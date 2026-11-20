@@ -3,7 +3,7 @@
 // 不用 canvas 的 filter（iPhone Safari 不支持），自己按像素算颜色矩阵。
 (() => {
   const mkc = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; };
-  const loadImg = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(src); i.src = src; });
+  const loadImg = src => new Promise((ok, no) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = () => no(src); i.src = src; });   // 试玩网址（raw.githack）的图片算跨域：要带 crossOrigin，不然改不了颜色
   const loadJSON = src => fetch(src).then(r => r.json());
 
   // ---------- 颜色矩阵（和 CSS 滤镜同一套公式）----------
@@ -21,7 +21,8 @@
   // 一张「原图集」：base 画布 + 帧表 { 名字: [{x,y,w,h,ax,ay}, …] }
   const SETS = {};
   function brown(c) {   // 纯黑描边 → 深褐
-    const x = c.getContext('2d', { willReadFrequently: true }), d = x.getImageData(0, 0, c.width, c.height), p = d.data;
+    const x = c.getContext('2d', { willReadFrequently: true }); let d; try { d = x.getImageData(0, 0, c.width, c.height); } catch (e) { return; }   // 万一读不了像素，就不换描边，照样能玩
+    const p = d.data;
     for (let i = 0; i < p.length; i += 4) if (p[i + 3] && p[i] < 56 && p[i + 1] < 50 && p[i + 2] < 50) { p[i] = 58; p[i + 1] = 34; p[i + 2] = 24; }
     x.putImageData(d, 0, 0);
   }
@@ -49,10 +50,11 @@
     const key = set + '|' + (v || 0); if (CG[key]) return CG[key];
     const S = SETS[set], m = chain([...(VAR[v || 0] || []), ...grade]);
     const c = mkc(S.base.width, S.base.height), x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(S.base, 0, 0);
-    const d = x.getImageData(0, 0, c.width, c.height), p = d.data;
+    let d = null; try { d = x.getImageData(0, 0, c.width, c.height); } catch (e) {}
+    if (d) { const p = d.data;
     for (let i = 0; i < p.length; i += 4) { if (!p[i + 3]) continue; const r = p[i], g = p[i + 1], b = p[i + 2];
       p[i] = m[0] * r + m[1] * g + m[2] * b + m[3]; p[i + 1] = m[4] * r + m[5] * g + m[6] * b + m[7]; p[i + 2] = m[8] * r + m[9] * g + m[10] * b + m[11]; }
-    x.putImageData(d, 0, 0);
+    x.putImageData(d, 0, 0); }
     const flip = s => { const o = mkc(s.width, s.height), g = o.getContext('2d'); g.translate(s.width, 0); g.scale(-1, 1); g.drawImage(s, 0, 0); return o; };
     const white = s => { const o = mkc(s.width, s.height), g = o.getContext('2d'); g.drawImage(s, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = '#fff8e8'; g.fillRect(0, 0, o.width, o.height); return o; };
     const fl = flip(c);

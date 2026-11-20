@@ -29,7 +29,7 @@
   // ---------- 开局 ----------
   function start(o) {
     opt = o; MAP = DATA.maps.find(m => m.id === o.map); WEP = DATA.weapons[o.weapon]; SPR.setGrade(MAP.grade);
-    MIMG = new Image(); MIMG.src = MAP.img;
+    MIMG = new Image(); MIMG.crossOrigin = 'anonymous'; MIMG.src = MAP.img;
     G = { t: 0, kills: 0, spawn: 1, boss: null, bossOut: false, over: null, overT: 0, shake: 0, hitStop: 0, paused: false, xp: 0, lv: 1, god: false, banner: null };
     const g = MAP.ground;
     hero = { x: MAPW / 2, y: (g.y0 + g.y1) / 2 * MAPH, hp: 100, maxHp: 100, f: 1, t: 0, roll: 0, rollCd: 0, inv: 0, hurtT: 0, atkT: 0, moving: false, cd: .6, dead: false,

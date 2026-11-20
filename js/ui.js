@@ -4,7 +4,7 @@
   const $ = id => document.getElementById(id), cv = $('cv'), ctx = cv.getContext('2d');
   const PI = Math.PI, rd = Math.round;
   let screen = 'load', last = performance.now(), sel = { weapon: 'sword', map: 'field' }, fieldImg = new Image();
-  fieldImg.src = 'art/map/field.webp';
+  fieldImg.crossOrigin = 'anonymous'; fieldImg.src = 'art/map/field.webp';
   const store = { get: k => { try { return localStorage.getItem('xsyz-' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('xsyz-' + k, v); } catch (e) {} } };
   if (matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window) document.body.classList.add('touch');
 
