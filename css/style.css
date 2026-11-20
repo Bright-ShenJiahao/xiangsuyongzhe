@@ -57,7 +57,7 @@ h1, h2, p { margin: 0; font-weight: 400; }
 }
 
 /* 地图选择 */
-.maps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2vw; width: 100%; max-width: 1200px; flex: 1; min-height: 0; align-content: center; }
+.maps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2vw; width: 100%; max-width: 1200px; flex: 1; min-height: 0; align-content: center; }
 .map { display: flex; flex-direction: column; padding: 8px; gap: 6px; cursor: pointer; position: relative; }
 .map .pic { aspect-ratio: 16 / 9; background: #1a1018 center / cover; position: relative; image-rendering: auto; }
 .map.lock .pic { filter: brightness(.25) grayscale(.6); background: repeating-linear-gradient(45deg, #241a26 0 8px, #1c1420 8px 16px); }
@@ -83,6 +83,7 @@ h1, h2, p { margin: 0; font-weight: 400; }
 .clock { margin-left: auto; font-size: 18px; text-shadow: 2px 2px #2a160e; } .clock.red { color: #ff8a6a; }
 .kills { font-size: 16px; color: #ffe08a; text-shadow: 2px 2px #2a160e; min-width: 70px; text-align: right; }
 .btn.sq { pointer-events: auto; padding: 6px 12px; font-size: 14px; margin: 0 4px 0 8px; }
+#bBg { font-size: 13px; padding: 6px 8px; }
 .boss { position: absolute; top: calc(44px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(60vw, 520px); text-align: center; display: none; }
 .boss b { font-size: 15px; color: #ffb0a0; text-shadow: 2px 2px #2a160e; } .bb { height: 12px; background: #3a1410; box-shadow: 0 0 0 2px #e8b84a, 0 0 0 4px #1a0e08; margin-top: 4px; } .bb i { display: block; height: 100%; background: linear-gradient(#ff7a5a 0 30%, #b8281a 30%); }
 .banner { position: absolute; top: 28%; left: 0; right: 0; text-align: center; font-size: clamp(24px, 5vw, 42px); color: #ffe08a; background: rgba(30, 16, 10, .55); padding: 10px 0; display: none; text-shadow: 3px 3px #2a160e; }

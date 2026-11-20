@@ -128,7 +128,7 @@
     for (const m of DATA.maps) {
       const d = document.createElement('div'); d.className = 'map panel' + (m.open ? '' : ' lock') + (m.id === sel.map ? ' on' : ''); d.dataset.id = m.id;
       d.innerHTML = `<div class="pic" ${m.open ? `style="background-image:url('${m.img}')"` : ''}></div><b>${m.open ? m.name : m.name}</b><p>${m.desc}</p>${m.open ? '<div class="foes"></div>' : ''}`;
-      if (m.open && m.foesImg) { const f = d.querySelector('.foes'); m.foesImg.forEach((k, i) => { const im = new Image(); im.src = `art/cav/${k}/${k === 'pcav8' ? 'E2' : 'E0'}.png`; if (i === 2) im.className = 'bs'; f.appendChild(im); }); const s = document.createElement('span'); s.textContent = '首领：' + m.bossName; f.appendChild(s); }
+      if (m.open && m.foesImg) { const f = d.querySelector('.foes'); m.foesImg.forEach((k, i) => { const im = new Image(); im.src = `art/cav/${k}/${k === 'pcav8' ? 'E2' : 'E0'}.png`; if (i === 2) im.className = 'bs'; f.appendChild(im); }); if (m.heroImg) { const h = new Image(); h.src = m.heroImg; h.className = 'bs'; h.style.marginRight = '8px'; f.prepend(h); } const s = document.createElement('span'); s.textContent = '首领：' + m.bossName; f.appendChild(s); }
       else if (m.open) { const f = d.querySelector('.foes'); m.foes.forEach(k => f.appendChild(foeCanvas(k))); const b = foeCanvas(m.boss); b.className = 'bs'; f.appendChild(b); const s = document.createElement('span'); s.textContent = '首领：' + DATA.enemies[m.boss].name; f.appendChild(s); }
       d.onclick = () => { if (!m.open) { d.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], 200); return; } sel.map = m.id; for (const c of box.children) c.classList.toggle('on', c.dataset.id === m.id); };
       box.appendChild(d);
@@ -149,7 +149,7 @@
     }
     startBattle0();
   }
-  function startBattle0() { const m = DATA.maps.find(x => x.id === sel.map); if (MOD) MOD.stop(); MOD = m.mode === 'cav' ? CAV : BATTLE; MOD.start({ weapon: sel.weapon, map: sel.map }); $('bRoll').textContent = m.feel === 'horse' ? '冲锋' : '翻滚'; tipFor = m.feel || 'hero'; show('battle'); for (const id of ['levelup', 'pause', 'result']) overlay(id, false); tipT = 6; }
+  function startBattle0() { const m = DATA.maps.find(x => x.id === sel.map); if (MOD) MOD.stop(); MOD = m.mode === 'cav' ? CAV : BATTLE; MOD.start({ weapon: sel.weapon, map: sel.map }); $('bRoll').textContent = m.feel === 'horse' ? '冲锋' : '翻滚'; $('bBg').style.display = m.bgSwitch ? '' : 'none'; if (m.bgSwitch) $('bBg').textContent = CAV.bg() === 'field' ? '换无尽草原' : '换打谷场'; tipFor = m.feel || 'hero'; show('battle'); for (const id of ['levelup', 'pause', 'result']) overlay(id, false); tipT = 6; }
   let tipT = 0, HC = {}, tipFor = 'hero';
   const set = (id, prop, v) => { if (HC[id + prop] === v) return; HC[id + prop] = v; const e = $(id); if (prop === 'text') e.textContent = v; else if (prop === 'w') e.style.width = v; else if (prop === 'show') e.style.display = v ? 'block' : 'none'; else if (prop === 'cls') e.className = v; };
   const mmss = t => { t = Math.ceil(t); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
@@ -172,6 +172,8 @@
     if (screen !== 'battle' || !MOD || !MOD.active() || $('levelup').classList.contains('on')) return;
     const on = force != null ? force : !MOD.paused; MOD.pause(on); overlay('pause', on);
   }
+  $('bBg').onclick = () => { if (!CAV.bg()) return; CAV.setBg(CAV.bg() === 'field' ? 'inf' : 'field'); startBattle0(); };   // 第 3、4 块：背景在打谷场和无尽草原之间切换（重开这一局）
+  addEventListener('keydown', e => { if (e.code === 'KeyB' && screen === 'battle' && MOD === CAV && CAV.bg()) $('bBg').click(); });
   $('bPause').onclick = () => togglePause(); $('pRes').onclick = () => togglePause(false);
   $('pRe').onclick = () => startBattle(); $('pHome').onclick = () => { MOD && MOD.stop(); overlay('pause', false); show('title'); };
   $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); MOD && MOD.roll(); });
