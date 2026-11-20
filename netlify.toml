@@ -1,0 +1,4 @@
+[build]
+  publish = "."
+  # 只有 main 分支才部署；preview 分支用 raw.githack 试玩，不消耗 Netlify 构建时间
+  ignore = "test \"$BRANCH\" != \"main\""

@@ -1,0 +1,80 @@
+// 像素勇者 · 精灵图：载入勇者图集和哥布林各帧，统一做三件事——
+// 1. 纯黑描边换深褐（在暖色地图上不扎眼）；2. 按地图给人物调色；3. 小兵分三种人群色（原色 / 深一点 / 偏黄旧一点）。
+// 不用 canvas 的 filter（iPhone Safari 不支持），自己按像素算颜色矩阵。
+(() => {
+  const mkc = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; };
+  const loadImg = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(src); i.src = src; });
+  const loadJSON = src => fetch(src).then(r => r.json());
+
+  // ---------- 颜色矩阵（和 CSS 滤镜同一套公式）----------
+  const I3 = () => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
+  function mat(op, v) {
+    if (op === 'saturate') return [.213 + .787 * v, .715 - .715 * v, .072 - .072 * v, 0, .213 - .213 * v, .715 + .285 * v, .072 - .072 * v, 0, .213 - .213 * v, .715 - .715 * v, .072 + .928 * v, 0];
+    if (op === 'brightness') return [v, 0, 0, 0, 0, v, 0, 0, 0, 0, v, 0];
+    if (op === 'sepia') { const a = 1 - v; return [.393 + .607 * a, .769 - .769 * a, .189 - .189 * a, 0, .349 - .349 * a, .686 + .314 * a, .168 - .168 * a, 0, .272 - .272 * a, .534 - .534 * a, .131 + .869 * a, 0]; }
+    return I3();
+  }
+  const mul = (b, a) => { const o = []; for (let r = 0; r < 3; r++) { for (let c = 0; c < 3; c++) o.push(b[r * 4] * a[c] + b[r * 4 + 1] * a[4 + c] + b[r * 4 + 2] * a[8 + c]); o.push(b[r * 4] * a[3] + b[r * 4 + 1] * a[7] + b[r * 4 + 2] * a[11] + b[r * 4 + 3]); } return o; };
+  const chain = list => (list || []).reduce((m, [op, v]) => mul(mat(op, v), m), I3());
+  const VAR = [[], [['brightness', .86]], [['sepia', .25], ['saturate', .9]]];
+
+  // 一张「原图集」：base 画布 + 帧表 { 名字: [{x,y,w,h,ax,ay}, …] }
+  const SETS = {};
+  function brown(c) {   // 纯黑描边 → 深褐
+    const x = c.getContext('2d', { willReadFrequently: true }), d = x.getImageData(0, 0, c.width, c.height), p = d.data;
+    for (let i = 0; i < p.length; i += 4) if (p[i + 3] && p[i] < 56 && p[i + 1] < 50 && p[i + 2] < 50) { p[i] = 58; p[i + 1] = 34; p[i + 2] = 24; }
+    x.putImageData(d, 0, 0);
+  }
+
+  async function load() {
+    // 勇者：帝国精进图集（tools/pixel/build_atlas.py 生成）
+    const [hi, hj] = await Promise.all([loadImg('art/hero/atlas.png'), loadJSON('art/hero/atlas.json')]);
+    const hc = mkc(hi.width, hi.height); hc.getContext('2d').drawImage(hi, 0, 0); brown(hc);
+    const hf = {}; for (const k in hj.f) if (k.startsWith('hero:')) hf[k.slice(5)] = hj.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay }));
+    SETS.hero = { base: hc, f: hf };
+    // 哥布林：每种一个文件夹，一帧一张图；载入后拼成一条横图集
+    const gj = await loadJSON('art/goblin/frames.json');
+    await Promise.all(Object.keys(gj).map(async k => {
+      const names = Object.keys(gj[k]), ims = await Promise.all(names.map(n => loadImg(`art/goblin/${k}/${n}.png`)));
+      const W = ims.reduce((s, i) => s + i.width + 2, 0), H = Math.max(...ims.map(i => i.height)), c = mkc(W, H), g = c.getContext('2d'); let x = 0; const f = {};
+      ims.forEach((im, i) => { g.drawImage(im, x, 0); const [ax, ay] = gj[k][names[i]]; f[names[i]] = [{ x, y: 0, w: im.width, h: im.height, ax, ay }]; x += im.width + 2; });
+      brown(c); SETS[k] = { base: c, f };
+    }));
+  }
+
+  // 调好色的图集（当前地图 × 人群色），用到才做，换地图时清空
+  let CG = {}, grade = [];
+  function setGrade(g) { grade = g || []; CG = {}; }
+  function sheet(set, v) {
+    const key = set + '|' + (v || 0); if (CG[key]) return CG[key];
+    const S = SETS[set], m = chain([...(VAR[v || 0] || []), ...grade]);
+    const c = mkc(S.base.width, S.base.height), x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(S.base, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height), p = d.data;
+    for (let i = 0; i < p.length; i += 4) { if (!p[i + 3]) continue; const r = p[i], g = p[i + 1], b = p[i + 2];
+      p[i] = m[0] * r + m[1] * g + m[2] * b + m[3]; p[i + 1] = m[4] * r + m[5] * g + m[6] * b + m[7]; p[i + 2] = m[8] * r + m[9] * g + m[10] * b + m[11]; }
+    x.putImageData(d, 0, 0);
+    const flip = s => { const o = mkc(s.width, s.height), g = o.getContext('2d'); g.translate(s.width, 0); g.scale(-1, 1); g.drawImage(s, 0, 0); return o; };
+    const white = s => { const o = mkc(s.width, s.height), g = o.getContext('2d'); g.drawImage(s, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = '#fff8e8'; g.fillRect(0, 0, o.width, o.height); return o; };
+    const fl = flip(c);
+    return (CG[key] = { at: c, fl, wat: white(c), wfl: white(fl), W: c.width });
+  }
+
+  // 帧：frame('hero', 'run', 1)；哥布林没有分组，名字就是帧名（walk3、strike…）
+  const frame = (set, name, i) => { const L = SETS[set] && SETS[set].f[name]; return L ? L[Math.max(0, Math.min(L.length - 1, i || 0))] : null; };
+  const count = (set, name) => (SETS[set] && SETS[set].f[name] || []).length;
+
+  // 画一帧：脚底中点对准屏幕 (X, Y)；u = 一个精灵像素占几个屏幕像素；k = 额外体型系数
+  function draw(ctx, set, name, i, X, Y, flip, u, o = {}) {
+    const f = frame(set, name, i); if (!f) return;
+    const S = sheet(set, o.v), k = u * (o.k || 1), dw = Math.round(f.w * k), dh = Math.round(f.h * k);
+    const dx = Math.round(X - (flip ? f.w - f.ax : f.ax) * k), dy = Math.round(Y - f.ay * k), sx = flip ? S.W - f.x - f.w : f.x;
+    if (o.alpha != null) ctx.globalAlpha = o.alpha;
+    ctx.drawImage(flip ? S.fl : S.at, sx, f.y, f.w, f.h, dx, dy, dw, dh);
+    if (o.white) { ctx.globalAlpha = (o.alpha == null ? 1 : o.alpha) * o.white; ctx.drawImage(flip ? S.wfl : S.wat, sx, f.y, f.w, f.h, dx, dy, dw, dh); }
+    ctx.globalAlpha = 1;
+  }
+  // 单独切一帧出来（武器选择页的小人、头像）
+  function crop(set, name, i) { const f = frame(set, name, i), S = SETS[set]; if (!f) return null; const c = mkc(f.w, f.h); c.getContext('2d').drawImage(S.base, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h); return { c, f }; }
+
+  window.SPR = { load, setGrade, frame, count, draw, crop, sets: SETS };
+})();
