@@ -128,7 +128,8 @@
     for (const m of DATA.maps) {
       const d = document.createElement('div'); d.className = 'map panel' + (m.open ? '' : ' lock') + (m.id === sel.map ? ' on' : ''); d.dataset.id = m.id;
       d.innerHTML = `<div class="pic" ${m.open ? `style="background-image:url('${m.img}')"` : ''}></div><b>${m.open ? m.name : m.name}</b><p>${m.desc}</p>${m.open ? '<div class="foes"></div>' : ''}`;
-      if (m.open) { const f = d.querySelector('.foes'); m.foes.forEach(k => f.appendChild(foeCanvas(k))); const b = foeCanvas(m.boss); b.className = 'bs'; f.appendChild(b); const s = document.createElement('span'); s.textContent = '首领：' + DATA.enemies[m.boss].name; f.appendChild(s); }
+      if (m.open && m.foesImg) { const f = d.querySelector('.foes'); m.foesImg.forEach((k, i) => { const im = new Image(); im.src = `art/cav/${k}/${k === 'pcav8' ? 'E2' : 'E0'}.png`; if (i === 2) im.className = 'bs'; f.appendChild(im); }); const s = document.createElement('span'); s.textContent = '首领：' + m.bossName; f.appendChild(s); }
+      else if (m.open) { const f = d.querySelector('.foes'); m.foes.forEach(k => f.appendChild(foeCanvas(k))); const b = foeCanvas(m.boss); b.className = 'bs'; f.appendChild(b); const s = document.createElement('span'); s.textContent = '首领：' + DATA.enemies[m.boss].name; f.appendChild(s); }
       d.onclick = () => { if (!m.open) { d.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], 200); return; } sel.map = m.id; for (const c of box.children) c.classList.toggle('on', c.dataset.id === m.id); };
       box.appendChild(d);
     }
@@ -138,8 +139,9 @@
   $('mGo').onclick = () => startBattle();
 
   // ================= 战斗 =================
-  function startBattle() { BATTLE.start({ weapon: sel.weapon, map: sel.map }); show('battle'); for (const id of ['levelup', 'pause', 'result']) overlay(id, false); tipT = 6; }
-  let tipT = 0, HC = {};
+  let MOD = null;   // 当前战斗模块：勇者 BATTLE / 骑兵 CAV
+  function startBattle() { const m = DATA.maps.find(x => x.id === sel.map); if (MOD) MOD.stop(); MOD = m.mode === 'cav' ? CAV : BATTLE; MOD.start({ weapon: sel.weapon, map: sel.map }); $('bRoll').textContent = m.feel === 'horse' ? '冲锋' : '翻滚'; tipFor = m.feel || 'hero'; show('battle'); for (const id of ['levelup', 'pause', 'result']) overlay(id, false); tipT = 6; }
+  let tipT = 0, HC = {}, tipFor = 'hero';
   const set = (id, prop, v) => { if (HC[id + prop] === v) return; HC[id + prop] = v; const e = $(id); if (prop === 'text') e.textContent = v; else if (prop === 'w') e.style.width = v; else if (prop === 'show') e.style.display = v ? 'block' : 'none'; else if (prop === 'cls') e.className = v; };
   const mmss = t => { t = Math.ceil(t); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
   function hud(h) {
@@ -147,9 +149,10 @@
     set('lvTxt', 'text', 'Lv ' + h.lv); set('xpBar', 'w', (h.xp / h.need * 100).toFixed(1) + '%');
     set('clock', 'text', h.bossOut ? '首领战！' : '首领 ' + mmss(h.left)); set('clock', 'cls', 'clock' + (!h.bossOut && h.left < 10 ? ' red' : ''));
     set('kills', 'text', '击倒 ' + h.kills);
+    set('bossName', 'text', h.bossName || '哥布林王'); set('speed', 'text', h.speed != null ? '速度 ' + h.speed + '%' : '');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');
     set('banner', 'text', h.banner); set('banner', 'show', !!h.banner);
-    set('tip', 'text', tipT > 0 ? (document.body.classList.contains('touch') ? '按住屏幕拖动走位 · 右下角翻滚 · 武器自动出手' : 'WASD / 方向键移动 · 空格翻滚 · 武器自动出手 · P 暂停') : '');
+    set('tip', 'text', tipT > 0 ? (tipFor === 'horse' ? (document.body.classList.contains('touch') ? '拖动转向 · 马有惯性，越快越痛 · 右下角冲锋' : 'WASD 转向 · 马有惯性，越快越痛，满速撞飞步兵 · 空格冲锋') : document.body.classList.contains('touch') ? '按住屏幕拖动走位 · 右下角翻滚 · 武器自动出手' : 'WASD / 方向键移动 · 空格翻滚 · 武器自动出手 · P 暂停') : '');
   }
   function levelUp(list, done) {
     $('luTitle').textContent = '升级！'; const box = $('ups'); box.innerHTML = '';
@@ -157,32 +160,32 @@
     overlay('levelup', true);
   }
   function togglePause(force) {
-    if (screen !== 'battle' || !BATTLE.active() || $('levelup').classList.contains('on')) return;
-    const on = force != null ? force : !BATTLE.paused; BATTLE.pause(on); overlay('pause', on);
+    if (screen !== 'battle' || !MOD || !MOD.active() || $('levelup').classList.contains('on')) return;
+    const on = force != null ? force : !MOD.paused; MOD.pause(on); overlay('pause', on);
   }
   $('bPause').onclick = () => togglePause(); $('pRes').onclick = () => togglePause(false);
-  $('pRe').onclick = () => startBattle(); $('pHome').onclick = () => { BATTLE.stop(); overlay('pause', false); show('title'); };
-  $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); BATTLE.roll(); });
+  $('pRe').onclick = () => startBattle(); $('pHome').onclick = () => { MOD && MOD.stop(); overlay('pause', false); show('title'); };
+  $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); MOD && MOD.roll(); });
   function result(r) {
     $('rTitle').textContent = r.win ? '胜利！' : '败北……';
-    $('rMsg').textContent = r.win ? '哥布林王倒下了，屏幕那头好像传来了「下一关」的音乐。' : '眼前一黑……再按一次开始键吧。';
-    $('rStats').innerHTML = `<span>用时</span><b>${mmss(r.time)}</b><span>击倒</span><b>${r.kills}</b><span>等级</span><b>Lv ${r.lv}</b><span>武器</span><b>${DATA.weapons[r.weapon].name}</b>`;
+    $('rMsg').textContent = r.win ? (r.wname || r.map === 'cav2' ? '敌将落马，整条战线崩了。' : '哥布林王倒下了，屏幕那头好像传来了「下一关」的音乐。') : '眼前一黑……再按一次开始键吧。';
+    $('rStats').innerHTML = `<span>用时</span><b>${mmss(r.time)}</b><span>击倒</span><b>${r.kills}</b><span>等级</span><b>Lv ${r.lv}</b><span>武器</span><b>${r.wname || DATA.weapons[r.weapon].name}</b>`;
     if (r.win) store.set('clear_' + r.map, '1');
     overlay('result', true);
   }
-  $('rAgain').onclick = () => startBattle(); $('rWep').onclick = () => { BATTLE.stop(); overlay('result', false); openWeapon(); }; $('rHome').onclick = () => { BATTLE.stop(); overlay('result', false); show('title'); };
+  $('rAgain').onclick = () => startBattle(); $('rWep').onclick = () => { MOD && MOD.stop(); overlay('result', false); openWeapon(); }; $('rHome').onclick = () => { MOD && MOD.stop(); overlay('result', false); show('title'); };
   document.addEventListener('visibilitychange', () => { if (document.hidden) togglePause(true); });
 
   // ================= 主循环 =================
   let T = 0;
   function loop(now) {
     const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
-    if (screen === 'battle') { BATTLE.frame(dt); if (tipT > 0) tipT -= dt; }
+    if (screen === 'battle') { if (MOD) MOD.frame(dt); if (tipT > 0) tipT -= dt; }
     else if (screen === 'title') { introTick(dt); drawTitle(T); }
     else if (screen === 'weapon' || screen === 'mapsel') { drawMenuBg(T); if (screen === 'weapon') drawHeroPreview(T, dt); }
     requestAnimationFrame(loop);
   }
-  window.UI = { hud, levelUp, result, togglePause, show, startBattle, openWeapon, openMaps, sel, get screen() { return screen; } };
-  BATTLE.init(cv);
+  window.UI = { mod: () => MOD || BATTLE, hud, levelUp, result, togglePause, show, startBattle, openWeapon, openMaps, sel, get screen() { return screen; } };
+  BATTLE.init(cv); CAV.init(cv);
   SPR.load().then(() => { show('title'); requestAnimationFrame(loop); }).catch(e => { $('load').innerHTML = '<b>载入失败：' + e + '</b>'; });
 })();

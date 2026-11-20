@@ -16,13 +16,17 @@ window.DATA = {
   },
   // 地图：第一版只开打谷场
   maps: [
-    { id: 'field', name: '新手村 · 打谷场', img: 'art/map/field.webp', open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
+    { id: 'field', name: '勇者 · 打谷场', img: 'art/map/field.webp', open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
       desc: '游戏里的第一站。哥布林从栅栏外、石阶上一波波涌进来。',
       // 能走的地面（占整张图的比例）：上边 y0、下边 y1，左右两条斜边从 (上 x, 下 x) 收拢
       ground: { y0: .31, y1: .85, l0: .2, l1: .03, r0: .8, r1: .97 }, grade: [['saturate', .94]] },
-    { id: 'forest', name: '迷雾森林', open: false, foes: [], desc: '还在施工中……' },
-    { id: 'snow', name: '冰封雪原', open: false, foes: [], desc: '还在施工中……' },
-    { id: 'castle', name: '哥布林王城', open: false, foes: [], desc: '还在施工中……' },
+    // 下面两张是沙盒对比：素材和无尽地图来自《骑兵幸存者》（js/cav.js）
+    { id: 'cav', mode: 'cav', feel: 'horse', name: '骑兵战场 · 原版手感', img: 'art/cav/cover.jpg', open: true, time: 120,
+      foesImg: ['spara', 'immortal', 'pcav8'], bossName: '敌将',
+      desc: '骑白马的少年带 4 名亲卫冲锋。转向有惯性，越快越痛，满速能把步兵撞飞；骑枪固定，不用选好的武器。无尽草原。' },
+    { id: 'cav2', mode: 'cav', feel: 'hero', name: '骑兵素材 · 勇者玩法', img: 'art/cav/cover.jpg', open: true, time: 120,
+      foesImg: ['spara', 'immortal', 'pcav8'], bossName: '敌将',
+      desc: '同样的白马少年和无尽草原，但操作和勇者一样：指哪走哪、空格翻滚，用你选好的武器自动出手。' },
   ],
   // 升级三选一
   upgrades: [
