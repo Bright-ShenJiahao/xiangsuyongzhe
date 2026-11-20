@@ -133,7 +133,7 @@
       d.onclick = () => { if (!m.open) { d.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], 200); return; } sel.map = m.id; for (const c of box.children) c.classList.toggle('on', c.dataset.id === m.id); };
       box.appendChild(d);
     }
-    show('mapsel'); CAV.preload();
+    show('mapsel');
   }
   $('mBack').onclick = () => openWeapon();
   $('mGo').onclick = () => startBattle();
@@ -141,7 +141,7 @@
   // ================= 战斗 =================
   let MOD = null;   // 当前战斗模块：勇者 BATTLE / 骑兵 CAV
   async function startBattle() {
-    const m0 = DATA.maps.find(x => x.id === sel.map);
+    const m0 = DATA.maps.concat(DATA.sandbox).find(x => x.id === sel.map);
     if (m0.mode === 'cav') {   // 骑兵素材多：先显示载入进度，载完再开打；有图载不下来就把名字列出来
       const L = $('load'); show('load');
       const ld = await CAV.preload(p => { L.innerHTML = `<b>载入骑兵素材…… ${p.done} / ${p.n}</b>`; });
@@ -149,7 +149,7 @@
     }
     startBattle0();
   }
-  function startBattle0() { const m = DATA.maps.find(x => x.id === sel.map); if (MOD) MOD.stop(); MOD = m.mode === 'cav' ? CAV : BATTLE; MOD.start({ weapon: sel.weapon, map: sel.map }); $('bRoll').textContent = m.feel === 'horse' ? '冲锋' : '翻滚'; $('bBg').style.display = m.bgSwitch ? '' : 'none'; if (m.bgSwitch) $('bBg').textContent = CAV.bg() === 'field' ? '换无尽草原' : '换打谷场'; tipFor = m.feel || 'hero'; show('battle'); for (const id of ['levelup', 'pause', 'result']) overlay(id, false); tipT = 6; }
+  function startBattle0() { const m = DATA.maps.concat(DATA.sandbox).find(x => x.id === sel.map); if (MOD) MOD.stop(); MOD = m.mode === 'cav' ? CAV : BATTLE; MOD.start({ weapon: sel.weapon, map: sel.map }); $('bRoll').textContent = m.feel === 'horse' ? '冲锋' : '翻滚'; $('bBg').style.display = m.bgSwitch ? '' : 'none'; if (m.bgSwitch) $('bBg').textContent = CAV.bg() === 'field' ? '换无尽草原' : '换打谷场'; tipFor = m.feel || 'hero'; show('battle'); for (const id of ['levelup', 'pause', 'result']) overlay(id, false); tipT = 6; }
   let tipT = 0, HC = {}, tipFor = 'hero';
   const set = (id, prop, v) => { if (HC[id + prop] === v) return; HC[id + prop] = v; const e = $(id); if (prop === 'text') e.textContent = v; else if (prop === 'w') e.style.width = v; else if (prop === 'show') e.style.display = v ? 'block' : 'none'; else if (prop === 'cls') e.className = v; };
   const mmss = t => { t = Math.ceil(t); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };

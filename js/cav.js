@@ -83,7 +83,7 @@
 
   // ---------- 开局 ----------
   function start(o) {
-    opt = o; MAP = DATA.maps.find(m => m.id === o.map); fit(); preload();
+    opt = o; MAP = DATA.maps.concat(DATA.sandbox || []).find(m => m.id === o.map); fit(); preload();
     const horse = MAP.feel === 'horse';
     G = { foot: MAP.feel === 'foot', bg: MAP.bgSwitch ? bgPref() : 'inf', atkT: 0, t: 0, kills: 0, spawn: 1, over: null, paused: false, xp: 0, lv: 1, god: false, banner: null, shake: 0, horse, bossOut: false, boss: null };
     hero = { x: 0, y: 0, a: 0, v: 0, anim: 0, hp: 100, maxHp: 100, inv: 0, cd: .5, dashCd: 0, dash: 0, dead: false, flash: 0,

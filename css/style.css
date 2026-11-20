@@ -57,7 +57,7 @@ h1, h2, p { margin: 0; font-weight: 400; }
 }
 
 /* 地图选择 */
-.maps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2vw; width: 100%; max-width: 1200px; flex: 1; min-height: 0; align-content: center; }
+.maps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 340px)); justify-content: center; gap: 2vw; width: 100%; max-width: 1200px; flex: 1; min-height: 0; align-content: center; }
 .map { display: flex; flex-direction: column; padding: 8px; gap: 6px; cursor: pointer; position: relative; }
 .map .pic { aspect-ratio: 16 / 9; background: #1a1018 center / cover; position: relative; image-rendering: auto; }
 .map.lock .pic { filter: brightness(.25) grayscale(.6); background: repeating-linear-gradient(45deg, #241a26 0 8px, #1c1420 8px 16px); }

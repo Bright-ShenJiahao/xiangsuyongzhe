@@ -16,11 +16,13 @@ window.DATA = {
   },
   // 地图：第一版只开打谷场
   maps: [
-    { id: 'field', name: '勇者 · 打谷场', img: 'art/map/field.webp', open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
+    { id: 'field', name: '新手村 · 打谷场', img: 'art/map/field.webp', open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
       desc: '游戏里的第一站。哥布林从栅栏外、石阶上一波波涌进来。',
       // 能走的地面（占整张图的比例）：上边 y0、下边 y1，左右两条斜边从 (上 x, 下 x) 收拢
       ground: { y0: .31, y1: .85, l0: .2, l1: .03, r0: .8, r1: .97 }, grade: [['saturate', .94]] },
-    // 下面两张是沙盒对比：素材和无尽地图来自《骑兵幸存者》（js/cav.js）
+  ],
+  // 骑兵素材的沙盒板块（11/21 对比后定了勇者画风，先从地图选择里拿掉；代码 js/cav.js 和素材 art/cav/ 留着，以后当别的世界还能用）
+  sandbox: [
     { id: 'cav', mode: 'cav', feel: 'horse', name: '骑兵战场 · 原版手感', img: 'art/cav/cover.jpg', open: true, time: 120,
       foesImg: ['spara', 'immortal', 'pcav8'], bossName: '敌将',
       desc: '骑白马的少年带 4 名亲卫冲锋。转向有惯性，越快越痛，满速能把步兵撞飞；骑枪固定，不用选好的武器。无尽草原。' },
