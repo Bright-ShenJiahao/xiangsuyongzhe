@@ -9,7 +9,8 @@
   let G = null, MAP, opt, hero, foes, guards, shots, fx, parts, nums, tele, pend;
   const keys = {}, joy = { on: false, id: null, sx: 0, sy: 0, x: 0, y: 0 };
   const hsh = (i, j, k) => { let n = (i * 73856093) ^ (j * 19349663) ^ ((k || 0) * 83492791); n = (n ^ (n >>> 13)) * 1274126177; return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
-  const img = src => { const i = new Image(); i.crossOrigin = 'anonymous'; i.src = src; return i; };
+  const LD = { n: 0, done: 0, bad: [], wait: [] };   // 载入进度：骑兵素材约 300 张小图，试玩网址上要等一会儿
+  const img = src => { const i = new Image(); i.crossOrigin = 'anonymous'; LD.n++; const fin = ok => { LD.done++; if (!ok) LD.bad.push(src); if (LD.done >= LD.n) LD.wait.splice(0).forEach(f => f()); }; i.onload = () => fin(true); i.onerror = () => fin(false); i.src = src; return i; };
   const ready = i => i && i.complete && i.naturalWidth;
 
   // ---------- 素材 ----------
@@ -18,7 +19,7 @@
   function loadArt() {
     for (const nm of Object.keys(window.COMBO || {})) for (const d of COMBO[nm].dirs) for (let i = 0; i < 8; i++) IM[nm + d + i] = img(`art/cav/${nm}/${d}${i}.png`);
     for (const nm of Object.keys(window.FOOT || {})) { for (const d of FOOT[nm].dirs) for (let i = 0; i < 6; i++) IM[nm + d + i] = img(`art/cav/${nm}/${d}${i}.png`); IM[nm + 'fly'] = img(`art/cav/${nm}/fly.png`); }
-    for (const k of Object.keys(window.PROPS || {})) IM['p_' + k] = img(`art/cav/props/${k}.png`);
+    for (const k of ['tuft1', 'tuft2', 'tuft3', 'tuft4', 'bushS', 'bushM', 'rubble', 'flat', 'rockM', 'wreck', 'dec1', 'dec2', 'dec3', 'fence', 'fenceC']) IM['p_' + k] = img(`art/cav/props/${k}.png`);   // 只载用得到的摆件
     for (const k of ['grass', 'dirt', 'trod']) GT[k] = img(`art/cav/ground/${k}.jpg`);
   }
 
@@ -67,7 +68,7 @@
 
   // ---------- 开局 ----------
   function start(o) {
-    opt = o; MAP = DATA.maps.find(m => m.id === o.map); fit(); if (!IM.hero8E0) loadArt();
+    opt = o; MAP = DATA.maps.find(m => m.id === o.map); fit(); preload();
     const horse = MAP.feel === 'horse';
     G = { t: 0, kills: 0, spawn: 1, over: null, paused: false, xp: 0, lv: 1, god: false, banner: null, shake: 0, horse, bossOut: false, boss: null };
     hero = { x: 0, y: 0, a: 0, v: 0, anim: 0, hp: 100, maxHp: 100, inv: 0, cd: .5, dashCd: 0, dash: 0, dead: false, flash: 0,
@@ -249,7 +250,7 @@
   // ---------- 绘制 ----------
   function shadow(x, y, rx, ry) { ctx.fillStyle = 'rgba(30,24,10,.28)'; ctx.beginPath(); ctx.ellipse(PX(x), PY(y), rx * z, ry * z, 0, 0, TAU); ctx.fill(); }
   function combo(o, nm, sc = 1, alpha = 1, white = 0) {
-    const C = COMBO[nm], sx = Math.cos(o.a), sy = Math.sin(o.a) * SQ, sec = ((Math.round(Math.atan2(sy, sx) / (PI / 4)) % 8) + 8) % 8, [dn, flip] = SECT[sec], di = C.dirs.indexOf(dn);
+    const C = window.COMBO && COMBO[nm]; if (!C) return; const sx = Math.cos(o.a), sy = Math.sin(o.a) * SQ, sec = ((Math.round(Math.atan2(sy, sx) / (PI / 4)) % 8) + 8) % 8, [dn, flip] = SECT[sec], di = C.dirs.indexOf(dn);
     const fi = o.v < 15 ? Math.floor(G.t * 1.6) % 2 : 2 + Math.floor(o.anim || 0) % 6, im = IM[nm + dn + fi], Fm = C.frames[di][fi]; if (!ready(im)) return;
     shadow(o.x, o.y, (dn === 'S' || dn === 'N' ? 12 : 24) * sc, 9 * sc);
     ctx.save(); ctx.globalAlpha = alpha; ctx.translate(rd(PX(o.x)), rd(PY(o.y) - Fm.up * z * sc)); if (flip < 0) ctx.scale(-1, 1);
@@ -258,7 +259,7 @@
     ctx.restore();
   }
   function foot(e) {
-    const C = FOOT[e.art];
+    const C = window.FOOT && FOOT[e.art]; if (!C) return;
     if (e.dead) { const im = IM[e.art + 'fly']; if (!ready(im)) return; const w = C.fly.w * z, h = C.fly.h * z; shadow(e.x, e.y, e.T.r, e.T.r * .5); ctx.save(); ctx.globalAlpha = clamp((1.1 - e.deadT) * 3, 0, 1); ctx.translate(PX(e.x), PY(e.y, e.z) - h / 2); ctx.rotate(e.rot * .3); if (e.face < 0) ctx.scale(-1, 1); ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore(); return; }
     const sx = Math.cos(e.a), sy = Math.sin(e.a) * SQ, sec = ((Math.round(Math.atan2(sy, sx) / (PI / 4)) % 8) + 8) % 8, [dn, flip] = SECT[sec], di = C.dirs.indexOf(dn);
     const fi = e.st === 'wind' ? 0 : Math.floor(e.wk) % 6, im = IM[e.art + dn + fi], Fm = C.frames[di][fi]; if (!ready(im)) return;
@@ -312,10 +313,14 @@
       speed: G.horse ? Math.round(ratio() * 100) : null });
   }
 
+  function preload(onProg) {   // 开打前把素材全部载完（地图选择页就开始在后台载）
+    if (!LD.started) { LD.started = true; loadArt(); }
+    return new Promise(res => { if (LD.done >= LD.n) return res(LD); LD.wait.push(() => res(LD)); if (onProg) { onProg(LD); const iv = setInterval(() => { if (LD.done >= LD.n) clearInterval(iv); else onProg(LD); }, 100); } });
+  }
   function frame(dt) { if (!G) return; if (!G.paused && !G.over) update(dt); draw(); }
   function init(canvas) { cv = canvas; ctx = cv.getContext('2d'); bindInput(); }
   window.CAV = {
-    init, start, frame, roll: dash,
+    init, start, frame, preload, roll: dash,
     pause(v) { if (G && !G.over) G.paused = v; }, get paused() { return !!(G && G.paused); }, active: () => !!G && !G.over, stop() { G = null; },
     debug: { boss: () => G && !G.bossOut && (G.t = MAP.time), god: () => G && (G.god = !G.god), clear: () => G && foes.forEach(e => !e.T.boss && !e.dead && kill(e, R(0, TAU), true)), lvl: () => G && (G.lv++, levelUp()), win: () => { if (!G) return; if (!G.boss) { G.bossOut = true; G.boss = spawn('boss'); } kill(G.boss, 0, false); }, heal: () => hero && (hero.hp = hero.maxHp), state: () => ({ G, hero, foes, guards, z }) },
   };
