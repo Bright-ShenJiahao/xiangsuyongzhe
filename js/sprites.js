@@ -29,12 +29,24 @@
     x.putImageData(d, 0, 0);
   }
 
+  function brownEdge(c) {   // 只把最外圈的黑描边换深褐（女主黑头发不能跟着变褐）
+    const x = c.getContext('2d', { willReadFrequently: true }); let d; try { d = x.getImageData(0, 0, c.width, c.height); } catch (e) { return; }
+    const p = d.data, W = c.width, H = c.height, A = i => (i < 0 || i >= W * H) ? 0 : p[i * 4 + 3];
+    const out = [];
+    for (let y = 0; y < H; y++) for (let X = 0; X < W; X++) { const i = y * W + X, k = i * 4; if (!p[k + 3] || !(p[k] < 56 && p[k + 1] < 50 && p[k + 2] < 50)) continue;
+      if ((X > 0 && !A(i - 1)) || (X < W - 1 && !A(i + 1)) || !A(i - W) || !A(i + W) || (X > 1 && !A(i - 2)) || (X < W - 2 && !A(i + 2)) || !A(i - 2 * W) || !A(i + 2 * W)) out.push(k); }
+    for (const k of out) { p[k] = 58; p[k + 1] = 34; p[k + 2] = 24; }
+    x.putImageData(d, 0, 0);
+  }
   async function load() {
     // 勇者：帝国精进图集（tools/pixel/build_atlas.py 生成）
     const [hi, hj] = await Promise.all([loadImg('art/hero/atlas.png'), loadJSON('art/hero/atlas.json')]);
     const hc = mkc(hi.width, hi.height); hc.getContext('2d').drawImage(hi, 0, 0); brown(hc);
     const hf = {}; for (const k in hj.f) if (k.startsWith('hero:')) hf[k.slice(5)] = hj.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay }));
     SETS.hero = { base: hc, f: hf };
+    // 女主（11/22，tools/pixel/build_heroine.py）：帧名和男主一样，出招帧通用
+    try { const [fi, fj] = await Promise.all([loadImg('art/heroF/atlas.png'), loadJSON('art/heroF/atlas.json')]); const fc = mkc(fi.width, fi.height); fc.getContext('2d').drawImage(fi, 0, 0); brownEdge(fc);
+      const ff = {}; for (const k in fj.f) if (k.startsWith('hero:')) ff[k.slice(5)] = fj.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay })); SETS.heroF = { base: fc, f: ff }; } catch (e) { console.warn('heroF', e); }
     // 高清勇者（11/22，tools/pixel/build_hd.py：原图清晰度，sk = 1/r 换算回像素格）。画质选「像素」时不载入
     if (HD) try { const [i2, j2] = await Promise.all([loadImg('art/herohd/atlas.webp'), loadJSON('art/herohd/atlas.json')]); const c2 = mkc(i2.width, i2.height); c2.getContext('2d').drawImage(i2, 0, 0); brown(c2);
       const f2 = {}; for (const k in j2.f) if (k.startsWith('hero:')) f2[k.slice(5)] = j2.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay })); SETS.herohd = { base: c2, f: f2, sk: 1 / j2.r, hd: true }; } catch (e) { console.warn('herohd', e); }
@@ -88,9 +100,9 @@
   function crop(set, name, i) { const f = frame(set, name, i), S = SETS[set]; if (!f) return null; const k = S.sk || 1, w = Math.max(1, Math.round(f.w * k)), h = Math.max(1, Math.round(f.h * k)), c = mkc(w, h), g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(S.base, f.x, f.y, f.w, f.h, 0, 0, w, h); return { c, f: k === 1 ? f : { ...f, w, h, ax: f.ax * k, ay: f.ay * k } }; }
 
   // 现在用哪套勇者：默认旧的（11/21 用户定）；localStorage xsyz-hero = new 时用新的（对比用）。k = 换算到旧勇者的身高（旧的 40 像素格）
-  const heroSet = () => SETS.herohd ? 'herohd' : 'hero';
+  const heroSet = c => c === 'f' && SETS.heroF ? 'heroF' : SETS.herohd ? 'herohd' : 'hero';   // c = 'm' 男主 / 'f' 女主（女主暂时没有高清版）
   const heroK = () => 1;
   // 勇者拿哪种武器：o.w = sword / spear / bow / staff（11/21 四套武器图，key 是 hero:<武器>.<动作>）；没有这套就用剑
-  function drawHero(ctx, n, i, X, Y, flip, u, o = {}) { const s = heroSet(); if (o.w && SETS[s].f[o.w + '.' + n]) n = o.w + '.' + n; draw(ctx, s, n, i, X, Y, flip, u, o); }
+  function drawHero(ctx, n, i, X, Y, flip, u, o = {}) { const s = heroSet(o.c); if (o.w && SETS[s].f[o.w + '.' + n]) n = o.w + '.' + n; draw(ctx, s, n, i, X, Y, flip, u, o); }
   window.SPR = { HD, load, setGrade, frame, count, draw, crop, sets: SETS, heroSet, heroK, drawHero };
 })();

@@ -53,13 +53,13 @@
   $('tpClose').onclick = () => overlay('tpanel', false);
 
   // ================= 备战页 =================
-  const P = { weapon: 'sword', free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
+  const P = { hero: 'm', weapon: 'sword', free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
   const attrsOf = () => { const o = {}; for (const a of DATA.attrs) o[a.id] = DATA.attrBase + (P.free[a.id] || 0); return o; };
   const used = () => Object.values(P.free).reduce((s, v) => s + v, 0);
-  const build = () => ({ weapon: P.weapon, attrs: attrsOf(), item: P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
+  const build = () => ({ hero: P.hero, weapon: P.weapon, attrs: attrsOf(), item: P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
   function openPrep(fresh) {
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
-      const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword';
+      const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.hero = store.get('hero') === 'f' ? 'f' : 'm';
       P.free = {}; P.habitOpts = shuffle(DATA.habits).slice(0, 3).map(h => h.id); P.itemOpts = shuffle(DATA.startItems).slice(0, 3).map(i => i.id);
       P.habit = null; P.item = P.itemOpts[0]; P.hrr = 0;
     }
@@ -69,6 +69,10 @@
   for (const b of $('ptabs').children) b.onclick = () => setTab(b.dataset.t);
   const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
   function renderPrep() {
+    // 人物（男主 / 女主）：不锁兵器，各一个被动
+    const cs = $('cSel'); cs.innerHTML = '';
+    for (const h of DATA.heroes) { const b = document.createElement('button'); b.className = h.id === P.hero ? 'on' : ''; const cr = SPR.crop(SPR.heroSet(h.id), P.weapon + '.idle', 0); if (cr) b.appendChild(cr.c);
+      b.insertAdjacentHTML('beforeend', `<span>${h.name} · ${h.from}</span><small>${h.perk}</small>`); b.onclick = () => { P.hero = h.id; store.set('hero', h.id); renderPrep(); }; cs.appendChild(b); }
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(w.icon)); b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
@@ -114,8 +118,8 @@
     if (c.width !== W || c.height !== H) { c.width = W; c.height = H; } const g = c.getContext('2d'); g.clearRect(0, 0, W, H); g.imageSmoothingEnabled = false;
     const u = Math.max(1, Math.floor(Math.min(H * .8 / 45, W * .8 / 50))); heroSwing -= dt;
     g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(W / 2, H * .9, 14 * u, 3.5 * u, 0, 0, 7); g.fill();
-    const hs = SPR.heroSet(), swing = heroSwing > 0, n = swing ? 'atk' : 'idle', i = swing ? Math.floor((.6 - heroSwing) / .6 * SPR.count(hs, 'atk')) : Math.floor(t * 3) % Math.max(1, SPR.count(hs, 'idle'));
-    SPR.drawHero(g, n, i, W / 2, H * .9, false, u, { w: P.weapon });   // 备战页预览：拿选中的起手兵器
+    const hs = SPR.heroSet(P.hero), swing = heroSwing > 0, n = swing ? 'atk' : 'idle', i = swing ? Math.floor((.6 - heroSwing) / .6 * SPR.count(hs, 'atk')) : Math.floor(t * 3) % Math.max(1, SPR.count(hs, 'idle'));
+    SPR.drawHero(g, n, i, W / 2, H * .9, false, u, { w: P.weapon, c: P.hero });   // 备战页预览：拿选中的起手兵器
   }
   function drawMenuBg(t) {   // 备战页背景：游戏里的打谷场，压暗
     const W = cv.width, H = cv.height; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#120c18'; ctx.fillRect(0, 0, W, H);

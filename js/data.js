@@ -29,6 +29,11 @@ window.DATA = {
     { id: 'clover', name: '四叶草', icon: '🍀', desc: '暴击率 +8%', fx: { crit: .08 }, price: 40 },
   ],
   // 现实习惯（备战页随机抽 3 个选 1，也可以不选）：一好一坏，现实里的小毛病带进了游戏
+  // 人物（11/22）：不锁兵器，只管长相 + 一个被动
+  heroes: [
+    { id: 'm', name: '男主', from: '中国', desc: '熬夜打游戏的年轻人', perk: '经验 +10%' },
+    { id: 'f', name: '女主', from: '日本', desc: '剑道部的高中生', perk: '翻滚冷却 −20%' },
+  ],
   habits: [
     { id: 'chips', name: '爱吃薯片', good: '体魄 +1', bad: '力量 −1', line: '手上全是油，剑握不稳。', fx: { con: 1, str: -1 } },
     { id: 'night', name: '熬夜冠军', good: '敏捷 +1', bad: '体魄 −1', line: '反应快，但身体被掏空。', fx: { agi: 1, con: -1 } },

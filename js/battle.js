@@ -39,7 +39,7 @@
     cam.snap = true; hero = { gap: 0, rollBuf: 0, x: MAPW / 2, y: (g.y0 + g.y1) / 2, hp: 0, maxHp: 0, f: 1, t: 0, roll: 0, rollCd: 0, inv: 0, hurtT: 0, atkT: 0, moving: false, cd: .6, dead: false,
       m: { dmg: 1, spd: 1, area: 1, move: 1 }, crit: .01, critMul: 1.5, pIn: 1, mIn: 1, xpMul: 1, fx: {}, A: {} };
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
-    RUN = { weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: b.pts || 0, alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
+    RUN = { hero: b.hero || 'm', weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: b.pts || 0, alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
       bag: Array(DATA.bagSize).fill(null), coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
     RUN.slots[0] = { id: b.weapon, lv: 1, xp: 0 }; if (b.item) RUN.bag[0] = { kind: 'item', id: b.item };
     recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0);
@@ -55,7 +55,7 @@
     const items = RUN.bag.filter(x => x && x.kind === 'item').map(x => x.id);
     const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit }), m = hero.m;
     m.dmg = (1 + (c.fx.dmg || 0)) * (1 + .03 * (G.lv - 1)); m.spd = c.spd; m.area = c.area; m.move = c.move;
-    hero.crit = c.crit; hero.critMul = c.critMul; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp; hero.A = c.A; hero.fx = c.fx;
+    hero.crit = c.crit; hero.critMul = c.critMul; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.44 : 1.8;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20% hero.A = c.A; hero.fx = c.fx;
     const max = c.hp + 5 * (G.lv - 1); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
     return c;
   }
@@ -80,7 +80,7 @@
     if (running() && !hero.dead && (hero.roll > 0 || hero.rollCd > 0)) { if (Math.max(hero.roll, hero.rollCd) < .2) hero.rollBuf = .2; return; }
     if (!running() || hero.dead) return; hero.rollBuf = 0;
     const [dx, dy] = moveDir(), d = Math.hypot(dx, dy); hero.rvx = d ? dx / d : hero.f; hero.rvy = d ? dy / d : 0; if (dx) hero.f = dx < 0 ? -1 : 1;
-    hero.roll = .3; hero.rollCd = 1.8; hero.inv = Math.max(hero.inv, .3);
+    hero.roll = .3; hero.rollCd = hero.rollMax || 1.8; hero.inv = Math.max(hero.inv, .3);
     const c = hero.cs; if (c && (c.ph === 'wu' || c.ph === 'rc')) { if (c.ph === 'wu') nums.push({ x: hero.x, y: hero.y - 50 * K, txt: c.S.name + ' 中断', t: 0, col: '#c8b890' }); endCast(); }
   }
 
@@ -465,7 +465,7 @@
         shadow(hero.x, hero.y, 26);
         if (hero.inv > 0 && hero.roll <= 0 && hero.hurtT <= 0 && !hero.dead && Math.floor(G.t * 20) % 2) continue;
         const [n, i, st, lg] = heroFrame(), bob = 0, lunge = st === 'strike' ? hero.f * (lg || 0) * u : st === 'hurt' ? -hero.f * 2 * u : 0;
-        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { w: hero.cs ? hero.cs.S.w : HWPN[RUN.weapon] || 'sword' });
+        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { w: hero.cs ? hero.cs.S.w : HWPN[RUN.weapon] || 'sword', c: RUN.hero });
       } else {
         const z = o.z, B = z.T.boss, [n, st] = foeFrame(z);
         const a = z.dead ? Math.max(0, 1 - Math.max(0, z.deadT - (B ? 2.4 : .9)) / .4) : z.flee ? Math.max(0, 1 - z.fleeT / 1.6) : 1;
@@ -512,7 +512,7 @@
     for (const n of nums) { const y = Y(n.y) - n.t * 22 * u; if (n.txt) { ctx.font = `${7 * u}px Pix, monospace`; ctx.textAlign = 'center'; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#2a160e'; ctx.strokeText(n.txt, X(n.x), y); ctx.fillStyle = n.col; ctx.fillText(n.txt, X(n.x), y); } else num(n.v, X(n.x), y, n.col, n.big ? nk + 1 : nk); }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (joy.on) { const dpr = W / innerWidth; ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.arc(joy.sx * dpr, joy.sy * dpr, 40 * dpr, 0, 7); ctx.fill(); const jx = joy.x - joy.sx, jy = joy.y - joy.sy, d = Math.hypot(jx, jy), k = Math.min(1, 40 / (d || 1)); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc((joy.sx + jx * k) * dpr, (joy.sy + jy * k) * dpr, 18 * dpr, 0, 7); ctx.fill(); }
-    UI.hud({ roll: Math.max(0, hero.rollCd) / 1.8, rollT: Math.max(0, hero.rollCd), lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
+    UI.hud({ roll: Math.max(0, hero.rollCd) / (hero.rollMax || 1.8), rollT: Math.max(0, hero.rollCd), lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
   }
   // 蓄力类前摇：脚下画金色预警（瞬光斩半圆、贯星箭长线、跃龙击圆圈 + 地裂）
   function chargePreview() {
