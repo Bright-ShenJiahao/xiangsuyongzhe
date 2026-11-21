@@ -37,10 +37,30 @@ def anchor(img):   # 脚底锚点：下半身有颜色部分的水平中点 + �
   m = al & (sat > .25); m[: int(h * .45)] = False
   if m.sum() < 5: m = al
   return float(np.nonzero(m)[1].mean()), int(np.nonzero(al)[0].max()) + 1
+# 枪的待机两帧：手上方那截枪杆和手之间那截角度不一样（看起来弯了，11/21 用户指出）。
+# 把手上方露在外面的那截（枪杆 + 枪头）绕握枪的手转到和下面那截同一个角度，只贴在背景上，手和身体保持在上面。
+SPEAR_FIX = [  # 手心（转轴）、外露那截的起点 A 和枪尖 B、下面那截的两个点（定角度）
+  dict(P=(183, 298), A=(190, 290), B=(266, 221), L=((152, 318), (172, 305))),
+  dict(P=(468, 298), A=(475, 290), B=(551, 221), L=((437, 318), (457, 305)))]
+def straighten(path):
+  im = Image.open(path).convert('RGB'); a = np.array(im).astype(int); r, g, b = a[..., 0], a[..., 1], a[..., 2]
+  bg = (r - g > 80) & (b - g > 80) & (r > 140) & (b > 140); H, W = bg.shape; yy, xx = np.mgrid[0:H, 0:W]
+  for F in SPEAR_FIX:
+    (ax, ay), (bx, by), (px, py) = F['A'], F['B'], F['P']; dx, dy = bx - ax, by - ay; L2 = dx * dx + dy * dy
+    t = ((xx - ax) * dx + (yy - ay) * dy) / L2; d = np.abs((xx - ax) * dy - (yy - ay) * dx) / np.sqrt(L2)
+    m = ~bg & (t > -.02) & (t < 1.12) & (d < np.where(t > .5, 17, 11)) & (yy <= ay)
+    near = (t > -.02) & (t < 1.15) & (d < 19) & (yy <= ay)   # 原来枪头边上和背景混色的一圈也一起擦掉
+    (l0x, l0y), (l1x, l1y) = F['L']; up = np.degrees(np.arctan2(by - ay, bx - ax)); lo = np.degrees(np.arctan2(l1y - l0y, l1x - l0x))
+    patch = np.zeros((H, W, 4), np.uint8); patch[m, :3] = a[m]; patch[m, 3] = 255
+    rot = np.array(Image.fromarray(patch, 'RGBA').rotate(up - lo, resample=Image.NEAREST, center=(px, py)))   # PIL 正角度 = 逆时针
+    a[near] = (255, 0, 255); bg2 = bg | near; put = (rot[..., 3] > 0) & bg2; a[put] = rot[put][:, :3]
+  out = '/tmp/_hero4_spear.png'; Image.fromarray(a.astype(np.uint8)).save(out); return out
 SRC = [('hero_sb', [('sword', 0), ('bow', 2)], False), ('hero_spear', [('spear', 0)], False), ('hero_staff', [('staff', 0)], True)]
 sheets = {}
 for name, sets, dots in SRC:
-  path = P('src', name + '.png'); R = frames(clean_small(path) if dots else path)
+  path = P('src', name + '.png')
+  if name == 'hero_spear': path = straighten(path)
+  R = frames(clean_small(path) if dots else path)
   assert all(len(r) == 6 for r in R), (name, [len(r) for r in R])
   for w, r0 in sets:
     fr = [f['img'] for f in R[r0] + R[r0 + 1]]; k = body_h(fr[0]) / BODY; i = 0
