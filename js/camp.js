@@ -11,8 +11,8 @@
   const dots = (L) => '●'.repeat(L) + '○'.repeat(7 - L);
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
-    // 出售：拿基价的 35%（书的基价 22 × 等级，宝物看各自的价）
-    if (o.kind === 'book') { const S = SK[o.id]; return { tier: S.tier, icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, sell: Math.round(DATA.tierPrice[S.tier] * DATA.price.sell) }; }
+    // 出售：书半价（22 / 34 / 52 → 11 / 17 / 26），宝物拿基价的 35%
+    if (o.kind === 'book') { const S = SK[o.id]; return { tier: S.tier, icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, sell: Math.round(DATA.tierPrice[S.tier] * .5) };   // 11/22：书卖掉 = 半价（不管用没用过） }
     if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物', desc: it.desc, sell: Math.round((it.price || 25) * DATA.price.sell) }; }
     const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 3 };
   }
