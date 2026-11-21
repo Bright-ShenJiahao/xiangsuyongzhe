@@ -401,7 +401,13 @@
   function heroFrame() {
     if (hero.dead) return ['dead', 0];
     if (hero.roll > 0) return ['roll', hero.roll > .16 ? 0 : 1];
-    const c = hero.cs; if (c) { if (c.ph === 'wu') return ['atk', 0, '']; if (c.ph === 'hold') return c.S.frame === 'big' ? ['big', 0, ''] : ['atk', Math.floor(c.t * 12) % 2, 'strike']; if (c.t < .25) return c.S.frame === 'big' ? ['big', 0, 'strike'] : ['atk', 1, 'strike']; }
+    const c = hero.cs; if (c) {   // 出招帧：js/skframes.js（tools/frames.html 调）
+      const F = SKF.get(c.sk.id); let r = null;
+      if (c.ph === 'wu') r = SKF.pick(F, 'wu', c.t);
+      else if (c.ph === 'hold') r = SKF.pick(F, 'hold', c.t);
+      else if (!c.move && c.t < F.hitT) { r = SKF.pick(F, 'hit', c.t); if (r) return [r[0], r[1], 'strike', F.lunge]; }
+      else r = SKF.pick(F, 'rc', c.t - (c.move ? 0 : F.hitT));
+      if (r) return [r[0], r[1], '']; if (c.ph !== 'rc') return ['idle', 0, '']; }
     if (hero.hurtT > 0) return ['hurt', 0, 'hurt'];
     if (hero.moving) return ['run', [0, 1, 2, 1][Math.floor(hero.t * 10) % 4], 'run'];
     return ['idle', Math.floor(hero.t * 2) % 2];
@@ -450,7 +456,7 @@
       if (o.h) {
         shadow(hero.x, hero.y, 26);
         if (hero.inv > 0 && hero.roll <= 0 && hero.hurtT <= 0 && !hero.dead && Math.floor(G.t * 20) % 2) continue;
-        const [n, i, st] = heroFrame(), bob = st === 'run' && i % 2 ? -u : 0, lunge = st === 'strike' && i > 0 ? hero.f * 3 * u : st === 'hurt' ? -hero.f * 2 * u : 0;
+        const [n, i, st, lg] = heroFrame(), bob = st === 'run' && i % 2 ? -u : 0, lunge = st === 'strike' ? hero.f * (lg || 0) * u : st === 'hurt' ? -hero.f * 2 * u : 0;
         SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { w: hero.cs ? hero.cs.S.w : HWPN[RUN.weapon] || 'sword' });
       } else {
         const z = o.z, B = z.T.boss, [n, st] = foeFrame(z);

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>出招帧调整 · 像素勇者</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#1c140e;color:#f0e2c4;font:14px/1.5 system-ui,"PingFang SC","Microsoft YaHei",sans-serif}
+header{padding:10px 14px;background:#2a1d13;border-bottom:2px solid #4a3220;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+header b{font-size:16px;margin-right:8px}
+button{background:#4a3220;color:#f0e2c4;border:1px solid #7a5a36;border-radius:6px;padding:6px 10px;font:inherit;cursor:pointer}
+button:hover{background:#5c4028}
+button.on{background:#c8902a;color:#1c140e;border-color:#ffd86a}
+button.go{background:#3a6a2a;border-color:#6ab04a}
+button.warn{background:#6a2a20;border-color:#b04a3a}
+main{display:grid;grid-template-columns:220px 1fr 360px;gap:12px;padding:12px}
+@media (max-width:900px){main{grid-template-columns:1fr}#list{max-height:200px}}
+section{background:#2a1d13;border:1px solid #4a3220;border-radius:8px;padding:10px}
+h3{margin:0 0 8px;font-size:14px;color:#ffd86a}
+#list{overflow:auto;max-height:calc(100vh - 110px)}
+#list div{padding:5px 8px;border-radius:5px;cursor:pointer;display:flex;justify-content:space-between}
+#list div:hover{background:#3a2818}
+#list div.sel{background:#c8902a;color:#1c140e}
+#list i{font-style:normal;font-size:12px;opacity:.7}
+#list .mod::after{content:"●";color:#6ae04a;margin-left:4px}
+#wtabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+canvas{image-rendering:pixelated;display:block;max-width:100%}
+#stage{background:#5a7a3a;border-radius:6px;width:100%;height:auto}
+.bar{height:22px;display:flex;border-radius:4px;overflow:hidden;margin:8px 0 4px;position:relative;font-size:12px}
+.bar span{display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden}
+#cur{position:absolute;top:0;bottom:0;width:2px;background:#fff}
+.ph{margin:8px 0;padding:8px;border-radius:6px;border:2px solid transparent;background:#1c140e;cursor:pointer}
+.ph.sel{border-color:#ffd86a}
+.ph .t{display:flex;justify-content:space-between;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;min-height:52px;margin-top:6px}
+.chip{background:#3a2818;border:1px solid #7a5a36;border-radius:4px;padding:2px;position:relative}
+.chip canvas{width:44px;height:48px}
+.chip em{position:absolute;right:1px;top:-2px;font-style:normal;color:#ff8a6a;font-size:12px}
+.empty{opacity:.5;font-size:12px;align-self:center}
+#pal{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+#pal div{background:#1c140e;border:1px solid #4a3220;border-radius:4px;text-align:center;cursor:pointer;font-size:11px;padding:2px}
+#pal div:hover{border-color:#ffd86a}
+#pal canvas{width:56px;height:60px;margin:auto}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.row label{display:flex;gap:4px;align-items:center}
+input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid #7a5a36;border-radius:4px;padding:3px}
+#out{width:100%;height:90px;background:#1c140e;color:#c8e0a0;border:1px solid #4a3220;border-radius:4px;font:12px monospace}
+.hint{font-size:12px;opacity:.75}
+#msg{color:#6ae04a;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <b>出招帧调整</b>
+  <button class="go" id="save">保存（游戏里立刻生效）</button>
+  <button id="copy">复制结果发给 Claude</button>
+  <button class="warn" id="resetOne">这招恢复默认</button>
+  <button class="warn" id="resetAll">全部清除</button>
+  <a id="game" href="../index.html?debug" target="_blank"><button>打开游戏</button></a>
+  <span id="msg"></span>
+</header>
+<main>
+  <section>
+    <div id="wtabs"></div>
+    <div id="list"></div>
+  </section>
+  <section>
+    <h3 id="title">—</h3>
+    <canvas id="stage" width="480" height="300"></canvas>
+    <div class="bar" id="bar"></div>
+    <div class="row">
+      <button id="play">暂停</button>
+      <label>速度 <select id="spd"><option value="1">1×</option><option value="0.5">0.5×</option><option value="0.25">0.25×</option></select></label>
+      <label><input type="checkbox" id="flip"> 朝左</label>
+      <label><input type="checkbox" id="run"> 不出招时跑步</label>
+    </div>
+    <div class="hint" id="info"></div>
+    <h3 style="margin-top:12px">导出内容</h3>
+    <textarea id="out" readonly></textarea>
+  </section>
+  <section>
+    <h3>四段帧（先点一段，再点下面的帧加进去；点段里的帧删掉）</h3>
+    <div id="phases"></div>
+    <div class="row">
+      <label>每秒帧数 <input type="number" id="fps" min="1" max="30" step="1"></label>
+      <label>出手时长(秒) <input type="number" id="hitT" min="0" max="1" step="0.05"></label>
+      <label>出手前冲(格) <input type="number" id="lunge" min="-10" max="20" step="1"></label>
+    </div>
+    <div class="row"><button id="toAll">这套帧用到同兵器所有招</button></div>
+    <h3 style="margin-top:10px">这把兵器的全部帧</h3>
+    <div id="pal"></div>
+  </section>
+</main>
+<script src="../js/data.js"></script>
+<script src="../js/skframes.js"></script>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id);
+  const WN = { sword: '剑', spear: '枪', bow: '弓', staff: '法杖' }, AN = { idle: '站立', run: '跑', atk: '出招', big: '大招', roll: '翻滚', hurt: '受伤', dead: '倒地' };
+  const PH = [['wu', '前摇', '#7a5a36'], ['hit', '出手', '#c8902a'], ['hold', '持续', '#3a6aa0'], ['rc', '后摇', '#6a3a5a']];
+  const img = new Image(); img.src = '../art/hero/atlas.png'; await img.decode();
+  const J = await (await fetch('../art/hero/atlas.json')).json();
+  // 跟游戏一样把描边的黑压成深棕
+  const at = document.createElement('canvas'); at.width = img.width; at.height = img.height; const ag = at.getContext('2d'); ag.drawImage(img, 0, 0);
+  { const d = ag.getImageData(0, 0, at.width, at.height), p = d.data; for (let i = 0; i < p.length; i += 4) if (p[i + 3] && p[i] < 56 && p[i + 1] < 50 && p[i + 2] < 50) { p[i] = 58; p[i + 1] = 34; p[i + 2] = 24; } ag.putImageData(d, 0, 0); }
+  const FR = {}; for (const k in J.f) if (k.startsWith('hero:') && k.includes('.')) { const [w, a] = k.slice(5).split('.'); (FR[w] = FR[w] || {})[a] = J.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay })); }
+  const frame = (w, tok) => { const m = /^([a-z]+)(\d+)$/.exec(tok || ''); if (!m) return null; const L = FR[w] && FR[w][m[1]]; return L && L[+m[2]] || null; };
+  function drawF(g, f, X, Y, k, flip) { if (!f) return; g.save(); g.imageSmoothingEnabled = false; if (flip) { g.translate(X, 0); g.scale(-1, 1); X = 0; } g.drawImage(at, f.x, f.y, f.w, f.h, Math.round(X - f.ax * k), Math.round(Y - f.ay * k), f.w * k, f.h * k); g.restore(); }
+  function thumb(w, tok, cw, ch) { const c = document.createElement('canvas'); c.width = cw; c.height = ch; const f = frame(w, tok); if (f) { const k = Math.min((cw - 4) / f.w, (ch - 4) / f.h, 2); drawF(c.getContext('2d'), f, cw / 2 - (f.w / 2 - f.ax) * k, ch - 2 - (f.h - f.ay) * k, k); } return c; }
+
+  let edits = {}; try { edits = JSON.parse(localStorage.getItem('xsyz-skf') || '{}') || {}; } catch (e) {}
+  let W = 'sword', id = null, phSel = 'wu', playing = true, T0 = performance.now(), tAcc = 0, last = performance.now();
+  const ids = w => Object.keys(DATA.skills).filter(k => DATA.skills[k].w === w);
+  // 当前招的帧设置：默认值 + 工具里改过的
+  const cur = () => { const S = DATA.skills[id]; return Object.assign({}, S.frame === 'big' ? SKF.big : SKF.base, SKF.s[id] || {}, edits[id] || {}); };
+  const setK = (k, v) => { const c = cur(); c[k] = v; const d = S => S.frame === 'big' ? SKF.big : SKF.base, def = Object.assign({}, d(DATA.skills[id]), SKF.s[id] || {});
+    const e = {}; for (const kk in c) if (JSON.stringify(c[kk]) !== JSON.stringify(def[kk])) e[kk] = c[kk];
+    if (Object.keys(e).length) edits[id] = e; else delete edits[id]; render(); };
+
+  function tabs() { $('wtabs').innerHTML = ''; for (const w in WN) { const b = document.createElement('button'); b.textContent = WN[w]; if (w === W) b.className = 'on'; b.onclick = () => { W = w; id = ids(w)[0]; phSel = 'wu'; tabs(); render(); }; $('wtabs').append(b); } }
+  function list() { $('list').innerHTML = ''; for (const k of ids(W)) { const S = DATA.skills[k], d = document.createElement('div'); d.className = (k === id ? 'sel ' : '') + (edits[k] ? 'mod' : ''); d.innerHTML = `<span>${S.name}</span><i>${DATA.tierName ? DATA.tierName[S.tier] : S.tier}${S.hold ? '·占时' : ''}</i>`; d.onclick = () => { id = k; phSel = 'wu'; tAcc = 0; render(); }; $('list').append(d); } }
+  function phases() {
+    const c = cur(), S = DATA.skills[id]; $('phases').innerHTML = '';
+    for (const [k, nm, col] of PH) {
+      if (k === 'hold' && !S.hold) continue;
+      const box = document.createElement('div'); box.className = 'ph' + (k === phSel ? ' sel' : ''); box.style.borderLeft = `6px solid ${col}`;
+      const dur = k === 'wu' ? S.wu : k === 'hit' ? (c.hitT) : k === 'hold' ? S.hold : Math.max(0, S.rc - c.hitT);
+      box.innerHTML = `<div class="t"><b>${nm}</b><span>${dur.toFixed(2)} 秒${k === 'hold' ? '（循环播）' : ''}</span></div>`;
+      const ch = document.createElement('div'); ch.className = 'chips';
+      const L = c[k] || [];
+      if (!L.length) ch.innerHTML = `<span class="empty">空 = ${k === 'rc' ? '站立' : '站立帧'}</span>`;
+      L.forEach((tok, j) => { const d = document.createElement('div'); d.className = 'chip'; d.title = '点一下删掉'; d.append(thumb(W, tok, 44, 48)); const e = document.createElement('em'); e.textContent = '×'; d.append(e);
+        d.onclick = ev => { ev.stopPropagation(); const n = L.slice(); n.splice(j, 1); setK(k, n); }; ch.append(d); });
+      box.append(ch); box.onclick = () => { phSel = k; phases(); }; $('phases').append(box);
+    }
+    $('fps').value = c.fps; $('hitT').value = c.hitT; $('lunge').value = c.lunge;
+  }
+  function pal() { $('pal').innerHTML = ''; for (const a in FR[W]) FR[W][a].forEach((_, i) => { const tok = a + i, d = document.createElement('div'); d.append(thumb(W, tok, 56, 60)); d.append(document.createTextNode(`${AN[a] || a}${FR[W][a].length > 1 ? i + 1 : ''} · ${tok}`)); d.onclick = () => { const c = cur(); setK(phSel, (c[phSel] || []).concat(tok)); }; $('pal').append(d); }); }
+  function out() { $('out').value = Object.keys(edits).length ? 'SKF 出招帧：\n' + JSON.stringify(edits) : '（还没改任何招）'; }
+  function render() { list(); phases(); pal(); out(); const S = DATA.skills[id]; $('title').textContent = `${S.name}（${WN[S.w]} · ${DATA.tierName ? DATA.tierName[S.tier] : ''}）`;
+    $('info').textContent = `前摇 ${S.wu}s · ${S.hold ? '持续 ' + S.hold + 's · ' : ''}后摇 ${S.rc}s（出手算在后摇里）· ${S.desc}`; }
+
+  // 时间轴：前摇 → 出手 → 持续 → 后摇剩下的 → 空闲 0.5 秒 → 重来
+  function segs() { const S = DATA.skills[id], c = cur(); const a = [['wu', S.wu]]; if (S.hold) a.push(['hold', S.hold], ['rc', S.rc]); else a.push(['hit', Math.min(c.hitT, S.rc)], ['rc', Math.max(0, S.rc - c.hitT)]); a.push(['idle', .5]); return a; }
+  const g = $('stage').getContext('2d');
+  function loop(now) {
+    const dt = Math.min(.1, (now - last) / 1000); last = now; if (playing) tAcc += dt * +$('spd').value;
+    const sg = segs(), tot = sg.reduce((s, x) => s + x[1], 0); let t = tAcc % tot, ph = 'idle', pt = 0, acc = 0;
+    for (const [k, d] of sg) { if (t < acc + d) { ph = k; pt = t - acc; break; } acc += d; }
+    const c = cur(), flip = $('flip').checked; let tok = null, lunge = 0;
+    if (ph !== 'idle') { const r = SKF.pick(c, ph, pt); tok = r ? r[0] + r[1] : null; if (ph === 'hit') lunge = c.lunge || 0; }
+    if (!tok) tok = ph === 'idle' && $('run').checked ? 'run' + [0, 1, 2, 1][Math.floor(tAcc * 10) % 4] : 'idle' + (Math.floor(tAcc * 2) % 2);
+    const cv = $('stage'), k = 4; g.clearRect(0, 0, cv.width, cv.height);
+    g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(cv.width / 2, 250, 64, 14, 0, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.moveTo(cv.width / 2, 40); g.lineTo(cv.width / 2, 260); g.stroke();
+    drawF(g, frame(W, tok), cv.width / 2 + (flip ? -1 : 1) * lunge * k, 250, k, flip);
+    g.fillStyle = '#fff'; g.font = '14px system-ui'; const nm = { wu: '前摇', hit: '出手', hold: '持续', rc: '后摇', idle: '空闲' }[ph]; g.fillText(`${nm}  ·  ${tok}`, 10, 20);
+    // 时间条
+    const bar = $('bar'); if (bar.dataset.k !== id + JSON.stringify(c)) { bar.dataset.k = id + JSON.stringify(c); bar.innerHTML = ''; for (const [k2, d] of sg) { const s = document.createElement('span'), P = PH.find(p => p[0] === k2); s.style.flex = d; s.style.background = P ? P[2] : '#333'; s.textContent = P ? P[1] : '空闲'; bar.append(s); } const cu = document.createElement('i'); cu.id = 'cur'; bar.append(cu); }
+    $('cur').style.left = (t / tot * 100) + '%';
+    requestAnimationFrame(loop);
+  }
+  const msg = t => { $('msg').textContent = t; clearTimeout(msg.h); msg.h = setTimeout(() => $('msg').textContent = '', 2500); };
+  $('play').onclick = () => { playing = !playing; $('play').textContent = playing ? '暂停' : '播放'; };
+  $('fps').onchange = e => setK('fps', Math.max(1, +e.target.value || 12));
+  $('hitT').onchange = e => setK('hitT', Math.max(0, +e.target.value || 0));
+  $('lunge').onchange = e => setK('lunge', +e.target.value || 0);
+  $('save').onclick = () => { localStorage.setItem('xsyz-skf', JSON.stringify(edits)); msg('已保存。游戏页刷新一下（或开着也会自动读到）'); };
+  $('copy').onclick = async () => { $('out').select(); try { await navigator.clipboard.writeText($('out').value); msg('已复制，直接粘贴发给 Claude'); } catch (e) { document.execCommand('copy'); msg('已复制'); } };
+  $('resetOne').onclick = () => { delete edits[id]; render(); msg('这招已恢复默认（记得点保存）'); };
+  $('resetAll').onclick = () => { if (!confirm('清除所有改动？')) return; edits = {}; localStorage.removeItem('xsyz-skf'); render(); msg('已全部清除'); };
+  $('toAll').onclick = () => { const c = cur(), me = id; for (const k of ids(W)) if (k !== me) { const S = DATA.skills[k]; edits[k] = { wu: c.wu, hit: c.hit, rc: c.rc, fps: c.fps, hitT: c.hitT, lunge: c.lunge }; if (S.hold) edits[k].hold = c.hold; } render(); msg(`已套用到${WN[W]}的所有招（记得点保存）`); };
+  id = ids(W)[0]; tabs(); render(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
