@@ -61,17 +61,31 @@
     <div class="lv"><b id="lvTxt"></b><div class="xp"><i id="xpBar"></i></div></div>
     <div class="clock" id="clock"></div>
     <div class="kills" id="kills"></div>
+    <div class="coins" id="coins"></div>
     <button class="btn sq" id="bPause">II</button>
   </div>
   <div class="boss" id="bossBox"><b id="bossName">哥布林王</b><div class="bb"><i id="bossBar"></i></div></div>
   <div class="banner" id="banner"></div>
+  <div class="sbar" id="sbar"></div>
   <div class="tip" id="tip"></div>
   <button class="btn round" id="bRoll">翻滚</button>
 </div>
 
 <!-- 升级 / 暂停 / 结算 / 主界面的小面板 -->
 <div id="levelup" class="scr over"><div class="panel box"><h2 id="luTitle">升级！</h2><div class="ups" id="ups"></div></div></div>
-<div id="pause" class="scr over"><div class="panel box"><h2>暂停</h2><div class="col"><button class="btn gold" id="pRes">继续</button><button class="btn" id="pRe">重新开始</button><button class="btn" id="pHome">回主界面</button></div></div></div>
+<div id="pause" class="scr over camp"><div class="panel cbox">
+  <div class="chead"><h2>暂停 · 备战</h2><span id="pCoin"></span></div>
+  <div class="cbody" id="pBody"></div>
+  <div class="cfoot"><button class="btn mini" id="pHome">回主界面</button><button class="btn mini" id="pRe">重新开始</button><span class="sp"></span><button class="btn gold" id="pRes">继续 ▶</button></div>
+</div></div>
+<!-- 波间结算页：结算 / 拾取 / 修炼 / 行商 / 技能 -->
+<div id="camp" class="scr over camp"><div class="panel cbox">
+  <div class="chead"><h2 id="cTitle"></h2><span id="cCoin"></span></div>
+  <div class="ctabs" id="ctabs"></div>
+  <div class="cbody" id="cBody"></div>
+  <div class="cfoot"><span class="dim" id="cHint"></span><span class="sp"></span><button class="btn gold" id="cGo">继续</button></div>
+</div></div>
+<div id="toast"></div>
 <div id="result" class="scr over"><div class="panel box"><h2 id="rTitle"></h2><p id="rMsg"></p><div class="stats" id="rStats"></div><div class="col"><button class="btn gold" id="rAgain">再来一次</button><button class="btn" id="rWep">回备战页</button><button class="btn" id="rHome">回主界面</button></div></div></div>
 <div id="tpanel" class="scr over"><div class="panel box wide"><h2 id="tpTitle"></h2><div id="tpBody"></div><div class="col"><button class="btn gold" id="tpClose">关闭</button></div></div></div>
 
@@ -80,5 +94,6 @@
 <script src="js/sprites.js"></script>
 <script src="js/battle.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/camp.js"></script>
 <script src="js/debug.js"></script>
 </body></html>

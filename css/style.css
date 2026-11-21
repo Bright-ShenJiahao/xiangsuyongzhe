@@ -131,3 +131,58 @@ body.touch #bRoll { display: block; }
 .codex { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
 .codex > div { background: #3a2416; box-shadow: 0 0 0 2px #8a6a3a; padding: 8px; text-align: center; font-size: 13px; } .codex canvas { height: 56px; image-rendering: pixelated; display: block; margin: 0 auto 4px; }
 @media (orientation: portrait) { .ups { flex-direction: column; } .up { width: 72vw; } }
+
+/* ---------- 战斗 HUD：铜钱、技能条 ---------- */
+.coins { font-size: 16px; color: #ffe08a; text-shadow: 2px 2px #2a160e; }
+.sbar { position: absolute; left: calc(12px + env(safe-area-inset-left)); bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; gap: 6px; }
+.sb { position: relative; width: 38px; height: 38px; background: rgba(30, 18, 12, .8); box-shadow: inset 0 0 0 2px #5a4228; display: flex; align-items: center; justify-content: center; }
+.sb canvas { width: 28px; height: 28px; image-rendering: pixelated; } .sb.lock { opacity: .35; }
+.sb.nx { box-shadow: inset 0 0 0 2px #fff0a8, 0 0 10px 2px rgba(255, 216, 96, .55); }
+.sb i { position: absolute; right: 2px; bottom: 0; font-style: normal; font-size: 10px; color: #8ef07a; text-shadow: 1px 1px #000; }
+body.touch .tip { bottom: calc(66px + env(safe-area-inset-bottom)); }
+@media (orientation: portrait) { .coins { order: 4; } .kills { min-width: 0; } }
+
+/* ---------- 波间结算页 / 暂停备战页 ---------- */
+.camp { background: rgba(10, 6, 14, .72); }
+.cbox { width: min(1000px, 96vw); height: min(660px, 94vh); display: flex; flex-direction: column; padding: 14px 18px; gap: 10px; }
+.chead { display: flex; align-items: center; gap: 12px; } .chead h2 { font-size: 24px; color: #ffd860; text-shadow: 2px 2px #2a160e; margin: 0; letter-spacing: .1em; }
+.chead > span { margin-left: auto; font-size: 18px; color: #ffe08a; }
+.ctabs { display: flex; gap: 6px; } .ctabs button { flex: 1; font: inherit; font-size: 16px; padding: 8px 0; color: #f0e0c0; background: #3a2416; border: 0; box-shadow: 0 0 0 2px #8a6a3a; cursor: pointer; position: relative; }
+.ctabs .on { background: #c8862a; color: #2a160e; box-shadow: 0 0 0 2px #fff0a8; }
+.ctabs em { position: absolute; top: -6px; right: 4px; font-style: normal; font-size: 11px; background: #d8402a; color: #fff; padding: 0 5px; border-radius: 8px; }
+.cbody { flex: 1; min-height: 0; overflow-y: auto; }
+.cfoot { display: flex; align-items: center; gap: 8px; } .cfoot .sp { flex: 1; }
+.dim { color: #a89878; font-size: 13px; line-height: 1.6; } .center { text-align: center; margin: 12px 0; } p.dim.center { margin-top: 8%; }
+.cg { display: grid; grid-template-columns: 1fr 1.3fr; gap: 14px; } .cpn { background: rgba(0, 0, 0, .2); box-shadow: inset 0 0 0 2px #5a4228; padding: 12px 14px; }
+.cpn h4, .lo h4 { font-size: 16px; color: #ffd860; margin: 0 0 8px; } .lo h4 small, .cpn h4 small { font-size: 11px; color: #c8b890; margin-left: 6px; }
+.stats.big { grid-template-columns: auto 1fr; font-size: 16px; gap: 8px 16px; } .stats b small { font-size: 11px; color: #c8b890; }
+.dmgr { display: grid; grid-template-columns: 4.5em 1fr 7.5em; gap: 8px; align-items: center; font-size: 13px; margin: 6px 0; }
+.dmgr i { height: 10px; background: #1e120c; box-shadow: inset 0 0 0 1px #5a4228; } .dmgr i b { display: block; height: 100%; background: linear-gradient(#ffd860 0 40%, #c8862a 40%); }
+.dmgr em { font-style: normal; color: #c8b890; text-align: right; }
+.cards { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; padding: 8px 4px; }
+.card { width: 170px; background: #3a2416; box-shadow: 0 0 0 2px #8a6a3a, 0 0 0 4px #1a0e08; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; }
+.card b { font-size: 17px; color: #ffd860; font-weight: 400; } .card small { font-size: 11px; color: #c8b890; } .card p { font-size: 12px; line-height: 1.5; color: #f0e0c0; margin: 0; }
+.card .ic { font-size: 30px; line-height: 1; height: 40px; display: flex; align-items: center; } .card .ic canvas { width: 40px; height: 40px; image-rendering: pixelated; }
+.card .cb { margin-top: auto; display: flex; flex-wrap: wrap; justify-content: center; } .card.sold { opacity: .45; }
+.card.xiu { box-shadow: 0 0 0 2px var(--q), 0 0 0 4px #1a0e08; } .card .plus { color: #8ef07a; font-size: 15px; }
+#toast { position: fixed; left: 50%; top: 18%; transform: translateX(-50%); z-index: 80; background: rgba(20, 10, 6, .92); color: #fff3d0; padding: 8px 18px; font-size: 15px; box-shadow: 0 0 0 2px #e8b84a; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
+#toast.on { opacity: 1; }
+/* 技能搭配 */
+.lo { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; }
+.lol, .lor { min-width: 0; background: rgba(0, 0, 0, .2); box-shadow: inset 0 0 0 2px #5a4228; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.lo .slots { max-width: 420px; grid-template-columns: repeat(5, minmax(0, 1fr)); } .lo .bag { grid-template-columns: repeat(8, minmax(0, 1fr)); } .slot { cursor: pointer; } .slot.lock { cursor: default; } .slot i { font-style: normal; font-size: 10px; color: #8ef07a; }
+.slot span { font-size: 12px; } .slot.sel, .bag > div.sel { box-shadow: inset 0 0 0 3px #fff0a8, 0 0 12px 3px rgba(255, 216, 96, .45); }
+.lo .bag > div { cursor: pointer; position: relative; } .lo .bag > div canvas { width: 70%; image-rendering: pixelated; } .lo .bag i { position: absolute; right: 2px; bottom: 0; font-style: normal; font-size: 9px; color: #8ef07a; }
+.lo .bag > div.book { background: #2a2440; } .lo .bag .ic { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+.loinfo { display: flex; gap: 10px; align-items: flex-start; min-height: 86px; background: #1e120c; padding: 8px; }
+.loinfo .ic { flex: none; width: 44px; height: 44px; font-size: 30px; display: flex; align-items: center; justify-content: center; } .loinfo .ic canvas { width: 40px; image-rendering: pixelated; }
+.loinfo p { flex: 1; margin: 0; font-size: 13px; line-height: 1.55; color: #f0e0c0; } .loinfo p b { color: #ffd860; font-weight: 400; font-size: 15px; } .loinfo p small { color: #c8b890; }
+.lob { display: flex; flex-direction: column; }
+.attr4 { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 16px; } .attr4 span { color: #c8b890; } .attr4 b { font-weight: 400; color: #fff3d0; } .attr4 small { color: #8ef07a; font-size: 11px; }
+.lor .stats { grid-template-columns: auto auto; }
+@media (orientation: portrait) {
+  .cbox { width: 100vw; height: 100%; padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom)); box-shadow: none; }
+  .chead h2 { font-size: 19px; } .ctabs button { font-size: 14px; }
+  .cg, .lo { grid-template-columns: minmax(0, 1fr); } .card { width: calc(50% - 10px); } .lo .bag { grid-template-columns: repeat(8, 1fr); }
+  .loinfo { flex-wrap: wrap; } .lob { flex-direction: row; width: 100%; justify-content: flex-end; }
+}

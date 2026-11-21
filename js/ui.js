@@ -21,6 +21,10 @@
     fire: ['.......e........', '......eee.......', '.....eeffe......', '....eeffffe.....', '...eefffggfe....', '..eefffggggfe...', '..effgggghhgfe..', '.eefggghhhhgfe..', '.efggghhhhhhgfe.', '.efgghhhhhhhgfe.', '.efgghhhhhhggfe.', '..efgghhhhggfe..', '..eefggggggfee..', '...eeffffffee...', '....eeeeeeee....', '................'],
   };
   const PAL = { a: '#3a2218', b: '#dfe4f0', c: '#c8862a', d: '#7a4a22', e: '#a02a10', f: '#e85a20', g: '#ffa030', h: '#fff2a0' };
+  ICON.axe = ['..aaa...', '.abbba..', 'abbbbba.', 'abbbbbcc', '.abbbcc.', '..aacc..', '....cc..', '....c...'].flatMap(r => { const w = [...r].map(ch => ch + ch).join(''); return [w, w]; });
+  PAL.i = '#8ad8ff'; PAL.j = '#e8f8ff';
+  ICON.nova = Array.from({ length: 16 }, (_, y) => Array.from({ length: 16 }, (_, x) => { const d = Math.hypot(x - 7.5, y - 7.5); return d > 5.6 && d < 7.4 ? ((x + y) % 3 ? 'i' : 'j') : d < 2.2 ? 'j' : (d > 3.4 && d < 4.2 && (x * y) % 2 ? 'i' : '.'); }).join(''));
+  ICON.axe = ICON.axe.map(r => r.replace(/c/g, 'd'));
   function iconCanvas(name) { const c = document.createElement('canvas'); c.width = c.height = 16; const g = c.getContext('2d'); (ICON[name] || ICON.sword).forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); } })); return c; }
 
   // ================= 主界面 =================
@@ -115,15 +119,17 @@
   let lastBuild = null, tipT = 0, HC = {};
   function startBattle(b) {
     lastBuild = b || lastBuild || build(); HC = {};
-    BATTLE.start({ weapon: lastBuild.weapon, map: 'field', build: lastBuild }); show('battle'); for (const id of ['levelup', 'pause', 'result']) overlay(id, false); tipT = 6;
+    BATTLE.start({ weapon: lastBuild.weapon, map: 'field', build: lastBuild }); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); tipT = 6;
   }
   const set = (id, prop, v) => { if (HC[id + prop] === v) return; HC[id + prop] = v; const e = $(id); if (prop === 'text') e.textContent = v; else if (prop === 'w') e.style.width = v; else if (prop === 'show') e.style.display = v ? 'block' : 'none'; else if (prop === 'cls') e.className = v; };
   const mmss = t => { t = Math.max(0, Math.ceil(t)); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
   function hud(h) {
     set('hpBar', 'w', (h.hp / h.maxHp * 100).toFixed(1) + '%'); set('hpTxt', 'text', `${Math.ceil(h.hp)} / ${h.maxHp}`);
     set('lvTxt', 'text', 'Lv ' + h.lv); set('xpBar', 'w', (h.xp / h.need * 100).toFixed(1) + '%');
-    set('clock', 'text', h.bossOut ? '首领战！' : '首领 ' + mmss(h.left)); set('clock', 'cls', 'clock' + (!h.bossOut && h.left < 10 ? ' red' : ''));
-    set('kills', 'text', '击倒 ' + h.kills); set('bossName', 'text', h.bossName || '哥布林王');
+    set('clock', 'text', h.bossWave ? '首领战！' : `第 ${h.wave + 1} / ${h.waves} 波 · 剩 ${h.left}`);
+    set('kills', 'text', '击倒 ' + h.kills); set('coins', 'text', '💰 ' + h.coins);
+    const sk = JSON.stringify([h.slots, h.open, h.next]);
+    if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.appendChild(iconCanvas(DATA.skills[s.id].icon)); if (s.lv > 1) d.insertAdjacentHTML('beforeend', `<i>${s.lv}</i>`); } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');
     set('banner', 'text', h.banner || ''); set('banner', 'show', !!h.banner);
     set('tip', 'text', tipT > 0 ? (touch ? '按住屏幕拖动走位 · 右下角翻滚 · 技能自动出手' : 'WASD / 方向键移动 · 空格翻滚 · 技能自动出手 · P 暂停') : '');
@@ -134,16 +140,18 @@
     overlay('levelup', true);
   }
   function togglePause(force) {
-    if (screen !== 'battle' || !BATTLE.active() || $('levelup').classList.contains('on')) return;
-    const on = force != null ? force : !BATTLE.paused; BATTLE.pause(on); overlay('pause', on);
+    if (screen !== 'battle' || !BATTLE.active() || $('levelup').classList.contains('on') || (window.CAMP && CAMP.isOpen())) return;
+    const on = force != null ? force : !$('pause').classList.contains('on'); BATTLE.pause(on); overlay('pause', on); if (on) CAMP.pauseOpen();
   }
   $('bPause').onclick = () => togglePause(); $('pRes').onclick = () => togglePause(false);
   $('pRe').onclick = () => startBattle(lastBuild); $('pHome').onclick = () => { BATTLE.stop(); overlay('pause', false); show('title'); };
+  const waveEnd = r => CAMP.open(r);
   $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); BATTLE.roll(); });
   function result(r) {
     $('rTitle').textContent = r.win ? '胜利！' : '败北……';
     $('rMsg').textContent = r.win ? '哥布林王倒下了，屏幕那头好像传来了「下一关」的音乐。' : '眼前一黑……再按一次开始键吧。';
-    $('rStats').innerHTML = `<span>用时</span><b>${mmss(r.time)}</b><span>击倒</span><b>${r.kills}</b><span>等级</span><b>Lv ${r.lv}</b><span>起手兵器</span><b>${(DATA.weapons[r.weapon] || {}).name || ''}</b>`;
+    const best = Object.entries(r.dmg || {}).sort((a, b) => b[1] - a[1])[0];
+    $('rStats').innerHTML = `<span>打到</span><b>${r.win ? '通关' : DATA.waves[r.wave] && DATA.waves[r.wave].boss ? '首领战' : `第 ${r.wave + 1} 波`}</b><span>用时</span><b>${mmss(r.time)}</b><span>击倒</span><b>${r.kills}</b><span>等级</span><b>Lv ${r.lv}</b>${best ? `<span>主力</span><b>${DATA.skills[best[0]].name}</b>` : ''}`;
     overlay('result', true);
   }
   $('rAgain').onclick = () => startBattle(lastBuild);
@@ -160,7 +168,7 @@
     else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#07101b'; ctx.fillRect(0, 0, cv.width, cv.height); }
     requestAnimationFrame(loop);
   }
-  window.UI = { mod: () => BATTLE, hud, levelUp, result, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { mod: () => BATTLE, hud, levelUp, result, waveEnd, icon: iconCanvas, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   if (window.BOOT) BOOT.progress(.3);
   SPR.load().then(() => { if (window.BOOT) { BOOT.progress(1); BOOT.done(() => show('title')); } else show('title'); requestAnimationFrame(loop); })

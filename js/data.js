@@ -43,6 +43,28 @@ window.DATA = {
     { id: 'otaku', name: '宅', good: '拾取范围 +50%', bad: '移速 −5%', line: '不想动，东西自己过来。', fx: { pick: .5, move: -.05 } },
   ],
   slotsMax: 5, slotsOpen: 3, bagSize: 8,
+  // 技能库（技能书）。按技能栏顺序轮流自动出手；同一招的书再拿一本 = 升一级（伤害 +25%，冷却 −4%，范围不涨）
+  // 前四招就是四种起手兵器的起手招；kind 对应 battle.js 里的出手方式
+  skills: {
+    sword: { name: '横斩', sys: '剑', icon: 'sword', kind: 'sword', type: 'str', desc: '身前大扇面横扫，近身最稳。', cd: .8, dmg: 6, range: 52, arc: 1.35 },
+    spear: { name: '突刺', sys: '枪', icon: 'spear', kind: 'spear', type: 'str', desc: '朝最近的敌人长直线突刺，穿透一整排。', cd: .9, dmg: 7, range: 82, width: 14 },
+    bow: { name: '速射', sys: '弓', icon: 'bow', kind: 'bow', type: 'agi', desc: '远程直线箭，射最近的敌人，能穿过一个。', cd: .55, dmg: 4, range: 170, pierce: 1 },
+    staff: { name: '火球', sys: '法杖', icon: 'fire', kind: 'staff', type: 'int', desc: '砸向敌人最密的地方，落地炸开一圈。', cd: 1.5, dmg: 9, range: 150, boom: 30 },
+    axe: { name: '回旋斧', sys: '斧', icon: 'axe', kind: 'axe', type: 'str', desc: '甩出飞斧，飞到头再转回来，来回都伤人。', cd: 1.3, dmg: 6, range: 95, size: 10 },
+    nova: { name: '冰环', sys: '法杖', icon: 'nova', kind: 'nova', type: 'int', desc: '以自己为中心炸开一圈寒气，被围时救命。', cd: 1.4, dmg: 8, range: 44 },
+  },
+  // 一站几波（第一版只有打谷场一站）：n = 这一波一共出多少只，pool = 出哪些，boss = 这一波带首领
+  waves: [
+    { n: 10, pool: ['goblin'] },
+    { n: 16, pool: ['goblin', 'goblin', 'gob_blade'] },
+    { n: 22, pool: ['goblin', 'gob_blade', 'gob_archer'] },
+    { n: 8, pool: ['goblin', 'gob_blade'], boss: 'gob_king' },   // 临时：「下一步去哪」还没做，打完 3 波直接接首领
+  ],
+  coinKill: { goblin: 1, gob_blade: 2, gob_archer: 2 }, coinWave: 15,
+  price: { book: 30, item: 25, reroll: 5, sellBook: 10, sellItem: 8, slot: 60 },
+  // 修炼（照三国终章）：每升一级攒一次，三选一，品阶 普通/精良/稀有/绝世，每次机会可刷新 2 次
+  rarity: [{ name: '普通', col: '#e8e0d0', add: 1, p: .55 }, { name: '精良', col: '#6fb8ff', add: 2, p: .3 }, { name: '稀有', col: '#c58cff', add: 3, p: .12 }, { name: '绝世', col: '#ffb347', add: 3, extra: 2, p: .03 }],
+  consumables: [{ id: 'meat', name: '烤肉', icon: '🍖', desc: '回复 40% 生命', heal: .4 }],
   // 敌人：用《异世界幸存者》的哥布林（art/goblin/），像素和勇者一样粗细
   enemies: {
     goblin: { name: '哥布林', hp: 6, spd: 21, reach: 16, dmg: 6, wind: .45, xp: 1 },
@@ -86,8 +108,8 @@ window.DATA = {
 window.DATA.calc = function (b) {
   const DATA = window.DATA;
   const fx = {}, add = o => { for (const k in (o || {})) fx[k] = (fx[k] || 0) + o[k]; };
-  add((DATA.startItems.find(i => i.id === b.item) || {}).fx); add((DATA.habits.find(h => h.id === b.habit) || {}).fx);
-  const A = {}; for (const a of DATA.attrs) A[a.id] = (b.attrs && b.attrs[a.id] || 0) + (fx[a.id] || 0);
+  for (const id of (b.items || [b.item])) add((DATA.startItems.find(i => i.id === id) || {}).fx); add((DATA.habits.find(h => h.id === b.habit) || {}).fx);
+  const A = {}; for (const a of DATA.attrs) A[a.id] = (b.attrs && b.attrs[a.id] || 0) + (b.train && b.train[a.id] || 0) + (fx[a.id] || 0);
   const W = DATA.weapons[b.weapon] || DATA.weapons.sword, type = W.type || 'str';
   return {
     A, fx,
