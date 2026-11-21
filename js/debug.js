@@ -13,7 +13,7 @@
   B('回血', () => UI.mod().debug.heal());
   B('直接胜利', () => UI.mod().debug.win());
   B('直接开打', () => { if (window.UI) UI.startBattle(); });
-  const hb = B('勇者：' + (localStorage.getItem('xsyz-hero') === 'new' ? '新' : '旧'), b => { const nw = localStorage.getItem('xsyz-hero') !== 'new'; localStorage.setItem('xsyz-hero', nw ? 'new' : 'old'); b.textContent = '勇者：' + (nw ? '新' : '旧'); });
+  const hb = B('画质：' + (SPR.HD ? '高清' : '像素'), b => { localStorage.setItem('xsyz-hd', SPR.HD ? '0' : '1'); location.reload(); });   // 11/22：高清 / 像素小图，切完刷新
   hide.click();   // 默认收起，点「调试」展开（手机上不挡按钮）
   box.addEventListener('pointerdown', e => e.stopPropagation());
   addEventListener('DOMContentLoaded', () => document.body.appendChild(box)); if (document.body) document.body.appendChild(box);
