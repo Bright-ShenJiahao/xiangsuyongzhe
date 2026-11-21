@@ -33,11 +33,18 @@
     G = { t: 0, kills: 0, spawn: 1, boss: null, bossOut: false, over: null, overT: 0, shake: 0, hitStop: 0, paused: false, xp: 0, lv: 1, god: false, banner: null };
     const g = MAP.ground;
     hero = { x: MAPW / 2, y: (g.y0 + g.y1) / 2 * MAPH, hp: 100, maxHp: 100, f: 1, t: 0, roll: 0, rollCd: 0, inv: 0, hurtT: 0, atkT: 0, moving: false, cd: .6, dead: false,
-      m: { dmg: 1, cd: 1, area: 1, move: 1, multi: 0 }, taken: {} };
+      m: { dmg: 1, cd: 1, area: 1, move: 1, multi: 0 }, taken: {}, crit: .1, dmgIn: 1, xpMul: 1 };
+    applyBuild(o.build);
     foes = []; shots = []; fx = []; parts = []; nums = []; tele = []; burns = []; pend = [];
     banner('哥布林来了！', 1.8);
   }
-  let pend = [];   // 延迟出手（剑的补刀）
+  let pend = [];
+  // 备战页的配置：属性、开局宝物、现实习惯 → 勇者的各项数值
+  function applyBuild(b) {
+    if (!b) return; const c = DATA.calc(b), m = hero.m;
+    m.dmg = c.dmg; m.cd = 1 / c.spd; m.area = c.area; m.move = c.move;
+    hero.crit = c.crit; hero.dmgIn = c.dmgIn; hero.xpMul = c.xp; hero.maxHp = hero.hp = c.hp; hero.A = c.A; hero.fx = c.fx;
+  }   // 延迟出手（剑的补刀）
   const banner = (t, T) => { G.banner = { t, T, left: T }; };
 
   // ---------- 输入 ----------
@@ -74,7 +81,7 @@
   }
   function hurt(z, d, from, kb = 14) {
     if (z.dead) return;
-    const crit = Math.random() < .15; if (crit) d *= 1.8; d = Math.max(1, rd(d));
+    const crit = Math.random() < (hero.crit != null ? hero.crit : .15); if (crit) d *= 1.8; d = Math.max(1, rd(d));
     z.hp -= d; z.flash = .12; nums.push({ x: z.x, y: z.y - (z.T.boss ? 64 : 34) * K, v: d, t: 0, col: crit ? '#ffd84a' : '#ffffff', big: crit });
     const a = from ? ang(from, z) : R(0, 7);
     if (!z.T.boss) { z.kbx = Math.cos(a) * kb * K; z.kby = Math.sin(a) * kb * K / YS; if (z.st !== 'strike') { z.st = 'hurt'; z.t = 0; } }
@@ -89,7 +96,7 @@
     if (G.winT == null) addXp(z.T.xp);
   }
   function addXp(n) {
-    G.xp += n; const need = () => 4 + G.lv * 3;
+    G.xp += n * (hero.xpMul || 1); const need = () => 4 + G.lv * 3;
     if (G.xp >= need() && !hero.dead) { G.xp -= need(); G.lv++; levelUp(); }
   }
   function levelUp() {
@@ -106,7 +113,7 @@
   }
   function damageHero(d) {
     if (hero.inv > 0 || hero.dead || G.over || G.god) return;
-    hero.hp -= d; hero.inv = .7; hero.hurtT = .25; G.shake = Math.max(G.shake, .15); nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
+    d *= hero.dmgIn || 1; hero.hp -= d; hero.inv = .7; hero.hurtT = .25; G.shake = Math.max(G.shake, .15); nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
     if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; banner('勇者倒下了……', 99); G.loseT = 1.6; }
   }
 
@@ -175,7 +182,17 @@
       const t = nearest(WEP.range * area * 1.3); if (!t) { hero.cd = .1; return; }
       const a = ang(hero, t); hero.f = Math.cos(a) < 0 ? -1 : 1; hero.atkT = .3; hero.cd = WEP.cd * m.cd;
       const n = 1 + m.multi; for (let i = 0; i < n; i++) { const aa = a + (i - (n - 1) / 2) * .45; shots.push({ k: 'axe', x: hero.x, y: hero.y - 14 * K, a: aa, d: 0, out: true, t: 0, hit: new Set(), L: WEP.range * area, r: WEP.size * area, dmg }); }
-    } else if (opt.weapon === 'fire') {
+    } else if (opt.weapon === 'spear') {   // 枪：朝最近的敌人长直线突刺，穿透一排
+      const t = nearest(WEP.range * area * 1.1); if (!t) { hero.cd = .1; return; }
+      const a = ang(hero, t); hero.f = Math.cos(a) < 0 ? -1 : 1; hero.atkT = .3; hero.cd = WEP.cd * m.cd;
+      const thrust = (aa, delay) => pend.push({ t: delay, fn: () => { const L = WEP.range * area, w = WEP.width * area; fx.push({ k: 'thrust', x: hero.x, y: hero.y - 12 * K, a: aa, L, w, t: 0, T: .2 });
+        for (const z of foes) if (!z.dead) { const dx = (z.x - hero.x) / K, dy = (z.y - hero.y) * YS / K, along = dx * Math.cos(aa) + dy * Math.sin(aa), side = Math.abs(-dx * Math.sin(aa) + dy * Math.cos(aa)); if (along > -4 && along < L && side < w + 6) hurt(z, dmg, hero, 14); } } });
+      thrust(a, .08); for (let i = 1; i <= m.multi; i++) thrust(a + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * .35, .08 + i * .1);
+    } else if (opt.weapon === 'bow') {   // 弓：射最近的敌人，箭能穿过 pierce 个
+      const t = nearest(WEP.range * 1.05); if (!t) { hero.cd = .1; return; }
+      const a = ang(hero, t); hero.f = Math.cos(a) < 0 ? -1 : 1; hero.atkT = .25; hero.cd = WEP.cd * m.cd;
+      const n = 1 + m.multi; for (let i = 0; i < n; i++) { const aa = a + (i - (n - 1) / 2) * .16; shots.push({ k: 'harrow', x: hero.x, y: hero.y - 16 * K, gy: hero.y, vx: Math.cos(aa) * 320 * K, vy: Math.sin(aa) * 320 * K / YS, t: 0, hit: new Set(), left: 1 + (WEP.pierce || 0), dmg }); }
+    } else if (opt.weapon === 'staff') {
       const cand = foes.filter(z => !z.dead && dist(z, hero) < WEP.range * area * 1.1); if (!cand.length) { hero.cd = .1; return; }
       const R2 = WEP.boom * area, score = z => foes.reduce((n, o) => n + (!o.dead && dist(o, z) < R2 ? 1 : 0), 0);
       cand.sort((p, q) => score(q) - score(p)); hero.atkT = .3; hero.cd = WEP.cd * m.cd; hero.f = cand[0].x < hero.x ? -1 : 1;
@@ -188,6 +205,11 @@
       if (o.k === 'arrow') { o.x += o.vx * dt; o.y += o.vy * dt; o.gy += o.vy * dt;
         if (Math.hypot(hero.x - o.x, (hero.y - o.gy) * YS) / K < 9) { damageHero(o.dmg); shots.splice(i, 1); continue; }
         if (o.t > 1.6) shots.splice(i, 1); continue; }
+      if (o.k === 'harrow') {   // 勇者的箭
+        o.x += o.vx * dt; o.y += o.vy * dt; o.gy += o.vy * dt;
+        for (const z of foes) if (!z.dead && !o.hit.has(z) && Math.hypot(z.x - o.x, (z.y - o.gy) * YS) / K < 10) { o.hit.add(z); hurt(z, o.dmg, { x: o.x - o.vx * .05, y: o.gy - o.vy * .05 }, 10); if (--o.left <= 0) break; }
+        if (o.left <= 0 || o.t > .7) shots.splice(i, 1); continue;
+      }
       if (o.k === 'axe') {
         const sp = (o.out ? 200 : 240) * K;
         if (o.out) { o.d += sp * dt / K; if (o.d >= o.L) { o.out = false; o.hit.clear(); } o.cx = hero.x + Math.cos(o.a) * o.d * K; o.cy = hero.y - 14 * K + Math.sin(o.a) * o.d * K / YS; }
@@ -312,12 +334,16 @@
     for (const o of shots) {
       if (o.k === 'arrow') { const f = SPR.frame('gob_archer', 'arrow'); if (f) { ctx.save(); ctx.translate(X(o.x), Y(o.y)); ctx.rotate(Math.atan2(o.vy, o.vx)); ctx.drawImage(SPR.sets.gob_archer.base, f.x, f.y, f.w, f.h, -f.w * u / 2, -f.h * u / 2, f.w * u, f.h * u); ctx.restore(); } }
       else if (o.k === 'axe') drawAxe(X(o.cx), Y(o.cy), o.t * 14);
+      else if (o.k === 'harrow') { const a = Math.atan2(o.vy, o.vx); for (let j = 0; j < 9; j++) { ctx.fillStyle = j < 2 ? '#e8ecf4' : j > 6 ? '#e8e0c8' : '#8a5a2a'; ctx.fillRect(X(o.x) - rd(Math.cos(a) * j * 1.6 * u), Y(o.y) - rd(Math.sin(a) * j * 1.6 * u), u + 1, u + 1); } }
       else if (o.k === 'fire') { const p = o.t / o.T, hy = (1 - p) * 120; for (let j = 0; j < 5; j++) { ctx.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; ctx.fillRect(X(o.x) - q / 2 - rd(j * 3 * u * (1 - p)), Y(o.y) - rd((hy + j * 7) * u) - q / 2, q, q); } }
     }
     for (const o of fx) {
       const p = o.t / o.T;
       if (o.k === 'slash') {   // 像素刀光：三层，从起手往前扫开
         for (let k = 0; k < 3; k++) { const r = (o.r - k * 4) * u; for (let a = -1.35; a <= 1.35; a += .04) { const t = (a + 1.35) / 2.7; if (t > p * 1.6) continue; if (p > .6 && (Math.floor(a * 40) % 2)) continue; const aa = o.a + a; ctx.fillStyle = k === 0 ? '#ffffff' : k === 1 ? '#fff2b0' : '#f0c04c'; const q = k === 0 ? 2 * u : u; ctx.fillRect(X(o.x) + rd(Math.cos(aa) * r), Y(o.y) + rd(Math.sin(aa) * r / YS), q, q); } }
+      } else if (o.k === 'thrust') {   // 像素枪芒：一道往前捅出去的直线，带两条边
+        const L = o.L * u * Math.min(1, p * 2.2), ca = Math.cos(o.a), sa = Math.sin(o.a) / YS;
+        for (let d = 0; d < L; d += u) { const k = d / (o.L * u); ctx.fillStyle = k > .85 ? '#ffffff' : p > .6 ? '#f0c04c' : '#fff2b0'; const q = k > .85 ? 2 * u : u; ctx.fillRect(X(o.x) + rd(ca * d), Y(o.y) + rd(sa * d), q, q); if (d % (3 * u) < u && p < .5) { const w = o.w * u * .5; ctx.fillStyle = 'rgba(255,240,180,.6)'; ctx.fillRect(X(o.x) + rd(ca * d - sa * w), Y(o.y) + rd(sa * d + ca * w), u, u); ctx.fillRect(X(o.x) + rd(ca * d + sa * w), Y(o.y) + rd(sa * d - ca * w), u, u); } }
       } else if (o.k === 'ring') { const r = o.r * u * (.6 + p * .8); for (let a = 0; a < PI * 2; a += .05) { ctx.fillStyle = p < .5 ? '#fff2c0' : '#c8a066'; ctx.fillRect(X(o.x) + rd(Math.cos(a) * r), Y(o.y) + rd(Math.sin(a) * r / YS), 2 * u, 2 * u); } }
       else if (o.k === 'boom') { const r = o.r * u * (.5 + p * .7); for (let a = 0; a < PI * 2; a += .06) { if (Math.floor(a * 10 + o.t * 30) % 3 === 0) continue; ctx.fillStyle = p < .4 ? '#fff2a0' : p < .7 ? '#ff9a30' : '#a03a18'; ctx.fillRect(X(o.x) + rd(Math.cos(a) * r), Y(o.y) + rd(Math.sin(a) * r / YS), 2 * u, 2 * u); } if (p < .3) { ctx.fillStyle = 'rgba(255,230,140,.35)'; ctx.beginPath(); ctx.ellipse(X(o.x), Y(o.y), r * .8, r * .8 / YS, 0, 0, 7); ctx.fill(); } }
     }

@@ -1,12 +1,48 @@
 // 像素勇者 · 数据表（武器、敌人、地图、升级）。
 // 距离、速度都用「像素格」（sp）：勇者从头到脚约 40 格。世界坐标是地图像素，1 格 = K 个地图像素（见 battle.js）。
 window.DATA = {
-  // 武器：三种出手形状完全不同（照幸存者类游戏：大、看得清、往外甩）
+  // 起手兵器（备战页四选一，不锁定：之后技能书什么系都会出）。type：吃哪项属性的加成
   weapons: {
-    sword: { name: '勇者之剑', icon: 'sword', desc: '身前大范围横扫，近身最稳', stat: ['伤害 ★★★', '范围 ★★', '速度 ★★★'], cd: .8, dmg: 6, range: 52, arc: 1.35 },
-    axe: { name: '回旋飞斧', icon: 'axe', desc: '甩出去再飞回来，一路穿透', stat: ['伤害 ★★', '范围 ★★★', '速度 ★★'], cd: 1.25, dmg: 5, range: 120, size: 13 },
-    fire: { name: '火球术', icon: 'fire', desc: '砸向远处的敌群，落地炸开一圈', stat: ['伤害 ★★★★', '范围 ★★★', '速度 ★'], cd: 1.5, dmg: 9, range: 150, boom: 30 },
+    sword: { name: '剑', skill: '横斩', icon: 'sword', type: 'str', desc: '身前大扇面横扫，近身最稳。', cd: .8, dmg: 6, range: 52, arc: 1.35 },
+    spear: { name: '枪', skill: '突刺', icon: 'spear', type: 'str', desc: '朝前方长直线突刺，穿透一整排。', cd: .9, dmg: 7, range: 82, width: 14 },
+    bow: { name: '弓', skill: '速射', icon: 'bow', type: 'agi', desc: '远程直线箭，射最近的敌人，能穿过一个。', cd: .55, dmg: 4, range: 170, pierce: 1 },
+    staff: { name: '法杖', skill: '火球', icon: 'fire', type: 'int', desc: '砸向远处的敌群，落地炸开一圈。', cd: 1.5, dmg: 9, range: 150, boom: 30 },
   },
+  // 属性：开局各 3 点，另有 5 点自由分配（备战页）
+  attrs: [
+    { id: 'str', name: '力量', desc: '剑、枪招式伤害 +6% / 点' },
+    { id: 'agi', name: '敏捷', desc: '弓招式伤害 +6% / 点，出手速度 +2% / 点' },
+    { id: 'int', name: '智力', desc: '法杖招式伤害 +6% / 点，技能范围 +2% / 点' },
+    { id: 'con', name: '体魄', desc: '生命 +10 / 点，受到伤害 −1% / 点' },
+  ],
+  attrBase: 3, attrFree: 5,
+  // 开局宝物（备战页随机三选一，放进物品栏）。fx：生效的加成
+  startItems: [
+    { id: 'amulet', name: '护身符', icon: '🧿', desc: '生命上限 +20', fx: { hp: 20 } },
+    { id: 'boots', name: '轻便靴', icon: '👢', desc: '移动速度 +10%', fx: { move: .1 } },
+    { id: 'purse', name: '钱袋', icon: '💰', desc: '开局铜钱 +50', fx: { coin: 50 } },
+    { id: 'whet', name: '磨刀石', icon: '🪨', desc: '所有伤害 +10%', fx: { dmg: .1 } },
+    { id: 'magnet', name: '磁石', icon: '🧲', desc: '拾取范围 +50%', fx: { pick: .5 } },
+    { id: 'bento', name: '便当', icon: '🍱', desc: '每波开始回复 10% 生命', fx: { waveHeal: .1 } },
+    { id: 'hourglass', name: '沙漏', icon: '⏳', desc: '出手速度 +8%', fx: { spd: .08 } },
+    { id: 'clover', name: '四叶草', icon: '🍀', desc: '暴击率 +8%', fx: { crit: .08 } },
+  ],
+  // 现实习惯（备战页随机抽 3 个选 1，也可以不选）：一好一坏，现实里的小毛病带进了游戏
+  habits: [
+    { id: 'chips', name: '爱吃薯片', good: '体魄 +1', bad: '力量 −1', line: '手上全是油，剑握不稳。', fx: { con: 1, str: -1 } },
+    { id: 'night', name: '熬夜冠军', good: '敏捷 +1', bad: '体魄 −1', line: '反应快，但身体被掏空。', fx: { agi: 1, con: -1 } },
+    { id: 'troll', name: '键盘侠', good: '智力 +1', bad: '体魄 −1', line: '嘴上功夫一流。', fx: { int: 1, con: -1 } },
+    { id: 'gym', name: '健身卡从没用过', good: '力量 +1', bad: '敏捷 −1', line: '办卡那天练过一次。', fx: { str: 1, agi: -1 } },
+    { id: 'takeout', name: '外卖达人', good: '铜钱 +50%', bad: '移速 −10%', line: '钱省下来了，人也胖了。', fx: { coinMul: .5, move: -.1 } },
+    { id: 'pad', name: '手柄党', good: '出手速度 +10%', bad: '暴击率 −5%', line: '按键快，准头一般。', fx: { spd: .1, crit: -.05 } },
+    { id: 'mouse', name: '键鼠党', good: '暴击率 +10%', bad: '移速 −5%', line: '瞄得准，走位一般。', fx: { crit: .1, move: -.05 } },
+    { id: 'bed', name: '赖床专业户', good: '每波开始回复 10% 生命', bad: '每站第 1 波伤害 −20%', line: '起得慢，但睡得香。', fx: { waveHeal: .1, firstWave: -.2 } },
+    { id: 'stingy', name: '抠门', good: '行商便宜 20%', bad: '刷新贵一倍', line: '能砍价，不舍得刷。', fx: { shop: -.2, reroll: 1 } },
+    { id: 'choosy', name: '选择困难症', good: '修炼多一个选项', bad: '修炼不能刷新', line: '选项越多越纠结。', fx: { xiuOpt: 1, xiuReroll: -99 } },
+    { id: 'gamer', name: '网瘾少年', good: '经验 +20%', bad: '生命上限 −10%', line: '越玩越会玩。', fx: { xp: .2, hpMul: -.1 } },
+    { id: 'otaku', name: '宅', good: '拾取范围 +50%', bad: '移速 −5%', line: '不想动，东西自己过来。', fx: { pick: .5, move: -.05 } },
+  ],
+  slotsMax: 5, slotsOpen: 3, bagSize: 8,
   // 敌人：用《异世界幸存者》的哥布林（art/goblin/），像素和勇者一样粗细
   enemies: {
     goblin: { name: '哥布林', hp: 6, spd: 21, reach: 16, dmg: 6, wind: .45, xp: 1 },
@@ -41,6 +77,27 @@ window.DATA = {
     { id: 'move', name: '疾行', desc: '移动速度 +12%' },
     { id: 'hp', name: '体魄', desc: '最大生命 +20，并回复 20' },
     { id: 'heal', name: '烤肉', desc: '回复 40% 生命', repeat: true },
-    { id: 'multi', name: '连击', desc: { sword: '再反手补一刀', axe: '多甩一把飞斧', fire: '多砸一颗火球' }, max: 3 },
+    { id: 'multi', name: '连击', desc: { sword: '再反手补一刀', spear: '多刺一枪', bow: '多射一支箭', staff: '多砸一颗火球' }, max: 3 },
   ],
+};
+
+// 备战配置 → 勇者数值（备战页显示、战斗开局都用这一份，避免两边算得不一样）
+// b = { weapon, attrs: {str, agi, int, con}（含底子 3 点）, item, habit }
+window.DATA.calc = function (b) {
+  const DATA = window.DATA;
+  const fx = {}, add = o => { for (const k in (o || {})) fx[k] = (fx[k] || 0) + o[k]; };
+  add((DATA.startItems.find(i => i.id === b.item) || {}).fx); add((DATA.habits.find(h => h.id === b.habit) || {}).fx);
+  const A = {}; for (const a of DATA.attrs) A[a.id] = (b.attrs && b.attrs[a.id] || 0) + (fx[a.id] || 0);
+  const W = DATA.weapons[b.weapon] || DATA.weapons.sword, type = W.type || 'str';
+  return {
+    A, fx,
+    dmg: (1 + .06 * A[type]) * (1 + (fx.dmg || 0)),        // 起手兵器那一系的伤害倍率
+    spd: 1 + .02 * A.agi + (fx.spd || 0),                    // 出手速度倍率（冷却 ÷ 它）
+    area: 1 + .02 * A.int,
+    move: 1 + (fx.move || 0),
+    crit: Math.max(0, .1 + (fx.crit || 0)),
+    dmgIn: Math.max(.5, 1 - .01 * A.con),
+    hp: Math.round((100 + 10 * (A.con - DATA.attrBase) + (fx.hp || 0)) * (1 + (fx.hpMul || 0))),
+    xp: 1 + (fx.xp || 0), coin: fx.coin || 0, pick: 1 + (fx.pick || 0),
+  };
 };

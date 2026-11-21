@@ -1,35 +1,57 @@
 <!DOCTYPE html>
 <html lang="zh"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#120c18"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="像素勇者">
+<meta name="theme-color" content="#07101b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="像素勇者">
 <title>像素勇者</title>
 <link rel="icon" type="image/png" href="art/ui/icon-192.png"><link rel="apple-touch-icon" href="art/ui/icon-192.png">
 <link rel="stylesheet" href="css/style.css">
 </head><body>
 <canvas id="cv"></canvas>
 
-<!-- 主界面 -->
+<!-- 加载动画（照搬《异世界幸存者》，js/boot.js） -->
+<div id="boot"><div id="bx"><canvas id="bxa" width="37" height="33"></canvas><p id="bxt"></p><i>▼</i></div><div id="btitle"><b>像素勇者</b></div><div class="tx" id="bootx">加载中…</div><div class="bar"><i id="bootbar"></i></div></div>
+
+<!-- 主界面（照三国终章：左边大图，右边标题和「新的开始」，右上角 图鉴 / 设置 / 帮助） -->
 <div id="title" class="scr">
-  <div class="tbox"><h1 class="logo">像素勇者</h1><p class="sub">深夜两点 · 被吸进游戏机的勇者</p></div>
-  <button class="btn big" id="bStart">开始游戏</button>
-  <div class="intro" id="intro"></div>
-</div>
-
-<!-- 武器选择 -->
-<div id="weapon" class="scr menu">
-  <div class="head"><h2>选择武器</h2><p>勇者会自动出手，你只管走位、翻滚</p></div>
-  <div class="wbody">
-    <div class="panel hero"><canvas id="heroCv"></canvas><b>勇者</b><small>深夜打游戏时被吸进来的玩家</small></div>
-    <div class="cards" id="wCards"></div>
+  <div class="tart"></div>
+  <div class="ttop"><button class="btn mini" data-panel="codex">图鉴</button><button class="btn mini" data-panel="set">设置</button><button class="btn mini" data-panel="help">帮助</button></div>
+  <div class="tbox">
+    <div class="logo"><span>像素</span><span>勇者</span><i class="seal">ROGUELIKE</i></div>
+    <div class="sub"><s></s>深夜两点的冒险<s></s></div>
+    <div class="en">PIXEL HERO · ONE MORE ROUND BEFORE BED</div>
+    <button class="btn big" id="bStart">新的开始</button>
   </div>
-  <div class="foot"><button class="btn" id="wBack">返回</button><button class="btn gold" id="wNext">选好了</button></div>
 </div>
 
-<!-- 地图选择 -->
-<div id="mapsel" class="scr menu">
-  <div class="head"><h2>选择地图</h2><p id="mWep"></p></div>
-  <div class="maps" id="mCards"></div>
-  <div class="foot"><button class="btn" id="mBack">返回</button><button class="btn gold" id="mGo">出发！</button></div>
+<!-- 备战页 -->
+<div id="prep" class="scr menu">
+  <div class="ptabs" id="ptabs"><button data-t="w" class="on">兵器</button><button data-t="a">属性</button><button data-t="h">习惯</button><button data-t="s">技能 · 物品</button></div>
+  <div class="pcols">
+    <div class="panel pc" data-t="w">
+      <h3>勇者</h3>
+      <canvas id="heroCv"></canvas>
+      <h4>起手兵器</h4>
+      <div class="wsel" id="wSel"></div>
+      <p class="wdesc" id="wDesc"></p>
+    </div>
+    <div class="panel pc" data-t="a">
+      <h3>属性 <small id="aLeft"></small><button class="btn mini" id="aReset">重置</button></h3>
+      <div id="aRows"></div>
+      <div class="stats" id="aStats"></div>
+      <h3 class="hh" data-t="h">现实习惯 <small>三选一，也可以不选</small></h3>
+      <div class="habits" id="hSel" data-t="h"></div>
+    </div>
+    <div class="panel pc" data-t="s">
+      <h3>技能栏 <small>按顺序轮流自动放出</small></h3>
+      <div class="slots" id="sSlots"></div>
+      <h3>开局宝物 <small>三选一，放进物品栏</small></h3>
+      <div class="items" id="iSel"></div>
+      <h3>物品栏</h3>
+      <div class="bag" id="bag"></div>
+      <p class="tipline" id="pTip"></p>
+    </div>
+  </div>
+  <div class="foot"><button class="btn" id="pBack">返回</button><button class="btn gold" id="pGo">出发！</button></div>
 </div>
 
 <!-- 战斗界面 -->
@@ -38,8 +60,8 @@
     <div class="hp"><i id="hpBar"></i><span id="hpTxt"></span></div>
     <div class="lv"><b id="lvTxt"></b><div class="xp"><i id="xpBar"></i></div></div>
     <div class="clock" id="clock"></div>
-    <div class="kills" id="speed"></div><div class="kills" id="kills"></div>
-    <button class="btn sq" id="bBg">背景</button><button class="btn sq" id="bPause">II</button>
+    <div class="kills" id="kills"></div>
+    <button class="btn sq" id="bPause">II</button>
   </div>
   <div class="boss" id="bossBox"><b id="bossName">哥布林王</b><div class="bb"><i id="bossBar"></i></div></div>
   <div class="banner" id="banner"></div>
@@ -47,17 +69,16 @@
   <button class="btn round" id="bRoll">翻滚</button>
 </div>
 
-<!-- 升级 / 暂停 / 结算 -->
+<!-- 升级 / 暂停 / 结算 / 主界面的小面板 -->
 <div id="levelup" class="scr over"><div class="panel box"><h2 id="luTitle">升级！</h2><div class="ups" id="ups"></div></div></div>
 <div id="pause" class="scr over"><div class="panel box"><h2>暂停</h2><div class="col"><button class="btn gold" id="pRes">继续</button><button class="btn" id="pRe">重新开始</button><button class="btn" id="pHome">回主界面</button></div></div></div>
-<div id="result" class="scr over"><div class="panel box"><h2 id="rTitle"></h2><p id="rMsg"></p><div class="stats" id="rStats"></div><div class="col"><button class="btn gold" id="rAgain">再来一次</button><button class="btn" id="rWep">换武器</button><button class="btn" id="rHome">回主界面</button></div></div></div>
+<div id="result" class="scr over"><div class="panel box"><h2 id="rTitle"></h2><p id="rMsg"></p><div class="stats" id="rStats"></div><div class="col"><button class="btn gold" id="rAgain">再来一次</button><button class="btn" id="rWep">回备战页</button><button class="btn" id="rHome">回主界面</button></div></div></div>
+<div id="tpanel" class="scr over"><div class="panel box wide"><h2 id="tpTitle"></h2><div id="tpBody"></div><div class="col"><button class="btn gold" id="tpClose">关闭</button></div></div></div>
 
-<div id="load" class="scr on"><b>载入中……</b></div>
+<script src="js/boot.js"></script>
 <script src="js/data.js"></script>
 <script src="js/sprites.js"></script>
 <script src="js/battle.js"></script>
-<script src="art/cav/hero8/meta.js"></script><script src="art/cav/comp8/meta.js"></script><script src="art/cav/pcav8/meta.js"></script><script src="art/cav/spara/meta.js"></script><script src="art/cav/immortal/meta.js"></script><script src="art/cav/props/meta.js"></script><script src="art/cav/herofoot/meta.js"></script>
-<script src="js/cav.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/debug.js"></script>
 </body></html>
