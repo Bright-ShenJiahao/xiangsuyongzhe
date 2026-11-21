@@ -36,7 +36,7 @@
     hero = { x: MAPW / 2, y: (g.y0 + g.y1) / 2 * MAPH, hp: 0, maxHp: 0, f: 1, t: 0, roll: 0, rollCd: 0, inv: 0, hurtT: 0, atkT: 0, moving: false, cd: .6, dead: false,
       m: { dmg: 1, spd: 1, area: 1, move: 1 }, crit: .1, dmgIn: 1, xpMul: 1, fx: {}, A: {} };
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
-    RUN = { weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
+    RUN = { weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0, alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
       bag: Array(DATA.bagSize).fill(null), coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0 };
     RUN.slots[0] = { id: b.weapon, lv: 1 }; if (b.item) RUN.bag[0] = { kind: 'item', id: b.item };
     recompute(); RUN.coins = hero.fx.coin || 0;
@@ -45,9 +45,11 @@
   }
   let pend = [];   // 延迟出手
   // 属性、修炼、背包里的宝物、现实习惯 → 勇者的各项数值（中途换宝物、修炼后都重算一次）
+  // 修炼加的 + 升级加点（已确认的 alloc + 这次结算里还能退的 tmp）
+  function trainAll() { const o = {}; for (const src of [RUN.train, RUN.alloc, RUN.tmp]) for (const k in src) o[k] = (o[k] || 0) + src[k]; return o; }
   function recompute() {
     const items = RUN.bag.filter(x => x && x.kind === 'item').map(x => x.id);
-    const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: RUN.train, items, habit: RUN.habit }), m = hero.m;
+    const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit }), m = hero.m;
     m.dmg = (1 + (c.fx.dmg || 0)) * (1 + .03 * (G.lv - 1)); m.spd = c.spd; m.area = c.area; m.move = c.move;
     hero.crit = c.crit; hero.dmgIn = c.dmgIn; hero.xpMul = c.xp; hero.A = c.A; hero.fx = c.fx;
     const max = c.hp + 5 * (G.lv - 1); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
@@ -109,7 +111,7 @@
   const need = () => 4 + G.lv * 3;
   function addXp(n) {
     n *= hero.xpMul || 1; G.xp += n; G.wx += n;
-    while (G.xp >= need() && !hero.dead) { G.xp -= need(); G.lv++; RUN.xiu++; recompute(); hero.hp = Math.min(hero.maxHp, hero.hp + 5); nums.push({ x: hero.x, y: hero.y - 52 * K, txt: '升级！修炼 +1', t: 0, col: '#8ef07a' }); }
+    while (G.xp >= need() && !hero.dead) { G.xp -= need(); G.lv++; RUN.xiu++; RUN.pts++; recompute(); hero.hp = Math.min(hero.maxHp, hero.hp + 5); nums.push({ x: hero.x, y: hero.y - 52 * K, txt: '升级！属性点 +1 · 修炼 +1', t: 0, col: '#8ef07a' }); }
   }
   function damageHero(d) {
     if (hero.inv > 0 || hero.dead || G.over || G.god) return;
@@ -396,7 +398,7 @@
     init, start, frame, fit, roll,
     pause(v) { if (G && !G.over) G.paused = v; }, get paused() { return !!(G && G.paused); }, active: () => !!G && !G.over,
     stop() { G = null; },
-    run: () => RUN, recompute: () => G && recompute(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1,
+    run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1,
     skillInfo: sk => { const S = DATA.skills[sk.id]; return G ? { dmg: skillDmg(S, sk.lv), cd: skillCd(S, sk.lv) } : { dmg: S.dmg * lvK(sk.lv), cd: S.cd }; },
     debug: { boss: () => G && (G.wave = DATA.waves.length - 2, foes.forEach(z => !z.dead && kill(z)), nextWave()), god: () => G && (G.god = !G.god), clear: () => G && (G.left = 0, foes.forEach(z => !z.T.boss && !z.dead && kill(z))), lvl: () => G && addXp(need() / (hero.xpMul || 1) - G.xp + .01), win: () => G && (G.boss ? kill(G.boss) : (G.wave = DATA.waves.length - 2, nextWave(), bossIn(), kill(G.boss))), heal: () => hero && (hero.hp = hero.maxHp), state: () => ({ G, hero, foes, RUN, u, s, W, H }) },
   };

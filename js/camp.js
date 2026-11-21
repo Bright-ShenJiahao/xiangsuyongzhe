@@ -32,8 +32,8 @@
   // ---------- 技能搭配（结算页「技能」页签和暂停页共用） ----------
   function loadout(box) {
     const r = R(), h = B().hero(); box.innerHTML = '';
-    const wrap = document.createElement('div'); wrap.className = 'lo'; box.appendChild(wrap);
-    const L = document.createElement('div'), Rt = document.createElement('div'); L.className = 'lol'; Rt.className = 'lor'; wrap.append(L, Rt);
+    const wrap = document.createElement('div'); wrap.className = 'lo solo'; box.appendChild(wrap);
+    const L = document.createElement('div'); L.className = 'lol'; wrap.append(L);
     let cyc = 0; r.slots.slice(0, r.open).forEach(s => { if (s) cyc += B().skillInfo(s).cd; });
     L.insertAdjacentHTML('beforeend', `<h4>技能栏 <small>按 1→2→3 顺序轮流自动出手 · 一轮约 ${cyc.toFixed(1)} 秒</small></h4>`);
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
@@ -66,11 +66,38 @@
         btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; r.bag[sel.i] = null; sel = null; if (cur.kind === 'item') B().recompute(); loadout(box); refreshCoin(); });
       }
     } else info.innerHTML = '<p class="dim">点技能格或背包里的东西查看说明。点两个格子可以交换位置。</p>';
-    // 右边：属性和各项数值
-    const c = DATA.calc({ weapon: r.weapon, attrs: r.attrs, train: r.train, items: r.bag.filter(x => x && x.kind === 'item').map(x => x.id), habit: r.habit });
-    const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
-    Rt.innerHTML = `<h4>勇者 <small>Lv${B().lv()}</small></h4><div class="attr4">${DATA.attrs.map(a => `<span>${UI.piH(a.id, 1)}${a.name}</span><b>${c.A[a.id]}${r.train[a.id] ? `<small> (修炼+${r.train[a.id]})</small>` : ''}</b>`).join('')}</div>
-      <div class="stats"><span>${UI.piH('hp', 1)}生命</span><b>${Math.ceil(h.hp)}/${h.maxHp}</b><span>${UI.piH('spd', 1)}出手速度</span><b>${pct(c.spd - 1)}</b><span>${UI.piH('area', 1)}范围</span><b>${pct(c.area - 1)}</b><span>${UI.piH('crit', 1)}暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>${UI.piH('guard', 1)}受到伤害</span><b>${pct(c.dmgIn - 1)}</b><span>${UI.piH('move', 1)}移速</span><b>${pct(c.move - 1)}</b></div>
+  }
+  // ---------- 属性页：升级攒的属性点手动加；这次结算 / 暂停里加的点，离开前都能退 ----------
+  function commit() { const r = R(); for (const k in r.tmp) r.alloc[k] = (r.alloc[k] || 0) + r.tmp[k]; r.tmp = {}; }
+  const redraw = () => $('pause').classList.contains('on') ? pauseRender() : render();
+  function attrPanel(box) {
+    const r = R(), h = B().hero(); box.innerHTML = '';
+    const c = DATA.calc({ weapon: r.weapon, attrs: r.attrs, train: B().trainAll(), items: r.bag.filter(x => x && x.kind === 'item').map(x => x.id), habit: r.habit });
+    const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%', used = Object.values(r.tmp).reduce((s, v) => s + v, 0);
+    const wrap = document.createElement('div'); wrap.className = 'lo'; box.appendChild(wrap);
+    const L = document.createElement('div'), Rt = document.createElement('div'); L.className = 'lol'; Rt.className = 'lor'; wrap.append(L, Rt);
+    L.innerHTML = `<h4>属性 <small>Lv${B().lv()} · 每升一级得 1 点</small><span class="pts">剩余 <b>${r.pts}</b> 点</span></h4>`;
+    for (const a of DATA.attrs) {
+      const tr = r.train[a.id] || 0, al = r.alloc[a.id] || 0, tp = r.tmp[a.id] || 0, row = document.createElement('div'); row.className = 'arow';
+      const src = [tr && `修炼+${tr}`, al && `加点+${al}`, tp && `<i>本次+${tp}</i>`].filter(Boolean).join(' · ');
+      row.innerHTML = `<b>${UI.piH(a.id, 1)}${a.name}</b><small>${a.desc}${src ? `<br><span class="src">${src}</span>` : ''}</small><button ${tp ? '' : 'disabled'}>−</button><button ${r.pts ? '' : 'disabled'}>＋</button><em class="${tp ? 'gain' : ''}">${c.A[a.id]}</em>`;
+      const [m, p] = row.querySelectorAll('button');
+      m.onclick = () => { r.tmp[a.id]--; if (!r.tmp[a.id]) delete r.tmp[a.id]; r.pts++; B().recompute(); redraw(); };
+      p.onclick = () => { r.tmp[a.id] = tp + 1; r.pts--; B().recompute(); redraw(); };
+      L.appendChild(row);
+    }
+    const ft = document.createElement('div'); ft.className = 'lob row'; L.appendChild(ft);
+    const rs = document.createElement('button'); rs.className = 'btn mini'; rs.textContent = '重置本次加点'; rs.disabled = !used;
+    rs.onclick = () => { for (const k in r.tmp) r.pts += r.tmp[k]; r.tmp = {}; B().recompute(); redraw(); }; ft.appendChild(rs);
+    ft.insertAdjacentHTML('beforeend', '<span class="dim">本次加的点，离开这一页前都能退</span>');
+    Rt.innerHTML = `<h4>勇者</h4><div class="stats big">
+      <span>${UI.piH('hp', 1)}生命</span><b>${Math.ceil(h.hp)} / ${h.maxHp}</b>
+      <span>${UI.piH('str', 1)}剑 · 枪 · 斧伤害</span><b>${pct(.06 * c.A.str + (c.fx.dmg || 0))}</b>
+      <span>${UI.piH('agi', 1)}弓伤害</span><b>${pct(.06 * c.A.agi + (c.fx.dmg || 0))}</b>
+      <span>${UI.piH('int', 1)}法杖伤害</span><b>${pct(.06 * c.A.int + (c.fx.dmg || 0))}</b>
+      <span>${UI.piH('spd', 1)}出手速度</span><b>${pct(c.spd - 1)}</b><span>${UI.piH('area', 1)}范围</span><b>${pct(c.area - 1)}</b>
+      <span>${UI.piH('crit', 1)}暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>${UI.piH('guard', 1)}受到伤害</span><b>${pct(c.dmgIn - 1)}</b>
+      <span>${UI.piH('move', 1)}移速</span><b>${pct(c.move - 1)}</b><span>${UI.piH('xp', 1)}经验</span><b>${pct(c.xp - 1)}</b></div>
       ${r.habit ? `<p class="dim">现实习惯：${DATA.habits.find(x => x.id === r.habit).name}</p>` : ''}`;
   }
   function pick(p, box) {
@@ -92,7 +119,7 @@
   }
 
   // ---------- 波间结算页 ----------
-  const TABS = [['jie', '结算'], ['shi', '拾取'], ['xiu', '修炼'], ['shang', '行商'], ['ji', '技能']];
+  const TABS = [['jie', '结算'], ['shi', '拾取'], ['xiu', '修炼'], ['shang', '行商'], ['ji', '技能'], ['shu', '属性']];
   function open(report) {
     rep = report; loot = report.loot.map(o => Object.assign({ lv: 1 }, o)); tab = 'jie'; sel = null;
     $('cTitle').textContent = `第 ${rep.wave + 1}/${rep.waves} 波 清完`;
@@ -103,7 +130,7 @@
   function refreshCoin() { const r = R(); for (const id of ['cCoin', 'pCoin']) $(id).innerHTML = coinTxt(r.coins); }
   function render() {
     const r = R(), tb = $('ctabs'); tb.innerHTML = '';
-    for (const [k, n] of TABS) { const b = document.createElement('button'); b.className = k === tab ? 'on' : ''; const dot = (k === 'xiu' && r.xiu) || (k === 'shi' && loot.length); b.innerHTML = n + (dot ? `<em>${k === 'xiu' ? r.xiu : loot.length}</em>` : ''); b.onclick = () => { tab = k; sel = null; render(); }; tb.appendChild(b); }
+    for (const [k, n] of TABS) { const b = document.createElement('button'); b.className = k === tab ? 'on' : ''; const dn = k === 'xiu' ? r.xiu : k === 'shi' ? loot.length : k === 'shu' ? r.pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : ''); b.onclick = () => { if (tab === 'shu' && k !== 'shu') commit(); tab = k; sel = null; render(); }; tb.appendChild(b); }
     refreshCoin(); const body = $('cBody'); body.innerHTML = ''; body.className = 'cbody t-' + tab;
     if (tab === 'jie') {
       const tot = Object.values(rep.dmg).reduce((s, v) => s + v, 0) || 1, rows = Object.entries(rep.dmg).sort((a, b) => b[1] - a[1]);
@@ -139,6 +166,7 @@
       const w = document.createElement('div'); w.className = 'center'; const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} 刷新货架 ${UI.piH('coin', 1)}${cost}`;
       rb.onclick = () => { if (r.coins < cost) return toast('铜钱不够'); r.coins -= cost; r.rr++; r.shop = rollShop(); render(); }; w.appendChild(rb); body.appendChild(w);
     } else if (tab === 'ji') loadout(body);
+    else if (tab === 'shu') attrPanel(body);
   }
   function card(t, o) { const d = document.createElement('div'); d.className = 'card ' + o.kind; d.appendChild(iconEl(t)); d.insertAdjacentHTML('beforeend', `<b>${t.name}</b><small>${t.sub}</small><p>${t.desc}</p>`);
     if (o.kind === 'book') { const r = R(), has = r.slots.find(s => s && s.id === o.id) || r.bag.find(b => b && b.kind === 'book' && b.id === o.id); if (has) d.insertAdjacentHTML('beforeend', `<p class="plus">已有：Lv${has.lv} → Lv${has.lv + 1}</p>`); }
@@ -157,12 +185,19 @@
     const L = items.concat(books); if (r.open < DATA.slotsMax) L.push({ kind: 'slot', price: DATA.price.slot * (r.open - 2) }); return L;
   }
   $('cGo').onclick = () => {
-    const r = R(); for (const o of loot) r.coins += thing(o).sell; loot = [];   // 没处理的自动卖掉
+    commit(); const r = R(); for (const o of loot) r.coins += thing(o).sell; loot = [];   // 没处理的自动卖掉
     $('camp').classList.remove('on'); B().nextWave();
   };
 
   // ---------- 暂停页 = 备战 ----------
-  function pauseOpen() { sel = null; refreshCoin(); loadout($('pBody')); }
+  let ptab = 'ji';
+  function pauseRender() {
+    const tb = $('pTabs'); tb.innerHTML = '';
+    for (const [k, n] of [['ji', '技能'], ['shu', '属性']]) { const b = document.createElement('button'); b.className = k === ptab ? 'on' : ''; const dn = k === 'shu' ? R().pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : '');
+      b.onclick = () => { if (ptab === 'shu' && k !== 'shu') commit(); ptab = k; sel = null; pauseRender(); }; tb.appendChild(b); }
+    refreshCoin(); if (ptab === 'ji') loadout($('pBody')); else attrPanel($('pBody'));
+  }
+  function pauseOpen() { sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); }
 
-  window.CAMP = { open, pauseOpen, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
+  window.CAMP = { open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
 })();

@@ -146,9 +146,9 @@
   }
   function togglePause(force) {
     if (screen !== 'battle' || !BATTLE.active() || $('levelup').classList.contains('on') || (window.CAMP && CAMP.isOpen())) return;
-    const on = force != null ? force : !$('pause').classList.contains('on'); BATTLE.pause(on); overlay('pause', on); if (on) CAMP.pauseOpen();
+    const on = force != null ? force : !$('pause').classList.contains('on'); if (!on) CAMP.commit(); BATTLE.pause(on); overlay('pause', on); if (on) CAMP.pauseOpen();
   }
-  $('bPause').onclick = () => togglePause(); $('pRes').onclick = () => togglePause(false);
+  $('bPause').onclick = () => togglePause(); $('pRes').onclick = () => { CAMP.commit(); togglePause(false); };
   $('pRe').onclick = () => startBattle(lastBuild); $('pHome').onclick = () => { BATTLE.stop(); overlay('pause', false); show('title'); };
   const waveEnd = r => CAMP.open(r);
   $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); BATTLE.roll(); });
