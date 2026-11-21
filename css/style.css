@@ -346,3 +346,11 @@ p.dim.center { font-size: 16px; } p.dim.center small { font-size: 14px; }
 #lvUp.on { animation: lvup .36s steps(2) infinite; }
 @keyframes lvup { 0% { opacity: 1; } 100% { opacity: .25; } }
 @media (max-width: 600px) { #lvUp { font-size: 17px; top: 62px; right: 8px; } }
+
+/* 翻滚按钮：PC 也显示在右下角（小一点，标「空格」），冷却时一圈暗色扇面 + 剩余秒数 */
+#bRoll { display: block; overflow: hidden; } #bRoll span, #bRoll small, #bRoll em { position: relative; z-index: 2; display: block; }
+body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-events: none; }
+#bRoll small { font-size: 10px; opacity: .7; margin-top: 2px; } body.touch #bRoll small { display: none; }
+#bRoll i { position: absolute; inset: 4px; border-radius: 3px; z-index: 1; background: conic-gradient(rgba(0,0,0,.62) calc(var(--p, 0) * 360deg), transparent 0); }
+#bRoll em { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 20px Pix, monospace; font-style: normal; color: #fff3d0; text-shadow: 1px 1px 0 #000; }
+#bRoll.cd span, #bRoll.cd small { opacity: .25; }
