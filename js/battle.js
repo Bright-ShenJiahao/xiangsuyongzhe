@@ -36,7 +36,7 @@
     G = { t: 0, kills: 0, boss: null, bossOut: false, over: null, overT: 0, shake: 0, hitStop: 0, paused: false, xp: 0, lv: 1, god: false, banner: null,
       st: 1, wi: -1, route: 'fight', waveOn: false, wave: 0 };
     const g = MAP.ground;
-    hero = { x: MAPW / 2, y: (g.y0 + g.y1) / 2, hp: 0, maxHp: 0, f: 1, t: 0, roll: 0, rollCd: 0, inv: 0, hurtT: 0, atkT: 0, moving: false, cd: .6, dead: false,
+    cam.snap = true; hero = { gap: 0, rollBuf: 0, x: MAPW / 2, y: (g.y0 + g.y1) / 2, hp: 0, maxHp: 0, f: 1, t: 0, roll: 0, rollCd: 0, inv: 0, hurtT: 0, atkT: 0, moving: false, cd: .6, dead: false,
       m: { dmg: 1, spd: 1, area: 1, move: 1 }, crit: .01, critMul: 1.5, pIn: 1, mIn: 1, xpMul: 1, fx: {}, A: {} };
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
     RUN = { weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0, alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
@@ -77,7 +77,8 @@
     return [dx, dy];
   }
   function roll() {
-    if (!running() || hero.roll > 0 || hero.rollCd > 0 || hero.dead) return;
+    if (running() && !hero.dead && (hero.roll > 0 || hero.rollCd > 0)) { if (Math.max(hero.roll, hero.rollCd) < .2) hero.rollBuf = .2; return; }
+    if (!running() || hero.dead) return; hero.rollBuf = 0;
     const [dx, dy] = moveDir(), d = Math.hypot(dx, dy); hero.rvx = d ? dx / d : hero.f; hero.rvy = d ? dy / d : 0; if (dx) hero.f = dx < 0 ? -1 : 1;
     hero.roll = .3; hero.rollCd = 1.8; hero.inv = Math.max(hero.inv, .3);
     const c = hero.cs; if (c && (c.ph === 'wu' || c.ph === 'rc')) { if (c.ph === 'wu') nums.push({ x: hero.x, y: hero.y - 50 * K, txt: c.S.name + ' 中断', t: 0, col: '#c8b890' }); endCast(); }
@@ -225,16 +226,21 @@
   // 前摇 / 后摇：敏捷的出手速度一起缩短；瞬光斩、贯星箭第 3 格蓄力变短
   function skillT(S, sk) { const L = profL(sk), sp = hero.m.spd || 1; let wu = S.wu; if (S.charge && L >= 3) wu = S.kind === 'pierce' || sk.id === 'pierce' ? .45 : .5; const cut = L >= 7 ? .05 : 0; return { wu: Math.max(.08, (wu - cut) / sp), rc: Math.max(.08, (S.rc - cut) / sp) }; }
   const nextSlot = () => { for (let k = 0; k < RUN.open; k++) { const i = (RUN.si + k) % RUN.open; if (RUN.slots[i]) return i; } return -1; };
+  // 射程（像素格）：近战招跟着范围加成一起变大
+  const reach = S => (S.rg || 9999) * (S.rg && S.rg < 100 ? hero.m.area : 1);
+  // 轮到的这本够不着就跳过，看下一本；都够不着就不放
+  const readySlot = () => { const t = nearest(); if (!t) return -1; const d = dist(t, hero);
+    for (let k = 0; k < RUN.open; k++) { const i = (RUN.si + k) % RUN.open, sk = RUN.slots[i]; if (sk && d <= reach(DATA.skills[sk.id])) return i; } return -1; };
   const HWPN = { sword: 'sword', spear: 'spear', bow: 'bow', staff: 'staff' };
   // 技能栏 1→2→3 严格轮流（空格子跳过），没有各自冷却：前摇（能走；翻滚 = 这招作废）→ 出手 → 占时型持续 → 后摇（站定；翻滚取消）
-  // 够不着也照样朝最近的敌人放，场上没有敌人才等
+  // 11/21：够不着的招跳过（readySlot）；两招之间空 0.18 秒（hero.gap），这段时间正常跑
   function weapon(dt) {
     for (let i = pend.length - 1; i >= 0; i--) { pend[i].t -= dt; if (pend[i].t <= 0) { pend[i].fn(); pend.splice(i, 1); } }
     if (hero.dead) return;
     let c = hero.cs;
-    if (!c) { const i = nextSlot(); if (i < 0 || !nearest()) return; const sk = RUN.slots[i], S = DATA.skills[sk.id], T = skillT(S, sk); c = hero.cs = { i, sk, S, ph: 'wu', t: 0, dur: T.wu, rc: T.rc, a: aimNow() }; faceTo(c.a); }
+    if (!c) { if (hero.gap > 0) { hero.gap -= dt; return; } const i = readySlot(); if (i < 0) return; const sk = RUN.slots[i], S = DATA.skills[sk.id], T = skillT(S, sk); c = hero.cs = { i, sk, S, ph: 'wu', t: 0, dur: T.wu, rc: T.rc, a: aimNow() }; faceTo(c.a); }
     c.t += dt;
-    if (c.ph === 'wu') { c.a = aimNow(c.a); faceTo(c.a); if (c.t < c.dur) return;
+    if (c.ph === 'wu') { c.a = aimNow(c.a); if (!hero.moving) faceTo(c.a); if (c.t < c.dur) return; faceTo(c.a);
       const L = profL(c.sk), r = SK.cast({ S: c.S, sk: c.sk, L, d: skillDmg(c.S, c.sk), a: c.a, sid: c.sk.id });
       if (!r) { hero.cs = null; return; }   // 场上没敌人了：不放，等下一个敌人
       c.sk.xp = (c.sk.xp || 0) + 1; if (profL(c.sk) > L) { nums.push({ x: hero.x, y: hero.y - 52 * K, txt: `${c.S.name} 熟练度 ${profL(c.sk)}/7`, t: 0, col: '#ffd86a' }); }
@@ -243,7 +249,7 @@
     if (c.ph === 'hold') { if (c.t >= c.dur) { SK.chEnd(); c.ph = 'rc'; c.t = 0; c.dur = c.rc; } return; }
     if (c.ph === 'rc' && c.t >= c.dur) endCast();
   }
-  function endCast() { const c = hero.cs; if (!c) return; if (c.ph === 'hold') SK.chEnd(); RUN.si = (c.i + 1) % RUN.open; hero.cs = null; }
+  function endCast() { const c = hero.cs; if (!c) return; if (c.ph === 'hold') SK.chEnd(); RUN.si = (c.i + 1) % RUN.open; hero.cs = null; hero.gap = .18; }
   function aimNow(a0) { const t = nearest(); return t ? ang(hero, t) : (a0 != null ? a0 : (hero.f < 0 ? PI : 0)); }
   function faceTo(a) { hero.f = Math.cos(a) < 0 ? -1 : 1; }
   // 给 skills.js 用的接口
@@ -367,10 +373,10 @@
     if (G.winT != null && (G.winT -= dt) <= 0 && !G.over) { G.over = 'win'; return end(); }
     if (hero.dead) { hero.deadT += dt; if ((G.loseT -= dt) <= 0 && !G.over) { G.over = 'lose'; return end(); } }
     else {
-      hero.rollCd -= dt; hero.inv -= dt; hero.hurtT -= dt;
+      hero.rollCd -= dt; hero.inv -= dt; hero.hurtT -= dt; if (hero.rollBuf > 0) { hero.rollBuf -= dt; if (hero.roll <= 0 && hero.rollCd <= 0) roll(); }
       if (hero.roll > 0) { hero.roll -= dt; hero.x += hero.rvx * 240 * K * dt; hero.y += hero.rvy * 182 * K * dt; if (Math.random() < .7) parts.push({ x: hero.x, y: hero.y, vx: R(-10, 10) * K, vy: R(-10, 0) * K, t: 0, T: .3, col: '#e6dcb4', g: 0 }); }
-      else { const c = hero.cs, root = c && c.ph === 'rc', mm = !c ? 1 : c.ph === 'wu' ? (c.S.charge ? .5 : 1) : c.ph === 'hold' ? c.move : 1;
-        const [dx, dy] = root ? [0, 0] : moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { const k = Math.min(1, d), v = 85 * hero.m.move * mm * K; hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (!c) hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
+      else { const c = hero.cs, root = false, mm = !c ? 1 : c.ph === 'wu' ? (c.S.charge ? .5 : 1) : c.ph === 'hold' ? c.move : .4;   // 11/21：后摇不再定住，改成 40% 慢走
+        const [dx, dy] = root ? [0, 0] : moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { const k = Math.min(1, d), v = 85 * hero.m.move * mm * K; hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (!c || c.ph !== 'hold') hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
       clampG(hero, 8 * K); weapon(dt);
     }
     if (!hero.dead) { SK.tick(dt);
@@ -403,6 +409,7 @@
     if (hero.roll > 0) return ['roll', hero.roll > .16 ? 0 : 1];
     const c = hero.cs; if (c) {   // 出招帧：js/skframes.js（tools/frames.html 调）
       const F = SKF.get(c.sk.id); let r = null;
+      if (c.ph !== 'hold' && hero.moving && !(c.ph === 'rc' && !c.move && c.t < F.hitT)) return ['run', [0, 1, 2, 1][Math.floor(hero.t * 10) % 4], 'run'];   // 边走边蓄力/收招：放跑步帧，不滑步
       if (c.ph === 'wu') r = SKF.pick(F, 'wu', c.t);
       else if (c.ph === 'hold') r = SKF.pick(F, 'hold', c.t);
       else if (!c.move && c.t < F.hitT) { r = SKF.pick(F, 'hit', c.t); if (r) return [r[0], r[1], 'strike', F.lunge]; }
@@ -430,7 +437,8 @@
   function draw() {
     if (!G) return;
     const Wm = W / s, Hm = H / s;
-    cam.x = Math.max(0, Math.min(MAPW - Wm, hero.x - Wm / 2)); cam.y = Math.max(0, Math.min(MAPH - Hm, hero.y - 20 * K - Hm / 2));
+    { const now = performance.now(), dt = Math.min(.1, (now - (cam.tm || now)) / 1000), tx = Math.max(0, Math.min(MAPW - Wm, hero.x - Wm / 2)), ty = Math.max(0, Math.min(MAPH - Hm, hero.y - 20 * K - Hm / 2)), k = 1 - Math.exp(-12 * dt);
+      cam.tm = now; if (cam.snap || cam.x == null || Math.abs(tx - cam.x) > Wm || Math.abs(ty - cam.y) > Hm) { cam.x = tx; cam.y = ty; cam.snap = false; } else { cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; } }   // 镜头平滑跟随
     const sh = G.shake > 0 ? rd(R(-2, 2)) * u : 0;
     ctx.setTransform(1, 0, 0, 1, sh, 0);
     if (MIMG.complete && MIMG.naturalWidth) { const k = MIMG.naturalWidth / MAPW; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(MIMG, cam.x * k, cam.y * k, Wm * k, Hm * k, 0, 0, W, H); ctx.imageSmoothingEnabled = false; }
