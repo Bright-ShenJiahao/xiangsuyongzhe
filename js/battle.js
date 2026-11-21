@@ -313,10 +313,12 @@
     const xp0 = G.xp, lv0 = G.lv; addXp(E.waveXp + G.st + Math.floor(G.wk / E.xpPerKills) + G.wElite * E.xpElite + G.wMini * E.xpMini + (cl ? E.xpClear : 0));
     hero.hp = Math.min(hero.maxHp, hero.hp + E.waveHeal + hero.maxHp * (fx.waveHeal || 0));
     RUN.xopt = null; RUN.xrr = 0; RUN.shop = null; RUN.rr = 0;
-    const ids = Object.keys(DATA.skills), pick = a => a[Math.random() * a.length | 0], loot = [];
+    // 掉书只从还没拿到的书里抽（11/21 定）；全拿到了就换成铜钱
+    const own = new Set([...RUN.slots, ...RUN.bag].filter(x => x && (x.kind === 'book' || !x.kind)).map(x => x.id)), ids = Object.keys(DATA.skills).filter(id => !own.has(id)), pick = a => a[Math.random() * a.length | 0], loot = [];
     const book = (G.st === 1 && G.wi === 0) || G.wi === STN().waves.length - 1 || (G.st === 1 && G.wi === 2);   // 必出书：1-1、1-3、每站第 3 波
-    if (book) loot.push({ kind: 'book', id: pick(ids) });
-    for (const d of G.drops) loot.push(d.kind === 'book' ? { kind: 'book', id: pick(ids) } : { kind: 'item', id: pick(ITEMS()).id });
+    const pickNew = () => { const f = ids.filter(i => !loot.some(o => o.id === i)); return pick(f.length ? f : ids); };   // 同一次结算不掉两本一样的
+    if (book) loot.push(ids.length ? { kind: 'book', id: pickNew() } : { kind: 'use', id: 'meat' });
+    for (const d of G.drops) loot.push(d.kind === 'book' && ids.length ? { kind: 'book', id: pickNew() } : { kind: 'item', id: pick(ITEMS()).id });
     if (!loot.length && Math.random() < .3) loot.push({ kind: 'use', id: 'meat' });
     const last = G.wi === STN().waves.length - 1 || !!(STN().waves[G.wi + 1] || {}).boss;
     UI.waveEnd({ st: G.st, wi: G.wi, kills: G.wk, coins: cw, clear: cl, timeout: G.timeout, xp: Math.round(G.wx), lv: G.lv, dmg: Object.assign({}, RUN.dmgW), loot, last, boss: !!(STN().waves[G.wi + 1] || {}).boss });

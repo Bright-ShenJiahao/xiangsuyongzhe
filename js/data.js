@@ -10,10 +10,11 @@ window.DATA = {
   },
   // 属性：开局各 3 点，另有 5 点自由分配（备战页）
   attrs: [
-    { id: 'str', name: '力量', desc: '剑、枪、斧招式伤害 +6% / 点' },
+    { id: 'str', name: '力量', desc: '剑、枪、斧招式伤害 +6%、物防 +1 / 点' },
     { id: 'agi', name: '敏捷', desc: '弓招式伤害 +6% / 点，出手速度 +2% / 点' },
-    { id: 'int', name: '智力', desc: '法杖招式伤害 +6% / 点，技能范围 +2%、魔防 +2 / 点' },
-    { id: 'con', name: '体魄', desc: '生命 +10 / 点，物防 +4、魔防 +2 / 点' },
+    { id: 'int', name: '智力', desc: '法杖招式伤害 +6%、技能范围 +2%、魔防 +1 / 点' },
+    { id: 'con', name: '体魄', desc: '生命 +10 / 点' },
+    { id: 'end', name: '耐力', desc: '物防 +4、魔防 +4 / 点' },   // 11/21 用户加：耐力管两种防御
   ],
   attrBase: 3, attrFree: 5,
   // 开局宝物（备战页随机三选一，放进物品栏）。fx：生效的加成
@@ -120,7 +121,7 @@ window.DATA = {
 };
 
 // 备战配置 → 勇者数值（备战页显示、战斗开局都用这一份，避免两边算得不一样）
-// b = { weapon, attrs: {str, agi, int, con}（含底子 3 点）, item, habit }
+// b = { weapon, attrs: {str, agi, int, con, end}（含底子 3 点）, item, habit }
 window.DATA.calc = function (b) {
   const DATA = window.DATA;
   const fx = {}, add = o => { for (const k in (o || {})) fx[k] = (fx[k] || 0) + o[k]; };
@@ -134,8 +135,8 @@ window.DATA.calc = function (b) {
     area: Math.min(1.6, Math.max(.8, 1 + .02 * A.int + (fx.area || 0))),
     move: 1 + (fx.move || 0),
     crit: Math.max(0, .01 + (fx.crit || 0)), critMul: 1.5 + (fx.critMul || 0),   // 暴击率 1% 起，暴击伤害 150% 起
-    // 防御：受到的伤害 × 100 / (100 + 防御)，最多减 50%。物防 = 体魄 × 4，魔防 = 体魄 × 2 + 智力 × 2，再加宝物
-    pdef: Math.max(0, 4 * A.con + (fx.pdef || 0)), mdef: Math.max(0, 2 * A.con + 2 * A.int + (fx.mdef || 0)),
+    // 防御：受到的伤害 × 100 / (100 + 防御)，最多减 50%。物防 = 耐力 × 4 + 力量 × 1，魔防 = 耐力 × 4 + 智力 × 1，再加宝物
+    pdef: Math.max(0, 4 * A.end + A.str + (fx.pdef || 0)), mdef: Math.max(0, 4 * A.end + A.int + (fx.mdef || 0)),
     hp: Math.round((100 + 10 * A.con + (fx.hp || 0)) * (1 + (fx.hpMul || 0))),
     xp: 1 + (fx.xp || 0), coin: fx.coin || 0, pick: 1 + (fx.pick || 0),
   };

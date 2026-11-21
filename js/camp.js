@@ -12,7 +12,7 @@
     if (!o) return null;
     // 出售：拿基价的 35%（书的基价 22 × 等级，宝物看各自的价）
     if (o.kind === 'book') { const S = SK[o.id]; return { icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · 技能书`, desc: S.desc, sell: Math.round(DATA.price.book * (o.lv || 1) * DATA.price.sell) }; }
-    if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物 · 放在背包里就生效', desc: it.desc, sell: Math.round((it.price || 25) * DATA.price.sell) }; }
+    if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物', desc: it.desc, sell: Math.round((it.price || 25) * DATA.price.sell) }; }
     const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 3 };
   }
   function iconEl(t) { const s = document.createElement('span'); s.className = 'ic'; if (t.icon) s.appendChild(t.icon); else s.textContent = t.emoji; return s; }
@@ -183,9 +183,8 @@
     } else if (tab === 'ji') loadout(body);
     else if (tab === 'shu') attrPanel(body);
   }
-  function card(t, o) { const d = document.createElement('div'); d.className = 'card ' + o.kind; d.appendChild(iconEl(t)); d.insertAdjacentHTML('beforeend', `<b>${t.name}</b><small>${t.sub}</small><p>${t.desc}</p>`);
-    if (o.kind === 'book') { const r = R(), has = r.slots.find(s => s && s.id === o.id) || r.bag.find(b => b && b.kind === 'book' && b.id === o.id); if (has) d.insertAdjacentHTML('beforeend', `<p class="plus">已有：Lv${has.lv} → Lv${has.lv + 1}</p>`); }
-    return d; }
+  // 卡片：图标 · 名字 · 类别 · 分隔线 · 说明（说明区固定高度、垂直居中，按钮永远在最下面对齐）
+  function card(t, o) { const d = document.createElement('div'); d.className = 'card ' + o.kind; d.appendChild(iconEl(t)); d.insertAdjacentHTML('beforeend', `<b>${t.name}</b><small>${t.sub}</small><i class="hr"></i><p class="desc">${t.desc}</p>`); return d; }
   function btnTo(d, label, fn, gold) { let f = d.querySelector('.cb'); if (!f) { f = document.createElement('div'); f.className = 'cb'; d.appendChild(f); } const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.innerHTML = label; b.onclick = fn; f.appendChild(b); }
   function rollXiu(n) {
     const out = [], ids = shuffle(DATA.attrs.map(a => a.id));
@@ -198,7 +197,7 @@
     // 货架：3 件宝物 + 2 本书（新书 22，已有的升 Lv2 34，再往上 52）。开技能格改成在「技能」页点锁
     const r = R(), P = DATA.price, items = shuffle(DATA.startItems.filter(i => i.id !== 'purse')).slice(0, 3).map(i => ({ kind: 'item', id: i.id, price: i.price || 25 }));
     const lvOf = id => { const h = r.slots.find(s => s && s.id === id) || r.bag.find(b => b && b.kind === 'book' && b.id === id); return h ? h.lv : 0; };
-    const books = shuffle(Object.keys(SK)).slice(0, 2).map(id => ({ kind: 'book', id, lv: 1, price: [22, 34, 52][Math.min(2, lvOf(id))] }));
+    const books = shuffle(Object.keys(SK).filter(id => !lvOf(id) && !loot.some(o => o.kind === 'book' && o.id === id))).slice(0, 2).map(id => ({ kind: 'book', id, lv: 1, price: DATA.price.book }));   // 已经有的书不再出（11/21 定：书只靠熟练度成长）
     const L = items.concat(books);
     return L;
   }

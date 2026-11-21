@@ -354,3 +354,8 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 #bRoll i { position: absolute; inset: 4px; border-radius: 3px; z-index: 1; background: conic-gradient(rgba(0,0,0,.62) calc(var(--p, 0) * 360deg), transparent 0); }
 #bRoll em { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 20px Pix, monospace; font-style: normal; color: #fff3d0; text-shadow: 1px 1px 0 #000; }
 #bRoll.cd span, #bRoll.cd small { opacity: .25; }
+
+/* 11/21 卡片对齐：类别一行不换行，分隔线，说明区占满中间并垂直居中，按钮贴底 */
+.card small { white-space: nowrap; } .card .hr { display: block; width: 70%; height: 1px; background: linear-gradient(90deg, transparent, #c8a06088, transparent); margin: 2px 0; }
+.card .desc { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 3.2em; color: #f3e6c8; }
+.card.item .desc { color: #9fe08a; } .card .cb { margin-top: 6px; }
