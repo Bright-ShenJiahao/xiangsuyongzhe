@@ -72,7 +72,7 @@
     // 人物（男主 / 女主）：不锁兵器，各一个被动
     const cs = $('cSel'); cs.innerHTML = '';
     for (const h of DATA.heroes) { const b = document.createElement('button'); b.className = h.id === P.hero ? 'on' : ''; const cr = SPR.crop(SPR.heroSet(h.id), P.weapon + '.idle', 0); if (cr) b.appendChild(cr.c);
-      b.insertAdjacentHTML('beforeend', `<span>${h.name} · ${h.from}</span><small>${h.perk}</small>`); b.onclick = () => { P.hero = h.id; store.set('hero', h.id); renderPrep(); }; cs.appendChild(b); }
+      b.insertAdjacentHTML('beforeend', `<span>${h.name}</span><small>${h.perk}</small>`); b.onclick = () => { P.hero = h.id; store.set('hero', h.id); renderPrep(); }; cs.appendChild(b); }
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(w.icon)); b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
