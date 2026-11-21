@@ -37,23 +37,37 @@ def anchor(img):   # 脚底锚点：下半身有颜色部分的水平中点 + �
   m = al & (sat > .25); m[: int(h * .45)] = False
   if m.sum() < 5: m = al
   return float(np.nonzero(m)[1].mean()), int(np.nonzero(al)[0].max()) + 1
-# 枪的待机两帧：手上方那截枪杆和手之间那截角度不一样（看起来弯了，11/21 用户指出）。
-# 把手上方露在外面的那截（枪杆 + 枪头）绕握枪的手转到和下面那截同一个角度，只贴在背景上，手和身体保持在上面。
-SPEAR_FIX = [  # 手心（转轴）、外露那截的起点 A 和枪尖 B、下面那截的两个点（定角度）
-  dict(P=(183, 298), A=(190, 290), B=(266, 221), L=((152, 318), (172, 305))),
-  dict(P=(468, 298), A=(475, 290), B=(551, 221), L=((437, 318), (457, 305)))]
+# 枪的待机两帧：手上方露出来的那截（枪杆 + 枪头）和两手之间那截不在一条线上（11/21 用户指出两次）。
+# 做法：擦掉外露那截，沿「两手之间那截」的延长线重新画一根干净的枪杆，再把原来的枪头转到同一角度接在杆头。
+# 只画在背景上，手和身体保持在枪杆上面。坐标是 hero_spear.png 原图像素，第 2 帧整体右移 285。
+SPEAR_FIX = [dict(dx=0), dict(dx=285)]
+HAND, LO0, LO1, OLD_A, OLD_B, HEAD_T = (183, 298), (152, 318), (172, 305.5), (190, 290), (263, 224), .58
 def straighten(path):
+  from PIL import ImageDraw
   im = Image.open(path).convert('RGB'); a = np.array(im).astype(int); r, g, b = a[..., 0], a[..., 1], a[..., 2]
   bg = (r - g > 80) & (b - g > 80) & (r > 140) & (b > 140); H, W = bg.shape; yy, xx = np.mgrid[0:H, 0:W]
   for F in SPEAR_FIX:
-    (ax, ay), (bx, by), (px, py) = F['A'], F['B'], F['P']; dx, dy = bx - ax, by - ay; L2 = dx * dx + dy * dy
-    t = ((xx - ax) * dx + (yy - ay) * dy) / L2; d = np.abs((xx - ax) * dy - (yy - ay) * dx) / np.sqrt(L2)
-    m = ~bg & (t > -.02) & (t < 1.12) & (d < np.where(t > .5, 17, 11)) & (yy <= ay)
-    near = (t > -.02) & (t < 1.15) & (d < 19) & (yy <= ay)   # 原来枪头边上和背景混色的一圈也一起擦掉
-    (l0x, l0y), (l1x, l1y) = F['L']; up = np.degrees(np.arctan2(by - ay, bx - ax)); lo = np.degrees(np.arctan2(l1y - l0y, l1x - l0x))
-    patch = np.zeros((H, W, 4), np.uint8); patch[m, :3] = a[m]; patch[m, 3] = 255
-    rot = np.array(Image.fromarray(patch, 'RGBA').rotate(up - lo, resample=Image.NEAREST, center=(px, py)))   # PIL 正角度 = 逆时针
-    a[near] = (255, 0, 255); bg2 = bg | near; put = (rot[..., 3] > 0) & bg2; a[put] = rot[put][:, :3]
+    o = F['dx']; (ax, ay), (bx, by) = (OLD_A[0] + o, OLD_A[1]), (OLD_B[0] + o, OLD_B[1]); vx, vy = bx - ax, by - ay; L2 = vx * vx + vy * vy
+    t = ((xx - ax) * vx + (yy - ay) * vy) / L2; d = np.abs((xx - ax) * vy - (yy - ay) * vx) / np.sqrt(L2)
+    near = (t > -.05) & (t < 1.15) & (d < 19) & (yy <= ay + 1)
+    # 原来的枪头（外露那截靠前的部分）单独抠出来
+    hm = ~bg & near & (t > HEAD_T); head = np.zeros((H, W, 4), np.uint8); head[hm, :3] = a[hm]; head[hm, 3] = 255
+    core = tuple(int(v) for v in a[int(ay + vy * .3), int(ax + vx * .3)]); edge = (54, 22, 20)   # 枪杆木色取原图，描边深红褐
+    a[near] = (255, 0, 255)
+    # 新方向 = 两手之间那截
+    hx, hy = HAND[0] + o, HAND[1]; ux, uy = LO1[0] - LO0[0], LO1[1] - LO0[1]; n = np.hypot(ux, uy); ux, uy = ux / n, uy / n
+    Ltot = np.hypot(OLD_B[0] - HAND[0], OLD_B[1] - HAND[1]); old = np.degrees(np.arctan2(vy, vx)); new = np.degrees(np.arctan2(uy, ux))
+    # 枪头：绕它在原图里的底部点转到新角度，再平移到新杆头
+    base0 = (ax + vx * HEAD_T, ay + vy * HEAD_T); sh = Ltot - np.hypot(base0[0] - hx, base0[1] - hy) - 0
+    hd = Image.fromarray(head, 'RGBA').rotate(old - new, resample=Image.BICUBIC, center=base0)
+    bnew = (hx + ux * (Ltot - np.hypot(bx - base0[0], by - base0[1])), hy + uy * (Ltot - np.hypot(bx - base0[0], by - base0[1])))
+    hd = np.array(hd.transform(hd.size, Image.AFFINE, (1, 0, base0[0] - bnew[0], 0, 1, base0[1] - bnew[1]), resample=Image.BICUBIC))
+    # 枪杆：从手边到枪头底部，描边 10 像素、木色 6 像素（和原图枪杆一样粗）
+    lay = Image.new('RGBA', (W, H)); dr = ImageDraw.Draw(lay); p0 = (hx + ux * 6, hy + uy * 6); p1 = (bnew[0] + ux * 3, bnew[1] + uy * 3)
+    dr.line([p0, p1], fill=edge + (255,), width=10); dr.line([p0, p1], fill=core + (255,), width=6); la = np.array(lay)
+    bg2 = (a[..., 0] - a[..., 1] > 80) & (a[..., 2] - a[..., 1] > 80)
+    put = (la[..., 3] > 0) & bg2; a[put] = la[put][:, :3]
+    put = (hd[..., 3] > 140) & ((a[..., 0] - a[..., 1] > 80) & (a[..., 2] - a[..., 1] > 80) | (la[..., 3] > 0)); a[put] = hd[put][:, :3]
   out = '/tmp/_hero4_spear.png'; Image.fromarray(a.astype(np.uint8)).save(out); return out
 SRC = [('hero_sb', [('sword', 0), ('bow', 2)], False), ('hero_spear', [('spear', 0)], False), ('hero_staff', [('staff', 0)], True)]
 sheets = {}
@@ -70,7 +84,7 @@ for name, sets, dots in SRC:
 allims = [im for v in sheets.values() for im in v]
 big = Image.new('RGBA', (sum(i.width + 2 for i in allims), max(i.height for i in allims))); x = 0; pos = []
 for im in allims: big.paste(im, (x, 0)); pos.append(x); x += im.width + 2
-q = big.convert('RGB').quantize(64, method=Image.Quantize.MEDIANCUT).convert('RGB'); big = Image.merge('RGBA', (*q.split(), big.split()[3]))   # 统一量化成 64 色（之后按颜色标部位换色）
+q = big.convert('RGB').quantize(128, method=Image.Quantize.MAXCOVERAGE, dither=Image.Dither.NONE).convert('RGB'); big = Image.merge('RGBA', (*q.split(), big.split()[3]))   # 统一量化成 128 色（64 色时绿色发灰）（之后按颜色标部位换色）
 meta = {}; i = 0; AW = 1024; cx = cy = rh = 0; places = []
 for key, ims in sheets.items():
   for im in ims:

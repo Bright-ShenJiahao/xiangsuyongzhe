@@ -359,3 +359,9 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 .card small { white-space: nowrap; } .card .hr { display: block; width: 70%; height: 1px; background: linear-gradient(90deg, transparent, #c8a06088, transparent); margin: 2px 0; }
 .card .desc { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 3.2em; color: #f3e6c8; }
 .card.item .desc { color: #9fe08a; } .card .cb { margin-top: 6px; }
+
+/* 拖动技能 / 背包里的东西 */
+.lo .slots > div, .lo .bag > div { touch-action: none; user-select: none; -webkit-user-select: none; }
+.dragging { opacity: .35; } .droptgt { filter: drop-shadow(0 0 6px #ffd86a) brightness(1.25); }
+.dragghost { position: fixed; z-index: 200; pointer-events: none; transform: translate(-50%, -60%) scale(1.15); width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 4px 8px #000a); }
+.dragghost img, .dragghost canvas { width: 100%; height: auto; }

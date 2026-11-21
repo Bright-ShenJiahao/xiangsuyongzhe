@@ -54,13 +54,13 @@
       else if (s) { d.className = 'slot has'; d.appendChild(UI.icon(SK[s.id].icon)); d.insertAdjacentHTML('beforeend', `<span>${SK[s.id].name}</span><i>Lv${s.lv}</i>`); }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
-      if (i < r.open) d.onclick = () => pick({ t: 's', i }, box); sl.appendChild(d); });
-    L.insertAdjacentHTML('beforeend', '<h4>背包 <small>宝物放着就生效；技能书点一下再点技能格装上</small></h4>');
+      if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
+    L.insertAdjacentHTML('beforeend', '<h4>背包 <small>宝物放着就生效；技能书直接拖到技能格上装上（点一下再点格子也行）</small></h4>');
     const bg = document.createElement('div'); bg.className = 'bag'; L.appendChild(bg);
     r.bag.forEach((o, i) => { const d = document.createElement('div'); const t = thing(o);
       if (t) { d.className = 'has ' + o.kind; d.appendChild(iconEl(t)); if (o.kind === 'book') d.insertAdjacentHTML('beforeend', `<i>${o.lv > 1 ? 'Lv' + o.lv : '书'}</i>`); }
       if (sel && sel.t === 'b' && sel.i === i) d.classList.add('sel');
-      d.onclick = () => pick({ t: 'b', i }, box); bg.appendChild(d); });
+      d.onclick = () => dragged || pick({ t: 'b', i }, box); drag(d, { t: 'b', i }, !!o, box); bg.appendChild(d); });
     // 选中东西的说明和按钮
     const info = document.createElement('div'); info.className = 'loinfo'; L.appendChild(info);
     if (sel && sel.t === 'L') { lockInfo(info, sel.i, box); return; }
@@ -78,7 +78,7 @@
         if (cur.kind === 'use') btn('吃掉', () => { learn(cur); r.bag[sel.i] = null; sel = null; loadout(box); }, true);
         btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; r.bag[sel.i] = null; sel = null; if (cur.kind === 'item') B().recompute(); loadout(box); refreshCoin(); });
       }
-    } else info.innerHTML = '<p class="dim">点技能格或背包里的东西查看说明。点两个格子可以交换位置。</p>';
+    } else info.innerHTML = '<p class="dim">点一下查看说明；拖到另一个格子上，或先后点两个格子，都能交换位置。</p>';
   }
   // ---------- 属性页：升级攒的属性点手动加；这次结算 / 暂停里加的点，离开前都能退 ----------
   function commit() { const r = R(); for (const k in r.tmp) r.alloc[k] = (r.alloc[k] || 0) + r.tmp[k]; r.tmp = {}; }
@@ -112,6 +112,29 @@
       <span>${UI.piH('crit', 1)}暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>${UI.piH('guard', 1)}物防</span><b>${c.pdef} <small>(受物理 ×${c.pIn.toFixed(2)})</small></b><span>${UI.piH('guard', 1)}魔防</span><b>${c.mdef} <small>(受法术 ×${c.mIn.toFixed(2)})</small></b>
       <span>${UI.piH('move', 1)}移速</span><b>${pct(c.move - 1)}</b><span>${UI.piH('xp', 1)}经验</span><b>${pct(c.xp - 1)}</b></div>
       ${r.habit ? `<p class="dim">现实习惯：${DATA.habits.find(x => x.id === r.habit).name}</p>` : ''}`;
+  }
+  // 拖动：按住技能格或背包里的东西拖到另一个格子上 = 交换 / 装上（PC 鼠标、手机手指都行）；没拖动就还是点选
+  let dragged = false;
+  function drag(el, p, has, box) {
+    el.dataset.t = p.t; el.dataset.i = p.i; if (!has) return;
+    el.onpointerdown = e => {
+      if (e.button) return; const x0 = e.clientX, y0 = e.clientY; let gh = null; dragged = false;
+      const mv = ev => {
+        if (!gh && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 8) return;
+        if (!gh) { const ic = el.querySelector('.pi, canvas, .ic'); gh = document.createElement('div'); gh.className = 'dragghost'; if (ic) gh.appendChild(ic.cloneNode(true)); if (ic && ic.tagName === 'CANVAS') gh.firstChild.getContext('2d').drawImage(ic, 0, 0); document.body.appendChild(gh); el.classList.add('dragging'); dragged = true; }
+        gh.style.left = ev.clientX + 'px'; gh.style.top = ev.clientY + 'px';
+        for (const c of box.querySelectorAll('.droptgt')) c.classList.remove('droptgt');
+        const t = document.elementFromPoint(ev.clientX, ev.clientY); const c = t && t.closest('[data-t]'); if (c && c !== el && box.contains(c)) c.classList.add('droptgt');
+      };
+      const up = ev => {
+        removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+        if (!gh) return; gh.remove(); el.classList.remove('dragging');
+        const t = document.elementFromPoint(ev.clientX, ev.clientY), c = t && t.closest('[data-t]');
+        if (c && c !== el && box.contains(c)) { sel = p; pick({ t: c.dataset.t, i: +c.dataset.i }, box); } else loadout(box);
+        setTimeout(() => { dragged = false; }, 0);
+      };
+      addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+    };
   }
   function pick(p, box) {
     const r = R();
