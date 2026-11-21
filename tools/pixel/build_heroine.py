@@ -43,6 +43,14 @@ OWN = {
 }
 TAIL = [('up', 1), ('finish', 1)]
 MAIN = {'sword': ('slash', 1), 'spear': ('thrust', 1), 'bow': ('shoot', 1), 'staff': ('point', 1)}   # atk1 用哪帧
+def despill(img):   # 11/22 去品红边：带品红色的像素，暗的改成黑描边，亮的删掉（女主衣服没有紫色，不会误伤）
+  a = np.array(img.convert('RGBA')).astype(int); r, g, b = a[..., 0], a[..., 1], a[..., 2]
+  pk = (a[..., 3] > 0) & (r - g > 30) & (b - g > 30)
+  dark = pk & (np.maximum(r, b) < 170); a[dark, :3] = (16, 10, 14); a[pk & ~dark, 3] = 0
+  from scipy import ndimage as _nd
+  al = a[..., 3] > 0; band = al & ~_nd.binary_erosion(al, iterations=2); r, g, b = a[..., 0], a[..., 1], a[..., 2]
+  red = band & (r - g > 25) & (r + g + b < 260); a[red, :3] = (16, 10, 14)   # 贴边 2 像素内偏红的暗色 → 黑描边（法杖原图的过渡色偏红）
+  return Image.fromarray(a.astype(np.uint8), 'RGBA')
 sheets = {}; anch = {}
 for w in ['sword', 'spear', 'bow', 'staff']:
   R = frames(P('src', 'hero30f_%s.png' % w), dil=4 if w == 'sword' else 8); assert [len(r) for r in R] == [6] * 5, (w, [len(r) for r in R])
@@ -51,7 +59,7 @@ for w in ['sword', 'spear', 'bow', 'staff']:
   i = 0
   for an, n in L:
     for _ in range(n):
-      f, gy = flat[i]; im = shrink(f['img'], k); sheets.setdefault((w, an), []).append(im)
+      f, gy = flat[i]; im = shrink(despill(f['img']), k); sheets.setdefault((w, an), []).append(im)
       anch[id(im)] = (gy - int(f['y'])) / k; i += 1
   ch = sheets[(w, 'charge')][1]; ma = sheets[(w, MAIN[w][0])][MAIN[w][1]]; up = sheets[(w, 'up')][0]
   sheets[(w, 'atk')] = [ch, ma]; sheets[(w, 'big')] = [up]
@@ -62,7 +70,7 @@ for v in sheets.values():
     if id(im) not in seen: seen.add(id(im)); uniq.append(im)
 big = Image.new('RGBA', (sum(i.width + 2 for i in uniq), max(i.height for i in uniq))); x = 0; pos = {}
 for im in uniq: big.paste(im, (x, 0)); pos[id(im)] = x; x += im.width + 2
-q = big.convert('RGB').quantize(128, method=Image.Quantize.MAXCOVERAGE, dither=Image.Dither.NONE).convert('RGB'); big = Image.merge('RGBA', (*q.split(), big.split()[3]))
+pass   # 女主不压色（压成 128 色时黑头发变蓝）
 AW = 1024; cx = cy = rh = 0; place = {}
 for im in uniq:
   sub = big.crop((pos[id(im)], 0, pos[id(im)] + im.width, im.height))
