@@ -144,7 +144,7 @@
     const sk = JSON.stringify([h.slots, h.open, h.next]);
     if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.classList.add('tr', 't' + DATA.skills[s.id].tier); d.appendChild(iconCanvas(DATA.skills[s.id].icon)); { const L = BATTLE.profL(s); if (L) d.insertAdjacentHTML('beforeend', `<i>${L}</i>`); } } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');
-    set('lvUp', 'cls', h.lvUp ? 'on' : '');
+    set('lvUp', 'cls', '');   // 11/22：升级字改成画在勇者头上，角落的不再显示
     // 右下角翻滚按钮：冷却时一圈暗色扇面倒转，中间显示剩余秒数
     const rp = Math.round(h.roll * 60) / 60; if (HC.rollP !== rp) { HC.rollP = rp; $('rollCd').style.setProperty('--p', rp); }
     set('rollT', 'text', h.rollT > .05 ? h.rollT.toFixed(1) : ''); set('bRoll', 'cls', 'btn round' + (h.rollT > .05 ? ' cd' : ''));
