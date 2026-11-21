@@ -41,9 +41,10 @@
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
     RUN = { weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0, alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
       bag: Array(DATA.bagSize).fill(null), coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
-    RUN.slots[0] = { id: b.weapon, lv: 1 }; if (b.item) RUN.bag[0] = { kind: 'item', id: b.item };
+    RUN.slots[0] = { id: b.weapon, lv: 1, xp: 0 }; if (b.item) RUN.bag[0] = { kind: 'item', id: b.item };
     recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0);
     foes = []; shots = []; fx = []; parts = []; nums = []; tele = []; burns = []; pend = []; warns.length = 0;
+    if (!SK) SK = SKILLS(API); SK.reset(); hero.cs = null;
     nextWave();
   }
   let pend = [];   // 延迟出手
@@ -79,6 +80,7 @@
     if (!running() || hero.roll > 0 || hero.rollCd > 0 || hero.dead) return;
     const [dx, dy] = moveDir(), d = Math.hypot(dx, dy); hero.rvx = d ? dx / d : hero.f; hero.rvy = d ? dy / d : 0; if (dx) hero.f = dx < 0 ? -1 : 1;
     hero.roll = .3; hero.rollCd = 1.8; hero.inv = Math.max(hero.inv, .3);
+    const c = hero.cs; if (c && (c.ph === 'wu' || c.ph === 'rc')) { if (c.ph === 'wu') nums.push({ x: hero.x, y: hero.y - 50 * K, txt: c.S.name + ' 中断', t: 0, col: '#c8b890' }); endCast(); }
   }
 
   // ---------- 敌人 ----------
@@ -97,18 +99,47 @@
     const z = { type, T, tier, x: p.x, y: p.y, hp, maxHp: hp, f: 1, t: R(0, 1), st: 'run', cd: R(.3, 1), flash: 0, kbx: 0, kby: 0, kbT: 0,
       v: T.boss ? 0 : Math.random() * 3 | 0, k: T.boss ? 1 : (TT ? TT.size : R(.94, 1.06)), as: R(.85, 1.15), sp: T.spd * R(.9, 1.1),
       dmgMul: TT ? TT.dmg : 1, reachMul: TT && TT.reach || 1, windAdd: TT && TT.wind || 0 };
+    z.sp0 = z.sp;
     clampG(z); foes.push(z); return z;
   }
-  function hurt(z, d, from, kb = 14, sid) {
+  // ---------- 怪身上的状态 ----------
+  // 缓滞：每层减速 15%，最多 4 层，叠满冻结 1 秒；硬控（眩晕 / 定身 / 浮空 / 冻结）之后 3 秒内不再被硬控；精英时间减半，小头目和首领免疫
+  function status(z, o, d) {
+    if (o.slowP) { z.slowP = Math.max(z.slowP || 0, o.slowP[0]); z.slowPT = Math.max(z.slowPT || 0, o.slowP[1]); }
+    if (o.slow) { z.slowL = Math.min(4, (z.slowL || 0) + o.slow); z.slowT = 3; if (z.slowL >= 4) { z.slowL = 0; cc(z, 'freeze', 1); } }
+    if (o.burn) { z.burnT = 3; z.burnD = Math.max(z.burnD || 0, d * .2); }
+    if (o.bleed) { z.bleedN = Math.min(5, (z.bleedN || 0) + 1); z.bleedT = 4; z.bleedD = Math.max(z.bleedD || 0, d * .12); }
+    if (o.curse) z.curseT = 4;
+    if (o.vuln) { z.vulnN = Math.min(10, (z.vulnN || 0) + 1); z.vulnT = 4; }
+    if (o.cc) cc(z, o.cc[0], o.cc[1], o.airVuln);
+  }
+  function cc(z, k, t, airVuln) {
+    if (z.T.boss || z.tier === 'mini' || (z.ccImm || 0) > 0) return; if (z.tier === 'elite') t *= .5;
+    z.cc = { k, t, T: t }; z.ccImm = 3; z.airVuln = !!airVuln; if (z.st === 'wind') { z.st = 'run'; z.t = 0; }   // 硬控打断抬手
+  }
+  function statusTick(z, dt) {
+    z.ccImm = (z.ccImm || 0) - dt; if (z.cc && (z.cc.t -= dt) <= 0) z.cc = null;
+    if (z.slowT > 0 && (z.slowT -= dt) <= 0) z.slowL = 0; if (z.slowPT > 0 && (z.slowPT -= dt) <= 0) z.slowP = 0;
+    z.curseT -= dt; z.vulnT -= dt;
+    z.dotT = (z.dotT || 0) - dt; if (z.dotT <= 0) { z.dotT = .5; let d = 0; if (z.burnT > 0) d += z.burnD; if (z.bleedT > 0) d += z.bleedD * z.bleedN; if (d > 0) { z.hp -= d; nums.push({ x: z.x + R(-6, 6) * K, y: z.y - 30 * K, v: Math.max(1, rd(d)), t: 0, col: z.burnT > 0 ? '#ff9a50' : '#ff6a6a' }); if (z.hp <= 0) kill(z); } }
+    if (z.burnT > 0) z.burnT -= dt; if (z.bleedT > 0 && (z.bleedT -= dt) <= 0) z.bleedN = 0;
+    z.sp = (z.sp0 || z.sp) * (1 - .15 * (z.slowL || 0)) * (1 - (z.slowP || 0));
+  }
+  // 打怪：o = { dt 伤害类型, crit 额外暴击, slow 缓滞层数, slowP [减速, 秒], burn, bleed, curse, vuln, cc [硬控, 秒], airVuln, quiet }
+  function hurt(z, d, from, kb = 14, sid, o = {}) {
     if (z.dead || z.flee) return;
-    const crit = Math.random() < hero.crit; if (crit) d *= hero.critMul; d = Math.max(1, rd(d));
+    const S = sid && DATA.skills[sid], dt = o.dt || (S && S.dt) || 'phys', T = z.T;
+    const def = dt === 'magic' ? (T.mdef || 0) : (T.pdef || 0) * (z.tier ? 1.5 : 1); d *= 1 - Math.min(.6, def / (def + 100));   // 怪物防御：和勇者同一公式，最多减 60%
+    if (z.curseT > 0) d *= 1.15; if (z.vulnN && z.vulnT > 0) d *= 1 + .05 * z.vulnN; if (z.cc && z.cc.k === 'air' && z.airVuln) d *= 1.3;
+    const crit = Math.random() < hero.crit + (o.crit || 0); if (crit) d *= hero.critMul; d = Math.max(1, rd(d));
+    status(z, o, d);
     if (sid) { const r = Math.min(d, Math.max(0, z.hp)); RUN.dmgW[sid] = (RUN.dmgW[sid] || 0) + r; RUN.dmgAll[sid] = (RUN.dmgAll[sid] || 0) + r; }
     z.hp -= d; z.flash = .12; nums.push({ x: z.x, y: z.y - (z.T.boss ? 64 : 34) * K, v: d, t: 0, col: crit ? '#ffd84a' : '#ffffff', big: crit });
     const a = from ? ang(from, z) : R(0, 7);
     // 推退：普通 6 格左右（原来 14 太远），同一只 0.2 秒内只推一次；精英减半，小头目和王不推；推不打断抬手
     const kbm = z.T.boss || z.tier === 'mini' ? 0 : z.tier === 'elite' ? .22 : .43;
     if (kbm && z.kbT <= 0) { z.kbx = Math.cos(a) * kb * kbm * K; z.kby = Math.sin(a) * kb * kbm * K / YS; z.kbT = .2; if (z.st === 'run') { z.st = 'hurt'; z.t = 0; } }
-    for (let i = 0; i < 3; i++) parts.push({ x: z.x, y: z.y - 14 * K, vx: (R(-30, 30) + Math.cos(a) * 30) * K, vy: R(-50, -10) * K, t: 0, T: R(.2, .4), col: i % 2 ? '#ffffff' : '#ffe9a8', g: 160 * K });
+    if (!o.quiet) for (let i = 0; i < 3; i++) parts.push({ x: z.x, y: z.y - 14 * K, vx: (R(-30, 30) + Math.cos(a) * 30) * K, vy: R(-50, -10) * K, t: 0, T: R(.2, .4), col: i % 2 ? '#ffffff' : '#ffe9a8', g: 160 * K });
     G.hitStop = Math.max(G.hitStop, z.T.boss ? .04 : .02);
     if (z.hp <= 0) kill(z);
   }
@@ -188,50 +219,41 @@
 
   // ---------- 勇者的武器 ----------
   function nearest(maxD = 1e9) { let b = null, bd = maxD; for (const z of foes) if (!z.dead && !z.flee) { const d = dist(z, hero); if (d < bd) { bd = d; b = z; } } return b; }
-  const lvK = lv => 1 + .25 * (lv - 1);
-  function skillDmg(S, lv) { return S.dmg * (1 + .06 * (hero.A[S.type] || 0)) * hero.m.dmg * lvK(lv) * (G.wi === 0 ? 1 + (hero.fx.firstWave || 0) : 1); }
-  function skillCd(S, lv) { return Math.max(.2, S.cd * Math.max(.6, 1 - .04 * (lv - 1)) / hero.m.spd); }   // 冷却最低 0.2 秒
+  // 熟练度：每本书出手一次 +1，7 格（DATA.prof）；第 2/4/6 格伤害 +10%，第 7 格前摇后摇各快 0.05 秒
+  const profL = sk => { let L = 0; for (const n of DATA.prof) if ((sk.xp || 0) >= n) L++; return L; };
+  function skillDmg(S, sk) { const L = profL(sk); return S.dmg * (1 + .06 * (hero.A[S.type] || 0)) * hero.m.dmg * (1 + .1 * Math.floor(L / 2)) * (G && G.wi === 0 ? 1 + (hero.fx.firstWave || 0) : 1); }
+  // 前摇 / 后摇：敏捷的出手速度一起缩短；瞬光斩、贯星箭第 3 格蓄力变短
+  function skillT(S, sk) { const L = profL(sk), sp = hero.m.spd || 1; let wu = S.wu; if (S.charge && L >= 3) wu = S.kind === 'pierce' || sk.id === 'pierce' ? .45 : .5; const cut = L >= 7 ? .05 : 0; return { wu: Math.max(.08, (wu - cut) / sp), rc: Math.max(.08, (S.rc - cut) / sp) }; }
   const nextSlot = () => { for (let k = 0; k < RUN.open; k++) { const i = (RUN.si + k) % RUN.open; if (RUN.slots[i]) return i; } return -1; };
-  // 技能栏按 1 → 2 → 3 → 1 严格轮流出手（空格子跳过）；够不着也照样朝最近的敌人放，场上没有敌人才等
+  const HWPN = { sword: 'sword', spear: 'spear', bow: 'bow', staff: 'staff' };
+  // 技能栏 1→2→3 严格轮流（空格子跳过），没有各自冷却：前摇（能走；翻滚 = 这招作废）→ 出手 → 占时型持续 → 后摇（站定；翻滚取消）
+  // 够不着也照样朝最近的敌人放，场上没有敌人才等
   function weapon(dt) {
-    hero.cd -= dt; for (let i = pend.length - 1; i >= 0; i--) { pend[i].t -= dt; if (pend[i].t <= 0) { pend[i].fn(); pend.splice(i, 1); } }
-    if (hero.cd > 0 || hero.dead) return;
-    const i = nextSlot(); if (i < 0) { hero.cd = .1; return; }
-    if (cast(RUN.slots[i])) RUN.si = (i + 1) % RUN.open; else hero.cd = .1;
+    for (let i = pend.length - 1; i >= 0; i--) { pend[i].t -= dt; if (pend[i].t <= 0) { pend[i].fn(); pend.splice(i, 1); } }
+    if (hero.dead) return;
+    let c = hero.cs;
+    if (!c) { const i = nextSlot(); if (i < 0 || !nearest()) return; const sk = RUN.slots[i], S = DATA.skills[sk.id], T = skillT(S, sk); c = hero.cs = { i, sk, S, ph: 'wu', t: 0, dur: T.wu, rc: T.rc, a: aimNow() }; faceTo(c.a); }
+    c.t += dt;
+    if (c.ph === 'wu') { c.a = aimNow(c.a); faceTo(c.a); if (c.t < c.dur) return;
+      const L = profL(c.sk), r = SK.cast({ S: c.S, sk: c.sk, L, d: skillDmg(c.S, c.sk), a: c.a, sid: c.sk.id });
+      if (!r) { hero.cs = null; return; }   // 场上没敌人了：不放，等下一个敌人
+      c.sk.xp = (c.sk.xp || 0) + 1; if (profL(c.sk) > L) { nums.push({ x: hero.x, y: hero.y - 52 * K, txt: `${c.S.name} 熟练度 ${profL(c.sk)}/7`, t: 0, col: '#ffd86a' }); }
+      if (r !== true && r.hold) { c.ph = 'hold'; c.t = 0; c.dur = r.hold; c.move = r.move || 1; return; }
+      c.ph = 'rc'; c.t = 0; c.dur = c.rc; return; }
+    if (c.ph === 'hold') { if (c.t >= c.dur) { SK.chEnd(); c.ph = 'rc'; c.t = 0; c.dur = c.rc; } return; }
+    if (c.ph === 'rc' && c.t >= c.dur) endCast();
   }
-  // 出招时勇者换成这一招的武器姿势（平时拿起手兵器）；冰环这类以自己为中心的大招用「大招」那一帧
-  const HWPN = { sword: 'sword', axe: 'sword', spear: 'spear', bow: 'bow', staff: 'staff', nova: 'staff' };
-  function cast(sk) {
-    const S0 = DATA.skills[sk.id]; hero.atkW = HWPN[S0.kind] || 'sword'; hero.atkBig = S0.kind === 'nova';
-    const S = S0, sid = sk.id, area = hero.m.area, dmg = skillDmg(S, sk.lv), cd = skillCd(S, sk.lv);
-    const face = t => { const a = ang(hero, t); hero.f = Math.cos(a) < 0 ? -1 : 1; hero.atkT = .3; hero.cd = cd; return a; };
-    if (S.kind === 'sword') {
-      const t = nearest(); if (!t) return false; const a = face(t);
-      pend.push({ t: .1, fn: () => { const r = S.range * area; fx.push({ k: 'slash', x: hero.x, y: hero.y - 12 * K, a, t: 0, T: .2, r });
-        for (const z of foes) if (!z.dead) { const b = ang(hero, z), da = Math.abs(((b - a + PI * 3) % (PI * 2)) - PI); if (dist(z, hero) < r && da < S.arc) hurt(z, dmg, hero, 16, sid); } } });
-    } else if (S.kind === 'axe') {
-      const t = nearest(); if (!t) return false; const a = face(t);
-      shots.push({ k: 'axe', sid, x: hero.x, y: hero.y - 14 * K, a, d: 0, out: true, t: 0, hit: new Set(), L: S.range * area, r: S.size * area, dmg });
-    } else if (S.kind === 'spear') {   // 枪：朝最近的敌人长直线突刺，穿透一排
-      const t = nearest(); if (!t) return false; const a = face(t);
-      pend.push({ t: .08, fn: () => { const L = S.range * area, w = S.width * area; fx.push({ k: 'thrust', x: hero.x, y: hero.y - 12 * K, a, L, w, t: 0, T: .2 });
-        for (const z of foes) if (!z.dead) { const dx = (z.x - hero.x) / K, dy = (z.y - hero.y) * YS / K, along = dx * Math.cos(a) + dy * Math.sin(a), side = Math.abs(-dx * Math.sin(a) + dy * Math.cos(a)); if (along > -4 && along < L && side < w + 6) hurt(z, dmg, hero, 14, sid); } } });
-    } else if (S.kind === 'bow') {   // 弓：射最近的敌人，箭能穿过 pierce 个
-      const t = nearest(); if (!t) return false; const a = face(t); hero.atkT = .25;
-      shots.push({ k: 'harrow', sid, x: hero.x, y: hero.y - 16 * K, gy: hero.y, vx: Math.cos(a) * 320 * K, vy: Math.sin(a) * 320 * K / YS, t: 0, hit: new Set(), left: 1 + (S.pierce || 0), dmg });
-    } else if (S.kind === 'staff') {
-      const t0 = nearest(); if (!t0) return false;
-      const cand = foes.filter(z => !z.dead && !z.flee && dist(z, hero) < S.range * area * 1.1), R2 = S.boom * area, score = z => foes.reduce((n, o) => n + (!o.dead && dist(o, z) < R2 ? 1 : 0), 0);
-      cand.sort((p, q) => score(q) - score(p)); hero.atkT = .3; hero.cd = cd;
-      let tx, ty; if (cand.length) { tx = cand[0].x; ty = cand[0].y; } else { const a = ang(hero, t0), L = S.range * area * K; tx = hero.x + Math.cos(a) * L; ty = hero.y + Math.sin(a) * L / YS; }   // 够不着：砸在射程尽头
-      hero.f = tx < hero.x ? -1 : 1; shots.push({ k: 'fire', sid, x: tx, y: ty, t: 0, T: .5, r: R2, dmg });
-    } else if (S.kind === 'nova') {   // 冰环：自身一圈
-      const r = S.range * area; if (!nearest()) return false; hero.atkT = .3; hero.cd = cd;
-      fx.push({ k: 'frost', x: hero.x, y: hero.y, t: 0, T: .45, r }); for (const z of foes) if (!z.dead && dist(z, hero) < r) hurt(z, dmg, hero, 20, sid);
-      for (let j = 0; j < 12; j++) { const a = j / 12 * PI * 2; parts.push({ x: hero.x + Math.cos(a) * r * .8 * K, y: hero.y + Math.sin(a) * r * .8 * K / YS, vx: Math.cos(a) * 20 * K, vy: -R(20, 40) * K, t: 0, T: .5, col: j % 2 ? '#e8f8ff' : '#8ad8ff', g: 60 * K }); }
-    } else return false;
-    return true;
-  }
+  function endCast() { const c = hero.cs; if (!c) return; if (c.ph === 'hold') SK.chEnd(); RUN.si = (c.i + 1) % RUN.open; hero.cs = null; }
+  function aimNow(a0) { const t = nearest(); return t ? ang(hero, t) : (a0 != null ? a0 : (hero.f < 0 ? PI : 0)); }
+  function faceTo(a) { hero.f = Math.cos(a) < 0 ? -1 : 1; }
+  // 给 skills.js 用的接口
+  let SK = null;
+  const API = { K, YS, PI, hero: () => hero, foes: () => foes, ang, aimNow, face: faceTo, spinFace: () => { hero.f = Math.floor(G.t * 12) % 2 ? 1 : -1; },
+    hurt: (z, d, from, kb, sid, o) => hurt(z, d, from, kb, sid, o), fx: o => fx.push(o), tele: o => tele.push(Object.assign({ mine: true }, o)), shake: v => { G.shake = Math.max(G.shake, v); },
+    heal: n => { hero.hp = Math.min(hero.maxHp, hero.hp + n); },
+    push: (z, a, d) => { if (z.T.boss) return; const k = z.tier === 'mini' ? 0 : z.tier === 'elite' ? .5 : 1; z.x += Math.cos(a) * d * k * K; z.y += Math.sin(a) * d * k * K / YS; clampG(z, 4 * K); },
+    pull: (z, p, v, dt) => { const a = Math.atan2((p.y - z.y) * YS, p.x - z.x), d = Math.hypot(p.x - z.x, (p.y - z.y) * YS) / K, m = Math.min(d, v * dt); z.x += Math.cos(a) * m * K; z.y += Math.sin(a) * m * K / YS; clampG(z, 4 * K); },
+    fireball: (x, y, T, r, cb) => shots.push({ k: 'fire', x, y, t: 0, T, r, cb }) };
   function shotTick(dt) {
     for (let i = shots.length - 1; i >= 0; i--) {
       const o = shots[i]; o.t += dt;
@@ -252,7 +274,7 @@
       }
       if (o.k === 'fire' && o.t >= o.T) {
         shots.splice(i, 1); G.shake = Math.max(G.shake, .1); fx.push({ k: 'boom', x: o.x, y: o.y, t: 0, T: .4, r: o.r }); burns.push({ x: o.x, y: o.y, r: o.r * .8, t: 0, T: 1.2 });
-        for (const z of foes) if (!z.dead && dist(z, o) < o.r) hurt(z, o.dmg, o, 18, o.sid);
+        if (o.cb) o.cb(); else for (const z of foes) if (!z.dead && dist(z, o) < o.r) hurt(z, o.dmg, o, 18, o.sid);
         for (let j = 0; j < 14; j++) { const a = R(0, PI * 2); parts.push({ x: o.x, y: o.y - 4 * K, vx: Math.cos(a) * R(30, 80) * K, vy: (Math.sin(a) * 30 - R(30, 70)) * K, t: 0, T: R(.3, .6), col: ['#fff2a0', '#ffb040', '#ff6020', '#a03010'][j % 4], g: 140 * K, sz: j % 3 ? 1 : 2 }); }
       }
     }
@@ -307,14 +329,14 @@
   }
   // 一波结算：铜钱、经验、回血、战利品（固定书、精英 / 小头目掉落）
   function waveEnd() {
-    G.paused = true; foes = foes.filter(z => !z.flee); const E = DATA.econ, fx = hero.fx, cl = G.cleared && !G.timeout;
+    G.paused = true; foes = foes.filter(z => !z.flee); if (hero.cs) { if (hero.cs.ph === 'hold') SK.chEnd(); hero.cs = null; } SK.reset(); const E = DATA.econ, fx = hero.fx, cl = G.cleared && !G.timeout;
     const cw = Math.round((E.waveCoin[0] + E.waveCoin[1] * (G.st - 1) + Math.floor(G.wk / E.perKills) + G.wElite * E.elite + G.wMini * E.mini + (cl ? E.clear : 0) + (fx.waveCoin || 0)) * (1 + (fx.coinMul || 0)));
     RUN.coins += cw;
     const xp0 = G.xp, lv0 = G.lv; addXp(E.waveXp + G.st + Math.floor(G.wk / E.xpPerKills) + G.wElite * E.xpElite + G.wMini * E.xpMini + (cl ? E.xpClear : 0));
     hero.hp = Math.min(hero.maxHp, hero.hp + E.waveHeal + hero.maxHp * (fx.waveHeal || 0));
     RUN.xopt = null; RUN.xrr = 0; RUN.shop = null; RUN.rr = 0;
     // 掉书只从还没拿到的书里抽（11/21 定）；全拿到了就换成铜钱
-    const own = new Set([...RUN.slots, ...RUN.bag].filter(x => x && (x.kind === 'book' || !x.kind)).map(x => x.id)), ids = Object.keys(DATA.skills).filter(id => !own.has(id)), pick = a => a[Math.random() * a.length | 0], loot = [];
+    const own = new Set([...RUN.slots, ...RUN.bag].filter(x => x && (x.kind === 'book' || !x.kind)).map(x => x.id)), ids = DATA.bookPool(own, G.st, G.drops.some(d => d.kind === 'book')), pick = a => a[Math.random() * a.length | 0], loot = [];
     const book = (G.st === 1 && G.wi === 0) || G.wi === STN().waves.length - 1 || (G.st === 1 && G.wi === 2);   // 必出书：1-1、1-3、每站第 3 波
     const pickNew = () => { const f = ids.filter(i => !loot.some(o => o.id === i)); return pick(f.length ? f : ids); };   // 同一次结算不掉两本一样的
     if (book) loot.push(ids.length ? { kind: 'book', id: pickNew() } : { kind: 'use', id: 'meat' });
@@ -345,15 +367,19 @@
     if (G.winT != null && (G.winT -= dt) <= 0 && !G.over) { G.over = 'win'; return end(); }
     if (hero.dead) { hero.deadT += dt; if ((G.loseT -= dt) <= 0 && !G.over) { G.over = 'lose'; return end(); } }
     else {
-      hero.rollCd -= dt; hero.inv -= dt; hero.hurtT -= dt; hero.atkT -= dt;
+      hero.rollCd -= dt; hero.inv -= dt; hero.hurtT -= dt;
       if (hero.roll > 0) { hero.roll -= dt; hero.x += hero.rvx * 240 * K * dt; hero.y += hero.rvy * 182 * K * dt; if (Math.random() < .7) parts.push({ x: hero.x, y: hero.y, vx: R(-10, 10) * K, vy: R(-10, 0) * K, t: 0, T: .3, col: '#e6dcb4', g: 0 }); }
-      else { const [dx, dy] = moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { const k = Math.min(1, d), v = 85 * hero.m.move * K; hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (hero.atkT <= 0) hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
+      else { const c = hero.cs, root = c && c.ph === 'rc', mm = !c ? 1 : c.ph === 'wu' ? (c.S.charge ? .5 : 1) : c.ph === 'hold' ? c.move : 1;
+        const [dx, dy] = root ? [0, 0] : moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { const k = Math.min(1, d), v = 85 * hero.m.move * mm * K; hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (!c) hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
       clampG(hero, 8 * K); weapon(dt);
+    }
+    if (!hero.dead) { SK.tick(dt);
     }
     spawner(dt); warnTick(dt);
     for (const z of foes) {
       if (z.dead) { z.deadT += dt; continue; }
-      z.flash -= dt; z.kbT -= dt; if (z.T.boss) bossAI(z, dt); else soldierAI(z, dt);
+      z.flash -= dt; z.kbT -= dt; statusTick(z, dt); if (z.dead) continue;
+      if (z.cc) z.moving = false; else if (z.T.boss) bossAI(z, dt); else soldierAI(z, dt);
       z.x += z.kbx * dt * 8; z.y += z.kby * dt * 8; z.kbx *= .8; z.kby *= .8; clampG(z, 4 * K);
     }
     const L = foes.filter(z => !z.dead), m0 = 9 * K;   // 互相推开，别叠成一坨
@@ -375,7 +401,7 @@
   function heroFrame() {
     if (hero.dead) return ['dead', 0];
     if (hero.roll > 0) return ['roll', hero.roll > .16 ? 0 : 1];
-    if (hero.atkT > 0) return hero.atkBig ? ['big', 0, 'strike'] : ['atk', hero.atkT > .2 ? 0 : 1, 'strike'];
+    const c = hero.cs; if (c) { if (c.ph === 'wu') return ['atk', 0, '']; if (c.ph === 'hold') return c.S.frame === 'big' ? ['big', 0, ''] : ['atk', Math.floor(c.t * 12) % 2, 'strike']; if (c.t < .25) return c.S.frame === 'big' ? ['big', 0, 'strike'] : ['atk', 1, 'strike']; }
     if (hero.hurtT > 0) return ['hurt', 0, 'hurt'];
     if (hero.moving) return ['run', [0, 1, 2, 1][Math.floor(hero.t * 10) % 4], 'run'];
     return ['idle', Math.floor(hero.t * 2) % 2];
@@ -405,9 +431,9 @@
     else { ctx.fillStyle = '#6a4a2a'; ctx.fillRect(0, 0, W, H); }
     for (const b of burns) { const a = 1 - b.t / b.T; ctx.fillStyle = `rgba(40,20,10,${.35 * a})`; ctx.beginPath(); ctx.ellipse(X(b.x), Y(b.y), b.r * u, b.r * u * .55, 0, 0, 7); ctx.fill(); }
     for (const o of tele) {   // 地面预警：虚线边 + 慢慢填满，最后闪
-      const p = o.t / o.T, blink = p > .7 && (Math.floor(o.t * 16) % 2), col = blink ? '#fff2c0' : '#d8402a';
+      const p = o.t / o.T, blink = p > .7 && (Math.floor(o.t * 16) % 2), col = o.mine ? (blink ? '#ffffff' : '#ffd86a') : blink ? '#fff2c0' : '#d8402a';
       ctx.save(); ctx.translate(X(o.x), Y(o.y));
-      if (o.k === 'circle') { const r = o.r * u; ctx.fillStyle = 'rgba(216,64,42,.28)'; ctx.beginPath(); ctx.ellipse(0, 0, r * p, r * p / YS, 0, 0, 7); ctx.fill(); ctx.fillStyle = col; for (let a = 0; a < PI * 2; a += .08) { if (Math.floor(a / .08) % 2) continue; ctx.fillRect(rd(Math.cos(a) * r), rd(Math.sin(a) * r / YS), 2 * u, 2 * u); } }
+      if (o.k === 'circle') { const r = o.r * u; ctx.fillStyle = o.mine ? 'rgba(255,216,106,.18)' : 'rgba(216,64,42,.28)'; ctx.beginPath(); ctx.ellipse(0, 0, r * p, r * p / YS, 0, 0, 7); ctx.fill(); ctx.fillStyle = col; for (let a = 0; a < PI * 2; a += .08) { if (Math.floor(a / .08) % 2) continue; ctx.fillRect(rd(Math.cos(a) * r), rd(Math.sin(a) * r / YS), 2 * u, 2 * u); } }
       else { ctx.scale(1, 1 / YS); ctx.rotate(o.a); const L = o.len * u, w = o.w * u; ctx.fillStyle = 'rgba(216,64,42,.26)'; ctx.fillRect(0, -w / 2, L * p, w); ctx.fillStyle = col; for (let i = 0; i < L; i += 6 * u) { ctx.fillRect(i, -w / 2, 3 * u, u); ctx.fillRect(i, w / 2, 3 * u, u); } }
       ctx.restore();
     }
@@ -415,6 +441,7 @@
       const p = w.t / .55, r = (14 + 10 * (1 - p)) * u; ctx.fillStyle = `rgba(30,10,5,${.25 + .25 * p})`; ctx.beginPath(); ctx.ellipse(X(w.x), Y(w.y), r, r / YS, 0, 0, 7); ctx.fill();
       ctx.fillStyle = w.tier ? '#ffcf3a' : '#d8402a'; for (let a = 0; a < PI * 2; a += .2) ctx.fillRect(X(w.x) + rd(Math.cos(a) * r), Y(w.y) + rd(Math.sin(a) * r / YS), u, u);
     }
+    SK.drawUnder(ctx, X, Y, u); chargePreview();
     for (const o of shots) if (o.k === 'fire') {   // 火球落点：地上的影子越来越大
       const p = o.t / o.T, r = o.r * u * (.3 + .7 * p); ctx.fillStyle = `rgba(255,90,30,${.15 + .2 * p})`; ctx.beginPath(); ctx.ellipse(X(o.x), Y(o.y), r, r / YS * .8, 0, 0, 7); ctx.fill();
     }
@@ -424,7 +451,7 @@
         shadow(hero.x, hero.y, 26);
         if (hero.inv > 0 && hero.roll <= 0 && hero.hurtT <= 0 && !hero.dead && Math.floor(G.t * 20) % 2) continue;
         const [n, i, st] = heroFrame(), bob = st === 'run' && i % 2 ? -u : 0, lunge = st === 'strike' && i > 0 ? hero.f * 3 * u : st === 'hurt' ? -hero.f * 2 * u : 0;
-        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { w: hero.atkT > 0 && hero.atkW ? hero.atkW : HWPN[RUN.weapon] || 'sword' });
+        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { w: hero.cs ? hero.cs.S.w : HWPN[RUN.weapon] || 'sword' });
       } else {
         const z = o.z, B = z.T.boss, [n, st] = foeFrame(z);
         const a = z.dead ? Math.max(0, 1 - Math.max(0, z.deadT - (B ? 2.4 : .9)) / .4) : z.flee ? Math.max(0, 1 - z.fleeT / 1.6) : 1;
@@ -432,7 +459,10 @@
         if (!z.dead && z.tier) { const r = (z.tier === 'mini' ? 20 : 15) * u; ctx.fillStyle = z.tier === 'mini' ? '#ff7a3a' : '#ffcf3a'; for (let a = 0; a < PI * 2; a += .14) ctx.fillRect(X(z.x) + rd(Math.cos(a) * r), Y(z.y) + rd(Math.sin(a) * r / YS), u, u);
           const w = 22 * u, y = Y(z.y) - rd(46 * z.k) * u; ctx.fillStyle = '#2a160e'; ctx.fillRect(X(z.x) - w / 2 - u, y - u, w + 2 * u, 3 * u); ctx.fillStyle = z.tier === 'mini' ? '#ff7a3a' : '#ffcf3a'; ctx.fillRect(X(z.x) - w / 2, y, rd(w * Math.max(0, z.hp / z.maxHp)), u); }
         const bob = st === 'run' ? -u : 0, lunge = st === 'strike' ? z.f * 4 * u : st === 'hurt' && !B ? -z.f * 2 * u : 0;
-        SPR.draw(ctx, z.type, n, 0, X(z.x) + lunge, Y(z.y) + bob, z.f < 0, u, { v: z.v, k: z.k, white: z.flash > 0 && !z.dead ? .6 : 0, alpha: a });
+        const air = z.cc && z.cc.k === 'air' ? rd(Math.sin(Math.min(1, 1 - z.cc.t / z.cc.T) * PI) * 18 * u) : 0;
+        SPR.draw(ctx, z.type, n, 0, X(z.x) + lunge, Y(z.y) + bob - air, z.f < 0, u, { v: z.v, k: z.k, white: z.flash > 0 && !z.dead ? .6 : z.cc && z.cc.k === 'freeze' ? .35 : 0, alpha: a });
+        if (!z.dead && z.cc) { if (z.cc.k === 'freeze') { ctx.fillStyle = 'rgba(140,210,255,.35)'; ctx.fillRect(X(z.x) - 10 * u, Y(z.y) - 34 * u, 20 * u, 34 * u); } else if (z.cc.k === 'stun') for (let k = 0; k < 3; k++) { const aa = G.t * 6 + k * 2.1; ctx.fillStyle = '#ffe27a'; ctx.fillRect(X(z.x) + rd(Math.cos(aa) * 7 * u), Y(z.y) - 40 * u + rd(Math.sin(aa) * 2 * u), 2 * u, 2 * u); } }
+        if (!z.dead && (z.burnT > 0 || z.slowL > 0 || z.curseT > 0) && Math.random() < .3) parts.push({ x: z.x + R(-6, 6) * K, y: z.y - R(4, 26) * K, vx: 0, vy: -20 * K, t: 0, T: .4, col: z.burnT > 0 ? '#ff8a30' : z.slowL > 0 ? '#8ad8ff' : '#b07bff', g: 0 });
         if (B && z.st === 'wind' && Math.floor(z.t * 12) % 2) SPR.draw(ctx, z.type, n, 0, X(z.x), Y(z.y), z.f < 0, u, { white: .35 });
       }
     }
@@ -442,16 +472,26 @@
       else if (o.k === 'harrow') { const a = Math.atan2(o.vy, o.vx); for (let j = 0; j < 9; j++) { ctx.fillStyle = j < 2 ? '#e8ecf4' : j > 6 ? '#e8e0c8' : '#8a5a2a'; ctx.fillRect(X(o.x) - rd(Math.cos(a) * j * 1.6 * u), Y(o.y) - rd(Math.sin(a) * j * 1.6 * u), u + 1, u + 1); } }
       else if (o.k === 'fire') { const p = o.t / o.T, hy = (1 - p) * 120; for (let j = 0; j < 5; j++) { ctx.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; ctx.fillRect(X(o.x) - q / 2 - rd(j * 3 * u * (1 - p)), Y(o.y) - rd((hy + j * 7) * u) - q / 2, q, q); } }
     }
+    SK.drawOver(ctx, X, Y, u);
     for (const o of fx) {
       const p = o.t / o.T;
-      if (o.k === 'slash') {   // 像素刀光：三层，从起手往前扫开
-        for (let k = 0; k < 3; k++) { const r = (o.r - k * 4) * u; for (let a = -1.35; a <= 1.35; a += .04) { const t = (a + 1.35) / 2.7; if (t > p * 1.6) continue; if (p > .6 && (Math.floor(a * 40) % 2)) continue; const aa = o.a + a; ctx.fillStyle = k === 0 ? '#ffffff' : k === 1 ? '#fff2b0' : '#f0c04c'; const q = k === 0 ? 2 * u : u; ctx.fillRect(X(o.x) + rd(Math.cos(aa) * r), Y(o.y) + rd(Math.sin(aa) * r / YS), q, q); } }
+      if (o.k === 'slash') {   // 像素刀光：三层，从起手往前扫开（half 半角、rev 反手、gold 金色、wood 枪杆）
+        const hf = o.half || 1.35, C3 = o.gold ? ['#ffffff', '#ffe27a', '#e8a020'] : o.wood ? ['#f0e0c0', '#c8a070', '#8a5a2a'] : ['#ffffff', '#fff2b0', '#f0c04c'];
+        for (let k = 0; k < 3; k++) { const r = (o.r - k * 4) * u; for (let a = -hf; a <= hf; a += .04) { const t = (o.rev ? hf - a : a + hf) / (2 * hf); if (t > p * 1.6) continue; if (p > .6 && (Math.floor(a * 40) % 2)) continue; const aa = o.a + a; ctx.fillStyle = C3[k]; const q = k === 0 ? 2 * u : u; ctx.fillRect(X(o.x) + rd(Math.cos(aa) * r), Y(o.y) + rd(Math.sin(aa) * r / YS), q, q); } }
       } else if (o.k === 'thrust') {   // 像素枪芒：一道往前捅出去的直线，带两条边
         const L = o.L * u * Math.min(1, p * 2.2), ca = Math.cos(o.a), sa = Math.sin(o.a) / YS;
         for (let d = 0; d < L; d += u) { const k = d / (o.L * u); ctx.fillStyle = k > .85 ? '#ffffff' : p > .6 ? '#f0c04c' : '#fff2b0'; const q = k > .85 ? 2 * u : u; ctx.fillRect(X(o.x) + rd(ca * d), Y(o.y) + rd(sa * d), q, q); if (d % (3 * u) < u && p < .5) { const w = o.w * u * .5; ctx.fillStyle = 'rgba(255,240,180,.6)'; ctx.fillRect(X(o.x) + rd(ca * d - sa * w), Y(o.y) + rd(sa * d + ca * w), u, u); ctx.fillRect(X(o.x) + rd(ca * d + sa * w), Y(o.y) + rd(sa * d - ca * w), u, u); } }
       } else if (o.k === 'frost') { const r = o.r * u * (.3 + p * .8); for (let a = 0; a < PI * 2; a += .05) { if (p > .6 && Math.floor(a * 20) % 2) continue; ctx.fillStyle = p < .4 ? '#ffffff' : '#8ad8ff'; ctx.fillRect(X(o.x) + rd(Math.cos(a) * r), Y(o.y) + rd(Math.sin(a) * r / YS), 2 * u, 2 * u); } if (p < .35) { ctx.fillStyle = 'rgba(160,220,255,.25)'; ctx.beginPath(); ctx.ellipse(X(o.x), Y(o.y), r, r / YS, 0, 0, 7); ctx.fill(); } }
-      else if (o.k === 'ring') { const r = o.r * u * (.6 + p * .8); for (let a = 0; a < PI * 2; a += .05) { ctx.fillStyle = p < .5 ? '#fff2c0' : '#c8a066'; ctx.fillRect(X(o.x) + rd(Math.cos(a) * r), Y(o.y) + rd(Math.sin(a) * r / YS), 2 * u, 2 * u); } }
-      else if (o.k === 'boom') { const r = o.r * u * (.5 + p * .7); for (let a = 0; a < PI * 2; a += .06) { if (Math.floor(a * 10 + o.t * 30) % 3 === 0) continue; ctx.fillStyle = p < .4 ? '#fff2a0' : p < .7 ? '#ff9a30' : '#a03a18'; ctx.fillRect(X(o.x) + rd(Math.cos(a) * r), Y(o.y) + rd(Math.sin(a) * r / YS), 2 * u, 2 * u); } if (p < .3) { ctx.fillStyle = 'rgba(255,230,140,.35)'; ctx.beginPath(); ctx.ellipse(X(o.x), Y(o.y), r * .8, r * .8 / YS, 0, 0, 7); ctx.fill(); } }
+      else if (o.k === 'ring') { const r = o.r * u * (.6 + p * .8); for (let a = 0; a < PI * 2; a += .05) { ctx.fillStyle = p < .5 ? '#fff2c0' : (o.col || '#c8a066'); ctx.fillRect(X(o.x) + rd(Math.cos(a) * r), Y(o.y) + rd(Math.sin(a) * r / YS), 2 * u, 2 * u); } }
+      else if (o.k === 'boom') { const r = o.r * u * (.5 + p * .7); for (let a = 0; a < PI * 2; a += .06) { if (Math.floor(a * 10 + o.t * 30) % 3 === 0) continue; ctx.fillStyle = o.col === 'dark' ? (p < .4 ? '#e0c0ff' : p < .7 ? '#9a50e0' : '#40104a') : p < .4 ? '#fff2a0' : p < .7 ? '#ff9a30' : '#a03a18'; ctx.fillRect(X(o.x) + rd(Math.cos(a) * r), Y(o.y) + rd(Math.sin(a) * r / YS), 2 * u, 2 * u); } if (p < .3) { ctx.fillStyle = 'rgba(255,230,140,.35)'; ctx.beginPath(); ctx.ellipse(X(o.x), Y(o.y), r * .8, r * .8 / YS, 0, 0, 7); ctx.fill(); } }
+    }
+    for (const o of fx) {
+      const p = o.t / o.T;
+      if (o.k === 'line') { const L = o.L * u * Math.min(1, p * 3), ca = Math.cos(o.a), sa = Math.sin(o.a) / YS, w = o.w * u * .5 * (1 - p); for (let d = 0; d < L; d += u) { ctx.fillStyle = p < .4 ? '#ffffff' : o.col; ctx.fillRect(X(o.x) + rd(ca * d - sa * w * .3), Y(o.y) + rd(sa * d + ca * w * .3), 2 * u, Math.max(u, rd(w))); } }
+      else if (o.k === 'bolt') { ctx.strokeStyle = p < .5 ? '#ffffff' : o.col; ctx.lineWidth = Math.max(1, (2 - p * 1.5) * u); ctx.beginPath(); o.pts.forEach((q, i) => { const jx = i && i < o.pts.length - 1 ? R(-3, 3) * u : 0; i ? ctx.lineTo(X(q.x) + jx, Y(q.y)) : ctx.moveTo(X(q.x), Y(q.y)); }); ctx.stroke(); }
+      else if (o.k === 'pillar') { const w = o.r * u * (1 - p * .5), h = 160 * u; ctx.fillStyle = `rgba(255,245,200,${.5 * (1 - p)})`; ctx.fillRect(X(o.x) - w, Y(o.y) - h, w * 2, h); ctx.fillStyle = `rgba(255,255,255,${.7 * (1 - p)})`; ctx.fillRect(X(o.x) - w * .4, Y(o.y) - h, w * .8, h); }
+      else if (o.k === 'orb') { ctx.fillStyle = o.col; ctx.globalAlpha = 1 - p; ctx.beginPath(); ctx.arc(X(o.x), Y(o.y), o.r * u, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+      else if (o.k === 'icicle') { const y = Y(o.y) - rd((1 - Math.min(1, p * 2)) * 40 * u); for (let j = 0; j < 6; j++) { ctx.fillStyle = j < 2 ? '#ffffff' : '#8ad8ff'; ctx.fillRect(X(o.x), y - j * u, u, u); } }
     }
     for (const q of parts) { ctx.fillStyle = q.col; const z = (q.sz || 1) * u; ctx.fillRect(X(q.x), Y(q.y), z, z); }
     const nk = Math.max(1, rd(u * .9));
@@ -459,6 +499,15 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (joy.on) { const dpr = W / innerWidth; ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.arc(joy.sx * dpr, joy.sy * dpr, 40 * dpr, 0, 7); ctx.fill(); const jx = joy.x - joy.sx, jy = joy.y - joy.sy, d = Math.hypot(jx, jy), k = Math.min(1, 40 / (d || 1)); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc((joy.sx + jx * k) * dpr, (joy.sy + jy * k) * dpr, 18 * dpr, 0, 7); ctx.fill(); }
     UI.hud({ roll: Math.max(0, hero.rollCd) / 1.8, rollT: Math.max(0, hero.rollCd), lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
+  }
+  // 蓄力类前摇：脚下画金色预警（瞬光斩半圆、贯星箭长线、跃龙击圆圈 + 地裂）
+  function chargePreview() {
+    const c = hero.cs; if (!c || c.ph !== 'wu') return; const id = c.sk.id, p = Math.min(1, c.t / c.dur), L = profL(c.sk), ar = hero.m.area;
+    ctx.save(); ctx.translate(X(hero.x), Y(hero.y)); ctx.fillStyle = 'rgba(255,216,106,.16)'; ctx.strokeStyle = '#ffd86a'; ctx.lineWidth = u;
+    if (id === 'flash') { const r = 52 * 1.8 * (L >= 5 ? 1.3 : 1) * ar * u; ctx.scale(1, 1 / YS); ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r * p, c.a - PI / 2, c.a + PI / 2); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, r, c.a - PI / 2, c.a + PI / 2); ctx.stroke(); }
+    else if (id === 'pierce') { ctx.scale(1, 1 / YS); ctx.rotate(c.a); const w = (L >= 5 ? 15 : 10) * 2 * u; ctx.fillRect(0, -w / 2, 600 * u * p, w); }
+    else if (id === 'leap') { const r = 40 * ar * u; ctx.beginPath(); ctx.ellipse(0, 0, r * p, r * p / YS, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(0, 0, r, r / YS, 0, 0, 7); ctx.stroke(); }
+    ctx.restore();
   }
   function drawAxe(x, y, a) {   // 飞斧：8×8 像素图，转着飞（按 4 个方向取整，保持像素整齐）
     const P = ['..aaa...', '.abbba..', 'abbbbba.', 'abbbbbcc', '.abbbcc.', '..aacc..', '....cc..', '....c...'], C = { a: '#3a2218', b: '#d8dce8', c: '#8a5a2a' }, q = Math.floor(a / (PI / 2)) % 4;
@@ -477,7 +526,7 @@
     pause(v) { if (G && !G.over) G.paused = v; }, get paused() { return !!(G && G.paused); }, active: () => !!G && !G.over,
     stop() { G = null; },
     run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1, st: () => G ? G.st : 1,
-    skillInfo: sk => { const S = DATA.skills[sk.id]; return G ? { dmg: skillDmg(S, sk.lv), cd: skillCd(S, sk.lv) } : { dmg: S.dmg * lvK(sk.lv), cd: S.cd }; },
+    skillInfo: sk => { const S = DATA.skills[sk.id], L = profL(sk), T = G ? skillT(S, sk) : { wu: S.wu, rc: S.rc }; return { dmg: G ? skillDmg(S, sk) : S.dmg, wu: T.wu, rc: T.rc, cd: T.wu + T.rc + (S.hold || 0), L, xp: sk.xp || 0, next: DATA.prof[L] || null }; }, profL,
     debug: { boss: () => G && (foes.forEach(z => !z.dead && kill(z)), G.st = DATA.stations.length, G.wi = 1, nextWave()), god: () => G && (G.god = !G.god), clear: () => G && (G.q = [], warns.length = 0, foes.forEach(z => !z.T.boss && !z.dead && kill(z)), G.wt = Math.max(G.wt, G.T - .1)), skip: () => G && G.W && (G.wt = G.T), st: n => G && (G.st = n, G.wi = -1), lvl: () => G && addXp(need() / (hero.xpMul || 1) - G.xp + .01), win: () => G && (G.boss ? kill(G.boss) : (G.st = DATA.stations.length, G.wi = 1, nextWave(), bossIn(), kill(G.boss))), heal: () => hero && (hero.hp = hero.maxHp), state: () => ({ G, hero, foes, RUN, u, s, W, H }) },
   };
 })();

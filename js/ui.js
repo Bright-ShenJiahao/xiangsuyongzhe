@@ -138,7 +138,7 @@
     set('clock', 'cls', h.left != null && h.left < 5.5 && !h.bossWave ? 'warn' : '');
     set('kills', 'html', piH('kill', 1) + ' ' + h.kills); set('coins', 'html', piH('coin', 1) + ' ' + h.coins);
     const sk = JSON.stringify([h.slots, h.open, h.next]);
-    if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.appendChild(iconCanvas(DATA.skills[s.id].icon)); if (s.lv > 1) d.insertAdjacentHTML('beforeend', `<i>${s.lv}</i>`); } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
+    if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.appendChild(iconCanvas(DATA.skills[s.id].icon)); { const L = BATTLE.profL(s); if (L) d.insertAdjacentHTML('beforeend', `<i>${L}</i>`); } } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');
     set('lvUp', 'cls', h.lvUp ? 'on' : '');
     // 右下角翻滚按钮：冷却时一圈暗色扇面倒转，中间显示剩余秒数

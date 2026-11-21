@@ -8,10 +8,11 @@
   let rep = null, tab = 'jie', sel = null, loot = [];
 
   // ---------- 通用：东西的样子 ----------
+  const dots = (L) => '●'.repeat(L) + '○'.repeat(7 - L);
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
     // 出售：拿基价的 35%（书的基价 22 × 等级，宝物看各自的价）
-    if (o.kind === 'book') { const S = SK[o.id]; return { icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · 技能书`, desc: S.desc, sell: Math.round(DATA.price.book * (o.lv || 1) * DATA.price.sell) }; }
+    if (o.kind === 'book') { const S = SK[o.id]; return { icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, sell: Math.round(DATA.tierPrice[S.tier] * DATA.price.sell) }; }
     if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物', desc: it.desc, sell: Math.round((it.price || 25) * DATA.price.sell) }; }
     const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 3 };
   }
@@ -25,7 +26,7 @@
     }
     if (o.kind === 'use') { const c = USE(o.id), h = B().hero(); h.hp = Math.min(h.maxHp, h.hp + h.maxHp * c.heal); toast(`吃掉${c.name}，回复生命`); return true; }
     const i = r.bag.indexOf(null); if (i < 0) { toast('背包满了，先卖掉点东西'); return false; }
-    r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: o.lv || 1 } : { kind: o.kind, id: o.id }; if (o.kind === 'item') B().recompute();
+    r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : { kind: o.kind, id: o.id }; if (o.kind === 'item') B().recompute();
     return true;
   }
   // 点锁着的技能格：花铜钱解锁（第 4 格第 2 站起 50，第 5 格第 5 站起 78，每站涨 7%；第 4 / 8 站打完也会免费开）
@@ -51,24 +52,24 @@
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
     r.slots.forEach((s, i) => { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
       if (i >= r.open) { d.className = 'slot lock' + (i === r.open ? ' buy' : ''); if (sel && sel.t === 'L' && sel.i === i) d.classList.add('sel'); d.onclick = () => { sel = { t: 'L', i }; loadout(box); }; }
-      else if (s) { d.className = 'slot has'; d.appendChild(UI.icon(SK[s.id].icon)); d.insertAdjacentHTML('beforeend', `<span>${SK[s.id].name}</span><i>Lv${s.lv}</i>`); }
+      else if (s) { d.className = 'slot has'; d.appendChild(UI.icon(SK[s.id].icon)); d.insertAdjacentHTML('beforeend', `<span>${SK[s.id].name}</span><i class="dots">${dots(B().profL(s))}</i>`); }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
     L.insertAdjacentHTML('beforeend', '<h4>背包 <small>宝物放着就生效；技能书直接拖到技能格上装上（点一下再点格子也行）</small></h4>');
     const bg = document.createElement('div'); bg.className = 'bag'; L.appendChild(bg);
     r.bag.forEach((o, i) => { const d = document.createElement('div'); const t = thing(o);
-      if (t) { d.className = 'has ' + o.kind; d.appendChild(iconEl(t)); if (o.kind === 'book') d.insertAdjacentHTML('beforeend', `<i>${o.lv > 1 ? 'Lv' + o.lv : '书'}</i>`); }
+      if (t) { d.className = 'has ' + o.kind; d.appendChild(iconEl(t)); if (o.kind === 'book') d.insertAdjacentHTML('beforeend', `<i>${B().profL(o) ? B().profL(o) + '/7' : '书'}</i>`); }
       if (sel && sel.t === 'b' && sel.i === i) d.classList.add('sel');
       d.onclick = () => dragged || pick({ t: 'b', i }, box); drag(d, { t: 'b', i }, !!o, box); bg.appendChild(d); });
     // 选中东西的说明和按钮
     const info = document.createElement('div'); info.className = 'loinfo'; L.appendChild(info);
     if (sel && sel.t === 'L') { lockInfo(info, sel.i, box); return; }
-    const cur = sel && (sel.t === 's' ? r.slots[sel.i] && { kind: 'book', id: r.slots[sel.i].id, lv: r.slots[sel.i].lv, slot: true } : r.bag[sel.i]);
+    const cur = sel && (sel.t === 's' ? r.slots[sel.i] && { kind: 'book', id: r.slots[sel.i].id, lv: 1, xp: r.slots[sel.i].xp || 0, slot: true } : r.bag[sel.i]);
     if (cur) {
       const t = thing(cur); info.appendChild(iconEl(t));
-      let txt = `<b>${t.name}${cur.kind === 'book' ? ' Lv' + cur.lv : ''}</b> <small>${t.sub}</small><br>${t.desc}`;
-      if (cur.kind === 'book') { const k = B().skillInfo({ id: cur.id, lv: cur.lv }); txt += `<br><small>伤害 ${Math.round(k.dmg)} · 冷却 ${k.cd.toFixed(2)} 秒 · 吃「${DATA.attrs.find(a => a.id === SK[cur.id].type).name}」</small>`; }
+      let txt = `<b>${t.name}</b> <small>${t.sub}</small><br>${t.desc}`;
+      if (cur.kind === 'book') { const S = SK[cur.id], k = B().skillInfo(cur); txt += `<br><small>伤害 ${Math.round(k.dmg)} · 前摇 ${k.wu.toFixed(2)} 秒 · 后摇 ${k.rc.toFixed(2)} 秒${S.hold ? ` · 持续 ${S.hold} 秒` : ''} · 吃「${DATA.attrs.find(a => a.id === S.type).name}」 · ${S.dt === 'magic' ? '法术' : '物理'}</small><br><small>熟练度 <b class="dots">${dots(k.L)}</b> ${k.next ? `${k.xp}/${k.next}` : '已练满'} · 3 格：${S.l3} · 5 格：${S.l5} · 7 格：${S.l7}</small>`; }
       const p = document.createElement('p'); p.innerHTML = txt; info.appendChild(p);
       const btns = document.createElement('div'); btns.className = 'lob'; info.appendChild(btns);
       const btn = (label, fn, gold) => { const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.textContent = label; b.onclick = e => { e.stopPropagation(); fn(); }; btns.appendChild(b); };
@@ -143,7 +144,7 @@
     const get = q => q.t === 's' ? r.slots[q.i] : r.bag[q.i], put = (q, v) => { if (q.t === 's') r.slots[q.i] = v; else r.bag[q.i] = v; };
     let a = get(sel), b = get(p);
     const toSlot = (o, q) => q.t !== 's' || !o || o.kind === 'book' || o.lv;   // 技能格只能放技能
-    const asSlot = o => o && o.kind === 'book' ? { id: o.id, lv: o.lv } : o, asBag = o => o && !o.kind ? { kind: 'book', id: o.id, lv: o.lv } : o;
+    const asSlot = o => o && o.kind === 'book' ? { id: o.id, lv: 1, xp: o.xp || 0 } : o, asBag = o => o && !o.kind ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : o;   // 熟练度跟着书走
     if ((a && p.t === 's' && !toSlot(a, p)) || (b && sel.t === 's' && !toSlot(b, sel))) { toast('技能格只能放技能书'); sel = p.t === 'b' && b ? p : null; return loadout(box); }
     // 同一招合并 = 升级
     if (a && b && a.id === b.id && (a.kind === 'book' || !a.kind) && (b.kind === 'book' || !b.kind)) { b.lv += a.lv; put(sel, null); toast(`${SK[b.id].name} 升到 Lv${b.lv}`); }
@@ -220,7 +221,8 @@
     // 货架：3 件宝物 + 2 本书（新书 22，已有的升 Lv2 34，再往上 52）。开技能格改成在「技能」页点锁
     const r = R(), P = DATA.price, items = shuffle(DATA.startItems.filter(i => i.id !== 'purse')).slice(0, 3).map(i => ({ kind: 'item', id: i.id, price: i.price || 25 }));
     const lvOf = id => { const h = r.slots.find(s => s && s.id === id) || r.bag.find(b => b && b.kind === 'book' && b.id === id); return h ? h.lv : 0; };
-    const books = shuffle(Object.keys(SK).filter(id => !lvOf(id) && !loot.some(o => o.kind === 'book' && o.id === id))).slice(0, 2).map(id => ({ kind: 'book', id, lv: 1, price: DATA.price.book }));   // 已经有的书不再出（11/21 定：书只靠熟练度成长）
+    const own = new Set(Object.keys(SK).filter(id => lvOf(id) || loot.some(o => o.kind === 'book' && o.id === id))), pool = DATA.bookPool(own, rep.st), books = [];   // 已经有的书不再出；按品阶抽，价格 22 / 34 / 52
+    while (books.length < 2 && pool.length) { const id = pool[Math.random() * pool.length | 0]; if (!books.some(b => b.id === id)) books.push({ kind: 'book', id, lv: 1, xp: 0, price: DATA.tierPrice[SK[id].tier] }); if (pool.every(i => books.some(b => b.id === i))) break; }
     const L = items.concat(books);
     return L;
   }

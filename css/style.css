@@ -365,3 +365,5 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 .dragging { opacity: .35; } .droptgt { filter: drop-shadow(0 0 6px #ffd86a) brightness(1.25); }
 .dragghost { position: fixed; z-index: 200; pointer-events: none; transform: translate(-50%, -60%) scale(1.15); width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 4px 8px #000a); }
 .dragghost img, .dragghost canvas { width: 100%; height: auto; }
+
+.dots { letter-spacing: -1px; color: #ffd86a; font-style: normal; font-size: 10px; } .loinfo .dots { font-size: 13px; }
