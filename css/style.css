@@ -382,3 +382,27 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 .wsel.csel { grid-template-columns: repeat(2, 1fr); margin-bottom: 6px; }
 .csel button canvas { width: auto; height: 44px; image-rendering: pixelated; }
 .csel button small { font-size: 12px; color: #9ee08a; }
+
+/* 11/22 站点卡（月圆之夜式） */
+#rtTitle small { font-size: 14px; color: #c8b890; margin-left: 8px; }
+.rcards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rcard { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 10px 12px; }
+.rcard b { font-size: 20px; margin: 0; } .rcard small { color: #c8b890; font-size: 13px; }
+.rcard .rav { width: 104px; height: 104px; border-radius: 50%; margin: 6px 0; display: flex; align-items: flex-end; justify-content: center; overflow: hidden;
+  background: radial-gradient(#3c4a2c, #1a1a12 70%); box-shadow: 0 0 0 3px #c8a060, inset 0 -8px 16px #0008; padding-bottom: 12px; box-sizing: border-box; }
+.rcard .rav canvas, .rcard .rav img { image-rendering: pixelated; }
+.rcard.rest .rav { background: radial-gradient(#3a3050, #16121e 70%); align-items: center; padding: 0; }
+.rcard.k-elite .rav { box-shadow: 0 0 0 3px #ffb06a, 0 0 14px #ff8a3088, inset 0 -8px 16px #0008; }
+.rcard.k-boss .rav { box-shadow: 0 0 0 3px #ff7a6a, 0 0 18px #ff403088, inset 0 -8px 16px #0008; }
+.rcard p { min-height: 3em; text-align: center; font-size: 14px; }
+.rcard .btn { margin-top: auto; }
+.rcards.ev { grid-template-columns: 1fr; max-width: 520px; margin: 10px auto 0; }
+.evbox { padding: 18px; text-align: center; background: linear-gradient(#2a1c14, #1a100a); box-shadow: 0 0 0 1px #c8a060; border-radius: 6px; color: #f3e6c8; }
+.evbox b { display: block; font-size: 22px; color: #ffe6a8; margin-bottom: 8px; } .evbox p { line-height: 1.6; }
+.evops { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; } .evops .btn { display: flex; flex-direction: column; align-items: center; padding: 10px; }
+.evops .btn small { font-size: 12px; opacity: .8; margin-top: 2px; } .evres { color: #9ee08a; font-size: 17px; }
+@media (max-width: 600px) { .rcards { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 6px !important; }
+  .rcard { display: flex !important; padding: 8px 4px !important; text-align: center !important; } .rcard b { font-size: 14px; } .rcard small { font-size: 11px; }
+  .rcard .rav { width: 70px; height: 70px; padding-bottom: 6px; } .rcard .rav canvas { transform: scale(.7); transform-origin: bottom center; } .rcard p { font-size: 11px; line-height: 1.35; min-height: 4em; }
+  .rcards.ev { grid-template-columns: 1fr !important; } }
+@media (max-width: 600px) { #rtTitle small { display: block; margin: 4px 0 0; font-size: 12px; } }

@@ -159,9 +159,9 @@
   // ---------- 波间结算页 ----------
   const TABS = [['jie', '结算'], ['shi', '拾取'], ['xiu', '修炼'], ['shang', '行商'], ['ji', '技能'], ['shu', '属性']];
   function open(report) {
-    rep = report; loot = report.loot.map(o => Object.assign({ lv: 1 }, o)); tab = 'jie'; sel = null;
-    $('cTitle').textContent = `第 ${rep.st} 站 · 第 ${rep.wi + 1} 波 结束`;
-    $('cGo').textContent = rep.boss ? '挑战首领 ▶' : rep.last ? '选下一站 ▶' : `第 ${rep.wi + 2} 波 ▶`;
+    rep = report; loot = report.loot.map(o => Object.assign({ lv: 1 }, o)); tab = report.tab || 'jie'; sel = null;
+    $('cTitle').textContent = rep.title || `第 ${rep.st} 站 · 第 ${rep.wi + 1} 波 结束`;
+    $('cGo').textContent = rep.goText ? rep.goText : rep.boss ? '挑战首领 ▶' : rep.last ? '选下一站 ▶' : `第 ${rep.wi + 2} 波 ▶`;
     $('cHint').textContent = rep.last && !rep.boss ? '这一站打完了，出发后三选一决定下一站' : '';
     render(); $('camp').classList.add('on');
   }
@@ -178,9 +178,9 @@
       if (!loot.length) { body.innerHTML = `<p class="dim center">这一波没有战利品<br><small>每站第 3 波必掉技能书；精英掉书，小头目掉宝物；行商那里也能买</small></p>`; return; }
       const g = document.createElement('div'); g.className = 'cards'; body.appendChild(g);
       loot.forEach((o, i) => { const t = thing(o), d = card(t, o);
-        btnTo(d, o.kind === 'book' ? '学会' : o.kind === 'use' ? '吃掉' : '收下', () => { if (learn(o)) { loot.splice(i, 1); render(); } }, true);
-        btnTo(d, `卖 ${t.sell}`, () => { r.coins += t.sell; loot.splice(i, 1); render(); }); g.appendChild(d); });
-      body.insertAdjacentHTML('beforeend', '<p class="dim center">没处理的战利品，出发时自动卖掉换铜钱</p>');
+        btnTo(d, o.kind === 'book' ? '学会' : o.kind === 'use' ? '吃掉' : '收下', () => { if (learn(o)) { if (rep.pickOne) loot = []; else loot.splice(i, 1); render(); } }, true);
+        if (!rep.pickOne) btnTo(d, `卖 ${t.sell}`, () => { r.coins += t.sell; loot.splice(i, 1); render(); }); g.appendChild(d); });
+      body.insertAdjacentHTML('beforeend', rep.pickOne ? '<p class="dim center">只能选一本，选了另外两本就消失</p>' : '<p class="dim center">没处理的战利品，出发时自动卖掉换铜钱</p>');
     } else if (tab === 'xiu') {
       if (!r.xiu) { body.innerHTML = '<p class="dim center">暂无修炼机会<br><small>打怪攒经验，每升一级得一次修炼</small></p>'; return; }
       const fx = B().hero().fx, nOpt = 3 + (fx.xiuOpt || 0), rrMax = Math.max(0, 2 + (fx.xiuReroll || 0));
@@ -193,7 +193,7 @@
       const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} 刷新 ${rrMax - r.xrr}/${rrMax}`; rb.disabled = r.xrr >= rrMax; rb.onclick = () => { r.xrr++; r.xopt = rollXiu(nOpt); render(); };
       const w = document.createElement('div'); w.className = 'center'; w.appendChild(rb); body.appendChild(w);
     } else if (tab === 'shang') {
-      const fx = B().hero().fx, pm = (1 + (fx.shop || 0)) * (1 + DATA.price.stUp * (rep.st - 1));   // 每站涨 7%
+      const fx = B().hero().fx, pm = (1 + (fx.shop || 0)) * (1 + DATA.price.stUp * (rep.st - 1)) * (rep.disc || 1);   // 每站涨 7%
       if (!r.shop) r.shop = rollShop();
       const g = document.createElement('div'); g.className = 'cards'; body.appendChild(g);
       r.shop.forEach((o, i) => { const d = o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开第 ${r.open + 1} 格</b><small>技能栏多开一格</small><p>${r.open + 1 === 4 ? '第 4 站打完也会免费开' : '第 8 站打完也会免费开'}</p>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
@@ -228,8 +228,8 @@
     return L;
   }
   $('cGo').onclick = () => {
-    commit(); const r = R(); for (const o of loot) r.coins += thing(o).sell; loot = [];   // 没处理的自动卖掉
-    $('camp').classList.remove('on'); B().nextWave();
+    commit(); const r = R(); if (!rep.pickOne) for (const o of loot) r.coins += thing(o).sell; loot = [];   // 没处理的自动卖掉
+    $('camp').classList.remove('on'); if (rep.after) rep.after(); else B().nextWave();
   };
 
   // ---------- 暂停页 = 备战 ----------
@@ -242,5 +242,5 @@
   }
   function pauseOpen() { sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); }
 
-  window.CAMP = { open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
+  window.CAMP = { learn, open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
 })();

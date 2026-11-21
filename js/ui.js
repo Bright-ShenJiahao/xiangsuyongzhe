@@ -163,12 +163,24 @@
   $('bPause').onclick = () => togglePause(); $('pRes').onclick = () => { CAMP.commit(); togglePause(false); };
   $('pRe').onclick = () => startBattle(lastBuild); $('pHome').onclick = () => { BATTLE.stop(); overlay('pause', false); show('title'); };
   const waveEnd = r => CAMP.open(r);
-  // 一站打完：三张路线卡选一张（月圆之夜式）。宝箱 / 休息 / 奇遇等设计好再加
+  // 一站打完：三张站点卡选一张（月圆之夜式，11/22）。卡：名字 · 等级/类型 · 圆形头像 · 说明 · 按钮
+  function avatar(c) { const w = document.createElement('div'); w.className = 'rav';
+    if (c.av) { const cr = SPR.crop(c.av, 'idle0') || SPR.crop(c.av, 'walk0'); if (cr) { const k = Math.min(2.4, 64 / cr.c.height, 84 / cr.c.width); cr.c.style.width = cr.c.width * k + 'px'; cr.c.style.height = cr.c.height * k + 'px'; w.appendChild(cr.c); } }
+    else w.appendChild(pi(c.icon, 3)); return w; }
   function route(o, done) {
-    $('rtTitle').textContent = `选择第 ${o.st} 站`; const box = $('rtCards'); box.innerHTML = '';
-    for (const c of o.cards) { const d = document.createElement('div'); d.className = 'rcard k-' + c.k; d.innerHTML = `<i>${{ fight: '⚔', elite: '☠', boss: '♛' }[c.k]}</i><b>${c.name}</b><p>${c.desc}</p>`;
+    $('rtTitle').innerHTML = `选择第 ${o.st} 站${o.rests != null ? ` <small>休整还剩 ${o.rests} 次</small>` : ''}`; const box = $('rtCards'); box.innerHTML = ''; box.className = 'rcards';
+    for (const c of o.cards) { const d = document.createElement('div'); d.className = 'rcard k-' + c.k + (c.rest ? ' rest' : '');
+      d.innerHTML = `<b>${c.name}</b><small>${c.sub || ''}</small>`; d.appendChild(avatar(c)); d.insertAdjacentHTML('beforeend', `<p>${c.desc}</p><button class="btn mini gold">${c.btn || '前往'}</button>`);
       d.onclick = () => { overlay('route', false); done(c); }; box.appendChild(d); }
     overlay('route', true);
+  }
+  // 奇遇：描述 + 两个选项；选完显示结果，点继续回到选站
+  function event(E, pickFn, back) {
+    $('rtTitle').innerHTML = '奇遇'; const box = $('rtCards'); box.innerHTML = ''; box.className = 'rcards ev';
+    const d = document.createElement('div'); d.className = 'evbox'; d.innerHTML = `<b>${E.name}</b><p>${E.desc}</p>`; const ops = document.createElement('div'); ops.className = 'evops'; d.appendChild(ops);
+    E.opts.forEach(([label, hint], i) => { const b = document.createElement('button'); b.className = 'btn' + (i ? '' : ' gold'); b.innerHTML = `${label}<small>${hint}</small>`;
+      b.onclick = () => { const res = pickFn(i); ops.innerHTML = `<p class="evres">${res}</p>`; const go = document.createElement('button'); go.className = 'btn gold'; go.textContent = '继续 ▶'; go.onclick = () => { overlay('route', false); back(); }; ops.appendChild(go); }; ops.appendChild(b); });
+    box.appendChild(d); overlay('route', true);
   }
   let toastT = 0; function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1800); }
   $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); BATTLE.roll(); });
@@ -193,7 +205,7 @@
     else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#07101b'; ctx.fillRect(0, 0, cv.width, cv.height); }
     requestAnimationFrame(loop);
   }
-  window.UI = { mod: () => BATTLE, hud, levelUp, result, waveEnd, route, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   if (window.BOOT) BOOT.progress(.3);
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来

@@ -148,7 +148,7 @@
   }
   function kill(z) {
     z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; G.wk++;
-    if (z.tier === 'elite') { G.wElite++; G.drops.push(z.routeElite ? { kind: 'item' } : { kind: 'book' }); }   // 固定精英掉书，路线精英掉宝物
+    if (z.tier === 'elite') { G.wElite++; G.drops.push({ kind: 'book' }); }   // 固定精英掉书，路线精英掉宝物
     if (z.tier === 'mini') { G.wMini++; G.drops.push({ kind: 'item' }); }
     for (let i = 0; i < 7; i++) parts.push({ x: z.x, y: z.y - 10 * K, vx: R(-45, 45) * K, vy: R(-70, -10) * K, t: 0, T: R(.4, .8), col: ['#8fd14a', '#5a8a2a', '#e8e0c8', '#c49a5c'][i % 4], g: 200 * K, sz: i < 3 ? 2 : 1 });
     if (z.T.boss) { G.shake = .5; banner('击败 哥布林王！', 3); G.winT = 2.2; for (const o of foes) if (!o.dead && o !== z) kill(o); return; }
@@ -163,6 +163,7 @@
   function damageHero(d, dtype = 'phys') {
     if (hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
     d *= dtype === 'magic' ? hero.mIn : hero.pIn; hero.hp -= d; hero.inv = .45; hero.hurtT = .25; G.shake = Math.max(G.shake, .15); nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
+    if (hero.hp <= 0 && RUN.save) { RUN.save = false; hero.hp = hero.maxHp; hero.inv = 2; banner('读档！满血复活', 1.6); return; }
     if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; banner('勇者倒下了……', 99); G.loseT = 1.6; }
   }
 
@@ -317,7 +318,7 @@
       const all = shuffle(Object.entries(DATA.codes).flatMap(([k, c]) => Array(Math.round((W[k] || 0) * DATA.countMul)).fill(c)));
       const T = G.T, nb = 5; for (let i = 0; i < all.length; i++) G.q.push({ at: T * .15 * Math.floor(i * nb / all.length) + R(0, 2.5), type: all[i] });
       for (const [tier, t] of W.ex || []) G.q.push({ at: T * .3 + R(0, 2), type: t, tier });
-      if (G.route === 'elite' && G.wi > 0) G.q.push({ at: T * .35, type: Math.random() < .5 ? 'gob_blade' : 'goblin', tier: 'elite', routeElite: true });   // 精英路线：第 2、3 波各多一只精英（掉宝物）
+      if (G.route === 'elite' && G.wi > 0) G.q.push({ at: T * .35, type: G.eliteType || 'gob_blade', tier: 'elite', routeElite: true });   // 精英路线：第 2、3 波各多一只精英（掉宝物）
       G.q.sort((a, b) => a.at - b.at);
       banner(`第 ${G.st} 站 · 第 ${G.wi + 1} 波`, 1.6);
     }
@@ -353,8 +354,8 @@
   // 一波结算：铜钱、经验、回血、战利品（固定书、精英 / 小头目掉落）
   function waveEnd() {
     G.paused = true; foes = foes.filter(z => !z.flee); if (hero.cs) { if (hero.cs.ph === 'hold') SK.chEnd(); hero.cs = null; } SK.reset(); const E = DATA.econ, fx = hero.fx, cl = G.cleared && !G.timeout;
-    const cw = Math.round((E.waveCoin[0] + E.waveCoin[1] * (G.st - 1) + Math.floor(G.wk / E.perKills) + G.wElite * E.elite + G.wMini * E.mini + (cl ? E.clear : 0) + (fx.waveCoin || 0)) * (1 + (fx.coinMul || 0)));
-    RUN.coins += cw;
+    const cw = Math.round((E.waveCoin[0] + E.waveCoin[1] * (G.st - 1) + Math.floor(G.wk / E.perKills) + G.wElite * E.elite + G.wMini * E.mini + (cl ? E.clear : 0) + (fx.waveCoin || 0)) * (1 + (fx.coinMul || 0)) * (G.route === 'elite' ? 1.5 : 1) * (RUN.coinBoost ? 1.5 : 1));
+    RUN.coins += cw; if (RUN.coinBoost && G.wi === STN().waves.length - 1) RUN.coinBoost = 0;
     const xp0 = G.xp, lv0 = G.lv; addXp(E.waveXp + G.st + Math.floor(G.wk / E.xpPerKills) + G.wElite * E.xpElite + G.wMini * E.xpMini + (cl ? E.xpClear : 0));
     hero.hp = Math.min(hero.maxHp, hero.hp + E.waveHeal + hero.maxHp * (fx.waveHeal || 0));
     RUN.xopt = null; RUN.xrr = 0; RUN.shop = null; RUN.rr = 0;
@@ -372,12 +373,59 @@
   function stationEnd() {
     if (G.st === 4 && RUN.open < 4) { RUN.open = 4; toastMsg('第 4 格技能栏免费解锁！'); }
     if (G.st === 8 && RUN.open < 5) { RUN.open = 5; toastMsg('第 5 格技能栏免费解锁！'); }
-    G.paused = true;
-    const go = route => { G.st++; G.wi = -1; G.route = route; nextWave(); };
-    if (G.st + 1 >= DATA.stations.length) return UI.route({ st: G.st + 1, cards: [{ k: 'boss', name: '首领 · 哥布林王', desc: '打谷场的尽头。打完 2 波杂兵，哥布林王亲自出来。' }] }, () => go('boss'));
-    const C = { fight: { k: 'fight', name: '战斗', desc: '普通的一站，3 波哥布林。' }, elite: { k: 'elite', name: '精英', desc: '第 2、3 波各多一只精英。更难，打倒精英掉宝物。' } };
-    const cards = shuffle([C.fight, C.elite, Math.random() < .5 ? C.fight : C.elite]).map((c, i) => Object.assign({ i }, c));
-    UI.route({ st: G.st + 1, cards }, c => go(c.k));
+    G.paused = true; showRoute();
+  }
+  // 11/22 站点卡：战斗 / 精英 / 宝箱 · 篝火 · 行商 · 奇遇（不打仗的卡每章最多 restMax 次，选了不推进站数，做完回来再选）
+  const EN = id => DATA.enemies[id].name.replace('哥布林', '') || '哥布林';
+  function stationInfo(n) {   // 第 n 站第一次出现的怪
+    const seen = new Set(), add = (S, set) => { for (const W of S.waves) for (const c in DATA.codes) if (W[c]) set.add(DATA.codes[c]); };
+    for (let i = 0; i < n - 1; i++) add(DATA.stations[i], seen);
+    const now = new Set(); add(DATA.stations[n - 1], now); return { fresh: [...now].filter(t => !seen.has(t)), all: [...now] };
+  }
+  function showRoute() {
+    const n = G.st + 1, go = route => { G.st++; G.wi = -1; G.route = route; nextWave(); };
+    if (n >= DATA.stations.length) return UI.route({ st: n, cards: [{ k: 'boss', av: 'gob_king', name: '哥布林王', sub: '首领', desc: '森林的尽头是哥布林王座。打完 2 波杂兵，哥布林王亲自出来。', btn: '挑战' }] }, () => go('boss'));
+    const S = DATA.stations[n - 1], info = stationInfo(n), main = info.fresh[0] || info.all[info.all.length - 1];
+    const fight = { k: 'fight', av: main, name: S.name, sub: `第 ${n} 站 · Lv${n}`, desc: info.fresh.length ? '会出现：' + info.fresh.map(EN).join('、') : '这一段的老对手。', btn: '前往' };
+    const pool = info.all.filter(t => !DATA.enemies[t].ranged), et = pool[Math.random() * pool.length | 0] || 'gob_blade';
+    const elite = { k: 'elite', av: et, et, name: '精英 · ' + DATA.enemies[et].name, sub: `第 ${n} 站 · Lv${n}`, desc: '最后两波各多一只精英。铜钱 +50%，精英必掉技能书。', btn: '挑战' };
+    const cards = [fight, elite];   // 第 2 张固定精英（避免两张一样的战斗卡）
+    if ((RUN.rests || 0) < DATA.restMax) { const R0 = DATA.rests[Math.random() * DATA.rests.length | 0]; cards.push(Object.assign({ rest: true, sub: '休整 · 不推进站数' }, R0)); }
+    else cards.push(n >= 2 ? elite : fight);
+    UI.route({ st: n, rests: DATA.restMax - (RUN.rests || 0), cards }, c => {
+      if (!c.rest) { G.eliteType = c.et; return go(c.k); }
+      RUN.rests = (RUN.rests || 0) + 1; doRest(c.k);
+    });
+  }
+  function ownBooks() { return new Set([...RUN.slots, ...RUN.bag].filter(x => x && (x.kind === 'book' || !x.kind)).map(x => x.id)); }
+  function randBook(minTier) { const all = DATA.bookPool(ownBooks(), Math.max(G.st, minTier >= 3 ? 4 : 1), minTier >= 3); const f = all.filter(id => DATA.skills[id].tier >= (minTier || 1)); const L = f.length ? f : all; return L[Math.random() * L.length | 0]; }
+  function doRest(k) {
+    const back = () => showRoute(), base = { st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], after: back, goText: '回到路线 ▶' };
+    if (k === 'chest') { const L = []; for (let i = 0; i < 3; i++) { const id = randBook(); if (id && !L.some(o => o.id === id)) L.push({ kind: 'book', id }); } return CAMP.open(Object.assign(base, { title: '宝箱 · 三本书选一本', tab: 'shi', loot: L, pickOne: true })); }
+    if (k === 'fire') { hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .5); RUN.xiu++; RUN.xopt = null; RUN.xrr = 0; return CAMP.open(Object.assign(base, { title: '篝火 · 回复 50% 生命，修炼一次', tab: 'xiu' })); }
+    if (k === 'shop') { RUN.shop = null; RUN.rr = 0; return CAMP.open(Object.assign(base, { title: '咕噜的摊子 · 全部八折', tab: 'shang', disc: .8 })); }
+    const used = RUN.evUsed || (RUN.evUsed = []), L = DATA.events.filter(e => !used.includes(e.id)), E = (L.length ? L : DATA.events)[Math.random() * (L.length || DATA.events.length) | 0]; used.push(E.id);
+    UI.event(E, i => doEvent(E.opts[i][2]), back);
+  }
+  function doEvent(fx) {   // 返回结果文字
+    const r = Math.random(), A = DATA.attrs.map(a => a.id), heal = p => { hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * p); };
+    const train = (a, v) => { RUN.train[a] = (RUN.train[a] || 0) + v; recompute(); }, give = o => CAMP.learn(o);
+    switch (fx) {
+      case 'con2': train('con', 2); heal(0); return '体魄 +2，生命上限提高了。';
+      case 'end2': train('end', 2); return '耐力 +2。旧盾还挺结实。';
+      case 'book2': { const id = randBook(2); if (id) { give({ kind: 'book', id }); return `得到一本「${DATA.skills[id].name}」。`; } RUN.coins += 30; return '没有新书了，换成 30 铜钱。'; }
+      case 'prof': { const L = RUN.slots.filter(Boolean); if (!L.length) return '技能栏是空的……'; const sk = L[Math.random() * L.length | 0], lv = profL(sk); if (lv >= 7) return `「${DATA.skills[sk.id].name}」已经练满了。`; sk.xp = DATA.prof[lv]; return `「${DATA.skills[sk.id].name}」熟练度 +1 格。`; }
+      case 'rift': if (r < .5) { const id = randBook(3); if (id) { give({ kind: 'book', id }); return `摸出一本「${DATA.skills[id].name}」！`; } } hero.hp = Math.max(1, hero.hp - hero.maxHp * .2); return '被乱码咬了一口，掉了 20% 生命。';
+      case 'gamble': if (RUN.coins < 20) return '铜钱不够，咕噜把杯子收了回去。'; RUN.coins -= 20; if (r < .5) { const it = ITEMS()[Math.random() * ITEMS().length | 0]; give({ kind: 'item', id: it.id }); return `猜中了！得到「${it.name}」。`; } return '没猜中。咕噜笑得很开心。';
+      case 'kid': RUN.coinBoost = 1; return '小哥布林跑了。下一站铜钱 +50%。';
+      case 'save': RUN.save = true; return '已存档。第一次倒下时会满血复活。';
+      case 'full': heal(1); return '生命回满了。';
+      case 'attr2': { const a = A[Math.random() * A.length | 0]; train(a, 2); return `${DATA.attrs.find(x => x.id === a).name} +2。`; }
+      case 'coin25': RUN.coins += 25; return '咕噜给了你 25 铜钱。';
+      case 'heal60': heal(.6); return '回复了 60% 生命。';
+      case 'xiu': RUN.xiu++; return '修炼次数 +1（下次结算时用）。';
+    }
+    return '什么都没有发生。';
   }
   function toastMsg(t) { UI.toast && UI.toast(t); }
   function bossIn() { if (G.bossOut) return; G.bossOut = true; G.boss = spawn(G.W.boss || MAP.boss); G.boss.cd = 2.5; banner('哥布林王 出现了！', 2.4); G.shake = .3; }
@@ -562,6 +610,6 @@
     stop() { G = null; },
     run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1, st: () => G ? G.st : 1,
     skillInfo: sk => { const S = DATA.skills[sk.id], L = profL(sk), T = G ? skillT(S, sk) : { wu: S.wu, rc: S.rc }; return { dmg: G ? skillDmg(S, sk) : S.dmg, wu: T.wu, rc: T.rc, cd: T.wu + T.rc + (S.hold || 0), L, xp: sk.xp || 0, next: DATA.prof[L] || null }; }, profL,
-    debug: { boss: () => G && (foes.forEach(z => !z.dead && kill(z)), G.st = DATA.stations.length, G.wi = 1, nextWave()), god: () => G && (G.god = !G.god), clear: () => G && (G.q = [], warns.length = 0, foes.forEach(z => !z.T.boss && !z.dead && kill(z)), G.wt = Math.max(G.wt, G.T - .1)), skip: () => G && G.W && (G.wt = G.T), st: n => G && (G.st = n, G.wi = -1), lvl: () => G && addXp(need() / (hero.xpMul || 1) - G.xp + .01), win: () => G && (G.boss ? kill(G.boss) : (G.st = DATA.stations.length, G.wi = 1, nextWave(), bossIn(), kill(G.boss))), heal: () => hero && (hero.hp = hero.maxHp), spawn: (t, tier) => G && spawn(t, { x: hero.x + R(60, 120) * K * (Math.random() < .5 ? -1 : 1), y: hero.y + R(-20, 20) * K }, tier), state: () => ({ G, hero, foes, RUN, u, s, W, H }) },
+    debug: { boss: () => G && (foes.forEach(z => !z.dead && kill(z)), G.st = DATA.stations.length, G.wi = 1, nextWave()), god: () => G && (G.god = !G.god), clear: () => G && (G.q = [], warns.length = 0, foes.forEach(z => !z.T.boss && !z.dead && kill(z)), G.wt = Math.max(G.wt, G.T - .1)), skip: () => G && G.W && (G.wt = G.T), st: n => G && (G.st = n, G.wi = -1), lvl: () => G && addXp(need() / (hero.xpMul || 1) - G.xp + .01), win: () => G && (G.boss ? kill(G.boss) : (G.st = DATA.stations.length, G.wi = 1, nextWave(), bossIn(), kill(G.boss))), heal: () => hero && (hero.hp = hero.maxHp), route: () => G && (G.paused = true, showRoute()), spawn: (t, tier) => G && spawn(t, { x: hero.x + R(60, 120) * K * (Math.random() < .5 ? -1 : 1), y: hero.y + R(-20, 20) * K }, tier), state: () => ({ G, hero, foes, RUN, u, s, W, H }) },
   };
 })();
