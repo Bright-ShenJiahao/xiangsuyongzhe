@@ -184,7 +184,21 @@
   }
   let toastT = 0; function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1800); }
   $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); BATTLE.roll(); });
+  // 11/22 卡带世界地图：打完一章出来，已通关的亮、下一章可选、其余被乱码盖着
+  function worldMap(done) {
+    const box = $('wmNodes'); box.innerHTML = ''; let pick = null; const cleared = 1;
+    $('wmTitle').textContent = '卡带世界 · 选择下一章'; $('wmGo').disabled = true; $('wmHint').textContent = '点地图上的地点';
+    DATA.chapters.forEach((c, i) => { const d = document.createElement('div'), st = c.id <= cleared ? 'done' : c.id === cleared + 1 ? 'next' : 'lock';
+      d.className = 'wmn ' + st; d.style.left = c.x * 100 + '%'; d.style.top = c.y * 100 + '%';
+      d.innerHTML = `<i></i><b>${st === 'lock' ? '？？？' : c.name}</b><small>${st === 'done' ? '已通关' : st === 'next' ? c.game : '被乱码覆盖'}</small>`;
+      d.onclick = () => { if (st === 'lock') return toast('先打通前面的章节'); if (st === 'done') return toast('这里已经恢复平静了');
+        for (const x of box.children) x.classList.remove('sel'); d.classList.add('sel'); pick = c; $('wmHint').textContent = `「${c.name}」还在制作中，敬请期待`; $('wmGo').disabled = false; };
+      box.appendChild(d); });
+    $('wmGo').onclick = () => { overlay('wmap', false); done(pick); }; overlay('wmap', true);
+    const sc = $('wmScroll'); sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) * .55;   // 手机竖屏：地图横向可拖，先对准中间
+  }
   function result(r) {
+    if (r.win && !r.mapShown) return worldMap(() => result(Object.assign({}, r, { mapShown: true })));
     $('rTitle').textContent = r.win ? '胜利！' : '败北……';
     $('rMsg').textContent = r.win ? '哥布林王倒下了，屏幕那头好像传来了「下一关」的音乐。' : '眼前一黑……再按一次开始键吧。';
     const best = Object.entries(r.dmg || {}).sort((a, b) => b[1] - a[1])[0];
