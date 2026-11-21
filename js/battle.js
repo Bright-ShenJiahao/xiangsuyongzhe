@@ -21,7 +21,7 @@
   function fit() {
     const dpr = Math.min(3, window.devicePixelRatio || 1); W = Math.round(innerWidth * dpr); H = Math.round(innerHeight * dpr);
     cv.width = W; cv.height = H;
-    u = Math.max(1, Math.round(H / 320));
+    u = Math.max(1, Math.round(H / 480));   // 11/21 镜头拉远一档（原来 H / 320）
     while (u / K * MAPW < W || u / K * MAPH < H) u++;   // 地图一定要盖满屏幕（超宽屏会把人物放大一点）
     s = u / K; ctx.imageSmoothingEnabled = false;
   }
@@ -124,7 +124,7 @@
   const need = () => Math.round((14 + 4 * (G.lv - 1)) * DATA.econ.xpMul);
   function addXp(n) {
     n *= hero.xpMul || 1; G.xp += n; G.wx += n;
-    while (G.xp >= need() && !hero.dead && G.lv < DATA.econ.maxLv) { G.xp -= need(); G.lv++; RUN.xiu++; RUN.pts++; recompute(); hero.hp = Math.min(hero.maxHp, hero.hp + 5); nums.push({ x: hero.x, y: hero.y - 52 * K, txt: '升级！属性点 +1 · 修炼 +1', t: 0, col: '#8ef07a' }); }
+    while (G.xp >= need() && !hero.dead && G.lv < DATA.econ.maxLv) { G.xp -= need(); G.lv++; RUN.xiu++; RUN.pts++; G.lvUpT = 2.2; recompute(); hero.hp = Math.min(hero.maxHp, hero.hp + 5); nums.push({ x: hero.x, y: hero.y - 52 * K, txt: '升级！属性点 +1 · 修炼 +1', t: 0, col: '#8ef07a' }); }
   }
   function damageHero(d, dtype = 'phys') {
     if (hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
@@ -334,7 +334,7 @@
 
   // ---------- 每帧更新 ----------
   function update(dt) {
-    G.t += dt; hero.t += dt;
+    G.t += dt; hero.t += dt; if (G.lvUpT > 0) G.lvUpT -= dt;
     if (G.banner) { G.banner.left -= dt; if (G.banner.left <= 0) G.banner = null; }
     G.shake = Math.max(0, G.shake - dt);
     if (G.winT != null && (G.winT -= dt) <= 0 && !G.over) { G.over = 'win'; return end(); }
@@ -453,7 +453,7 @@
     for (const n of nums) { const y = Y(n.y) - n.t * 22 * u; if (n.txt) { ctx.font = `${7 * u}px Pix, monospace`; ctx.textAlign = 'center'; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#2a160e'; ctx.strokeText(n.txt, X(n.x), y); ctx.fillStyle = n.col; ctx.fillText(n.txt, X(n.x), y); } else num(n.v, X(n.x), y, n.col, n.big ? nk + 1 : nk); }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (joy.on) { const dpr = W / innerWidth; ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.arc(joy.sx * dpr, joy.sy * dpr, 40 * dpr, 0, 7); ctx.fill(); const jx = joy.x - joy.sx, jy = joy.y - joy.sy, d = Math.hypot(jx, jy), k = Math.min(1, 40 / (d || 1)); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc((joy.sx + jx * k) * dpr, (joy.sy + jy * k) * dpr, 18 * dpr, 0, 7); ctx.fill(); }
-    UI.hud({ hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
+    UI.hud({ lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
   }
   function drawAxe(x, y, a) {   // 飞斧：8×8 像素图，转着飞（按 4 个方向取整，保持像素整齐）
     const P = ['..aaa...', '.abbba..', 'abbbbba.', 'abbbbbcc', '.abbbcc.', '..aacc..', '....cc..', '....c...'], C = { a: '#3a2218', b: '#d8dce8', c: '#8a5a2a' }, q = Math.floor(a / (PI / 2)) % 4;

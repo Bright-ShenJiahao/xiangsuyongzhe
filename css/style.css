@@ -340,3 +340,9 @@ p.dim.center { font-size: 16px; } p.dim.center small { font-size: 14px; }
 #hSel .reroll { color: #ffd86a; } #hSel .reroll.off { opacity: .4; pointer-events: none; }
 
 .slot.lock { cursor: pointer; } .slot.lock.buy { filter: drop-shadow(0 0 4px #ffd86a88); } .slot.lock.sel { border-image: none; border: 0; background: url(../art/ui2/slot_lock.png) 0 0 / 100% 100%; filter: drop-shadow(0 0 6px #ffd86a); }
+
+/* 升级：顶部角落闪「LEVEL UP!」（照光明之魂） */
+#lvUp { position: fixed; right: 12px; top: 46px; z-index: 30; font: 22px Pix, monospace; color: #7ff0e0; text-shadow: 2px 2px 0 #0a2a2a, -1px -1px 0 #0a2a2a, 0 0 8px #3ad8c8; letter-spacing: 1px; pointer-events: none; opacity: 0; }
+#lvUp.on { animation: lvup .36s steps(2) infinite; }
+@keyframes lvup { 0% { opacity: 1; } 100% { opacity: .25; } }
+@media (max-width: 600px) { #lvUp { font-size: 17px; top: 62px; right: 8px; } }

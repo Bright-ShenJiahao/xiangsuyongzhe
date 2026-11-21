@@ -139,6 +139,7 @@
     const sk = JSON.stringify([h.slots, h.open, h.next]);
     if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.appendChild(iconCanvas(DATA.skills[s.id].icon)); if (s.lv > 1) d.insertAdjacentHTML('beforeend', `<i>${s.lv}</i>`); } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');
+    set('lvUp', 'cls', h.lvUp ? 'on' : '');
     set('banner', 'text', h.banner || ''); set('banner', 'show', !!h.banner);
     set('tip', 'text', tipT > 0 ? (touch ? '按住屏幕拖动走位 · 右下角翻滚 · 技能自动出手' : 'WASD / 方向键移动 · 空格翻滚 · 技能自动出手 · P 暂停') : '');
   }
