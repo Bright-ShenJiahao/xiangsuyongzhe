@@ -12,7 +12,7 @@
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
     // 出售：书半价（22 / 34 / 52 → 11 / 17 / 26），宝物拿基价的 35%
-    if (o.kind === 'book') { const S = SK[o.id]; return { tier: S.tier, icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, sell: Math.round(DATA.tierPrice[S.tier] * .5) }; }   // 11/22：书卖掉 = 半价（不管用没用过）
+    if (o.kind === 'book') { const S = SK[o.id]; return { tier: S.tier, icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, brief: S.brief, sell: Math.round(DATA.tierPrice[S.tier] * .5) }; }   // 11/22：书卖掉 = 半价（不管用没用过）
     if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物', desc: it.desc, sell: Math.round((it.price || 25) * DATA.price.sell) }; }
     const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 3 };
   }
@@ -209,7 +209,7 @@
     else if (tab === 'shu') attrPanel(body);
   }
   // 卡片：图标 · 名字 · 类别 · 分隔线 · 说明（说明区固定高度、垂直居中，按钮永远在最下面对齐）
-  function card(t, o) { const d = document.createElement('div'); d.className = 'card ' + o.kind + (t.tier ? ' ct' + t.tier : ''); d.appendChild(iconEl(t)); d.insertAdjacentHTML('beforeend', `<b class="${t.tier ? 'tn' + t.tier : ''}">${t.name}</b><small>${t.sub}</small><i class="hr"></i><p class="desc">${t.desc}</p>`); return d; }
+  function card(t, o) { const d = document.createElement('div'); d.className = 'card ' + o.kind + (t.tier ? ' ct' + t.tier : ''); d.appendChild(iconEl(t)); d.insertAdjacentHTML('beforeend', `<b class="${t.tier ? 'tn' + t.tier : ''}">${t.name}</b><small>${t.sub}</small><i class="hr"></i><p class="desc" title="${t.desc}">${t.brief || t.desc}</p>`); return d; }
   function btnTo(d, label, fn, gold) { let f = d.querySelector('.cb'); if (!f) { f = document.createElement('div'); f.className = 'cb'; d.appendChild(f); } const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.innerHTML = label; b.onclick = fn; f.appendChild(b); }
   function rollXiu(n) {
     const out = [], ids = shuffle(DATA.attrs.map(a => a.id));

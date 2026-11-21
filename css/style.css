@@ -406,3 +406,17 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
   .rcard .rav { width: 70px; height: 70px; padding-bottom: 6px; } .rcard .rav canvas { transform: scale(.7); transform-origin: bottom center; } .rcard p { font-size: 11px; line-height: 1.35; min-height: 4em; }
   .rcards.ev { grid-template-columns: 1fr !important; } }
 @media (max-width: 600px) { #rtTitle small { display: block; margin: 4px 0 0; font-size: 12px; } }
+/* 11/22 结算页：有卡片时提示字贴顶，卡片和按钮收紧，不出滚动条 */
+.cbody > p.dim.center:not(:only-child) { margin: 2px 0 6px; }
+.cbody > .cards + .center, .cbody > .cards + p.dim.center { margin: 6px 0 0; }
+.cbody > .cards { padding-top: 2px; }
+
+/* 11/22 卡片：说明左右留空，最多 3 行 */
+.card { padding-left: 12px !important; padding-right: 12px !important; box-sizing: border-box; }
+.card p.desc { padding: 0 4px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+@media (max-width: 600px) {
+  .cbody > .cards { gap: 6px; } .cbody > .cards .card { width: calc(33.3% - 6px) !important; padding: 6px 4px !important; gap: 3px; }
+  .cbody > .cards .card b { font-size: 13px; } .cbody > .cards .card small, .cbody > .cards .card p { font-size: 11px; }
+  .cbody > .cards .card .ic .pi { width: 30px !important; } .cbody > .cards .card .btn.mini { padding: 2px 6px; font-size: 12px; }
+}
+@media (max-width: 600px) { .cbody > .cards .card .btn.mini { white-space: nowrap; padding: 2px 4px; } }
