@@ -54,25 +54,26 @@ window.DATA = {
     nova: { name: '冰环', sys: '法杖', icon: 'nova', kind: 'nova', type: 'int', desc: '以自己为中心炸开一圈寒气，被围时救命。', cd: 1.4, dmg: 8, range: 44 },
   },
   // 第一章：8 站 + 首领站，每站 3 波，限时（11/21 定稿，照 Codex 表，数量再 ×countMul，前两站时间更短）
-  // T = 这一波多少秒；G / K / A = 哥布林 / 刀手 / 弓手数量；ex = 额外的精英或小头目；hp = 这一站的血量倍率
+  // G / K / A = 哥布林 / 刀手 / 弓手数量；ex = 额外的精英或小头目；hp = 这一站的血量倍率
   stations: [
-    { hp: 1.00, waves: [{ T: 14, G: 8 }, { T: 16, G: 10, K: 2 }, { T: 18, G: 12, K: 3, A: 2 }] },
-    { hp: 1.06, waves: [{ T: 18, G: 12, K: 4 }, { T: 20, G: 14, K: 4, A: 3 }, { T: 22, G: 15, K: 5, A: 3 }] },
-    { hp: 1.15, waves: [{ T: 21, G: 15, K: 5, A: 3 }, { T: 23, G: 16, K: 6, A: 4 }, { T: 25, G: 17, K: 6, A: 4, ex: [['elite', 'gob_blade']] }] },
-    { hp: 1.25, waves: [{ T: 25, G: 18, K: 6, A: 4 }, { T: 26, G: 18, K: 7, A: 5 }, { T: 28, G: 20, K: 8, A: 5, ex: [['mini', 'gob_blade']] }] },
-    { hp: 1.40, waves: [{ T: 27, G: 20, K: 8, A: 5 }, { T: 28, G: 22, K: 9, A: 6 }, { T: 30, G: 24, K: 9, A: 6, ex: [['elite', 'gob_archer']] }] },
-    { hp: 1.55, waves: [{ T: 28, G: 22, K: 9, A: 7 }, { T: 30, G: 24, K: 10, A: 7 }, { T: 31, G: 24, K: 10, A: 8, ex: [['mini', 'gob_blade']] }] },
-    { hp: 1.75, waves: [{ T: 30, G: 24, K: 11, A: 7 }, { T: 31, G: 26, K: 12, A: 8 }, { T: 33, G: 28, K: 12, A: 8, ex: [['elite', 'gob_blade'], ['elite', 'gob_blade']] }] },
-    { hp: 1.95, waves: [{ T: 31, G: 26, K: 12, A: 8 }, { T: 33, G: 28, K: 13, A: 9 }, { T: 35, G: 30, K: 14, A: 9, ex: [['mini', 'gob_blade']] }] },
-    { hp: 2.10, boss: true, waves: [{ T: 32, G: 26, K: 12, A: 8 }, { T: 34, G: 28, K: 13, A: 9, ex: [['elite', 'gob_archer']] }, { boss: 'gob_king' }] },
+    { hp: 1.00, waves: [{ G: 8 }, { G: 10, K: 2 }, { G: 12, K: 3, A: 2 }] },
+    { hp: 1.06, waves: [{ G: 12, K: 4 }, { G: 14, K: 4, A: 3 }, { G: 15, K: 5, A: 3 }] },
+    { hp: 1.15, waves: [{ G: 15, K: 5, A: 3 }, { G: 16, K: 6, A: 4 }, { G: 17, K: 6, A: 4, ex: [['elite', 'gob_blade']] }] },
+    { hp: 1.25, waves: [{ G: 18, K: 6, A: 4 }, { G: 18, K: 7, A: 5 }, { G: 20, K: 8, A: 5, ex: [['mini', 'gob_blade']] }] },
+    { hp: 1.40, waves: [{ G: 20, K: 8, A: 5 }, { G: 22, K: 9, A: 6 }, { G: 24, K: 9, A: 6, ex: [['elite', 'gob_archer']] }] },
+    { hp: 1.55, waves: [{ G: 22, K: 9, A: 7 }, { G: 24, K: 10, A: 7 }, { G: 24, K: 10, A: 8, ex: [['mini', 'gob_blade']] }] },
+    { hp: 1.75, waves: [{ G: 24, K: 11, A: 7 }, { G: 26, K: 12, A: 8 }, { G: 28, K: 12, A: 8, ex: [['elite', 'gob_blade'], ['elite', 'gob_blade']] }] },
+    { hp: 1.95, waves: [{ G: 26, K: 12, A: 8 }, { G: 28, K: 13, A: 9 }, { G: 30, K: 14, A: 9, ex: [['mini', 'gob_blade']] }] },
+    { hp: 2.10, boss: true, waves: [{ G: 26, K: 12, A: 8 }, { G: 28, K: 13, A: 9, ex: [['elite', 'gob_archer']] }, { boss: 'gob_king' }] },
   ],
-  countMul: 1.2,                         // 出怪数量在 Codex 表上再多 20%（用户：可以稍微多一些）
+  waveT: 30,                             // 每波固定 30 秒（11/21 用户定，先这样试）
+  countMul: 2,                           // 出怪数量 = 表上 × 2（30 秒一波、不再清场，怪要多）
   // 精英 / 小头目：血、伤害、体型倍率（群侠四档）
   tiers: { elite: { hp: 2.5, dmg: 1.25, size: 1.15, name: '精英' }, mini: { hp: 7, dmg: 1.5, size: 1.35, reach: 1.2, wind: .1, name: '小头目' } },
-  caps: { normal: 45, archer: 8 },      // 场上同时最多多少只
+  caps: { normal: 50, archer: 10 },      // 场上同时最多多少只
   // 经济（起始值，Codex）
-  econ: { startCoin: 18, waveCoin: [10, 2], perKills: 3, elite: 5, mini: 8, clear: 5, waveHeal: 4,
-    waveXp: 8, xpPerKills: 4, xpElite: 3, xpMini: 5, xpClear: 3, xpMul: 1.3, maxLv: 12 },
+  econ: { startCoin: 18, waveCoin: [10, 2], perKills: 3, elite: 5, mini: 8, clear: 0, waveHeal: 4,
+    waveXp: 8, xpPerKills: 4, xpElite: 3, xpMini: 5, xpClear: 0, xpMul: 1.3, maxLv: 12 },
   // 行商：书价、开格价、刷新价（每站涨 7%）；出售拿基价的 35%
   price: { book: 22, slot4: 50, slot5: 78, slot4At: 2, slot5At: 5, stUp: .07, sell: .35, refresh: [4, 2, 3], refreshMax: 4, itemLimit: 2 },
   // 修炼（照三国终章）：每升一级攒一次，三选一，品阶 普通/精良/稀有/绝世，每次机会可刷新 2 次
@@ -88,10 +89,10 @@ window.DATA = {
   },
   // 地图：第一版只开打谷场
   maps: [
-    { id: 'field', name: '新手村 · 打谷场', img: 'art/map/field_big.webp', w: 2572, h: 1421, open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
+    { id: 'field', name: '新手村 · 打谷场', img: 'art/map/field.webp', w: 1672, h: 941, open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
       desc: '游戏里的第一站。哥布林从栅栏外、石阶上一波波涌进来。',
-      // 能走的地面（地图像素）：y0–y1 之间，每一行的左右边界见 pts [y, 左, 右]（tools/extend_map.py 生成）
-      ground: {"y0":292,"y1":1280,"pts":[[291,334,2238],[311,324,2248],[331,312,2260],[351,301,2271],[371,290,2282],[391,279,2293],[411,268,2304],[431,256,2316],[451,245,2327],[471,235,2337],[491,246,2326],[511,258,2314],[531,269,2303],[551,280,2292],[571,291,2281],[591,301,2271],[611,290,2282],[631,279,2293],[651,268,2304],[671,256,2316],[691,245,2327],[711,235,2337],[731,246,2326],[751,258,2314],[771,269,2303],[791,280,2292],[811,291,2281],[831,301,2271],[851,290,2282],[871,279,2293],[891,268,2304],[911,256,2316],[931,245,2327],[951,234,2338],[971,223,2349],[991,212,2360],[1011,201,2371],[1031,189,2383],[1051,178,2394],[1071,167,2405],[1091,156,2416],[1111,145,2427],[1131,133,2439],[1151,122,2450],[1171,111,2461],[1191,100,2472],[1211,89,2483],[1231,77,2495],[1251,66,2506],[1271,55,2517],[1279,51,2521]]}, grade: [['saturate', .94]] },
+      // 能走的地面（地图像素）：y0–y1 之间，每一行的左右边界见 pts [y, 左, 右]（11/21 改回原图；加大版 field_big 和 tools/extend_map.py 留着）
+      ground: {"y0":292,"y1":800,"pts":[[292,334,1338],[800,50,1622]]}, grade: [['saturate', .94]] },
   ],
   // 骑兵素材的沙盒板块（11/21 对比后定了勇者画风，先从地图选择里拿掉；代码 js/cav.js 和素材 art/cav/ 留着，以后当别的世界还能用）
   sandbox: [

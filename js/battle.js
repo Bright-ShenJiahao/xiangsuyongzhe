@@ -256,22 +256,20 @@
   }
 
   // ---------- 站与波次 ----------
-  // 一站 3 波，每波限时 T 秒。怪分 3 批出（0 / 30% / 60% 时），每只出现前地上先亮 0.55 秒的圈。
-  // 打光一批就马上提前出下一批；全出完又全打倒 = 清场（有奖励），但至少要打到 0.85T（不足就快进到 0.85T）。
-  // 时间到：剩下的怪逃走，没有清场奖励。首领波不限时，打倒哥布林王就通关。
+  // 一站 3 波，每波固定 30 秒（不再有清场）。怪分 5 批出（0 / 15% / 30% / 45% / 60% 时），每只出现前地上先亮 0.55 秒的圈。
+  // 场上打光了就提前出下一批；全出完还没到时间，就一直零星补哥布林，场上不空。时间到：剩下的怪逃走。首领波不限时。
   const STN = () => DATA.stations[G.st - 1], ITEMS = () => DATA.startItems.filter(i => i.id !== 'purse');
   function nextWave() {
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();   // 这一站打完：出 3 张路线卡
     G.wi++; G.wave++; const W = STN().waves[G.wi];
-    Object.assign(G, { W, wt: 0, T: W.T || 0, waveOn: true, wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], q: [], cleared: false, endT: null, timeout: false });
+    Object.assign(G, { W, wt: 0, T: W.boss ? 0 : DATA.waveT, waveOn: true, wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], q: [], cleared: false, endT: null, timeout: false });
     if (W.boss) { G.bossT = 2.2; G.trickle = 6; banner('首领战！', 2); }
     else {
       const n = (k, c) => Array(Math.round((W[k] || 0) * DATA.countMul)).fill(c), all = shuffle([...n('G', 'goblin'), ...n('K', 'gob_blade'), ...n('A', 'gob_archer')]);
-      const cut = [0, Math.round(all.length * .4), Math.round(all.length * .7), all.length];
-      for (let b = 0; b < 3; b++) for (const t of all.slice(cut[b], cut[b + 1])) G.q.push({ at: W.T * [0, .3, .6][b] + R(0, 2.5), type: t });
-      for (const [tier, t] of W.ex || []) G.q.push({ at: W.T * .3 + R(0, 2), type: t, tier });
-      if (G.route === 'elite' && G.wi > 0) G.q.push({ at: W.T * .35, type: Math.random() < .5 ? 'gob_blade' : 'goblin', tier: 'elite', routeElite: true });   // 精英路线：第 2、3 波各多一只精英（掉宝物）
+      const T = G.T, nb = 5; for (let i = 0; i < all.length; i++) G.q.push({ at: T * .15 * Math.floor(i * nb / all.length) + R(0, 2.5), type: all[i] });
+      for (const [tier, t] of W.ex || []) G.q.push({ at: T * .3 + R(0, 2), type: t, tier });
+      if (G.route === 'elite' && G.wi > 0) G.q.push({ at: T * .35, type: Math.random() < .5 ? 'gob_blade' : 'goblin', tier: 'elite', routeElite: true });   // 精英路线：第 2、3 波各多一只精英（掉宝物）
       G.q.sort((a, b) => a.at - b.at);
       banner(`第 ${G.st} 站 · 第 ${G.wi + 1} 波`, 1.6);
     }
@@ -286,7 +284,7 @@
       if (G.bossOut && (G.trickle -= dt) <= 0 && alive.length < 8) { G.trickle = 5; for (let i = 0; i < 2; i++) warnSpawn({ type: Math.random() < .6 ? 'goblin' : 'gob_blade' }); }
       return;
     }
-    G.wt += dt * (G.cleared && G.wt < G.T * .85 ? 6 : 1);
+    G.wt += dt;
     if (G.endT != null) { if ((G.endT -= dt) <= 0) { G.waveOn = false; waveEnd(); } return; }
     // 场上打光了：下一批提前出
     if (!alive.length && G.q.length && !warns.length && G.q[0].at > G.wt) { const d = G.q[0].at - G.wt; for (const o of G.q) o.at -= d; }
@@ -295,9 +293,8 @@
       const o = G.q[0]; if (alive.length + warns.length >= DATA.caps.normal || (o.type === 'gob_archer' && arch >= DATA.caps.archer)) break;   // 场上太多就等等
       G.q.shift(); warnSpawn(o);
     }
-    if (!G.cleared && !G.q.length && !warns.length && !alive.length) { G.cleared = true; banner('清场！', 1.2); }
-    if (G.cleared && G.wt >= G.T * .85) G.endT = .8;
-    else if (G.wt >= G.T) { G.timeout = true; for (const z of alive) z.flee = true; G.q = []; warns.length = 0; banner('时间到！敌人撤退了', 1.4); G.endT = 1.4; }
+    if (!G.q.length && alive.length + warns.length < 6 && G.wt < G.T - 3) for (let i = 0; i < 3; i++) warnSpawn({ type: Math.random() < .7 ? 'goblin' : 'gob_blade' });   // 出完了：零星补怪
+    if (G.wt >= G.T) { G.timeout = true; for (const z of alive) z.flee = true; G.q = []; warns.length = 0; banner('时间到！敌人撤退了', 1.4); G.endT = 1.4; }
   }
   // 出怪前地上先亮一个圈（0.55 秒），离勇者 135–190 格
   const warns = [];
@@ -476,6 +473,6 @@
     stop() { G = null; },
     run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1,
     skillInfo: sk => { const S = DATA.skills[sk.id]; return G ? { dmg: skillDmg(S, sk.lv), cd: skillCd(S, sk.lv) } : { dmg: S.dmg * lvK(sk.lv), cd: S.cd }; },
-    debug: { boss: () => G && (foes.forEach(z => !z.dead && kill(z)), G.st = DATA.stations.length, G.wi = 1, nextWave()), god: () => G && (G.god = !G.god), clear: () => G && (G.q = [], warns.length = 0, foes.forEach(z => !z.T.boss && !z.dead && kill(z)), G.wt = Math.max(G.wt, G.T * .85)), skip: () => G && G.W && (G.wt = G.T), st: n => G && (G.st = n, G.wi = -1), lvl: () => G && addXp(need() / (hero.xpMul || 1) - G.xp + .01), win: () => G && (G.boss ? kill(G.boss) : (G.st = DATA.stations.length, G.wi = 1, nextWave(), bossIn(), kill(G.boss))), heal: () => hero && (hero.hp = hero.maxHp), state: () => ({ G, hero, foes, RUN, u, s, W, H }) },
+    debug: { boss: () => G && (foes.forEach(z => !z.dead && kill(z)), G.st = DATA.stations.length, G.wi = 1, nextWave()), god: () => G && (G.god = !G.god), clear: () => G && (G.q = [], warns.length = 0, foes.forEach(z => !z.T.boss && !z.dead && kill(z)), G.wt = Math.max(G.wt, G.T - .1)), skip: () => G && G.W && (G.wt = G.T), st: n => G && (G.st = n, G.wi = -1), lvl: () => G && addXp(need() / (hero.xpMul || 1) - G.xp + .01), win: () => G && (G.boss ? kill(G.boss) : (G.st = DATA.stations.length, G.wi = 1, nextWave(), bossIn(), kill(G.boss))), heal: () => hero && (hero.hp = hero.maxHp), state: () => ({ G, hero, foes, RUN, u, s, W, H }) },
   };
 })();

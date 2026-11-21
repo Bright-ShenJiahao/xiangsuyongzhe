@@ -123,7 +123,7 @@
   const TABS = [['jie', '结算'], ['shi', '拾取'], ['xiu', '修炼'], ['shang', '行商'], ['ji', '技能'], ['shu', '属性']];
   function open(report) {
     rep = report; loot = report.loot.map(o => Object.assign({ lv: 1 }, o)); tab = 'jie'; sel = null;
-    $('cTitle').textContent = `第 ${rep.st} 站 · 第 ${rep.wi + 1} 波 ${rep.clear ? '清场' : '结束'}`;
+    $('cTitle').textContent = `第 ${rep.st} 站 · 第 ${rep.wi + 1} 波 结束`;
     $('cGo').textContent = rep.boss ? '挑战首领 ▶' : rep.last ? '选下一站 ▶' : `第 ${rep.wi + 2} 波 ▶`;
     $('cHint').textContent = rep.last && !rep.boss ? '这一站打完了，出发后三选一决定下一站' : '';
     render(); $('camp').classList.add('on');
@@ -135,7 +135,7 @@
     refreshCoin(); const body = $('cBody'); body.innerHTML = ''; body.className = 'cbody t-' + tab;
     if (tab === 'jie') {
       const tot = Object.values(rep.dmg).reduce((s, v) => s + v, 0) || 1, rows = Object.entries(rep.dmg).sort((a, b) => b[1] - a[1]);
-      body.innerHTML = `<div class="cg"><div class="cpn"><h4>这一波</h4><div class="stats big"><span>击倒</span><b>${rep.kills}</b><span>铜钱</span><b>+${rep.coins}${rep.clear ? ' <small>(含清场奖励)</small>' : rep.timeout ? ' <small>(超时，没有清场奖励)</small>' : ''}</b><span>经验</span><b>+${rep.xp}</b><span>等级</span><b>Lv${rep.lv}</b><span>待修炼</span><b>${r.xiu} 次</b></div></div>
+      body.innerHTML = `<div class="cg"><div class="cpn"><h4>这一波</h4><div class="stats big"><span>击倒</span><b>${rep.kills}</b><span>铜钱</span><b>+${rep.coins}</b><span>经验</span><b>+${rep.xp}</b><span>等级</span><b>Lv${rep.lv}</b><span>待修炼</span><b>${r.xiu} 次</b></div></div>
         <div class="cpn"><h4>输出统计</h4>${rows.length ? rows.map(([id, v]) => `<div class="dmgr"><span>${SK[id].name}</span><i><b style="width:${(v / tot * 100).toFixed(1)}%"></b></i><em>${Math.round(v)} · ${Math.round(v / tot * 100)}%</em></div>`).join('') : '<p class="dim">没有打出伤害</p>'}</div></div>`;
     } else if (tab === 'shi') {
       if (!loot.length) { body.innerHTML = `<p class="dim center">这一波没有战利品<br><small>每站第 3 波必掉技能书；精英掉书，小头目掉宝物；行商那里也能买</small></p>`; return; }
