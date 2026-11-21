@@ -84,6 +84,7 @@
   // 现在用哪套勇者：默认旧的（11/21 用户定）；localStorage xsyz-hero = new 时用新的（对比用）。k = 换算到旧勇者的身高（旧的 40 像素格）
   const heroSet = () => { let o = null; try { o = localStorage.getItem('xsyz-hero'); } catch (e) {} return o === 'new' && SETS.hero2 ? 'hero2' : 'hero'; };
   const heroK = () => heroSet() === 'hero2' ? 52 / 191 : 1;
-  function drawHero(ctx, n, i, X, Y, flip, u, o = {}) { const s = heroSet(), hd = s === 'hero2'; if (hd) { ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; } draw(ctx, s, n, i, X, Y, flip, u, Object.assign({ k: heroK() }, o)); if (hd) ctx.imageSmoothingEnabled = false; }
+  // 勇者拿哪种武器：o.w = sword / spear / bow / staff（11/21 四套武器图，key 是 hero:<武器>.<动作>）；没有这套就用剑
+  function drawHero(ctx, n, i, X, Y, flip, u, o = {}) { const s = heroSet(), hd = s === 'hero2'; if (o.w && SETS[s].f[o.w + '.' + n]) n = o.w + '.' + n; if (hd) { ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; } draw(ctx, s, n, i, X, Y, flip, u, Object.assign({ k: heroK() }, o)); if (hd) ctx.imageSmoothingEnabled = false; }
   window.SPR = { load, setGrade, frame, count, draw, crop, sets: SETS, heroSet, heroK, drawHero };
 })();

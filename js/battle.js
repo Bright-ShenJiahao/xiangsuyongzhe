@@ -199,8 +199,11 @@
     const i = nextSlot(); if (i < 0) { hero.cd = .1; return; }
     if (cast(RUN.slots[i])) RUN.si = (i + 1) % RUN.open; else hero.cd = .1;
   }
+  // 出招时勇者换成这一招的武器姿势（平时拿起手兵器）；冰环这类以自己为中心的大招用「大招」那一帧
+  const HWPN = { sword: 'sword', axe: 'sword', spear: 'spear', bow: 'bow', staff: 'staff', nova: 'staff' };
   function cast(sk) {
-    const S = DATA.skills[sk.id], sid = sk.id, area = hero.m.area, dmg = skillDmg(S, sk.lv), cd = skillCd(S, sk.lv);
+    const S0 = DATA.skills[sk.id]; hero.atkW = HWPN[S0.kind] || 'sword'; hero.atkBig = S0.kind === 'nova';
+    const S = S0, sid = sk.id, area = hero.m.area, dmg = skillDmg(S, sk.lv), cd = skillCd(S, sk.lv);
     const face = t => { const a = ang(hero, t); hero.f = Math.cos(a) < 0 ? -1 : 1; hero.atkT = .3; hero.cd = cd; return a; };
     if (S.kind === 'sword') {
       const t = nearest(); if (!t) return false; const a = face(t);
@@ -370,7 +373,7 @@
   function heroFrame() {
     if (hero.dead) return ['dead', 0];
     if (hero.roll > 0) return ['roll', hero.roll > .16 ? 0 : 1];
-    if (hero.atkT > 0) return ['atk', hero.atkT > .2 ? 0 : 1, 'strike'];
+    if (hero.atkT > 0) return hero.atkBig ? ['big', 0, 'strike'] : ['atk', hero.atkT > .2 ? 0 : 1, 'strike'];
     if (hero.hurtT > 0) return ['hurt', 0, 'hurt'];
     if (hero.moving) return ['run', [0, 1, 2, 1][Math.floor(hero.t * 10) % 4], 'run'];
     return ['idle', Math.floor(hero.t * 2) % 2];
@@ -419,7 +422,7 @@
         shadow(hero.x, hero.y, 26);
         if (hero.inv > 0 && hero.roll <= 0 && hero.hurtT <= 0 && !hero.dead && Math.floor(G.t * 20) % 2) continue;
         const [n, i, st] = heroFrame(), bob = st === 'run' && i % 2 ? -u : 0, lunge = st === 'strike' && i > 0 ? hero.f * 3 * u : st === 'hurt' ? -hero.f * 2 * u : 0;
-        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u);
+        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { w: hero.atkT > 0 && hero.atkW ? hero.atkW : HWPN[RUN.weapon] || 'sword' });
       } else {
         const z = o.z, B = z.T.boss, [n, st] = foeFrame(z);
         const a = z.dead ? Math.max(0, 1 - Math.max(0, z.deadT - (B ? 2.4 : .9)) / .4) : z.flee ? Math.max(0, 1 - z.fleeT / 1.6) : 1;

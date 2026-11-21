@@ -114,7 +114,7 @@
     const u = Math.max(1, Math.floor(Math.min(H * .8 / 45, W * .8 / 50))); heroSwing -= dt;
     g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(W / 2, H * .9, 14 * u, 3.5 * u, 0, 0, 7); g.fill();
     const hs = SPR.heroSet(), swing = heroSwing > 0, n = swing ? 'atk' : 'idle', i = swing ? Math.floor((.6 - heroSwing) / .6 * SPR.count(hs, 'atk')) : Math.floor(t * 3) % Math.max(1, SPR.count(hs, 'idle'));
-    SPR.drawHero(g, n, i, W / 2, H * .9, false, u);
+    SPR.drawHero(g, n, i, W / 2, H * .9, false, u, { w: P.weapon });   // 备战页预览：拿选中的起手兵器
   }
   function drawMenuBg(t) {   // 备战页背景：游戏里的打谷场，压暗
     const W = cv.width, H = cv.height; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#120c18'; ctx.fillRect(0, 0, W, H);
