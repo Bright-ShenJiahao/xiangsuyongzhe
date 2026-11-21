@@ -33,6 +33,9 @@
     const hc = mkc(hi.width, hi.height); hc.getContext('2d').drawImage(hi, 0, 0); brown(hc);
     const hf = {}; for (const k in hj.f) if (k.startsWith('hero:')) hf[k.slice(5)] = hj.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay }));
     SETS.hero = { base: hc, f: hf };
+    // 新勇者（高清像素，原分辨率，tools/cut_hd_hero.py 切的）：对比用，调试面板可以切回旧的
+    try { const [i2, j2] = await Promise.all([loadImg('art/hero2/atlas.png'), loadJSON('art/hero2/atlas.json')]); const c2 = mkc(i2.width, i2.height); c2.getContext('2d').drawImage(i2, 0, 0);
+      const f2 = {}; for (const k in j2.f) f2[k] = j2.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay })); SETS.hero2 = { base: c2, f: f2 }; } catch (e) { console.warn('hero2', e); }
     // 哥布林：每种一个文件夹，一帧一张图；载入后拼成一条横图集
     const gj = await loadJSON('art/goblin/frames.json');
     await Promise.all(Object.keys(gj).map(async k => {
@@ -78,5 +81,9 @@
   // 单独切一帧出来（武器选择页的小人、头像）
   function crop(set, name, i) { const f = frame(set, name, i), S = SETS[set]; if (!f) return null; const c = mkc(f.w, f.h); c.getContext('2d').drawImage(S.base, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h); return { c, f }; }
 
-  window.SPR = { load, setGrade, frame, count, draw, crop, sets: SETS };
+  // 现在用哪套勇者：默认新的；localStorage xsyz-hero = old 时用旧的。k = 换算到旧勇者的身高（旧的 40 像素格）
+  const heroSet = () => { let o = null; try { o = localStorage.getItem('xsyz-hero'); } catch (e) {} return o === 'old' || !SETS.hero2 ? 'hero' : 'hero2'; };
+  const heroK = () => heroSet() === 'hero2' ? 52 / 191 : 1;
+  function drawHero(ctx, n, i, X, Y, flip, u, o = {}) { const s = heroSet(), hd = s === 'hero2'; if (hd) { ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; } draw(ctx, s, n, i, X, Y, flip, u, Object.assign({ k: heroK() }, o)); if (hd) ctx.imageSmoothingEnabled = false; }
+  window.SPR = { load, setGrade, frame, count, draw, crop, sets: SETS, heroSet, heroK, drawHero };
 })();
