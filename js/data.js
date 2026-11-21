@@ -89,8 +89,9 @@ window.DATA = {
   },
   // 地图：第一版只开打谷场
   maps: [
-    { id: 'field', name: '新手村 · 打谷场', img: 'art/map/field.webp', w: 1672, h: 941, open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
-      desc: '游戏里的第一站。哥布林从栅栏外、石阶上一波波涌进来。',
+    { id: 'field', name: '哥布林森林', img: 'art/map/forest.webp', w: 1672, h: 941,   // 11/21 换成哥布林森林（旧的打谷场 field.webp 留着）
+      open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
+      desc: '游戏里的第一站。密林深处的哥布林营地，哥布林从林子里一波波涌出来。',
       // 能走的地面（地图像素）：y0–y1 之间，每一行的左右边界见 pts [y, 左, 右]（11/21 改回原图；加大版 field_big 和 tools/extend_map.py 留着）
       ground: {"y0":292,"y1":800,"pts":[[292,334,1338],[800,50,1622]]}, grade: [['saturate', .94]] },
   ],

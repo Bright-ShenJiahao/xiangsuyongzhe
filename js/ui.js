@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id), cv = $('cv'), ctx = cv.getContext('2d');
   const rd = Math.round;
   let screen = 'boot', last = performance.now();
-  const fieldImg = new Image(); fieldImg.crossOrigin = 'anonymous'; fieldImg.src = 'art/map/field.webp';
+  const fieldImg = new Image(); fieldImg.crossOrigin = 'anonymous'; fieldImg.src = DATA.maps[0].img;
   const store = { get: k => { try { return localStorage.getItem('xsyz-' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('xsyz-' + k, v); } catch (e) {} } };
   const touch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window; if (touch) document.body.classList.add('touch');
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
