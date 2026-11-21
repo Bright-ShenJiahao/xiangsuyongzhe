@@ -6,7 +6,46 @@
 window.SKF = (() => {
   const base = { wu: ['atk0'], hit: ['atk1'], hold: ['atk0', 'atk1'], rc: [], hitT: .25, fps: 12, lunge: 3 };
   const big = { wu: ['atk0'], hit: ['big0'], hold: ['big0'], rc: [], hitT: .25, fps: 12, lunge: 0 };
-  const s = {};   // 调好的招式写在这里：s.whirl = { wu: [...], ... }
+  // 11/22 用新的 30 帧填的默认值：前摇 1 帧、出手 1–3 帧、后摇回站立，简洁好读。帧名见 tools/frames.html
+  const S = (wu, hit, o = {}) => Object.assign({ wu, hit, hitT: Math.max(.2, hit.length / 12) }, o);
+  const s = {
+    // 剑
+    sword: S(['charge1'], ['slash0', 'slash1', 'slash2'], { lunge: 3 }),
+    whirl: S(['charge0'], ['spin0', 'spin1', 'spin0', 'spin1'], { lunge: 0 }),
+    guard: S(['charge1'], ['up0'], { lunge: 0 }),
+    wave: S(['charge1'], ['slash1', 'slash2'], { lunge: 2 }),
+    phantom: S(['charge0'], ['dash0', 'thrust0'], { lunge: 5 }),
+    flash: S(['charge0'], ['slash1', 'slash2'], { lunge: 4 }),
+    storm: S(['charge0'], [], { hold: ['spin0', 'spin1'], fps: 10 }),
+    holysword: S(['charge1'], ['up0'], { rc: ['finish0'], lunge: 0 }),
+    // 枪（thrust0 枪头朝后，当横扫起手用）
+    spear: S(['charge0'], ['thrust1'], { lunge: 5 }),
+    sweep: S(['thrust0'], ['sweep0', 'sweep1', 'sweep2'], { lunge: 2 }),
+    javelin: S(['throw0'], ['thrust1'], { lunge: 2 }),
+    hundred: S(['charge0'], [], { hold: ['thrust1', 'charge0'], fps: 14 }),
+    rising: S(['lift0'], ['lift1'], { lunge: 3 }),
+    drill: S(['charge1'], ['thrust1'], { lunge: 4 }),
+    leap: S(['jump0'], ['slam0'], { lunge: 0 }),
+    dragon: S(['charge1'], [], { hold: ['twirl0', 'twirl1'], fps: 8 }),
+    // 弓
+    bow: S(['shoot1'], ['shoot2'], { lunge: 0 }),
+    fan: S(['side0'], ['shoot2'], { lunge: 0 }),
+    homing: S(['shoot1'], ['shoot2'], { lunge: 0 }),
+    rain: S(['sky0'], ['sky1'], { lunge: 0 }),
+    barrage: S(['shoot1'], [], { hold: ['rapid0', 'shoot2'], fps: 10 }),
+    pierce: S(['kneel0'], ['kneel1'], { lunge: -2 }),
+    cyclone: S(['side0'], ['shoot2'], { lunge: 0 }),
+    starfall: S(['sky0'], [], { hold: ['sky0', 'sky1'], fps: 6 }),
+    // 法杖
+    staff: S(['charge1'], ['point0', 'point1'], { lunge: 1 }),
+    nova: S(['stomp0'], ['stomp1'], { lunge: 0 }),
+    chain: S(['palm0'], ['palm1'], { lunge: 1 }),
+    pillar: S(['raise0'], ['raise1'], { lunge: 0 }),
+    orbs: S(['twirl0', 'twirl1'], ['palm1'], { lunge: 0 }),
+    thunder: S(['raise0'], ['raise1'], { lunge: 0 }),
+    blizzard: S(['charge1'], [], { hold: ['twirl0', 'twirl1'], fps: 8 }),
+    abyss: S(['raise0'], [], { hold: ['raise1'] }),
+  };
   let local = {};
   const readLocal = () => { try { local = JSON.parse(localStorage.getItem('xsyz-skf') || '{}') || {}; } catch (e) { local = {}; } };
   readLocal();
