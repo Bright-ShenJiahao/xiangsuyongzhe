@@ -6,7 +6,7 @@
 window.SKF = (() => {
   const base = { wu: ['atk0'], hit: ['atk1'], hold: ['atk0', 'atk1'], rc: [], hitT: .25, fps: 12, lunge: 3 };
   const big = { wu: ['atk0'], hit: ['big0'], hold: ['big0'], rc: [], hitT: .25, fps: 12, lunge: 0 };
-  // 11/22 用新的 30 帧填的默认值；下面 ED 是用户在帧工具里改的（11/22 01:08），盖在默认值上：前摇 1 帧、出手 1–3 帧、后摇回站立，简洁好读。帧名见 tools/frames.html
+  // 11/22 用新的 30 帧填的默认值；下面 ED 是用户在帧工具里改的（11/22 01:08，01:38 半月斩前摇改蓄力 2），盖在默认值上：前摇 1 帧、出手 1–3 帧、后摇回站立，简洁好读。帧名见 tools/frames.html
   const S = (wu, hit, o = {}) => Object.assign({ wu, hit, hitT: Math.max(.2, hit.length / 12) }, o);
   const s = {
     // 剑
@@ -46,7 +46,7 @@ window.SKF = (() => {
     blizzard: S(['charge1'], [], { hold: ['twirl0', 'twirl1'], fps: 8 }),
     abyss: S(['raise0'], [], { hold: ['raise1'] }),
   };
-  const ED = {"guard": {"wu": ["chop0"], "hit": []}, "sword": {"wu": ["slash0"], "hit": ["slash1"]}, "wave": {"wu": ["charge0"], "hit": ["dash0"]}, "phantom": {"wu": ["charge1"], "hit": ["chop1"]}, "flash": {"hit": ["dash0"]}, "holysword": {"wu": ["spin1"], "rc": []}, "spear": {"wu": ["charge1"]}, "javelin": {"wu": ["charge0"], "hit": ["dash0"]}, "hundred": {"hold": ["run2", "atk1"]}, "dragon": {"wu": ["up0"]}, "bow": {"wu": ["side0"], "fps": 14}, "homing": {"wu": ["charge1"]}, "cyclone": {"wu": ["up0"], "hit": ["sky0"], "rc": ["sky1"]}, "orbs": {"wu": ["raise0"], "hit": ["stomp0"]}, "pillar": {"hit": ["stomp1"]}, "abyss": {"wu": ["palm1"], "hold": ["up0", "twirl0"]}, "whirl": {"hit": ["spin1"]}, "sweep": {"hit": ["sweep1"]}, "drill": {"hit": ["dash0"]}, "fan": {"wu": ["charge1"]}, "pierce": {"wu": ["jump0"], "hit": ["slam0"], "rc": ["kneel0"]}, "blizzard": {"wu": ["up0"], "hold": ["palm0", "palm1"]}, "thunder": {"wu": ["jump0"], "hit": ["slam0"]}, "staff": {"hit": ["point1"]}};
+  const ED = {"guard": {"wu": ["chop0"], "hit": []}, "sword": {"wu": ["charge1"], "hit": ["slash1"]}, "wave": {"wu": ["charge0"], "hit": ["dash0"]}, "phantom": {"wu": ["charge1"], "hit": ["chop1"]}, "flash": {"hit": ["dash0"]}, "holysword": {"wu": ["spin1"], "rc": []}, "spear": {"wu": ["charge1"]}, "javelin": {"wu": ["charge0"], "hit": ["dash0"]}, "hundred": {"hold": ["run2", "atk1"]}, "dragon": {"wu": ["up0"]}, "bow": {"wu": ["side0"], "fps": 14}, "homing": {"wu": ["charge1"]}, "cyclone": {"wu": ["up0"], "hit": ["sky0"], "rc": ["sky1"]}, "orbs": {"wu": ["raise0"], "hit": ["stomp0"]}, "pillar": {"hit": ["stomp1"]}, "abyss": {"wu": ["palm1"], "hold": ["up0", "twirl0"]}, "whirl": {"hit": ["spin1"]}, "sweep": {"hit": ["sweep1"]}, "drill": {"hit": ["dash0"]}, "fan": {"wu": ["charge1"]}, "pierce": {"wu": ["jump0"], "hit": ["slam0"], "rc": ["kneel0"]}, "blizzard": {"wu": ["up0"], "hold": ["palm0", "palm1"]}, "thunder": {"wu": ["jump0"], "hit": ["slam0"]}, "staff": {"hit": ["point1"]}};
   for (const k in ED) s[k] = Object.assign({}, s[k], ED[k]);
   let local = {};
   const readLocal = () => { try { local = JSON.parse(localStorage.getItem('xsyz-skf') || '{}') || {}; } catch (e) { local = {}; } };
