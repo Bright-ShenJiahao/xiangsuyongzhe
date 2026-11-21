@@ -123,6 +123,7 @@ window.DATA = {
     goblin: { name: '哥布林', pdef: 5, mdef: 0, hp: 6, spd: 45, reach: 24, arc: 60, r: 36, dmg: 6, wind: .43, cool: 1.35, dtype: 'phys' },
     gob_blade: { name: '哥布林刀手', pdef: 15, mdef: 5, hp: 9, spd: 55, reach: 31, arc: 110, r: 50, dmg: 8, wind: .52, cool: 1.65, dtype: 'phys' },
     gob_archer: { name: '哥布林弓手', pdef: 0, mdef: 10, hp: 5, spd: 38, reach: 168, keep: [115, 155], dmg: 5, wind: .7, cool: 1.9, arrow: 130, ranged: true, dtype: 'phys' },
+    zhangfei: { name: '张飞（试看）', pdef: 15, mdef: 5, hp: 10, spd: 50, reach: 36, arc: 90, r: 58, dmg: 8, wind: .55, cool: 1.6, dtype: 'phys' },   // 11/22 试看：当小怪混进每一波（battle.js spawner，约三成小兵换成他）
     gob_king: { name: '哥布林王', pdef: 30, mdef: 20, hp: 600, spd: 30, reach: 30, dmg: 14, wind: .9, boss: true, dtype: 'phys' },
   },
   // 地图：第一版只开打谷场

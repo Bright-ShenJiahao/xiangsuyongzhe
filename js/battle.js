@@ -297,7 +297,7 @@
     Object.assign(G, { W, wt: 0, T: W.boss ? 0 : DATA.waveT, waveOn: true, wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], q: [], cleared: false, endT: null, timeout: false });
     if (W.boss) { G.bossT = 2.2; G.trickle = 6; banner('首领战！', 2); }
     else {
-      const n = (k, c) => Array(Math.round((W[k] || 0) * DATA.countMul)).fill(c), all = shuffle([...n('G', 'goblin'), ...n('K', 'gob_blade'), ...n('A', 'gob_archer')]);
+      const n = (k, c) => Array(Math.round((W[k] || 0) * DATA.countMul)).fill(c), all = shuffle([...n('G', 'goblin'), ...n('K', 'gob_blade'), ...n('A', 'gob_archer')]).map(t => t === 'goblin' && Math.random() < .3 ? 'zhangfei' : t);   // 11/22 试看张飞
       const T = G.T, nb = 5; for (let i = 0; i < all.length; i++) G.q.push({ at: T * .15 * Math.floor(i * nb / all.length) + R(0, 2.5), type: all[i] });
       for (const [tier, t] of W.ex || []) G.q.push({ at: T * .3 + R(0, 2), type: t, tier });
       if (G.route === 'elite' && G.wi > 0) G.q.push({ at: T * .35, type: Math.random() < .5 ? 'gob_blade' : 'goblin', tier: 'elite', routeElite: true });   // 精英路线：第 2、3 波各多一只精英（掉宝物）
