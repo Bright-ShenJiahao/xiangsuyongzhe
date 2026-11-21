@@ -73,7 +73,7 @@ SRC = [('hero_sb', [('sword', 0), ('bow', 2)], False), ('hero_spear', [('spear',
 sheets = {}
 for name, sets, dots in SRC:
   path = P('src', name + '.png')
-  if name == 'hero_spear': path = straighten(path)
+  # if name == 'hero_spear': path = straighten(path)   # 11/21 枪图已重出、枪杆是直的，不再需要（留着备用，坐标只对旧图有效）
   R = frames(clean_small(path) if dots else path)
   assert all(len(r) == 6 for r in R), (name, [len(r) for r in R])
   for w, r0 in sets:
