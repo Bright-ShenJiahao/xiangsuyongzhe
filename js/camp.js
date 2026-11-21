@@ -28,6 +28,17 @@
     r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: o.lv || 1 } : { kind: o.kind, id: o.id }; if (o.kind === 'item') B().recompute();
     return true;
   }
+  // 点锁着的技能格：花铜钱解锁（第 4 格第 2 站起 50，第 5 格第 5 站起 78，每站涨 7%；第 4 / 8 站打完也会免费开）
+  function slotPrice(n) { const P = DATA.price, st = B().st(), fx = B().hero().fx; return { at: n === 4 ? P.slot4At : P.slot5At, free: n === 4 ? 4 : 8, cost: Math.round((n === 4 ? P.slot4 : P.slot5) * (1 + P.stUp * (st - 1)) * (1 + (fx.shop || 0))), st }; }
+  function lockInfo(info, i, box) {
+    const r = R(), n = i + 1, p = slotPrice(n); info.insertAdjacentHTML('beforeend', `<span class="ic">${UI.piH('lock')}</span>`);
+    const q = document.createElement('p'); info.appendChild(q);
+    if (i > r.open) { q.innerHTML = `<b>第 ${n} 格</b><br>先解锁第 ${r.open + 1} 格。`; return; }
+    if (p.st < p.at) { q.innerHTML = `<b>第 ${n} 格</b><br>第 ${p.at} 站起可以花铜钱解锁；打完第 ${p.free} 站也会免费开。`; return; }
+    q.innerHTML = `<b>第 ${n} 格</b><br>技能栏多开一格，多放一招轮流出手。打完第 ${p.free} 站也会免费开。`;
+    const bs = document.createElement('div'); bs.className = 'lob'; info.appendChild(bs); const b = document.createElement('button'); b.className = 'btn mini gold'; b.innerHTML = `解锁 ${UI.piH('coin', 1)}${p.cost}`;
+    b.onclick = e => { e.stopPropagation(); if (r.coins < p.cost) return toast('铜钱不够'); r.coins -= p.cost; r.open = Math.max(r.open, n); sel = null; toast(`第 ${n} 格解锁了`); refreshCoin(); loadout(box); }; bs.appendChild(b);
+  }
   let toastT = 0; function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1600); }
 
   // ---------- 技能搭配（结算页「技能」页签和暂停页共用） ----------
@@ -39,7 +50,7 @@
     L.insertAdjacentHTML('beforeend', `<h4>技能栏 <small>按 1→2→3 顺序轮流自动出手 · 一轮约 ${cyc.toFixed(1)} 秒</small></h4>`);
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
     r.slots.forEach((s, i) => { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
-      if (i >= r.open) d.className = 'slot lock';
+      if (i >= r.open) { d.className = 'slot lock' + (i === r.open ? ' buy' : ''); if (sel && sel.t === 'L' && sel.i === i) d.classList.add('sel'); d.onclick = () => { sel = { t: 'L', i }; loadout(box); }; }
       else if (s) { d.className = 'slot has'; d.appendChild(UI.icon(SK[s.id].icon)); d.insertAdjacentHTML('beforeend', `<span>${SK[s.id].name}</span><i>Lv${s.lv}</i>`); }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
@@ -52,6 +63,7 @@
       d.onclick = () => pick({ t: 'b', i }, box); bg.appendChild(d); });
     // 选中东西的说明和按钮
     const info = document.createElement('div'); info.className = 'loinfo'; L.appendChild(info);
+    if (sel && sel.t === 'L') { lockInfo(info, sel.i, box); return; }
     const cur = sel && (sel.t === 's' ? r.slots[sel.i] && { kind: 'book', id: r.slots[sel.i].id, lv: r.slots[sel.i].lv, slot: true } : r.bag[sel.i]);
     if (cur) {
       const t = thing(cur); info.appendChild(iconEl(t));
@@ -183,12 +195,11 @@
     return out;
   }
   function rollShop() {
-    // 货架：3 件宝物 + 2 本书（新书 22，已有的升 Lv2 34，再往上 52）+ 能开格时多一格（第 2 站起 50 开第 4 格，第 5 站起 78 开第 5 格）
+    // 货架：3 件宝物 + 2 本书（新书 22，已有的升 Lv2 34，再往上 52）。开技能格改成在「技能」页点锁
     const r = R(), P = DATA.price, items = shuffle(DATA.startItems.filter(i => i.id !== 'purse')).slice(0, 3).map(i => ({ kind: 'item', id: i.id, price: i.price || 25 }));
     const lvOf = id => { const h = r.slots.find(s => s && s.id === id) || r.bag.find(b => b && b.kind === 'book' && b.id === id); return h ? h.lv : 0; };
     const books = shuffle(Object.keys(SK)).slice(0, 2).map(id => ({ kind: 'book', id, lv: 1, price: [22, 34, 52][Math.min(2, lvOf(id))] }));
     const L = items.concat(books);
-    if (r.open === 3 && rep.st >= P.slot4At) L.push({ kind: 'slot', n: 4, price: P.slot4 }); else if (r.open === 4 && rep.st >= P.slot5At) L.push({ kind: 'slot', n: 5, price: P.slot5 });
     return L;
   }
   $('cGo').onclick = () => {
