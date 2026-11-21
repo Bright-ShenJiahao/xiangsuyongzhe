@@ -25,6 +25,7 @@
       if (has) { has.lv += o.lv || 1; toast(`${SK[o.id].name} 升到 Lv${has.lv}`); return true; }
     }
     if (o.kind === 'use') { const c = USE(o.id), h = B().hero(); h.hp = Math.min(h.maxHp, h.hp + h.maxHp * c.heal); toast(`吃掉${c.name}，回复生命`); return true; }
+    if (o.kind === 'book') { const j = r.slots.findIndex((s, k) => !s && k < r.open); if (j >= 0) { r.slots[j] = { id: o.id, lv: 1, xp: o.xp || 0 }; toast(`${SK[o.id].name} 自动装上第 ${j + 1} 格`); return true; } }   // 技能栏有空位就直接装上
     const i = r.bag.indexOf(null); if (i < 0) { toast('背包满了，先卖掉点东西'); return false; }
     r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : { kind: o.kind, id: o.id }; if (o.kind === 'item') B().recompute();
     return true;

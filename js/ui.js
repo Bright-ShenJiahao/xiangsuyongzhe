@@ -56,7 +56,7 @@
   const P = { weapon: 'sword', free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
   const attrsOf = () => { const o = {}; for (const a of DATA.attrs) o[a.id] = DATA.attrBase + (P.free[a.id] || 0); return o; };
   const used = () => Object.values(P.free).reduce((s, v) => s + v, 0);
-  const build = () => ({ weapon: P.weapon, attrs: attrsOf(), item: P.item, habit: P.habit });
+  const build = () => ({ weapon: P.weapon, attrs: attrsOf(), item: P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
   function openPrep(fresh) {
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
       const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword';
@@ -74,7 +74,7 @@
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(w.icon)); b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
     const W = DATA.weapons[P.weapon]; $('wDesc').innerHTML = `<b style="color:#ffd860;font-weight:400">起手招：${W.skill}</b>　${W.desc}<br><small style="color:#c8b890">吃「${DATA.attrs.find(a => a.id === W.type).name}」加成。之后的技能书什么系都会出，可以混着带。</small>`;
     // 属性
-    const c = DATA.calc(build()), left = DATA.attrFree - used(); $('aLeft').textContent = `剩余 ${left} 点`;
+    const c = DATA.calc(build()), left = DATA.attrFree - used(); $("aLeft").textContent = left ? `剩余 ${left} 点（可带进游戏）` : "剩余 0 点";
     const ar = $('aRows'); ar.innerHTML = '';
     for (const a of DATA.attrs) {
       const base = DATA.attrBase + (P.free[a.id] || 0), fin = c.A[a.id], cls = fin > base ? 'up' : fin < base ? 'dn' : '';
