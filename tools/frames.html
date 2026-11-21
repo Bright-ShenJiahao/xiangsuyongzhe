@@ -97,7 +97,8 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
 <script>
 (async () => { try {
   const $ = id => document.getElementById(id);
-  const WN = { sword: '剑', spear: '枪', bow: '弓', staff: '法杖' }, AN = { idle: '站立', run: '跑', atk: '出招', big: '大招', roll: '翻滚', hurt: '受伤', dead: '倒地' };
+  const WN = { sword: '剑', spear: '枪', bow: '弓', staff: '法杖' }, AN = { idle: '站立', run: '跑', atk: '旧出招', big: '旧大招', roll: '翻滚', back: '后跳', hurt: '受伤', dead: '倒地', charge: '蓄力', dash: '前冲', stop: '刹停', jump: '跳起', slam: '落地砸', up: '举天', finish: '收招',
+    slash: '横斩', chop: '下劈', upper: '上撩', spin: '旋转', thrust: '刺', sweep: '横扫', lift: '上挑', twirl: '旋转', throw: '掷', shoot: '射', sky: '朝天射', side: '横拉', kneel: '跪射', rapid: '快射', lower: '收弓', point: '前指', raise: '高举', stomp: '杖击地', palm: '托掌' };
   const PH = [['wu', '前摇', '#7a5a36'], ['hit', '出手', '#c8902a'], ['hold', '持续', '#3a6aa0'], ['rc', '后摇', '#6a3a5a']];
   const img = new Image(); img.src = '../art/hero/atlas.png'; await img.decode();
   const J = await (await fetch('../art/hero/atlas.json')).json();
@@ -136,7 +137,7 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
     }
     $('fps').value = c.fps; $('hitT').value = c.hitT; $('lunge').value = c.lunge;
   }
-  function pal() { $('pal').innerHTML = ''; for (const a in FR[W]) FR[W][a].forEach((_, i) => { const tok = a + i, d = document.createElement('div'); d.append(thumb(W, tok, 56, 60)); d.append(document.createTextNode(`${AN[a] || a}${FR[W][a].length > 1 ? i + 1 : ''} · ${tok}`)); d.onclick = () => { const c = cur(); setK(phSel, (c[phSel] || []).concat(tok)); }; $('pal').append(d); }); }
+  function pal() { $('pal').innerHTML = ''; for (const a of (J.own && J.own[W]) || Object.keys(FR[W])) FR[W][a].forEach((_, i) => { const tok = a + i, d = document.createElement('div'); d.append(thumb(W, tok, 56, 60)); d.append(document.createTextNode(`${AN[a] || a}${FR[W][a].length > 1 ? i + 1 : ''} · ${tok}`)); d.onclick = () => { const c = cur(); setK(phSel, (c[phSel] || []).concat(tok)); }; $('pal').append(d); }); }
   function out() { $('out').value = Object.keys(edits).length ? 'SKF 出招帧：\n' + JSON.stringify(edits) : '（还没改任何招）'; }
   function render() { list(); phases(); pal(); out(); const S = DATA.skills[id]; $('title').textContent = `${S.name}（${WN[S.w]} · ${DATA.tierName ? DATA.tierName[S.tier] : ''}）`;
     $('info').textContent = `前摇 ${S.wu}s · ${S.hold ? '持续 ' + S.hold + 's · ' : ''}后摇 ${S.rc}s（出手算在后摇里）· ${S.desc}`; }
@@ -150,7 +151,7 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
     for (const [k, d] of sg) { if (t < acc + d) { ph = k; pt = t - acc; break; } acc += d; }
     const c = cur(), flip = $('flip').checked; let tok = null, lunge = 0;
     if (ph !== 'idle') { const r = SKF.pick(c, ph, pt); tok = r ? r[0] + r[1] : null; if (ph === 'hit') lunge = c.lunge || 0; }
-    if (!tok) tok = ph === 'idle' && $('run').checked ? 'run' + [0, 1, 2, 1][Math.floor(tAcc * 10) % 4] : 'idle' + (Math.floor(tAcc * 2) % 2);
+    if (!tok) tok = ph === 'idle' && $('run').checked ? 'run' + (Math.floor(tAcc * 10) % 4) : 'idle' + (Math.floor(tAcc * 2) % 2);
     const cv = $('stage'), k = 4; g.clearRect(0, 0, cv.width, cv.height);
     g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(cv.width / 2, 250, 64, 14, 0, 0, 7); g.fill();
     g.strokeStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.moveTo(cv.width / 2, 40); g.lineTo(cv.width / 2, 260); g.stroke();
