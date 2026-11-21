@@ -8,6 +8,7 @@
   B('首领出场', () => UI.mod().debug.boss());
   B('无敌', b => { UI.mod().debug.god(); b.style.color = b.style.color === 'rgb(255, 216, 96)' ? '#8ef07a' : '#ffd860'; });
   B('清场', () => UI.mod().debug.clear());
+  B('时间到', () => UI.mod().debug.skip());
   B('升级', () => UI.mod().debug.lvl());
   B('回血', () => UI.mod().debug.heal());
   B('直接胜利', () => UI.mod().debug.win());

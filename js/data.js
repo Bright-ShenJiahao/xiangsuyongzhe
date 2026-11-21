@@ -12,20 +12,20 @@ window.DATA = {
   attrs: [
     { id: 'str', name: '力量', desc: '剑、枪、斧招式伤害 +6% / 点' },
     { id: 'agi', name: '敏捷', desc: '弓招式伤害 +6% / 点，出手速度 +2% / 点' },
-    { id: 'int', name: '智力', desc: '法杖招式伤害 +6% / 点，技能范围 +2% / 点' },
-    { id: 'con', name: '体魄', desc: '生命 +10 / 点，受到伤害 −1% / 点' },
+    { id: 'int', name: '智力', desc: '法杖招式伤害 +6% / 点，技能范围 +2%、魔防 +2 / 点' },
+    { id: 'con', name: '体魄', desc: '生命 +10 / 点，物防 +4、魔防 +2 / 点' },
   ],
   attrBase: 3, attrFree: 5,
   // 开局宝物（备战页随机三选一，放进物品栏）。fx：生效的加成
   startItems: [
-    { id: 'amulet', name: '护身符', icon: '🧿', desc: '生命上限 +20', fx: { hp: 20 } },
-    { id: 'boots', name: '轻便靴', icon: '👢', desc: '移动速度 +10%', fx: { move: .1 } },
-    { id: 'purse', name: '钱袋', icon: '💰', desc: '开局铜钱 +50', fx: { coin: 50 } },
-    { id: 'whet', name: '磨刀石', icon: '🪨', desc: '所有伤害 +10%', fx: { dmg: .1 } },
-    { id: 'magnet', name: '磁石', icon: '🧲', desc: '拾取范围 +50%', fx: { pick: .5 } },
-    { id: 'bento', name: '便当', icon: '🍱', desc: '每波开始回复 10% 生命', fx: { waveHeal: .1 } },
-    { id: 'hourglass', name: '沙漏', icon: '⏳', desc: '出手速度 +8%', fx: { spd: .08 } },
-    { id: 'clover', name: '四叶草', icon: '🍀', desc: '暴击率 +8%', fx: { crit: .08 } },
+    { id: 'amulet', name: '护身符', icon: '🧿', desc: '生命上限 +20', fx: { hp: 20 }, price: 26 },
+    { id: 'boots', name: '轻便靴', icon: '👢', desc: '移动速度 +10%', fx: { move: .1 }, price: 24 },
+    { id: 'purse', name: '钱袋', icon: '💰', desc: '开局铜钱 +30', fx: { coin: 30 }, price: 24 },
+    { id: 'whet', name: '磨刀石', icon: '🪨', desc: '所有伤害 +10%', fx: { dmg: .1 }, price: 26 },
+    { id: 'magnet', name: '磁石', icon: '🧲', desc: '每波铜钱 +3', fx: { waveCoin: 3 }, price: 24 },
+    { id: 'bento', name: '便当', icon: '🍱', desc: '每波开始回复 6% 生命', fx: { waveHeal: .06 }, price: 43 },
+    { id: 'hourglass', name: '沙漏', icon: '⏳', desc: '出手速度 +8%', fx: { spd: .08 }, price: 46 },
+    { id: 'clover', name: '四叶草', icon: '🍀', desc: '暴击率 +8%', fx: { crit: .08 }, price: 40 },
   ],
   // 现实习惯（备战页随机抽 3 个选 1，也可以不选）：一好一坏，现实里的小毛病带进了游戏
   habits: [
@@ -40,7 +40,7 @@ window.DATA = {
     { id: 'stingy', name: '抠门', good: '行商便宜 20%', bad: '刷新贵一倍', line: '能砍价，不舍得刷。', fx: { shop: -.2, reroll: 1 } },
     { id: 'choosy', name: '选择困难症', good: '修炼多一个选项', bad: '修炼不能刷新', line: '选项越多越纠结。', fx: { xiuOpt: 1, xiuReroll: -99 } },
     { id: 'gamer', name: '网瘾少年', good: '经验 +20%', bad: '生命上限 −10%', line: '越玩越会玩。', fx: { xp: .2, hpMul: -.1 } },
-    { id: 'otaku', name: '宅', good: '拾取范围 +50%', bad: '移速 −5%', line: '不想动，东西自己过来。', fx: { pick: .5, move: -.05 } },
+    { id: 'otaku', name: '宅', good: '每波铜钱 +4', bad: '移速 −8%', line: '不想动，钱自己过来。', fx: { waveCoin: 4, move: -.08 } },
   ],
   slotsMax: 5, slotsOpen: 3, bagSize: 8,
   // 技能库（技能书）。按技能栏顺序轮流自动出手；同一招的书再拿一本 = 升一级（伤害 +25%，冷却 −4%，范围不涨）
@@ -53,31 +53,45 @@ window.DATA = {
     axe: { name: '回旋斧', sys: '斧', icon: 'axe', kind: 'axe', type: 'str', desc: '甩出飞斧，飞到头再转回来，来回都伤人。', cd: 1.3, dmg: 6, range: 95, size: 10 },
     nova: { name: '冰环', sys: '法杖', icon: 'nova', kind: 'nova', type: 'int', desc: '以自己为中心炸开一圈寒气，被围时救命。', cd: 1.4, dmg: 8, range: 44 },
   },
-  // 一站几波（第一版只有打谷场一站）：n = 这一波一共出多少只，pool = 出哪些，boss = 这一波带首领
-  waves: [
-    { n: 10, pool: ['goblin'] },
-    { n: 16, pool: ['goblin', 'goblin', 'gob_blade'] },
-    { n: 22, pool: ['goblin', 'gob_blade', 'gob_archer'] },
-    { n: 8, pool: ['goblin', 'gob_blade'], boss: 'gob_king' },   // 临时：「下一步去哪」还没做，打完 3 波直接接首领
+  // 第一章：8 站 + 首领站，每站 3 波，限时（11/21 定稿，照 Codex 表，数量再 ×countMul，前两站时间更短）
+  // T = 这一波多少秒；G / K / A = 哥布林 / 刀手 / 弓手数量；ex = 额外的精英或小头目；hp = 这一站的血量倍率
+  stations: [
+    { hp: 1.00, waves: [{ T: 14, G: 8 }, { T: 16, G: 10, K: 2 }, { T: 18, G: 12, K: 3, A: 2 }] },
+    { hp: 1.06, waves: [{ T: 18, G: 12, K: 4 }, { T: 20, G: 14, K: 4, A: 3 }, { T: 22, G: 15, K: 5, A: 3 }] },
+    { hp: 1.15, waves: [{ T: 21, G: 15, K: 5, A: 3 }, { T: 23, G: 16, K: 6, A: 4 }, { T: 25, G: 17, K: 6, A: 4, ex: [['elite', 'gob_blade']] }] },
+    { hp: 1.25, waves: [{ T: 25, G: 18, K: 6, A: 4 }, { T: 26, G: 18, K: 7, A: 5 }, { T: 28, G: 20, K: 8, A: 5, ex: [['mini', 'gob_blade']] }] },
+    { hp: 1.40, waves: [{ T: 27, G: 20, K: 8, A: 5 }, { T: 28, G: 22, K: 9, A: 6 }, { T: 30, G: 24, K: 9, A: 6, ex: [['elite', 'gob_archer']] }] },
+    { hp: 1.55, waves: [{ T: 28, G: 22, K: 9, A: 7 }, { T: 30, G: 24, K: 10, A: 7 }, { T: 31, G: 24, K: 10, A: 8, ex: [['mini', 'gob_blade']] }] },
+    { hp: 1.75, waves: [{ T: 30, G: 24, K: 11, A: 7 }, { T: 31, G: 26, K: 12, A: 8 }, { T: 33, G: 28, K: 12, A: 8, ex: [['elite', 'gob_blade'], ['elite', 'gob_blade']] }] },
+    { hp: 1.95, waves: [{ T: 31, G: 26, K: 12, A: 8 }, { T: 33, G: 28, K: 13, A: 9 }, { T: 35, G: 30, K: 14, A: 9, ex: [['mini', 'gob_blade']] }] },
+    { hp: 2.10, boss: true, waves: [{ T: 32, G: 26, K: 12, A: 8 }, { T: 34, G: 28, K: 13, A: 9, ex: [['elite', 'gob_archer']] }, { boss: 'gob_king' }] },
   ],
-  coinKill: { goblin: 1, gob_blade: 2, gob_archer: 2 }, coinWave: 15,
-  price: { book: 30, item: 25, reroll: 5, sellBook: 10, sellItem: 8, slot: 60 },
+  countMul: 1.2,                         // 出怪数量在 Codex 表上再多 20%（用户：可以稍微多一些）
+  // 精英 / 小头目：血、伤害、体型倍率（群侠四档）
+  tiers: { elite: { hp: 2.5, dmg: 1.25, size: 1.15, name: '精英' }, mini: { hp: 7, dmg: 1.5, size: 1.35, reach: 1.2, wind: .1, name: '小头目' } },
+  caps: { normal: 45, archer: 8 },      // 场上同时最多多少只
+  // 经济（起始值，Codex）
+  econ: { startCoin: 18, waveCoin: [10, 2], perKills: 3, elite: 5, mini: 8, clear: 5, waveHeal: 4,
+    waveXp: 8, xpPerKills: 4, xpElite: 3, xpMini: 5, xpClear: 3, xpMul: 1.3, maxLv: 12 },
+  // 行商：书价、开格价、刷新价（每站涨 7%）；出售拿基价的 35%
+  price: { book: 22, slot4: 50, slot5: 78, slot4At: 2, slot5At: 5, stUp: .07, sell: .35, refresh: [4, 2, 3], refreshMax: 4, itemLimit: 2 },
   // 修炼（照三国终章）：每升一级攒一次，三选一，品阶 普通/精良/稀有/绝世，每次机会可刷新 2 次
   rarity: [{ name: '普通', col: '#e8e0d0', add: 1, p: .55 }, { name: '精良', col: '#6fb8ff', add: 2, p: .3 }, { name: '稀有', col: '#c58cff', add: 3, p: .12 }, { name: '绝世', col: '#ffb347', add: 3, extra: 2, p: .03 }],
   consumables: [{ id: 'meat', name: '烤肉', icon: '🍖', desc: '回复 40% 生命', heal: .4 }],
   // 敌人：用《异世界幸存者》的哥布林（art/goblin/），像素和勇者一样粗细
   enemies: {
-    goblin: { name: '哥布林', hp: 6, spd: 21, reach: 16, dmg: 6, wind: .45, xp: 1 },
-    gob_blade: { name: '哥布林刀手', hp: 9, spd: 27, reach: 18, dmg: 8, wind: .38, xp: 2 },
-    gob_archer: { name: '哥布林弓手', hp: 5, spd: 18, reach: 95, dmg: 5, wind: .7, xp: 2, ranged: true },
-    gob_king: { name: '哥布林王', hp: 360, spd: 16, reach: 30, dmg: 14, wind: .9, xp: 0, boss: true },
+    // reach = 走到多近开始抬手；arc / r = 劈砍扇面角度和半径；cool = 招后间隔；dtype = 伤害类型（物理 / 魔法）
+    goblin: { name: '哥布林', hp: 6, spd: 45, reach: 24, arc: 60, r: 36, dmg: 6, wind: .43, cool: 1.35, dtype: 'phys' },
+    gob_blade: { name: '哥布林刀手', hp: 9, spd: 55, reach: 31, arc: 110, r: 50, dmg: 8, wind: .52, cool: 1.65, dtype: 'phys' },
+    gob_archer: { name: '哥布林弓手', hp: 5, spd: 38, reach: 168, keep: [115, 155], dmg: 5, wind: .7, cool: 1.9, arrow: 130, ranged: true, dtype: 'phys' },
+    gob_king: { name: '哥布林王', hp: 600, spd: 30, reach: 30, dmg: 14, wind: .9, boss: true, dtype: 'phys' },
   },
   // 地图：第一版只开打谷场
   maps: [
-    { id: 'field', name: '新手村 · 打谷场', img: 'art/map/field.webp', open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
+    { id: 'field', name: '新手村 · 打谷场', img: 'art/map/field_big.webp', w: 2572, h: 1421, open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
       desc: '游戏里的第一站。哥布林从栅栏外、石阶上一波波涌进来。',
-      // 能走的地面（占整张图的比例）：上边 y0、下边 y1，左右两条斜边从 (上 x, 下 x) 收拢
-      ground: { y0: .31, y1: .85, l0: .2, l1: .03, r0: .8, r1: .97 }, grade: [['saturate', .94]] },
+      // 能走的地面（地图像素）：y0–y1 之间，每一行的左右边界见 pts [y, 左, 右]（tools/extend_map.py 生成）
+      ground: {"y0":292,"y1":1280,"pts":[[291,334,2238],[311,324,2248],[331,312,2260],[351,301,2271],[371,290,2282],[391,279,2293],[411,268,2304],[431,256,2316],[451,245,2327],[471,235,2337],[491,246,2326],[511,258,2314],[531,269,2303],[551,280,2292],[571,291,2281],[591,301,2271],[611,290,2282],[631,279,2293],[651,268,2304],[671,256,2316],[691,245,2327],[711,235,2337],[731,246,2326],[751,258,2314],[771,269,2303],[791,280,2292],[811,291,2281],[831,301,2271],[851,290,2282],[871,279,2293],[891,268,2304],[911,256,2316],[931,245,2327],[951,234,2338],[971,223,2349],[991,212,2360],[1011,201,2371],[1031,189,2383],[1051,178,2394],[1071,167,2405],[1091,156,2416],[1111,145,2427],[1131,133,2439],[1151,122,2450],[1171,111,2461],[1191,100,2472],[1211,89,2483],[1231,77,2495],[1251,66,2506],[1271,55,2517],[1279,51,2521]]}, grade: [['saturate', .94]] },
   ],
   // 骑兵素材的沙盒板块（11/21 对比后定了勇者画风，先从地图选择里拿掉；代码 js/cav.js 和素材 art/cav/ 留着，以后当别的世界还能用）
   sandbox: [
@@ -111,15 +125,18 @@ window.DATA.calc = function (b) {
   for (const id of (b.items || [b.item])) add((DATA.startItems.find(i => i.id === id) || {}).fx); add((DATA.habits.find(h => h.id === b.habit) || {}).fx);
   const A = {}; for (const a of DATA.attrs) A[a.id] = (b.attrs && b.attrs[a.id] || 0) + (b.train && b.train[a.id] || 0) + (fx[a.id] || 0);
   const W = DATA.weapons[b.weapon] || DATA.weapons.sword, type = W.type || 'str';
-  return {
+  const out = {
     A, fx,
     dmg: (1 + .06 * A[type]) * (1 + (fx.dmg || 0)),        // 起手兵器那一系的伤害倍率
     spd: 1 + .02 * A.agi + (fx.spd || 0),                    // 出手速度倍率（冷却 ÷ 它）
-    area: 1 + .02 * A.int,
+    area: Math.min(1.6, Math.max(.8, 1 + .02 * A.int + (fx.area || 0))),
     move: 1 + (fx.move || 0),
-    crit: Math.max(0, .1 + (fx.crit || 0)),
-    dmgIn: Math.max(.5, 1 - .01 * A.con),
-    hp: Math.round((100 + 10 * (A.con - DATA.attrBase) + (fx.hp || 0)) * (1 + (fx.hpMul || 0))),
+    crit: Math.max(0, .01 + (fx.crit || 0)), critMul: 1.5 + (fx.critMul || 0),   // 暴击率 1% 起，暴击伤害 150% 起
+    // 防御：受到的伤害 × 100 / (100 + 防御)，最多减 50%。物防 = 体魄 × 4，魔防 = 体魄 × 2 + 智力 × 2，再加宝物
+    pdef: Math.max(0, 4 * A.con + (fx.pdef || 0)), mdef: Math.max(0, 2 * A.con + 2 * A.int + (fx.mdef || 0)),
+    hp: Math.round((100 + 10 * A.con + (fx.hp || 0)) * (1 + (fx.hpMul || 0))),
     xp: 1 + (fx.xp || 0), coin: fx.coin || 0, pick: 1 + (fx.pick || 0),
   };
+  const r = c => Math.min(.5, c / (c + 100)); out.pIn = 1 - r(out.pdef); out.mIn = 1 - r(out.mdef);   // pIn / mIn：受到物理 / 魔法伤害的倍率
+  return out;
 };

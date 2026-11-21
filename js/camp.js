@@ -10,9 +10,10 @@
   // ---------- 通用：东西的样子 ----------
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
-    if (o.kind === 'book') { const S = SK[o.id]; return { icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · 技能书`, desc: S.desc, sell: DATA.price.sellBook * (o.lv || 1) }; }
-    if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物 · 放在背包里就生效', desc: it.desc, sell: DATA.price.sellItem }; }
-    const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 5 };
+    // 出售：拿基价的 35%（书的基价 22 × 等级，宝物看各自的价）
+    if (o.kind === 'book') { const S = SK[o.id]; return { icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · 技能书`, desc: S.desc, sell: Math.round(DATA.price.book * (o.lv || 1) * DATA.price.sell) }; }
+    if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物 · 放在背包里就生效', desc: it.desc, sell: Math.round((it.price || 25) * DATA.price.sell) }; }
+    const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 3 };
   }
   function iconEl(t) { const s = document.createElement('span'); s.className = 'ic'; if (t.icon) s.appendChild(t.icon); else s.textContent = t.emoji; return s; }
   // 学会一本书：已经有这一招就升一级，否则放进背包
@@ -96,7 +97,7 @@
       <span>${UI.piH('agi', 1)}弓伤害</span><b>${pct(.06 * c.A.agi + (c.fx.dmg || 0))}</b>
       <span>${UI.piH('int', 1)}法杖伤害</span><b>${pct(.06 * c.A.int + (c.fx.dmg || 0))}</b>
       <span>${UI.piH('spd', 1)}出手速度</span><b>${pct(c.spd - 1)}</b><span>${UI.piH('area', 1)}范围</span><b>${pct(c.area - 1)}</b>
-      <span>${UI.piH('crit', 1)}暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>${UI.piH('guard', 1)}受到伤害</span><b>${pct(c.dmgIn - 1)}</b>
+      <span>${UI.piH('crit', 1)}暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>${UI.piH('guard', 1)}物防</span><b>${c.pdef} <small>(受物理 ×${c.pIn.toFixed(2)})</small></b><span>${UI.piH('guard', 1)}魔防</span><b>${c.mdef} <small>(受法术 ×${c.mIn.toFixed(2)})</small></b>
       <span>${UI.piH('move', 1)}移速</span><b>${pct(c.move - 1)}</b><span>${UI.piH('xp', 1)}经验</span><b>${pct(c.xp - 1)}</b></div>
       ${r.habit ? `<p class="dim">现实习惯：${DATA.habits.find(x => x.id === r.habit).name}</p>` : ''}`;
   }
@@ -122,9 +123,9 @@
   const TABS = [['jie', '结算'], ['shi', '拾取'], ['xiu', '修炼'], ['shang', '行商'], ['ji', '技能'], ['shu', '属性']];
   function open(report) {
     rep = report; loot = report.loot.map(o => Object.assign({ lv: 1 }, o)); tab = 'jie'; sel = null;
-    $('cTitle').textContent = `第 ${rep.wave + 1}/${rep.waves} 波 清完`;
-    $('cGo').textContent = rep.last ? '挑战首领 ▶' : `第 ${rep.wave + 2} 波 ▶`;
-    $('cHint').textContent = rep.last ? '（「下一步去哪」还没做，先直接打首领）' : '';
+    $('cTitle').textContent = `第 ${rep.st} 站 · 第 ${rep.wi + 1} 波 ${rep.clear ? '清场' : '结束'}`;
+    $('cGo').textContent = rep.boss ? '挑战首领 ▶' : rep.last ? '选下一站 ▶' : `第 ${rep.wi + 2} 波 ▶`;
+    $('cHint').textContent = rep.last && !rep.boss ? '这一站打完了，出发后三选一决定下一站' : '';
     render(); $('camp').classList.add('on');
   }
   function refreshCoin() { const r = R(); for (const id of ['cCoin', 'pCoin']) $(id).innerHTML = coinTxt(r.coins); }
@@ -134,10 +135,10 @@
     refreshCoin(); const body = $('cBody'); body.innerHTML = ''; body.className = 'cbody t-' + tab;
     if (tab === 'jie') {
       const tot = Object.values(rep.dmg).reduce((s, v) => s + v, 0) || 1, rows = Object.entries(rep.dmg).sort((a, b) => b[1] - a[1]);
-      body.innerHTML = `<div class="cg"><div class="cpn"><h4>这一波</h4><div class="stats big"><span>击倒</span><b>${rep.kills}</b><span>铜钱</span><b>+${rep.coins} <small>(含清场 ${rep.coinWave})</small></b><span>经验</span><b>+${rep.xp}</b><span>等级</span><b>Lv${rep.lv}</b><span>待修炼</span><b>${r.xiu} 次</b></div></div>
+      body.innerHTML = `<div class="cg"><div class="cpn"><h4>这一波</h4><div class="stats big"><span>击倒</span><b>${rep.kills}</b><span>铜钱</span><b>+${rep.coins}${rep.clear ? ' <small>(含清场奖励)</small>' : rep.timeout ? ' <small>(超时，没有清场奖励)</small>' : ''}</b><span>经验</span><b>+${rep.xp}</b><span>等级</span><b>Lv${rep.lv}</b><span>待修炼</span><b>${r.xiu} 次</b></div></div>
         <div class="cpn"><h4>输出统计</h4>${rows.length ? rows.map(([id, v]) => `<div class="dmgr"><span>${SK[id].name}</span><i><b style="width:${(v / tot * 100).toFixed(1)}%"></b></i><em>${Math.round(v)} · ${Math.round(v / tot * 100)}%</em></div>`).join('') : '<p class="dim">没有打出伤害</p>'}</div></div>`;
     } else if (tab === 'shi') {
-      if (!loot.length) { body.innerHTML = `<p class="dim center">这一波没有别的战利品${rep.last ? '' : '<br><small>技能书要打完一站才掉；行商那里也能买</small>'}</p>`; return; }
+      if (!loot.length) { body.innerHTML = `<p class="dim center">这一波没有战利品<br><small>每站第 3 波必掉技能书；精英掉书，小头目掉宝物；行商那里也能买</small></p>`; return; }
       const g = document.createElement('div'); g.className = 'cards'; body.appendChild(g);
       loot.forEach((o, i) => { const t = thing(o), d = card(t, o);
         btnTo(d, o.kind === 'book' ? '学会' : o.kind === 'use' ? '吃掉' : '收下', () => { if (learn(o)) { loot.splice(i, 1); render(); } }, true);
@@ -155,15 +156,17 @@
       const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} 刷新 ${rrMax - r.xrr}/${rrMax}`; rb.disabled = r.xrr >= rrMax; rb.onclick = () => { r.xrr++; r.xopt = rollXiu(nOpt); render(); };
       const w = document.createElement('div'); w.className = 'center'; w.appendChild(rb); body.appendChild(w);
     } else if (tab === 'shang') {
-      const fx = B().hero().fx, pm = 1 + (fx.shop || 0);
+      const fx = B().hero().fx, pm = (1 + (fx.shop || 0)) * (1 + DATA.price.stUp * (rep.st - 1));   // 每站涨 7%
       if (!r.shop) r.shop = rollShop();
       const g = document.createElement('div'); g.className = 'cards'; body.appendChild(g);
-      r.shop.forEach((o, i) => { const d = o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开新技能格</b><small>技能栏多开一格</small>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
+      r.shop.forEach((o, i) => { const d = o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开第 ${r.open + 1} 格</b><small>技能栏多开一格</small><p>${r.open + 1 === 4 ? '第 4 站打完也会免费开' : '第 8 站打完也会免费开'}</p>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
         if (o.sold) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已买</p>'); }
+        else if (o.kind === 'slot' && o.n !== r.open + 1) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已开</p>'); }
         else btnTo(d, `买 ${UI.piH('coin', 1)}${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; r.coins -= price; o.sold = true; render(); }, true);
         g.appendChild(d); });
-      const cost = Math.round(DATA.price.reroll * (r.rr + 1) * (1 + (fx.reroll || 0)));
-      const w = document.createElement('div'); w.className = 'center'; const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} 刷新货架 ${UI.piH('coin', 1)}${cost}`;
+      // 刷新：4 + 2 ×（站 − 1）+ 3 × 已刷次数，每次结算最多刷 4 次
+      const [c0, c1, c2] = DATA.price.refresh, cost = Math.round((c0 + c1 * (rep.st - 1) + c2 * r.rr) * (1 + (fx.reroll || 0))), left = DATA.price.refreshMax - r.rr;
+      const w = document.createElement('div'); w.className = 'center'; const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} 刷新货架 ${UI.piH('coin', 1)}${cost} <small>(${left}/${DATA.price.refreshMax})</small>`; rb.disabled = left <= 0;
       rb.onclick = () => { if (r.coins < cost) return toast('铜钱不够'); r.coins -= cost; r.rr++; r.shop = rollShop(); render(); }; w.appendChild(rb); body.appendChild(w);
     } else if (tab === 'ji') loadout(body);
     else if (tab === 'shu') attrPanel(body);
@@ -180,9 +183,13 @@
     return out;
   }
   function rollShop() {
-    const r = R(), items = shuffle(DATA.startItems.filter(i => i.id !== 'purse')).slice(0, 3).map(i => ({ kind: 'item', id: i.id, price: DATA.price.item }));
-    const books = shuffle(Object.keys(SK)).slice(0, 2).map(id => ({ kind: 'book', id, lv: 1, price: DATA.price.book }));
-    const L = items.concat(books); if (r.open < DATA.slotsMax) L.push({ kind: 'slot', price: DATA.price.slot * (r.open - 2) }); return L;
+    // 货架：3 件宝物 + 2 本书（新书 22，已有的升 Lv2 34，再往上 52）+ 能开格时多一格（第 2 站起 50 开第 4 格，第 5 站起 78 开第 5 格）
+    const r = R(), P = DATA.price, items = shuffle(DATA.startItems.filter(i => i.id !== 'purse')).slice(0, 3).map(i => ({ kind: 'item', id: i.id, price: i.price || 25 }));
+    const lvOf = id => { const h = r.slots.find(s => s && s.id === id) || r.bag.find(b => b && b.kind === 'book' && b.id === id); return h ? h.lv : 0; };
+    const books = shuffle(Object.keys(SK)).slice(0, 2).map(id => ({ kind: 'book', id, lv: 1, price: [22, 34, 52][Math.min(2, lvOf(id))] }));
+    const L = items.concat(books);
+    if (r.open === 3 && rep.st >= P.slot4At) L.push({ kind: 'slot', n: 4, price: P.slot4 }); else if (r.open === 4 && rep.st >= P.slot5At) L.push({ kind: 'slot', n: 5, price: P.slot5 });
+    return L;
   }
   $('cGo').onclick = () => {
     commit(); const r = R(); for (const o of loot) r.coins += thing(o).sell; loot = [];   // 没处理的自动卖掉

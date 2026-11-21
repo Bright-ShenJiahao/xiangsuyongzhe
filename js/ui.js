@@ -60,7 +60,7 @@
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
       const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword';
       P.free = {}; P.habitOpts = shuffle(DATA.habits).slice(0, 3).map(h => h.id); P.itemOpts = shuffle(DATA.startItems).slice(0, 3).map(i => i.id);
-      P.habit = null; P.item = P.itemOpts[0];
+      P.habit = null; P.item = P.itemOpts[0]; P.hrr = 0;
     }
     renderPrep(); setTab(P.tab); show('prep');
   }
@@ -82,11 +82,13 @@
       const [m, p] = r.querySelectorAll('button'); m.onclick = () => { P.free[a.id]--; renderPrep(); }; p.onclick = () => { P.free[a.id] = (P.free[a.id] || 0) + 1; renderPrep(); };
       ar.appendChild(r);
     }
-    $('aStats').innerHTML = `<span>生命</span><b>${c.hp}</b><span>${W.name}伤害</span><b>${pct(c.dmg - 1)}</b><span>出手速度</span><b>${pct(c.spd - 1)}</b><span>范围</span><b>${pct(c.area - 1)}</b><span>暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>受到伤害</span><b>${pct(c.dmgIn - 1)}</b><span>移速</span><b>${pct(c.move - 1)}</b><span>经验</span><b>${pct(c.xp - 1)}</b>`;
+    $('aStats').innerHTML = `<span>生命</span><b>${c.hp}</b><span>${W.name}伤害</span><b>${pct(c.dmg - 1)}</b><span>出手速度</span><b>${pct(c.spd - 1)}</b><span>范围</span><b>${pct(c.area - 1)}</b><span>暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>物防 / 魔防</span><b>${c.pdef} / ${c.mdef}</b><span>移速</span><b>${pct(c.move - 1)}</b><span>经验</span><b>${pct(c.xp - 1)}</b>`;
     // 现实习惯：三选一，也可以不选
     const hs = $('hSel'); hs.innerHTML = '';
     for (const id of P.habitOpts) { const h = DATA.habits.find(x => x.id === id), d = document.createElement('div'); d.className = id === P.habit ? 'on' : ''; d.innerHTML = `<b>${h.name}</b><i>${h.good}</i><u>${h.bad}</u><small>${h.line}</small>`; d.onclick = () => { P.habit = P.habit === id ? null : id; renderPrep(); }; hs.appendChild(d); }
     const no = document.createElement('div'); no.className = 'none' + (P.habit ? '' : ' on'); no.textContent = '不选习惯'; no.onclick = () => { P.habit = null; renderPrep(); }; hs.appendChild(no);
+    const HRR = 2, rr = document.createElement('div'); rr.className = 'none reroll' + (P.hrr >= HRR ? ' off' : ''); rr.textContent = `换一批 (${HRR - P.hrr}/${HRR})`;   // 习惯可以换 2 次
+    rr.onclick = () => { if (P.hrr >= HRR) return; P.hrr++; P.habit = null; P.habitOpts = shuffle(DATA.habits.filter(h => !P.habitOpts.includes(h.id))).slice(0, 3).map(h => h.id); renderPrep(); }; hs.appendChild(rr);
     // 技能栏：5 格，开 3 格；第 1 格是起手招
     const sl = $('sSlots'); sl.innerHTML = '';
     for (let i = 0; i < DATA.slotsMax; i++) { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
@@ -130,8 +132,9 @@
   const mmss = t => { t = Math.max(0, Math.ceil(t)); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
   function hud(h) {
     set('hpBar', 'w', (h.hp / h.maxHp * 100).toFixed(1) + '%'); set('hpTxt', 'text', `${Math.ceil(h.hp)} / ${h.maxHp}`);
-    set('lvTxt', 'text', 'Lv ' + h.lv); set('xpBar', 'w', (h.xp / h.need * 100).toFixed(1) + '%');
-    set('clock', 'text', h.bossWave ? '首领战！' : `第 ${h.wave + 1} / ${h.waves} 波 · 剩 ${h.left}`);
+    set('lvTxt', 'text', 'Lv ' + h.lv); set('xpBar', 'w', h.need ? (h.xp / h.need * 100).toFixed(1) + '%' : '100%');
+    set('clock', 'text', h.bossWave ? '首领站 · 首领战！' : `第 ${h.st}/${h.sts} 站 · 第 ${h.wi + 1}/3 波 · ${h.left == null ? '' : mmss(h.left)}`);
+    set('clock', 'cls', h.left != null && h.left < 5.5 && !h.bossWave ? 'warn' : '');
     set('kills', 'html', piH('kill', 1) + ' ' + h.kills); set('coins', 'html', piH('coin', 1) + ' ' + h.coins);
     const sk = JSON.stringify([h.slots, h.open, h.next]);
     if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.appendChild(iconCanvas(DATA.skills[s.id].icon)); if (s.lv > 1) d.insertAdjacentHTML('beforeend', `<i>${s.lv}</i>`); } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
@@ -145,18 +148,26 @@
     overlay('levelup', true);
   }
   function togglePause(force) {
-    if (screen !== 'battle' || !BATTLE.active() || $('levelup').classList.contains('on') || (window.CAMP && CAMP.isOpen())) return;
+    if (screen !== 'battle' || !BATTLE.active() || $('levelup').classList.contains('on') || $('route').classList.contains('on') || (window.CAMP && CAMP.isOpen())) return;
     const on = force != null ? force : !$('pause').classList.contains('on'); if (!on) CAMP.commit(); BATTLE.pause(on); overlay('pause', on); if (on) CAMP.pauseOpen();
   }
   $('bPause').onclick = () => togglePause(); $('pRes').onclick = () => { CAMP.commit(); togglePause(false); };
   $('pRe').onclick = () => startBattle(lastBuild); $('pHome').onclick = () => { BATTLE.stop(); overlay('pause', false); show('title'); };
   const waveEnd = r => CAMP.open(r);
+  // 一站打完：三张路线卡选一张（月圆之夜式）。宝箱 / 休息 / 奇遇等设计好再加
+  function route(o, done) {
+    $('rtTitle').textContent = `选择第 ${o.st} 站`; const box = $('rtCards'); box.innerHTML = '';
+    for (const c of o.cards) { const d = document.createElement('div'); d.className = 'rcard k-' + c.k; d.innerHTML = `<i>${{ fight: '⚔', elite: '☠', boss: '♛' }[c.k]}</i><b>${c.name}</b><p>${c.desc}</p>`;
+      d.onclick = () => { overlay('route', false); done(c); }; box.appendChild(d); }
+    overlay('route', true);
+  }
+  let toastT = 0; function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1800); }
   $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); BATTLE.roll(); });
   function result(r) {
     $('rTitle').textContent = r.win ? '胜利！' : '败北……';
     $('rMsg').textContent = r.win ? '哥布林王倒下了，屏幕那头好像传来了「下一关」的音乐。' : '眼前一黑……再按一次开始键吧。';
     const best = Object.entries(r.dmg || {}).sort((a, b) => b[1] - a[1])[0];
-    $('rStats').innerHTML = `<span>打到</span><b>${r.win ? '通关' : DATA.waves[r.wave] && DATA.waves[r.wave].boss ? '首领战' : `第 ${r.wave + 1} 波`}</b><span>用时</span><b>${mmss(r.time)}</b><span>击倒</span><b>${r.kills}</b><span>等级</span><b>Lv ${r.lv}</b>${best ? `<span>主力</span><b>${DATA.skills[best[0]].name}</b>` : ''}`;
+    $('rStats').innerHTML = `<span>打到</span><b>${r.win ? '通关' : r.boss ? '首领战' : `第 ${r.st} 站 第 ${Math.max(0, r.wi) + 1} 波`}</b><span>用时</span><b>${mmss(r.time)}</b><span>击倒</span><b>${r.kills}</b><span>等级</span><b>Lv ${r.lv}</b>${best ? `<span>主力</span><b>${DATA.skills[best[0]].name}</b>` : ''}`;
     overlay('result', true);
   }
   $('rAgain').onclick = () => startBattle(lastBuild);
@@ -173,7 +184,7 @@
     else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#07101b'; ctx.fillRect(0, 0, cv.width, cv.height); }
     requestAnimationFrame(loop);
   }
-  window.UI = { mod: () => BATTLE, hud, levelUp, result, waveEnd, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { mod: () => BATTLE, hud, levelUp, result, waveEnd, route, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   if (window.BOOT) BOOT.progress(.3);
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来
