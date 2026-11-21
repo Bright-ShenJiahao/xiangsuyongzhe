@@ -456,3 +456,9 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
   #title.t2.v3 .tart::after, #title.t2.v4 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 28, 0) 50%, #0d1626 66%); }
   #title.t2.v3 .tbox, #title.t2.v4 .tbox { right: 0; width: 100%; }
 }
+
+/* 11/22 主界面载入条（替代加载页） */
+.tload { position: relative; width: min(60vw, 260px); height: 18px; background: rgba(0,0,0,.45); box-shadow: 0 0 0 1px #c8a060; margin-top: 14px; }
+.tload i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(#ffd86a, #b8862a); transition: width .3s; }
+.tload span { position: relative; display: block; text-align: center; font-size: 12px; line-height: 18px; color: #fff; text-shadow: 0 1px 2px #000; }
+.tload.done { display: none; } #bStart:disabled { opacity: .4; pointer-events: none; }

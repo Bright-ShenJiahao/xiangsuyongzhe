@@ -4,7 +4,7 @@
 (() => {
   const $ = id => document.getElementById(id), cv = $('cv'), ctx = cv.getContext('2d');
   const rd = Math.round;
-  let screen = 'boot', last = performance.now();
+  let screen = 'title', last = performance.now();
   const fieldImg = new Image(); fieldImg.crossOrigin = 'anonymous'; fieldImg.src = DATA.maps[0].img;
   try { if (localStorage.getItem('xsyz-title') !== 'old') document.getElementById('title').classList.add('t2', 'v' + (localStorage.getItem('xsyz-tart') || '2')); } catch (e) { document.getElementById('title').classList.add('t2'); }   // 11/22 新主界面（月夜 + 旧地图水彩），旧的可在调试面板切回
   const store = { get: k => { try { return localStorage.getItem('xsyz-' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('xsyz-' + k, v); } catch (e) {} } };
@@ -42,8 +42,7 @@
       add(SPR.crop('hero', 'idle', 0), '勇者', '深夜打游戏被吸进来的玩家');
       for (const [k, T] of Object.entries(DATA.enemies)) add(SPR.crop(k, 'idle0') || SPR.crop(k, 'walk0'), T.name, T.boss ? '首领' : T.ranged ? '远程' : '近战');
       return d; }],
-    set: ['设置', () => { const d = document.createElement('div'); d.innerHTML = '<p>· 重看开场动画：下次打开游戏时完整播放加载动画。</p><div class="col"><button class="btn" id="setBoot">重看开场动画</button></div><p style="margin-top:10px;color:#a89878">音量等设置以后加。</p>';
-      d.querySelector('#setBoot').onclick = e => { try { localStorage.removeItem('xsyz-bootSeen'); } catch (_) {} e.target.textContent = '好了，刷新页面就会播'; }; return d; }],
+    set: ['设置', () => { const d = document.createElement('div'); d.innerHTML = '<p style="color:#a89878">音量等设置以后加。</p>'; return d; }],
     help: ['帮助', () => { const d = document.createElement('div'); d.innerHTML = `<p>· 深夜两点，你被吸进了游戏机。打倒首领才能回去。</p>
       <p>· 移动：${touch ? '按住屏幕拖动' : 'WASD 或方向键'}；翻滚：${touch ? '右下角按钮' : '空格'}（翻滚时不会受伤）。</p>
       <p>· 技能按技能栏的顺序轮流自动放出，你只管走位。</p>
@@ -208,11 +207,11 @@
   }
   window.UI = { mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
-  if (window.BOOT) BOOT.progress(.3);
+  const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来
   const UIPRE = ['map.webp', 'panel.png', 'card.png', 'q0.png', 'q1.png', 'q2.png', 'q3.png', 'slot.png', 'slot_sel.png', 'slot_lock.png', 'cell.png', 'btn.png', 'btn_gold.png', 'tab.png', 'tab_on.png', 'bar.png', 'pause.png', 'divider.png']
     .concat(Object.keys(window.UIART || {}).filter(k => (window.UIART[k][0] || 0) < 60).map(k => k + '.png'));
   const preUI = () => Promise.all([...new Set(UIPRE)].map(f => new Promise(ok => { const im = new Image(); im.onload = im.onerror = ok; im.src = 'art/ui2/' + f; (window.__ui = window.__ui || []).push(im); })));
-  Promise.all([SPR.load(), preUI()]).then(() => { if (window.BOOT) { BOOT.progress(1); BOOT.done(() => show('title')); } else show('title'); requestAnimationFrame(loop); })
-    .catch(e => { console.error(e); if (window.BOOT) BOOT.fail('载入失败：' + e); });
+  Promise.all([SPR.load(), preUI()]).then(() => { prog(1); document.getElementById('tload').classList.add('done'); $('bStart').disabled = false; show('title'); requestAnimationFrame(loop); })
+    .catch(e => { console.error(e); document.getElementById('ttx').textContent = '载入失败，请刷新'; });
 })();

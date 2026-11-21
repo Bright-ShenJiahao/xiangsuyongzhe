@@ -10,17 +10,17 @@
 <canvas id="cv"></canvas>
 
 <!-- 加载页：深夜卧室打游戏机（js/boot.js） -->
-<div id="boot"><div id="bx"><canvas id="bxa" width="37" height="33"></canvas><p id="bxt"></p><i>▼</i></div><div id="btitle"><b>像素勇者</b></div><div class="tx" id="bootx">加载中…</div><div class="bar"><i id="bootbar"></i></div></div>
 
 <!-- 主界面（照三国终章：左边大图，右边标题和「新的开始」，右上角 图鉴 / 设置 / 帮助） -->
-<div id="title" class="scr">
+<div id="title" class="scr on">
   <div class="tart"></div>
   <div class="ttop"><button class="btn mini" data-panel="codex">图鉴</button><button class="btn mini" data-panel="set">设置</button><button class="btn mini" data-panel="help">帮助</button></div>
   <div class="tbox">
     <div class="logo"><img class="lg1" src="art/title/logo.png" alt="像素勇者" draggable="false"><img class="lg2" src="art/title/logo2.png" alt="像素勇者" draggable="false"><i class="seal">肉鸽</i></div>
     <div class="sub"><s></s>深夜两点的冒险<s></s></div>
     <div class="en">PIXEL HERO · ONE MORE ROUND BEFORE BED</div>
-    <button class="btn big gold" id="bStart">新的开始</button>
+    <div class="tload" id="tload"><i id="tbar"></i><span id="ttx">载入中…</span></div>
+    <button class="btn big gold" id="bStart" disabled>新的开始</button>
   </div>
 </div>
 
@@ -95,7 +95,6 @@
 <div id="result" class="scr over"><div class="panel box"><h2 id="rTitle"></h2><p id="rMsg"></p><div class="stats" id="rStats"></div><div class="col"><button class="btn gold" id="rAgain">再来一次</button><button class="btn" id="rWep">回备战页</button><button class="btn" id="rHome">回主界面</button></div></div></div>
 <div id="tpanel" class="scr over"><div class="panel box wide"><h2 id="tpTitle"></h2><div id="tpBody"></div><div class="col"><button class="btn gold" id="tpClose">关闭</button></div></div></div>
 
-<script src="js/boot.js"></script>
 <script src="js/data.js"></script>
 <script src="js/sprites.js"></script>
 <script src="js/skframes.js"></script>
