@@ -367,3 +367,13 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 .dragghost img, .dragghost canvas { width: 100%; height: auto; }
 
 .dots { letter-spacing: -1px; color: #ffd86a; font-style: normal; font-size: 10px; } .loinfo .dots { font-size: 13px; }
+
+/* 11/22 技能书阶级颜色：初阶灰白 / 中阶蓝 / 高阶紫 / 宗师金（格子内框 + 书名 + 行商卡片顶边） */
+.tr { position: relative; }
+.tr::after { content: ''; position: absolute; inset: 2px; border: 2px solid var(--tc); border-radius: 3px; pointer-events: none; }
+.t1 { --tc: rgba(220, 220, 210, .55); } .t2 { --tc: #4aa0ff; } .t3 { --tc: #b070ff; } .t4 { --tc: #ffcf3a; }
+.t4::after { box-shadow: 0 0 8px 1px rgba(255, 207, 58, .7); animation: tierGlow 1.6s ease-in-out infinite; }
+@keyframes tierGlow { 50% { box-shadow: 0 0 2px 0 rgba(255, 207, 58, .3); } }
+.ic.tr::after { inset: -1px; }
+.tn1 { color: #e6e2d6 !important; } .tn2 { color: #6ab8ff !important; } .tn3 { color: #c890ff !important; } .tn4 { color: #ffd84a !important; }
+.card.ct1 { border-top: 3px solid #c8c4b8; } .card.ct2 { border-top: 3px solid #4aa0ff; } .card.ct3 { border-top: 3px solid #b070ff; } .card.ct4 { border-top: 3px solid #ffcf3a; }

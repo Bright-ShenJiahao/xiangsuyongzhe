@@ -53,7 +53,7 @@ window.DATA = {
     // ---- 剑（力量，物理）----
     sword: { name: '半月斩', rg: 60, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .4, dmg: 6, desc: '身前 135° 大扇面一刀。', l3: '扇面扩大 +25%', l5: '反手再补一刀', l7: '斩完飞出一道月牙剑气' },
     whirl: { name: '旋风斩', rg: 48, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .45, dmg: 4, desc: '原地转一圈，打身边一整圈。', l3: '打中的怪减速', l5: '连转两圈', l7: '转完留下小旋风' },
-    guard: { name: '守护之刃', rg: 90, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .5, rc: .3, dmg: 4, frame: 'big', desc: '每次召唤 1 把飞剑绕身转（最多 2 把），碰 5 次就碎。', l3: '最多 3 把', l5: '碰到的怪流血', l7: '碎掉时飞向敌人' },
+    guard: { name: '守护之刃', rg: 90, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .5, rc: .3, dmg: 4, frame: 'big', desc: '每次召唤 1 把大飞剑绕身转（最多 2 把），碰 8 次才碎。', l3: '最多 3 把', l5: '碰到的怪流血', l7: '碎掉时飞向敌人' },
     wave: { name: '破空斩', rg: 220, sys: '剑', w: 'sword', tier: 2, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .5, dmg: 7, desc: '朝最近的敌人射出月牙剑气，穿透 3 只。', l3: '扇形 3 道', l5: '穿透不限', l7: '飞到尽头再飞回来' },
     phantom: { name: '幻影斩', rg: 130, sys: '剑', w: 'sword', tier: 2, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .5, dmg: 9, desc: '瞬间斩出一条直线，尽头留下残影转身斩一圈。', l3: '残影停留 2 秒，跟着你出剑招', l5: '直线留伤痕，怪流血', l7: '两端各留一个残影' },
     flash: { name: '瞬光斩', rg: 110, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .8, rc: .5, dmg: 20, crit: .3, charge: true, desc: '蓄力后向前砍出一个大半圆，暴击率 +30%。蓄力时翻滚就作废。', l3: '蓄力缩短到 0.5 秒', l5: '半圆扩大 +30%', l7: '出刀后飞出巨大月牙剑气' },
@@ -71,7 +71,7 @@ window.DATA = {
     // ---- 弓（敏捷，物理）----
     bow: { name: '疾矢', rg: 230, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .2, rc: .35, dmg: 4, desc: '射最近的敌人，能穿过 1 只。出手最快。', l3: '穿透 +1', l5: '一次射 2 支', l7: '命中后分裂 3 支小箭' },
     fan: { name: '扇羽箭', rg: 120, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .3, rc: .4, dmg: 3, desc: '朝前方扇形射出 5 支短程箭，近身伤害高。', l3: '7 支', l5: '击退', l7: '0.3 秒后再补一轮' },
-    homing: { name: '灵羽箭', rg: 260, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .3, rc: .4, dmg: 4, desc: '射出 2 支会追踪的羽箭，尽量打不同的怪。', l3: '3 支', l5: '命中减速', l7: '命中后弹射到下一只' },
+    homing: { name: '灵羽箭', rg: 260, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .3, rc: .4, dmg: 4, desc: '射出 3 支会追踪的羽箭，命中后弹到下一只怪。', l3: '5 支', l5: '命中减速', l7: '弹 2 次' },
     rain: { name: '暴风箭雨', rg: 240, sys: '弓', w: 'bow', tier: 2, icon: 'bow', type: 'agi', dt: 'phys', wu: .45, rc: .45, dmg: 3, frame: 'big', desc: '朝天一箭，0.6 秒后在怪最密处落下箭雨 1.5 秒。', l3: '范围 +25%', l5: '持续 2.5 秒且减速', l7: '同时落两片' },
     barrage: { name: '连珠箭', rg: 240, sys: '弓', w: 'bow', tier: 2, icon: 'bow', type: 'agi', dt: 'phys', wu: .2, rc: .35, hold: .8, dmg: 4, desc: '锁定一只（优先精英），0.8 秒连射 5 箭。', l3: '7 箭', l5: '每箭叠易伤', l7: '最后一箭贯穿全屏' },
     pierce: { name: '贯星箭', rg: 260, sys: '弓', w: 'bow', tier: 3, icon: 'bow', type: 'agi', dt: 'phys', wu: .7, rc: .5, dmg: 22, charge: true, desc: '蓄力后射出贯穿全屏的巨箭，推开沿途的怪。', l3: '蓄力缩短到 0.45 秒', l5: '箭变粗 +50%', l7: '沿途接连爆炸' },
@@ -82,7 +82,7 @@ window.DATA = {
     nova: { name: '霜冻新星', rg: 52, sys: '法杖', w: 'staff', tier: 1, icon: 'nova', type: 'int', dt: 'magic', wu: .3, rc: .45, dmg: 8, frame: 'big', desc: '以自己为中心炸开寒气，叠 1 层缓滞（叠满 4 层冻结）。', l3: '范围 +25%', l5: '一次叠 2 层', l7: '飞出 8 根冰刺' },
     chain: { name: '闪电链', rg: 200, sys: '法杖', w: 'staff', tier: 1, icon: 'fire', type: 'int', dt: 'magic', wu: .3, rc: .4, dmg: 6, desc: '劈中最近的怪再弹 3 只，打缓滞的怪伤害翻倍。', l3: '弹 5 只', l5: '弹跳不衰减', l7: '同时两道' },
     pillar: { name: '圣光柱', rg: 240, sys: '法杖', w: 'staff', tier: 2, icon: 'fire', type: 'int', dt: 'magic', wu: .4, rc: .4, dmg: 12, desc: '0.5 秒后在怪脚下降下光柱。', l3: '同时 2 道', l5: '光柱停留 1.5 秒', l7: '打中回复生命' },
-    orbs: { name: '暗影宝珠', rg: 160, sys: '法杖', w: 'staff', tier: 2, icon: 'nova', type: 'int', dt: 'magic', wu: .3, rc: .3, dmg: 4, desc: '每次召唤 1 颗宝珠（最多 2 颗），每 0.8 秒射暗影弹，6 发后消失。', l3: '最多 3 颗', l5: '命中附加诅咒', l7: '消失时爆炸' },
+    orbs: { name: '暗影黑雾', rg: 220, sys: '法杖', w: 'staff', tier: 2, icon: 'nova', type: 'int', dt: 'magic', wu: .3, rc: .3, dmg: 4, desc: '在怪最密的地方放一团黑雾 5 秒（最多 2 团），雾里的怪每 0.5 秒受魔法伤害并减速。', l3: '黑雾变大 +25%', l5: '雾里的怪被诅咒', l7: '雾散时炸开' },
     thunder: { name: '雷霆万钧', rg: 240, sys: '法杖', w: 'staff', tier: 3, icon: 'fire', type: 'int', dt: 'magic', wu: .6, rc: .5, dmg: 14, frame: 'big', desc: '依次劈下 4 道落雷，打缓滞的怪伤害翻倍。', l3: '6 道', l5: '留下雷区', l7: '最后一道巨大天雷' },
     blizzard: { name: '暴风雪', rg: 80, sys: '法杖', w: 'staff', tier: 3, icon: 'nova', type: 'int', dt: 'magic', wu: .4, rc: .4, hold: 2.5, dmg: 4, frame: 'big', desc: '2.5 秒内周围不断落下冰锥叠缓滞，跟着你走。', l3: '范围 +25%', l5: '持续 3.5 秒', l7: '结束时冻住的怪碎裂' },
     abyss: { name: '深渊之门', rg: 240, sys: '法杖', w: 'staff', tier: 4, icon: 'nova', type: 'int', dt: 'magic', wu: 1, rc: .8, hold: 4, dmg: 6, frame: 'big', desc: '打开深渊之门 4 秒，吸怪并用触手抽打。', l3: '吸引范围 +30%', l5: '周围的怪被诅咒', l7: '关门大爆炸' },
@@ -123,7 +123,6 @@ window.DATA = {
     goblin: { name: '哥布林', pdef: 5, mdef: 0, hp: 6, spd: 45, reach: 24, arc: 60, r: 36, dmg: 6, wind: .43, cool: 1.35, dtype: 'phys' },
     gob_blade: { name: '哥布林刀手', pdef: 15, mdef: 5, hp: 9, spd: 55, reach: 31, arc: 110, r: 50, dmg: 8, wind: .52, cool: 1.65, dtype: 'phys' },
     gob_archer: { name: '哥布林弓手', pdef: 0, mdef: 10, hp: 5, spd: 38, reach: 168, keep: [115, 155], dmg: 5, wind: .7, cool: 1.9, arrow: 130, ranged: true, dtype: 'phys' },
-    zhangfei: { name: '张飞（试看）', pdef: 15, mdef: 5, hp: 10, spd: 50, reach: 36, arc: 90, r: 58, dmg: 8, wind: .55, cool: 1.6, dtype: 'phys' },   // 11/22 试看：当小怪混进每一波（battle.js spawner，约三成小兵换成他）
     gob_king: { name: '哥布林王', pdef: 30, mdef: 20, hp: 600, spd: 30, reach: 30, dmg: 14, wind: .9, boss: true, dtype: 'phys' },
   },
   // 地图：第一版只开打谷场

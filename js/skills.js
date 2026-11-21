@@ -37,7 +37,7 @@ window.SKILLS = (A) => {
     whirl(c) { const r = 40 * area(), h = H(), spin = (k) => { A.fx({ k: 'ring', x: h.x, y: h.y, t: 0, T: .3, r, col: '#e8ecf4' }); hitAll(z => inCircle(z, h, r), c.d * k, { sid: c.sid, kb: 12, slowP: c.L >= 3 ? [.3, 1.5] : 0 }); };
       spin(1); if (c.L >= 5) wait(.25, () => spin(1));
       if (c.L >= 7) zone({ x: h.x, y: h.y, r: r * .7, T: 1, every: .2, d: c.d * .4, sid: c.sid, look: 'wind' }); },
-    guard(c) { const max = c.L >= 3 ? 3 : 2; if (swords.length >= max) swords.sort((a, b) => a.life - b.life).shift(); swords.push({ hits: 5, life: 6, ph: R(0, 7), d: c.d, sid: c.sid, L: c.L, cd: new Map() }); },
+    guard(c) { const max = c.L >= 3 ? 3 : 2; if (swords.length >= max) swords.sort((a, b) => a.life - b.life).shift(); swords.push({ hits: 8, life: 6, ph: R(0, 7), d: c.d, sid: c.sid, L: c.L, cd: new Map() }); },
     wave(c) { const h = H(), n = c.L >= 3 ? 3 : 1; for (let i = 0; i < n; i++) shoot({ x: h.x, y: h.y, a: c.a + (i - (n - 1) / 2) * .25, v: 240, life: .7, r: 12, pierce: c.L >= 5 ? 99 : 3, d: c.d, sid: c.sid, look: 'crescent', back: c.L >= 7 }); },
     phantom(c) { const h = H(), L = 120, w = 12, e = P(h.x, h.y, c.a, L);
       A.fx({ k: 'line', x: h.x, y: h.y - 10 * K, a: c.a, L, w, t: 0, T: .25, col: '#bfe8ff' });
@@ -86,9 +86,9 @@ window.SKILLS = (A) => {
       arrow(c.a, c.L >= 7); if (c.L >= 5) wait(.1, () => arrow(A.aimNow(c.a), c.L >= 7)); },
     fan(c) { const h = H(), n = c.L >= 3 ? 7 : 5, go = () => { const a0 = A.aimNow(c.a); for (let i = 0; i < n; i++) shoot({ x: h.x, y: h.y - 16 * K, a: a0 + (i - (n - 1) / 2) * (1 / (n - 1)), v: 300, life: .35, r: 8, pierce: 0, d: c.d, sid: c.sid, look: 'arrow', kb: c.L >= 5 ? 18 : 6 }); };
       go(); if (c.L >= 7) wait(.3, go); },
-    homing(c) { const h = H(), n = c.L >= 3 ? 3 : 2, used = new Set(); for (let i = 0; i < n; i++) { const t = near(1e9, used) || near(); if (t) used.add(t);
+    homing(c) { const h = H(), n = c.L >= 3 ? 5 : 3, used = new Set(); for (let i = 0; i < n; i++) { const t = near(1e9, used) || near(); if (t) used.add(t);
       shoot({ x: h.x, y: h.y - 16 * K, a: c.a + (i - (n - 1) / 2) * .9, v: 200, life: 1.6, r: 8, pierce: 0, d: c.d, sid: c.sid, look: 'feather', home: t, o: c.L >= 5 ? { slowP: [.3, 2] } : {},
-        onHit: (p, z) => { if (c.L >= 7 && !p.bounced) { const n2 = nearOf(z, 80, new Set([z])); if (n2) { p.bounced = 1; p.left = 1; p.home = n2; p.life = p.t + 1; } } } }); } },
+        onHit: (p, z) => { p.bn = (p.bn || 0) + 1; if (p.bn <= (c.L >= 7 ? 2 : 1)) { const n2 = nearOf(z, 110, new Set([z])); if (n2) { p.left = 1; p.home = n2; p.life = p.t + 1; } } } }); } },   // 11/22：命中后弹到下一只
     rain(c) { const go = (p) => { if (!p) return; const r = 36 * (c.L >= 3 ? 1.25 : 1) * area(); A.tele({ k: 'circle', x: p.x, y: p.y, r, t: 0, T: .6 });
         wait(.6, () => zone({ x: p.x, y: p.y, r, T: c.L >= 5 ? 2.5 : 1.5, every: .25, d: c.d, sid: c.sid, look: 'rain', o: c.L >= 5 ? { slowP: [.3, .5] } : {} })); };
       const p1 = dense(30) || (near() && { x: near().x, y: near().y }); go(p1); if (c.L >= 7) go(dense(30, 170, p1 ? [p1] : [])); },
@@ -116,7 +116,11 @@ window.SKILLS = (A) => {
       wait(.5, () => { A.fx({ k: 'pillar', x: p.x, y: p.y, t: 0, T: c.L >= 5 ? 1.5 : .4, r: 14, col: '#fff2b0' }); let healed = 0;
         hitAll(z => inCircle(z, p, 26), c.d, { sid: c.sid, kb: 8, on: () => { if (c.L >= 7 && healed < 5) { healed++; A.heal(1); } } });
         if (c.L >= 5) zone({ x: p.x, y: p.y, r: 26, T: 1.5, every: .3, d: c.d * .3, sid: c.sid, look: 'holy' }); }); } },
-    orbs(c) { const max = c.L >= 3 ? 3 : 2; if (orbs.length >= max) orbs.sort((a, b) => a.shots - b.shots).pop(); orbs.push({ shots: 6, cd: .3, ph: R(0, 7), d: c.d, sid: c.sid, L: c.L }); },
+    // 11/22 暗影黑雾（原暗影宝珠，id 不变）：在怪最密处放一团黑雾 5 秒，每 0.5 秒魔法伤害 + 减速；最多 2 团，再放就换掉剩得最少的那团
+    orbs(c) { const p = dense(40, 220) || near(); if (!p) return; const fogs = zones.filter(z => z.look === 'fog'); if (fogs.length >= 2) { const old = fogs.sort((a, b) => (b.t / b.T) - (a.t / a.T))[0]; zones.splice(zones.indexOf(old), 1); }
+      const r = 40 * (c.L >= 3 ? 1.25 : 1) * area();
+      zone({ x: p.x, y: p.y, r, T: 5, every: .5, d: c.d, sid: c.sid, look: 'fog', o: { dt: 'magic', slowP: [.3, .6], curse: c.L >= 5 },
+        end: c.L >= 7 ? (z0) => { A.fx({ k: 'boom', x: z0.x, y: z0.y, t: 0, T: .4, r: r, col: 'dark' }); hitAll(q => inCircle(q, z0, r), c.d * 3, { sid: c.sid, kb: 10, dt: 'magic' }); } : null }); },
     thunder(c) { const n = c.L >= 3 ? 6 : 4, pts = []; for (let i = 0; i < n; i++) { const p = dense(24, 200, pts) || (F()[i] && { x: F()[i].x, y: F()[i].y }); if (p) pts.push(p); }
       pts.forEach((p, i) => { A.tele({ k: 'circle', x: p.x, y: p.y, r: 24, t: 0, T: .3 + i * .15 }); wait(.3 + i * .15, () => { bolt([{ x: p.x + R(-6, 6) * K, y: p.y - 140 * K }, { x: p.x + R(-8, 8) * K, y: p.y - 70 * K }, { x: p.x, y: p.y }], '#fff6a0', .3); A.shake(.12);
         for (const z of F()) if (inCircle(z, p, 24)) A.hurt(z, c.d * (z.slowL > 0 ? 2 : 1), p, 10, c.sid, { dt: 'magic' });
@@ -153,10 +157,10 @@ window.SKILLS = (A) => {
       if (p.dead || p.t >= p.life) { if (p.onEnd) p.onEnd(p); projs.splice(i, 1); }
     }
     // 地面区域
-    for (let i = zones.length - 1; i >= 0; i--) { const z0 = zones[i]; z0.t += dt; z0.ti -= dt; if (z0.ti <= 0) { z0.ti = z0.every; for (const z of fs) if (inCircle(z, z0, z0.r)) A.hurt(z, z0.d, z0, 2, z0.sid, Object.assign({ quiet: true }, z0.o)); } if (z0.t >= z0.T) zones.splice(i, 1); }
+    for (let i = zones.length - 1; i >= 0; i--) { const z0 = zones[i]; z0.t += dt; z0.ti -= dt; if (z0.ti <= 0) { z0.ti = z0.every; for (const z of fs) if (inCircle(z, z0, z0.r)) A.hurt(z, z0.d, z0, 2, z0.sid, Object.assign({ quiet: true }, z0.o)); } if (z0.t >= z0.T) { zones.splice(i, 1); if (z0.end) z0.end(z0); } }
     // 守护之刃
-    for (let i = swords.length - 1; i >= 0; i--) { const s = swords[i]; s.life -= dt; s.ph += 4 * dt; const p = P(h.x, h.y, s.ph + i * PI * 2 / swords.length, 26); s.x = p.x; s.y = p.y;
-      for (const z of fs) { const cd = s.cd.get(z) || 0; if (cd > 0) { s.cd.set(z, cd - dt); continue; } if (!inCircle(z, s, 6)) continue; s.cd.set(z, .4); A.hurt(z, s.d, h, 14, s.sid, { bleed: s.L >= 5 }); if (--s.hits <= 0) break; }
+    for (let i = swords.length - 1; i >= 0; i--) { const s = swords[i]; s.life -= dt; s.ph += 4 * dt; const p = P(h.x, h.y, s.ph + i * PI * 2 / swords.length, 40);   // 11/22 变大：半径 26→40 s.x = p.x; s.y = p.y;
+      for (const z of fs) { const cd = s.cd.get(z) || 0; if (cd > 0) { s.cd.set(z, cd - dt); continue; } if (!inCircle(z, s, 12)) continue; s.cd.set(z, .4); A.hurt(z, s.d, h, 14, s.sid, { bleed: s.L >= 5 }); if (--s.hits <= 0) break; }
       if (s.hits <= 0 || s.life <= 0) { swords.splice(i, 1); if (s.L >= 7) { const t = nearOf(s, 160); if (t) shoot({ x: s.x, y: s.y - 12 * K, a: A.ang(s, t), v: 320, life: .6, r: 8, pierce: 0, d: s.d * 2, sid: s.sid, look: 'sword' }); } } }
     // 暗影宝珠
     for (let i = orbs.length - 1; i >= 0; i--) { const o = orbs[i]; o.ph += 2 * dt; const p = P(h.x, h.y - 26 * K, o.ph + i * 2.1, 18); o.x = p.x; o.y = p.y; o.cd -= dt;
@@ -173,7 +177,12 @@ window.SKILLS = (A) => {
   // ---------- 画 ----------
   function drawUnder(ctx, X, Y, u) {
     const pix = (x, y, c, q = 1) => { ctx.fillStyle = c; ctx.fillRect(x, y, q * u, q * u); };
-    for (const z of zones) { const a = 1 - z.t / z.T, col = { fire: '255,110,40', rain: '200,210,230', holy: '255,240,170', spark: '255,240,120', wind: '220,230,240' }[z.look] || '255,255,255';
+    for (const z of zones) { const a = 1 - z.t / z.T;
+      if (z.look === 'fog') { const k = Math.min(1, z.t * 4, (z.T - z.t) * 2), x = X(z.x), y = Y(z.y);   // 黑雾：深紫底 + 翻滚的暗紫颗粒
+        for (let q = 0; q < 3; q++) { ctx.fillStyle = `rgba(${[40, 60, 90][q]},${[14, 24, 40][q]},${[60, 90, 130][q]},${.22 * k})`; ctx.beginPath(); ctx.ellipse(x + Math.round(Math.cos(z.t * 1.3 + q * 2) * 4 * u), y + Math.round(Math.sin(z.t * 1.1 + q * 2) * 2 * u), z.r * u * (1 - q * .18), z.r * u * (1 - q * .18) / YS, 0, 0, 7); ctx.fill(); }
+        for (let j = 0; j < 14; j++) { const aa = j * 2.4 + z.t * (j % 2 ? 1.2 : -.9), rr = z.r * (.25 + .7 * ((j * 37) % 10) / 10); pix(x + Math.round(Math.cos(aa) * rr * u), y + Math.round(Math.sin(aa) * rr * u / YS) - Math.round(((z.t * 10 + j * 3) % 8) * u), j % 3 ? 'rgba(154,80,224,' + (.8 * k) + ')' : 'rgba(30,8,40,' + (.9 * k) + ')', 2 * u); }
+        continue; }
+      const col = { fire: '255,110,40', rain: '200,210,230', holy: '255,240,170', spark: '255,240,120', wind: '220,230,240' }[z.look] || '255,255,255';
       ctx.fillStyle = `rgba(${col},${.12 + .1 * a})`; ctx.beginPath(); ctx.ellipse(X(z.x), Y(z.y), z.r * u, z.r * u / YS, 0, 0, 7); ctx.fill();
       for (let k = 0; k < 6; k++) { const aa = Math.random() * 7, rr = Math.random() * z.r; pix(X(z.x) + Math.round(Math.cos(aa) * rr * u), Y(z.y) + Math.round(Math.sin(aa) * rr * u / YS) - (z.look === 'rain' ? Math.round(Math.random() * 8 * u) : 0), `rgba(${col},.9)`, z.look === 'rain' ? 1 : 2); } }
     for (const m of marks) if (m.k === 'stuck') { const ca = Math.cos(m.a), sa = Math.sin(m.a) / YS; for (let j = 0; j < 12; j++) pix(X(m.x) - Math.round(ca * j * 1.5 * u), Y(m.y) - Math.round((sa * j * 1.5 + j * .6) * u), j < 3 ? '#e8ecf4' : '#a89a80'); }
@@ -183,7 +192,9 @@ window.SKILLS = (A) => {
   function drawOver(ctx, X, Y, u) {
     const pix = (x, y, c, q = 1) => { ctx.fillStyle = c; ctx.fillRect(x, y, q * u, q * u); };
     for (const g of ghosts) { const a = Math.max(0, 1 - g.t / g.T) * .55; ctx.globalAlpha = a; SPR.drawHero(ctx, g.spun ? 'atk' : 'idle', g.spun ? 1 : 0, X(g.x), Y(g.y), g.f < 0, u, { w: 'sword', white: .8 }); ctx.globalAlpha = 1; }
-    for (const s of swords) { const x = X(s.x), y = Y(s.y) - 12 * u, a = s.ph * 2; for (let j = -4; j <= 4; j++) pix(x + Math.round(Math.cos(a) * j * u), y + Math.round(Math.sin(a) * j * u), j > 2 ? '#8a5a2a' : '#e8ecf4'); }
+    for (const s of swords) { const x = X(s.x), y = Y(s.y) - 14 * u, a = s.ph * 2, ca = Math.cos(a), sa = Math.sin(a);   // 11/22 飞剑画大：两倍长、金边
+      ctx.fillStyle = 'rgba(255,216,106,.18)'; ctx.beginPath(); ctx.arc(x, y, 10 * u, 0, 7); ctx.fill();
+      for (let j = -9; j <= 9; j++) { const px = x + Math.round(ca * j * u), py = y + Math.round(sa * j * u); if (j > 5) pix(px, py, j === 6 ? '#ffcf3a' : '#8a5a2a', 2 * u); else { pix(px - Math.round(sa * u), py + Math.round(ca * u), '#e8a020', 2 * u); pix(px, py, j < -7 ? '#ffffff' : '#e8ecf4', 2 * u); } } }
     for (const o of orbs) { const x = X(o.x), y = Y(o.y); ctx.fillStyle = 'rgba(120,60,200,.35)'; ctx.beginPath(); ctx.arc(x, y, 6 * u, 0, 7); ctx.fill(); pix(x - 2 * u, y - 2 * u, '#2a0a40', 4); pix(x - u, y - u, '#c8a0ff', 2); }
     for (const p of projs) { const x = X(p.x), y = Y(p.y), ca = Math.cos(p.a), sa = Math.sin(p.a) / YS, b = p.big || 1;
       if (p.look === 'crescent') { for (let j = -6 * b; j <= 6 * b; j++) { const off = (1 - (j / (6 * b)) ** 2) * 4 * b; pix(x + Math.round((-sa * j + ca * off) * u), y + Math.round((ca * j + sa * off) * u), Math.abs(j) < 2 * b ? '#ffffff' : '#bfe8ff'); } }

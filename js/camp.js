@@ -12,11 +12,11 @@
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
     // 出售：拿基价的 35%（书的基价 22 × 等级，宝物看各自的价）
-    if (o.kind === 'book') { const S = SK[o.id]; return { icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, sell: Math.round(DATA.tierPrice[S.tier] * DATA.price.sell) }; }
+    if (o.kind === 'book') { const S = SK[o.id]; return { tier: S.tier, icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, sell: Math.round(DATA.tierPrice[S.tier] * DATA.price.sell) }; }
     if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物', desc: it.desc, sell: Math.round((it.price || 25) * DATA.price.sell) }; }
     const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 3 };
   }
-  function iconEl(t) { const s = document.createElement('span'); s.className = 'ic'; if (t.icon) s.appendChild(t.icon); else s.textContent = t.emoji; return s; }
+  function iconEl(t) { const s = document.createElement('span'); s.className = 'ic' + (t.tier ? ' tr t' + t.tier : ''); if (t.icon) s.appendChild(t.icon); else s.textContent = t.emoji; return s; }
   // 学会一本书：已经有这一招就升一级，否则放进背包
   function learn(o) {
     const r = R();
@@ -53,14 +53,14 @@
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
     r.slots.forEach((s, i) => { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
       if (i >= r.open) { d.className = 'slot lock' + (i === r.open ? ' buy' : ''); if (sel && sel.t === 'L' && sel.i === i) d.classList.add('sel'); d.onclick = () => { sel = { t: 'L', i }; loadout(box); }; }
-      else if (s) { d.className = 'slot has'; d.appendChild(UI.icon(SK[s.id].icon)); d.insertAdjacentHTML('beforeend', `<span>${SK[s.id].name}</span><i class="dots">${dots(B().profL(s))}</i>`); }
+      else if (s) { d.className = 'slot has tr t' + SK[s.id].tier; d.appendChild(UI.icon(SK[s.id].icon)); d.insertAdjacentHTML('beforeend', `<span class="tn${SK[s.id].tier}">${SK[s.id].name}</span><i class="dots">${dots(B().profL(s))}</i>`); }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
     L.insertAdjacentHTML('beforeend', '<h4>背包 <small>宝物放着就生效；技能书直接拖到技能格上装上（点一下再点格子也行）</small></h4>');
     const bg = document.createElement('div'); bg.className = 'bag'; L.appendChild(bg);
     r.bag.forEach((o, i) => { const d = document.createElement('div'); const t = thing(o);
-      if (t) { d.className = 'has ' + o.kind; d.appendChild(iconEl(t)); if (o.kind === 'book') d.insertAdjacentHTML('beforeend', `<i>${B().profL(o) ? B().profL(o) + '/7' : '书'}</i>`); }
+      if (t) { d.className = 'has ' + o.kind + (t.tier ? ' tr t' + t.tier : ''); d.appendChild(iconEl(t)); if (o.kind === 'book') d.insertAdjacentHTML('beforeend', `<i>${B().profL(o) ? B().profL(o) + '/7' : '书'}</i>`); }
       if (sel && sel.t === 'b' && sel.i === i) d.classList.add('sel');
       d.onclick = () => dragged || pick({ t: 'b', i }, box); drag(d, { t: 'b', i }, !!o, box); bg.appendChild(d); });
     // 选中东西的说明和按钮
@@ -69,7 +69,7 @@
     const cur = sel && (sel.t === 's' ? r.slots[sel.i] && { kind: 'book', id: r.slots[sel.i].id, lv: 1, xp: r.slots[sel.i].xp || 0, slot: true } : r.bag[sel.i]);
     if (cur) {
       const t = thing(cur); info.appendChild(iconEl(t));
-      let txt = `<b>${t.name}</b> <small>${t.sub}</small><br>${t.desc}`;
+      let txt = `<b class="${t.tier ? 'tn' + t.tier : ''}">${t.name}</b> <small>${t.sub}</small><br>${t.desc}`;
       if (cur.kind === 'book') { const S = SK[cur.id], k = B().skillInfo(cur); txt += `<br><small>伤害 ${Math.round(k.dmg)} · 前摇 ${k.wu.toFixed(2)} 秒 · 后摇 ${k.rc.toFixed(2)} 秒${S.hold ? ` · 持续 ${S.hold} 秒` : ''} · 吃「${DATA.attrs.find(a => a.id === S.type).name}」 · ${S.dt === 'magic' ? '法术' : '物理'}</small><br><small>熟练度 <b class="dots">${dots(k.L)}</b> ${k.next ? `${k.xp}/${k.next}` : '已练满'} · 3 格：${S.l3} · 5 格：${S.l5} · 7 格：${S.l7}</small>`; }
       const p = document.createElement('p'); p.innerHTML = txt; info.appendChild(p);
       const btns = document.createElement('div'); btns.className = 'lob'; info.appendChild(btns);
@@ -209,7 +209,7 @@
     else if (tab === 'shu') attrPanel(body);
   }
   // 卡片：图标 · 名字 · 类别 · 分隔线 · 说明（说明区固定高度、垂直居中，按钮永远在最下面对齐）
-  function card(t, o) { const d = document.createElement('div'); d.className = 'card ' + o.kind; d.appendChild(iconEl(t)); d.insertAdjacentHTML('beforeend', `<b>${t.name}</b><small>${t.sub}</small><i class="hr"></i><p class="desc">${t.desc}</p>`); return d; }
+  function card(t, o) { const d = document.createElement('div'); d.className = 'card ' + o.kind + (t.tier ? ' ct' + t.tier : ''); d.appendChild(iconEl(t)); d.insertAdjacentHTML('beforeend', `<b class="${t.tier ? 'tn' + t.tier : ''}">${t.name}</b><small>${t.sub}</small><i class="hr"></i><p class="desc">${t.desc}</p>`); return d; }
   function btnTo(d, label, fn, gold) { let f = d.querySelector('.cb'); if (!f) { f = document.createElement('div'); f.className = 'cb'; d.appendChild(f); } const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.innerHTML = label; b.onclick = fn; f.appendChild(b); }
   function rollXiu(n) {
     const out = [], ids = shuffle(DATA.attrs.map(a => a.id));
