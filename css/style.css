@@ -420,3 +420,27 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
   .cbody > .cards .card .ic .pi { width: 30px !important; } .cbody > .cards .card .btn.mini { padding: 2px 6px; font-size: 12px; }
 }
 @media (max-width: 600px) { .cbody > .cards .card .btn.mini { white-space: nowrap; padding: 2px 4px; } }
+
+/* ===== 11/22 新主界面（月圆之夜的月夜 + 歧路旅人的水彩旧地图）：#title.t2 ===== */
+.logo .lg2 { display: none; }
+#title.t2 { background: #0d1626; }
+#title.t2 .tart { inset: 0; background: url(../art/title/art2.webp) 62% 50% / cover no-repeat; image-rendering: auto; }
+#title.t2 .tart::after { content: ""; background: linear-gradient(90deg, rgba(8, 14, 28, .78) 0%, rgba(8, 14, 28, .45) 28%, rgba(8, 14, 28, 0) 48%); }
+#title.t2 .tart::before { content: ""; position: absolute; left: 66%; top: 8%; width: 22vw; height: 22vw; border-radius: 50%; background: radial-gradient(rgba(220, 235, 255, .35), transparent 65%); animation: moonG 4s ease-in-out infinite; pointer-events: none; }
+@keyframes moonG { 50% { opacity: .35; } }
+#title.t2 .tbox { left: 3%; right: auto; width: 42%; gap: 10px; padding-bottom: 0; }
+#title.t2 .logo .lg1, #title.t2 .seal { display: none; } #title.t2 .logo .lg2 { display: block; width: min(38vw, 560px); height: auto; image-rendering: auto; filter: drop-shadow(0 4px 10px #000a); }
+#title.t2 .sub { color: #f0e2c0; text-shadow: 0 2px 4px #000; } #title.t2 .sub s { background: #d8b060; }
+#title.t2 .en { color: #b8c4d8; text-shadow: 0 1px 3px #000; }
+#title.t2 #bStart { margin-top: 18px; }
+@media (orientation: portrait), (max-width: 600px) {
+  #title.t2 .tart { background-position: 60% 50%; }
+  #title.t2 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 28, .2) 0%, rgba(8, 14, 28, 0) 35%, rgba(8, 14, 28, .55) 62%, rgba(8, 14, 28, .9) 100%); }
+  #title.t2 .tart::before { left: 55%; top: 10%; width: 40vw; height: 40vw; }
+  #title.t2 .tbox { left: 0; width: 100%; height: 44%; top: auto; bottom: 0; justify-content: flex-end; padding-bottom: calc(5vh + env(safe-area-inset-bottom)); }
+  #title.t2 .logo .lg2 { width: 86vw; }
+}
+@media (orientation: portrait), (max-width: 600px) {
+  #title.t2 .tart { background-size: auto 56%; background-position: 70% 6%; background-color: #0d1626; }
+  #title.t2 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 28, 0) 0%, rgba(8, 14, 28, 0) 50%, #0d1626 66%); }
+}
