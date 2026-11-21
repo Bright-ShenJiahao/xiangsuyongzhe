@@ -176,6 +176,10 @@
   window.UI = { mod: () => BATTLE, hud, levelUp, result, waveEnd, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   if (window.BOOT) BOOT.progress(.3);
-  SPR.load().then(() => { if (window.BOOT) { BOOT.progress(1); BOOT.done(() => show('title')); } else show('title'); requestAnimationFrame(loop); })
+  // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来
+  const UIPRE = ['map.webp', 'panel.png', 'card.png', 'q0.png', 'q1.png', 'q2.png', 'q3.png', 'slot.png', 'slot_sel.png', 'slot_lock.png', 'cell.png', 'btn.png', 'btn_gold.png', 'tab.png', 'tab_on.png', 'bar.png', 'pause.png', 'divider.png']
+    .concat(Object.keys(window.UIART || {}).filter(k => (window.UIART[k][0] || 0) < 60).map(k => k + '.png'));
+  const preUI = () => Promise.all([...new Set(UIPRE)].map(f => new Promise(ok => { const im = new Image(); im.onload = im.onerror = ok; im.src = 'art/ui2/' + f; (window.__ui = window.__ui || []).push(im); })));
+  Promise.all([SPR.load(), preUI()]).then(() => { if (window.BOOT) { BOOT.progress(1); BOOT.done(() => show('title')); } else show('title'); requestAnimationFrame(loop); })
     .catch(e => { console.error(e); if (window.BOOT) BOOT.fail('载入失败：' + e); });
 })();

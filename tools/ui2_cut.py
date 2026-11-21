@@ -48,6 +48,6 @@ def run(icons, frames, mp):
         for p, n in zip(L, names):
             m = ndimage.binary_dilation(np.isin(lab, p[4]), iterations=3); ys, xs = np.where(m & (al > .02))
             sizes[n] = list(save(a, al * m, ys, xs, n))
-    im = Image.open(mp).convert('RGB'); im.save(os.path.join(OUT, 'map.jpg'), quality=80)
+    im = Image.open(mp).convert('RGB'); im.save(os.path.join(OUT, 'map.webp'), quality=78, method=6)
     open(os.path.join(R, 'js', 'uiart.js'), 'w').write('// 界面素材尺寸（tools/ui2_cut.py 切的 art/ui2/*.png）。图标记的是显示尺寸（k=1 时），框件记的是原图像素\nwindow.UIART = ' + json.dumps(sizes, separators=(',', ':')) + ';\n')
 if __name__ == '__main__': run(*sys.argv[1:4])

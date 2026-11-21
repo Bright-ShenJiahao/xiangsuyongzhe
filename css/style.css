@@ -257,7 +257,7 @@ body { font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto 
 .pi { image-rendering: auto; height: auto; }
 .panel { background: none; border: 20px solid transparent; border-image: url(../art/ui2/panel.png) 28 fill / 20px stretch; image-rendering: auto; box-shadow: 0 6px 18px rgba(0, 0, 0, .5); }
 .pc { padding: 6px 8px; } .cbox { padding: 4px 6px; } .box { padding: 8px 12px; }
-.camp, #prep { background: linear-gradient(rgba(14, 10, 8, .5), rgba(14, 10, 8, .62)), url(../art/ui2/map.jpg) 50% 50% / cover; }
+.camp, #prep { background: linear-gradient(rgba(14, 10, 8, .5), rgba(14, 10, 8, .62)), url(../art/ui2/map.webp) 50% 50% / cover; }
 .btn, .btn.mini, .btn.gold { border: 10px solid transparent; border-image: url(../art/ui2/btn.png) 14 fill / 10px stretch; image-rendering: auto; padding: 0 14px; font-size: 16px; letter-spacing: .1em; color: #f2e6cc; text-shadow: 0 1px 2px #000; font-weight: 500; }
 .btn.mini { font-size: 13px; padding: 0 6px; border-width: 7px; border-image-width: 7px; } .btn.big { font-size: 22px; padding: 2px 26px; }
 .btn.gold { border-image-source: url(../art/ui2/btn_gold.png); color: #fff6dc; text-shadow: 0 1px 2px #3a2008; }
@@ -324,3 +324,4 @@ p.dim.center { font-size: 16px; } p.dim.center small { font-size: 14px; }
   .cpn h4, .lo h4, .pc h3 { font-size: 17px; } .arow b, .loinfo p b { font-size: 15px; } .slot span { font-size: 11px; } .slot i { font-size: 10px; }
 }
 .arow em.up, .arow em.gain { width: auto; padding: 0; background: none; box-shadow: none; cursor: default; color: #9ee08a; }
+.camp, #prep { background-color: #2a2016; }
