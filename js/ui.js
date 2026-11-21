@@ -27,7 +27,7 @@
   ICON.axe = ICON.axe.map(r => r.replace(/c/g, 'd'));
   // 像素图标（art/ui，尺寸见 js/uiart.js）：k = 放大倍数
   const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_staff', axe: 'bk_axe', nova: 'bk_nova' };
-  function pi(name, k = 2) { const im = new Image(); im.className = 'pi'; im.alt = ''; im.draggable = false; im.src = 'art/ui/' + name + '.png'; const s = (window.UIART || {})[name]; if (s) { im.width = s[0] * k; im.height = s[1] * k; } return im; }
+  function pi(name, k = 2) { const im = new Image(); im.className = 'pi'; im.alt = ''; im.draggable = false; im.src = 'art/ui2/' + name + '.png'; const s = (window.UIART || {})[name]; if (s) { im.width = s[0] * k; im.height = s[1] * k; } return im; }
   const piH = (name, k) => pi(name, k).outerHTML;
   function iconCanvas(name) { return pi(BOOK[name] || name); }
   function iconCanvasOld(name) { const c = document.createElement('canvas'); c.width = c.height = 16; const g = c.getContext('2d'); (ICON[name] || ICON.sword).forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); } })); return c; }
