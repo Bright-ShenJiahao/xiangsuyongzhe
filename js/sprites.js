@@ -81,8 +81,8 @@
   // 单独切一帧出来（武器选择页的小人、头像）
   function crop(set, name, i) { const f = frame(set, name, i), S = SETS[set]; if (!f) return null; const c = mkc(f.w, f.h); c.getContext('2d').drawImage(S.base, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h); return { c, f }; }
 
-  // 现在用哪套勇者：默认新的；localStorage xsyz-hero = old 时用旧的。k = 换算到旧勇者的身高（旧的 40 像素格）
-  const heroSet = () => { let o = null; try { o = localStorage.getItem('xsyz-hero'); } catch (e) {} return o === 'old' || !SETS.hero2 ? 'hero' : 'hero2'; };
+  // 现在用哪套勇者：默认旧的（11/21 用户定）；localStorage xsyz-hero = new 时用新的（对比用）。k = 换算到旧勇者的身高（旧的 40 像素格）
+  const heroSet = () => { let o = null; try { o = localStorage.getItem('xsyz-hero'); } catch (e) {} return o === 'new' && SETS.hero2 ? 'hero2' : 'hero'; };
   const heroK = () => heroSet() === 'hero2' ? 52 / 191 : 1;
   function drawHero(ctx, n, i, X, Y, flip, u, o = {}) { const s = heroSet(), hd = s === 'hero2'; if (hd) { ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; } draw(ctx, s, n, i, X, Y, flip, u, Object.assign({ k: heroK() }, o)); if (hd) ctx.imageSmoothingEnabled = false; }
   window.SPR = { load, setGrade, frame, count, draw, crop, sets: SETS, heroSet, heroK, drawHero };
