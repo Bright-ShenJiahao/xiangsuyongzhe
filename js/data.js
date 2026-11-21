@@ -96,22 +96,26 @@ window.DATA = {
   tierName: ['', '初阶', '中阶', '高阶', '宗师'], tierPrice: [0, 22, 34, 52, 80],
   // 第一章：8 站 + 首领站，每站 3 波，限时（11/21 定稿，照 Codex 表，数量再 ×countMul，前两站时间更短）
   // G / K / A = 哥布林 / 刀手 / 弓手数量；ex = 额外的精英或小头目；hp = 这一站的血量倍率
+  // 11/22 用户定：第一章 9 站把哥布林全家用完（异世界幸存者的 20 种），每站加新怪；下一章换别的怪。
+  // 字母 → 兵种：G 哥布林 K 刀手 A 弓手 S 小哥布林 W 野狼 D 盾兵 T 投石兵 B 炸弹兵 H 幽灵 R 狼骑兵 P 野猪骑兵 M 法师 O 岩石哥布林（数量再 ×countMul）
+  // ex = 额外的精英 / 小头目；hp = 这一站的血量倍率
+  codes: { G: 'goblin', K: 'gob_blade', A: 'gob_archer', S: 'gob_kid', W: 'wolf_free', D: 'gob_shield', T: 'gob_thrower', B: 'gob_bomb', H: 'gob_ghost', R: 'gob_wolf', P: 'gob_boar', M: 'gob_mage', O: 'gob_rock' },
   stations: [
-    { hp: 1.00, waves: [{ G: 8 }, { G: 10, K: 2 }, { G: 12, K: 3, A: 2 }] },
-    { hp: 1.06, waves: [{ G: 12, K: 4 }, { G: 14, K: 4, A: 3 }, { G: 15, K: 5, A: 3 }] },
-    { hp: 1.15, waves: [{ G: 15, K: 5, A: 3 }, { G: 16, K: 6, A: 4 }, { G: 17, K: 6, A: 4, ex: [['elite', 'gob_blade']] }] },
-    { hp: 1.25, waves: [{ G: 18, K: 6, A: 4 }, { G: 18, K: 7, A: 5 }, { G: 20, K: 8, A: 5, ex: [['mini', 'gob_blade']] }] },
-    { hp: 1.40, waves: [{ G: 20, K: 8, A: 5 }, { G: 22, K: 9, A: 6 }, { G: 24, K: 9, A: 6, ex: [['elite', 'gob_archer']] }] },
-    { hp: 1.55, waves: [{ G: 22, K: 9, A: 7 }, { G: 24, K: 10, A: 7 }, { G: 24, K: 10, A: 8, ex: [['mini', 'gob_blade']] }] },
-    { hp: 1.75, waves: [{ G: 24, K: 11, A: 7 }, { G: 26, K: 12, A: 8 }, { G: 28, K: 12, A: 8, ex: [['elite', 'gob_blade'], ['elite', 'gob_blade']] }] },
-    { hp: 1.95, waves: [{ G: 26, K: 12, A: 8 }, { G: 28, K: 13, A: 9 }, { G: 30, K: 14, A: 9, ex: [['mini', 'gob_blade']] }] },
-    { hp: 2.10, boss: true, waves: [{ G: 26, K: 12, A: 8 }, { G: 28, K: 13, A: 9, ex: [['elite', 'gob_archer']] }, { boss: 'gob_king' }] },
+    { hp: 1.00, name: '森林外围', waves: [{ G: 6, S: 3 }, { G: 8, S: 4 }, { G: 8, S: 4, K: 2, A: 1 }] },
+    { hp: 1.06, name: '森林外围', waves: [{ G: 8, S: 3, K: 3 }, { G: 9, S: 3, K: 3, A: 2 }, { G: 10, S: 4, K: 4, A: 3, ex: [['elite', 'gob_blade']] }] },
+    { hp: 1.15, name: '森林外围', waves: [{ G: 9, S: 3, K: 4, A: 2, W: 3 }, { G: 10, K: 4, A: 3, W: 4 }, { G: 10, K: 5, A: 3, W: 4, ex: [['mini', 'gob_chief']] }] },
+    { hp: 1.25, name: '森林深处', waves: [{ G: 10, K: 4, A: 3, D: 3, T: 2 }, { G: 10, K: 5, A: 3, D: 4, T: 3 }, { G: 11, K: 5, D: 4, T: 3, W: 3, ex: [['elite', 'gob_shaman']] }] },
+    { hp: 1.40, name: '森林深处', waves: [{ G: 10, K: 5, D: 3, T: 2, B: 2, H: 2 }, { G: 11, K: 5, D: 4, T: 3, B: 3, H: 3 }, { G: 12, K: 6, D: 4, T: 3, B: 3, H: 3, ex: [['elite', 'gob_drum']] }] },
+    { hp: 1.55, name: '森林深处', waves: [{ G: 11, K: 5, D: 4, B: 3, H: 3, R: 2 }, { G: 12, K: 6, D: 4, T: 3, B: 3, R: 3 }, { G: 12, K: 6, D: 4, T: 3, H: 3, R: 3, ex: [['mini', 'gob_paladin']] }] },
+    { hp: 1.75, name: '哥布林营地', waves: [{ G: 12, K: 6, D: 4, R: 3, P: 2, M: 2 }, { G: 12, K: 6, D: 4, T: 3, P: 3, M: 3 }, { G: 13, K: 6, D: 5, P: 3, M: 3, B: 3, ex: [['elite', 'gob_necro']] }] },
+    { hp: 1.95, name: '哥布林营地', waves: [{ G: 12, K: 6, D: 5, P: 3, M: 3, O: 2 }, { G: 13, K: 6, D: 5, R: 3, M: 3, O: 3, ex: [['elite', 'gob_giant']] }, { G: 14, K: 7, D: 5, P: 3, M: 3, O: 3, ex: [['elite', 'gob_hero'], ['elite', 'gob_troll']] }] },
+    { hp: 2.10, name: '哥布林王座', boss: true, waves: [{ G: 12, K: 6, A: 3, D: 4, T: 3, B: 3, H: 3 }, { G: 12, K: 6, R: 3, P: 3, M: 3, O: 3, ex: [['elite', 'gob_shaman'], ['elite', 'gob_drum']] }, { boss: 'gob_king' }] },
   ],
   waveT: 30,                             // 每波固定 30 秒（11/21 用户定，先这样试）
   countMul: 2,                           // 出怪数量 = 表上 × 2（30 秒一波、不再清场，怪要多）
   // 精英 / 小头目：血、伤害、体型倍率（群侠四档）
   tiers: { elite: { hp: 2.5, dmg: 1.25, size: 1.15, name: '精英' }, mini: { hp: 7, dmg: 1.5, size: 1.35, reach: 1.2, wind: .1, name: '小头目' } },
-  caps: { normal: 50, archer: 10 },      // 场上同时最多多少只
+  caps: { normal: 50, archer: 12 },      // archer = 远程怪合计      // 场上同时最多多少只
   // 经济（起始值，Codex）
   econ: { startCoin: 18, waveCoin: [10, 2], perKills: 3, elite: 5, mini: 8, clear: 0, waveHeal: 4,
     waveXp: 8, xpPerKills: 4, xpElite: 3, xpMini: 5, xpClear: 0, xpMul: 1.3, maxLv: 12 },
@@ -128,6 +132,27 @@ window.DATA = {
     goblin: { name: '哥布林', pdef: 5, mdef: 0, hp: 6, spd: 45, reach: 24, arc: 60, r: 36, dmg: 6, wind: .43, cool: 1.35, dtype: 'phys' },
     gob_blade: { name: '哥布林刀手', pdef: 15, mdef: 5, hp: 9, spd: 55, reach: 31, arc: 110, r: 50, dmg: 8, wind: .52, cool: 1.65, dtype: 'phys' },
     gob_archer: { name: '哥布林弓手', pdef: 0, mdef: 10, hp: 5, spd: 38, reach: 168, keep: [115, 155], dmg: 5, wind: .7, cool: 1.9, arrow: 130, ranged: true, dtype: 'phys' },
+    // 11/22 哥布林全家（异世界幸存者的图）。nw = 走路帧数；k = 体型系数（别比王大）；res = 体质：iron 铁甲（物理减半）/ spirit 灵体（物理减半、法术 +25%）/ magic 魔抗（法术减半）
+    // 特殊行为：shield 正面挡几下（之后换成没盾的帧）/ bomb 自爆半径 / charge 冲锋距离 / ghost 穿过别的怪 / aura heal 回血 · drum 加速 / summon 召唤 / ai boss 用首领的招式
+    gob_kid: { name: '小哥布林', pdef: 0, mdef: 0, hp: 3, spd: 62, reach: 20, arc: 60, r: 30, dmg: 4, wind: .35, cool: 1.1, dtype: 'phys', nw: 4 },
+    wolf_free: { name: '野狼', pdef: 0, mdef: 0, hp: 6, spd: 72, reach: 24, arc: 70, r: 34, dmg: 5, wind: .3, cool: 1.2, dtype: 'phys', nw: 4 },
+    gob_shield: { name: '哥布林盾兵', pdef: 10, mdef: 5, hp: 12, spd: 36, reach: 26, arc: 80, r: 40, dmg: 8, wind: .6, cool: 1.8, dtype: 'phys', shield: 8 },
+    gob_thrower: { name: '哥布林投石兵', pdef: 0, mdef: 5, hp: 6, spd: 36, reach: 175, keep: [120, 165], dmg: 6, wind: .8, cool: 2.2, arrow: 110, ranged: true, shot: 'rock', dtype: 'phys', nw: 4 },
+    gob_bomb: { name: '哥布林炸弹兵', pdef: 0, mdef: 0, hp: 5, spd: 58, reach: 30, dmg: 16, wind: .9, cool: 1, bomb: 44, dtype: 'phys', nw: 4 },
+    gob_ghost: { name: '哥布林幽灵', pdef: 0, mdef: 0, hp: 8, spd: 46, reach: 22, arc: 70, r: 34, dmg: 6, wind: .45, cool: 1.4, res: 'spirit', ghost: true, dtype: 'magic', nw: 4 },
+    gob_wolf: { name: '哥布林狼骑兵', pdef: 10, mdef: 0, hp: 14, spd: 58, reach: 28, arc: 80, r: 40, dmg: 8, wind: .5, cool: 1.8, charge: 130, dtype: 'phys', nw: 4, k: .85 },
+    gob_boar: { name: '哥布林野猪骑兵', pdef: 15, mdef: 0, hp: 18, spd: 40, reach: 28, arc: 80, r: 42, dmg: 10, wind: .55, cool: 2, charge: 170, dtype: 'phys', nw: 4, k: .9 },
+    gob_mage: { name: '哥布林法师', pdef: 0, mdef: 30, hp: 7, spd: 34, reach: 170, keep: [110, 160], dmg: 7, wind: .8, cool: 2.2, arrow: 120, ranged: true, shot: 'bolt', res: 'magic', dtype: 'magic', nw: 4 },
+    gob_rock: { name: '岩石哥布林', pdef: 20, mdef: 0, hp: 30, spd: 26, reach: 30, arc: 100, r: 46, dmg: 12, wind: .8, cool: 2, res: 'iron', dtype: 'phys', nw: 4, k: .8 },
+    gob_shaman: { name: '哥布林萨满', pdef: 0, mdef: 20, hp: 10, spd: 34, reach: 160, keep: [100, 150], dmg: 6, wind: .8, cool: 2.4, arrow: 120, ranged: true, shot: 'bolt', aura: 'heal', dtype: 'magic', k: .85 },
+    gob_drum: { name: '哥布林战鼓手', pdef: 10, mdef: 10, hp: 14, spd: 32, reach: 24, arc: 70, r: 36, dmg: 6, wind: .6, cool: 2, aura: 'drum', dtype: 'phys', nw: 4, k: .65 },
+    gob_necro: { name: '哥布林死灵法师', pdef: 0, mdef: 25, hp: 12, spd: 30, reach: 160, keep: [110, 155], dmg: 6, wind: .9, cool: 2.6, arrow: 110, ranged: true, shot: 'bolt', summon: 'skeleton', dtype: 'magic', nw: 4, k: .75 },
+    skeleton: { name: '骷髅', pdef: 0, mdef: 0, hp: 4, spd: 48, reach: 22, arc: 70, r: 34, dmg: 5, wind: .4, cool: 1.3, dtype: 'phys', nw: 4, k: .7 },
+    gob_giant: { name: '哥布林巨人', pdef: 20, mdef: 5, hp: 30, spd: 26, reach: 38, arc: 140, r: 58, dmg: 14, wind: .9, cool: 2.2, dtype: 'phys', nw: 4, k: .8 },
+    gob_hero: { name: '哥布林勇士', pdef: 25, mdef: 10, hp: 24, spd: 40, reach: 34, arc: 110, r: 50, dmg: 12, wind: .6, cool: 1.8, dtype: 'phys', k: .8 },
+    gob_troll: { name: '哥布林巨魔', pdef: 15, mdef: 5, hp: 40, spd: 22, reach: 42, arc: 150, r: 64, dmg: 16, wind: 1, cool: 2.4, dtype: 'phys', k: .6 },
+    gob_chief: { name: '哥布林酋长', pdef: 20, mdef: 10, hp: 40, spd: 32, reach: 34, dmg: 10, wind: .8, ai: 'boss', dtype: 'phys', nw: 4, k: .68 },
+    gob_paladin: { name: '哥布林圣骑士', pdef: 25, mdef: 20, hp: 44, spd: 36, reach: 34, dmg: 11, wind: .8, ai: 'boss', dtype: 'phys', nw: 4, k: .66 },
     gob_king: { name: '哥布林王', pdef: 30, mdef: 20, hp: 600, spd: 30, reach: 30, dmg: 14, wind: .9, boss: true, dtype: 'phys' },
   },
   // 地图：第一版只开打谷场
