@@ -4,15 +4,15 @@
   const $ = id => document.getElementById(id), B = () => BATTLE, R = () => BATTLE.run();
   const SK = DATA.skills, ITEM = id => DATA.startItems.find(i => i.id === id), USE = id => DATA.consumables.find(i => i.id === id);
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
-  const coinTxt = n => `<span class="cn">💰 ${n}</span>`;
+  const coinTxt = n => `<span class="cn">${UI.piH('coin', 1)} ${n}</span>`;
   let rep = null, tab = 'jie', sel = null, loot = [];
 
   // ---------- 通用：东西的样子 ----------
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
     if (o.kind === 'book') { const S = SK[o.id]; return { icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · 技能书`, desc: S.desc, sell: DATA.price.sellBook * (o.lv || 1) }; }
-    if (o.kind === 'item') { const it = ITEM(o.id); return { emoji: it.icon, name: it.name, sub: '宝物 · 放在背包里就生效', desc: it.desc, sell: DATA.price.sellItem }; }
-    const c = USE(o.id); return { emoji: c.icon, name: c.name, sub: '消耗品', desc: c.desc, sell: 5 };
+    if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物 · 放在背包里就生效', desc: it.desc, sell: DATA.price.sellItem }; }
+    const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 5 };
   }
   function iconEl(t) { const s = document.createElement('span'); s.className = 'ic'; if (t.icon) s.appendChild(t.icon); else s.textContent = t.emoji; return s; }
   // 学会一本书：已经有这一招就升一级，否则放进背包
@@ -38,7 +38,7 @@
     L.insertAdjacentHTML('beforeend', `<h4>技能栏 <small>按 1→2→3 顺序轮流自动出手 · 一轮约 ${cyc.toFixed(1)} 秒</small></h4>`);
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
     r.slots.forEach((s, i) => { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
-      if (i >= r.open) { d.className = 'slot lock'; d.insertAdjacentHTML('beforeend', '🔒'); }
+      if (i >= r.open) d.className = 'slot lock';
       else if (s) { d.className = 'slot has'; d.appendChild(UI.icon(SK[s.id].icon)); d.insertAdjacentHTML('beforeend', `<span>${SK[s.id].name}</span><i>Lv${s.lv}</i>`); }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
@@ -69,8 +69,8 @@
     // 右边：属性和各项数值
     const c = DATA.calc({ weapon: r.weapon, attrs: r.attrs, train: r.train, items: r.bag.filter(x => x && x.kind === 'item').map(x => x.id), habit: r.habit });
     const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
-    Rt.innerHTML = `<h4>勇者 <small>Lv${B().lv()}</small></h4><div class="attr4">${DATA.attrs.map(a => `<span>${a.name}</span><b>${c.A[a.id]}${r.train[a.id] ? `<small> (修炼+${r.train[a.id]})</small>` : ''}</b>`).join('')}</div>
-      <div class="stats"><span>生命</span><b>${Math.ceil(h.hp)}/${h.maxHp}</b><span>出手速度</span><b>${pct(c.spd - 1)}</b><span>范围</span><b>${pct(c.area - 1)}</b><span>暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>受到伤害</span><b>${pct(c.dmgIn - 1)}</b><span>移速</span><b>${pct(c.move - 1)}</b></div>
+    Rt.innerHTML = `<h4>勇者 <small>Lv${B().lv()}</small></h4><div class="attr4">${DATA.attrs.map(a => `<span>${UI.piH(a.id, 1)}${a.name}</span><b>${c.A[a.id]}${r.train[a.id] ? `<small> (修炼+${r.train[a.id]})</small>` : ''}</b>`).join('')}</div>
+      <div class="stats"><span>${UI.piH('hp', 1)}生命</span><b>${Math.ceil(h.hp)}/${h.maxHp}</b><span>${UI.piH('spd', 1)}出手速度</span><b>${pct(c.spd - 1)}</b><span>${UI.piH('area', 1)}范围</span><b>${pct(c.area - 1)}</b><span>${UI.piH('crit', 1)}暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>${UI.piH('guard', 1)}受到伤害</span><b>${pct(c.dmgIn - 1)}</b><span>${UI.piH('move', 1)}移速</span><b>${pct(c.move - 1)}</b></div>
       ${r.habit ? `<p class="dim">现实习惯：${DATA.habits.find(x => x.id === r.habit).name}</p>` : ''}`;
   }
   function pick(p, box) {
@@ -95,7 +95,7 @@
   const TABS = [['jie', '结算'], ['shi', '拾取'], ['xiu', '修炼'], ['shang', '行商'], ['ji', '技能']];
   function open(report) {
     rep = report; loot = report.loot.map(o => Object.assign({ lv: 1 }, o)); tab = 'jie'; sel = null;
-    $('cTitle').textContent = `第 ${rep.wave + 1} / ${rep.waves} 波 · 清完了`;
+    $('cTitle').textContent = `第 ${rep.wave + 1}/${rep.waves} 波 清完`;
     $('cGo').textContent = rep.last ? '挑战首领 ▶' : `第 ${rep.wave + 2} 波 ▶`;
     $('cHint').textContent = rep.last ? '（「下一步去哪」还没做，先直接打首领）' : '';
     render(); $('camp').classList.add('on');
@@ -122,28 +122,28 @@
       if (!r.xopt) r.xopt = rollXiu(nOpt);
       body.insertAdjacentHTML('beforeend', `<p class="dim center">还有 ${r.xiu} 次修炼机会 · 三选一</p>`);
       const g = document.createElement('div'); g.className = 'cards'; body.appendChild(g);
-      r.xopt.forEach(o => { const Q = DATA.rarity[o.q], d = document.createElement('div'); d.className = 'card xiu'; d.style.setProperty('--q', Q.col);
-        d.innerHTML = `<b>${DATA.attrs.find(a => a.id === o.adds[0][0]).name}修炼</b><small style="color:${Q.col}">${Q.name}</small>${o.adds.map(([a, v]) => `<p class="plus">+${v} ${DATA.attrs.find(x => x.id === a).name}</p>`).join('')}<p class="dim">${DATA.attrs.find(a => a.id === o.adds[0][0]).desc}</p>`;
+      r.xopt.forEach(o => { const Q = DATA.rarity[o.q], d = document.createElement('div'); d.className = 'card xiu q' + o.q;
+        d.innerHTML = `${UI.piH(o.adds[0][0])}<b>${DATA.attrs.find(a => a.id === o.adds[0][0]).name}修炼</b><small style="color:${Q.col}">${Q.name}</small>${o.adds.map(([a, v]) => `<p class="plus">+${v} ${DATA.attrs.find(x => x.id === a).name}</p>`).join('')}<p class="dim">${DATA.attrs.find(a => a.id === o.adds[0][0]).desc}</p>`;
         btnTo(d, '修 炼', () => { for (const [a, v] of o.adds) r.train[a] = (r.train[a] || 0) + v; r.xiu--; r.xopt = null; r.xrr = 0; B().recompute(); render(); }, true); g.appendChild(d); });
-      const rb = document.createElement('button'); rb.className = 'btn mini'; rb.textContent = `刷新 ${rrMax - r.xrr}/${rrMax}`; rb.disabled = r.xrr >= rrMax; rb.onclick = () => { r.xrr++; r.xopt = rollXiu(nOpt); render(); };
+      const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} 刷新 ${rrMax - r.xrr}/${rrMax}`; rb.disabled = r.xrr >= rrMax; rb.onclick = () => { r.xrr++; r.xopt = rollXiu(nOpt); render(); };
       const w = document.createElement('div'); w.className = 'center'; w.appendChild(rb); body.appendChild(w);
     } else if (tab === 'shang') {
       const fx = B().hero().fx, pm = 1 + (fx.shop || 0);
       if (!r.shop) r.shop = rollShop();
       const g = document.createElement('div'); g.className = 'cards'; body.appendChild(g);
-      r.shop.forEach((o, i) => { const d = o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = '<span class="ic">➕</span><b>开新技能格</b><small>技能栏多开一格</small>'; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
+      r.shop.forEach((o, i) => { const d = o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开新技能格</b><small>技能栏多开一格</small>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
         if (o.sold) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已买</p>'); }
-        else btnTo(d, `买 💰${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; r.coins -= price; o.sold = true; render(); }, true);
+        else btnTo(d, `买 ${UI.piH('coin', 1)}${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; r.coins -= price; o.sold = true; render(); }, true);
         g.appendChild(d); });
       const cost = Math.round(DATA.price.reroll * (r.rr + 1) * (1 + (fx.reroll || 0)));
-      const w = document.createElement('div'); w.className = 'center'; const rb = document.createElement('button'); rb.className = 'btn mini'; rb.textContent = `刷新货架 💰${cost}`;
+      const w = document.createElement('div'); w.className = 'center'; const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} 刷新货架 ${UI.piH('coin', 1)}${cost}`;
       rb.onclick = () => { if (r.coins < cost) return toast('铜钱不够'); r.coins -= cost; r.rr++; r.shop = rollShop(); render(); }; w.appendChild(rb); body.appendChild(w);
     } else if (tab === 'ji') loadout(body);
   }
   function card(t, o) { const d = document.createElement('div'); d.className = 'card ' + o.kind; d.appendChild(iconEl(t)); d.insertAdjacentHTML('beforeend', `<b>${t.name}</b><small>${t.sub}</small><p>${t.desc}</p>`);
     if (o.kind === 'book') { const r = R(), has = r.slots.find(s => s && s.id === o.id) || r.bag.find(b => b && b.kind === 'book' && b.id === o.id); if (has) d.insertAdjacentHTML('beforeend', `<p class="plus">已有：Lv${has.lv} → Lv${has.lv + 1}</p>`); }
     return d; }
-  function btnTo(d, label, fn, gold) { let f = d.querySelector('.cb'); if (!f) { f = document.createElement('div'); f.className = 'cb'; d.appendChild(f); } const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.textContent = label; b.onclick = fn; f.appendChild(b); }
+  function btnTo(d, label, fn, gold) { let f = d.querySelector('.cb'); if (!f) { f = document.createElement('div'); f.className = 'cb'; d.appendChild(f); } const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.innerHTML = label; b.onclick = fn; f.appendChild(b); }
   function rollXiu(n) {
     const out = [], ids = shuffle(DATA.attrs.map(a => a.id));
     for (let k = 0; k < n; k++) { let x = Math.random(), q = 0; for (let j = DATA.rarity.length - 1; j > 0; j--) { if (x < DATA.rarity[j].p) { q = j; break; } x -= DATA.rarity[j].p; }

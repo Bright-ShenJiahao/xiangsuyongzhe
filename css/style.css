@@ -186,3 +186,66 @@ body.touch .tip { bottom: calc(66px + env(safe-area-inset-bottom)); }
   .cg, .lo { grid-template-columns: minmax(0, 1fr); } .card { width: calc(50% - 10px); } .lo .bag { grid-template-columns: repeat(8, 1fr); }
   .loinfo { flex-wrap: wrap; } .lob { flex-direction: row; width: 100%; justify-content: flex-end; }
 }
+
+/* ================= 像素界面素材（art/ui/*.png，tools/ui_cut.py 从生图切出）=================
+   一个素材像素 = --p 个屏幕像素（PC 3、手机 2），边框用九宫格 border-image，字号只用 12 / 24（像素字体整数倍才清楚） */
+:root { --p: 3px; --q: 2px; }
+@media (orientation: portrait), (max-height: 600px) { :root { --p: 2px; --q: 1px; } }
+.pi { image-rendering: pixelated; vertical-align: middle; flex: none; }
+.panel { box-shadow: none; background: url(../art/ui/wood.png) 0 0 / calc(var(--p) * 44) calc(var(--p) * 13) repeat, #4f2a18; background-clip: padding-box;
+  border: calc(var(--q) * 10) solid transparent; border-image: url(../art/ui/panel.png) 10 / calc(var(--q) * 10) stretch; image-rendering: pixelated; }
+.pc { padding: 4px 6px; } .cbox { padding: 2px 4px; } .box { padding: 6px 10px; }
+.btn, .btn.mini, .btn.gold { box-shadow: none; background: none; border: calc(var(--q) * 6) solid transparent; border-image: url(../art/ui/btn.png) 6 fill / calc(var(--q) * 6) stretch; image-rendering: pixelated; padding: 0 12px; line-height: 1; color: #fff3d0; text-shadow: 0 2px #2a160e; }
+.btn { font-size: 24px; } .btn.mini { font-size: 12px; padding: 0 6px; } .btn.big { font-size: 36px; padding: 2px 24px; }
+.btn.gold { border-image-source: url(../art/ui/btn_gold.png); color: #3a1c0c; text-shadow: 0 2px #fff0a8; }
+.btn:active { transform: translateY(var(--p)); }
+.btn.sq#bPause { width: calc(var(--p) * 25); height: calc(var(--p) * 25); border: 0; border-image: none; background: url(../art/ui/pause.png) 0 0 / 100% 100%; font-size: 0; padding: 0; }
+.ctabs button, .ptabs button { box-shadow: none; background: none; border: calc(var(--q) * 5) solid transparent; border-bottom-width: 0; border-image: url(../art/ui/tab.png) 5 5 0 5 fill / calc(var(--q) * 5) calc(var(--q) * 5) 0 stretch; image-rendering: pixelated; font-size: 24px; padding: 2px 0 6px; color: #f0e0c0; }
+.ctabs .on, .ptabs .on { border-image-source: url(../art/ui/tab_on.png); color: #3a1c0c; box-shadow: none; background: none; }
+.card, .wsel button, .habits > div, .items > div { box-shadow: none; background: none; border: calc(var(--q) * 6) solid transparent; border-image: url(../art/ui/card.png) 6 fill / calc(var(--q) * 6) stretch; image-rendering: pixelated; }
+.wsel .on, .habits .on, .items .on, .card.q3 { border-image-source: url(../art/ui/q3.png); background: none; box-shadow: none; }
+.card.q0 { border-image-source: url(../art/ui/q0.png); } .card.q1 { border-image-source: url(../art/ui/q1.png); } .card.q2 { border-image-source: url(../art/ui/q2.png); }
+.card { padding: 4px; gap: 6px; } .card b { font-size: 24px; } .card small, .card p { font-size: 12px; }
+.slot, .slot.has { box-shadow: none; background: none; border: calc(var(--q) * 6) solid transparent; border-image: url(../art/ui/slot.png) 6 fill / calc(var(--q) * 6) stretch; image-rendering: pixelated; font-size: 12px; }
+.slot.lock { border-image-source: url(../art/ui/slot_lock.png); border-image-slice: 6 fill; } .slot.lock .pi { display: none; }
+.slot.sel { box-shadow: none; border-image-source: url(../art/ui/slot_sel.png); border-image-slice: 9 fill; }
+.slot u { left: 0; top: -2px; font-size: 12px; } .slot span { font-size: 12px; } .slot i { font-size: 12px; }
+.bag > div, .bag > div.has, .lo .bag > div.book, .sb { box-shadow: none; background: none; border: calc(var(--q) * 5) solid transparent; border-image: url(../art/ui/cell.png) 5 fill / calc(var(--q) * 5) stretch; image-rendering: pixelated; }
+.bag > div.sel, .sb.nx { box-shadow: none; border-image-source: url(../art/ui/slot_sel.png); border-image-slice: 9 fill; }
+.sb { width: calc(var(--p) * 16); height: calc(var(--p) * 16); } .sb.lock { opacity: .4; }
+.slot .pi { width: 70%; height: auto; } .bag .pi, .sb .pi { width: 100%; height: auto; } .wsel .pi { width: calc(var(--p) * 14); }
+.items .pi, .card .ic .pi { width: calc(var(--p) * 16); } .loinfo .ic .pi { width: 44px; }
+.hp { box-shadow: none; background: none; border: calc(var(--q) * 3) solid transparent; border-image: url(../art/ui/hp_frame.png) 3 fill / calc(var(--q) * 3) stretch; image-rendering: pixelated; height: calc(var(--p) * 11); }
+.hp i { background: url(../art/ui/hp_fill.png) 0 0 / 100% 100%; image-rendering: pixelated; } .hp span { line-height: calc(var(--p) * 5); font-size: 12px; }
+.xp { box-shadow: none; background: #1a2030; height: calc(var(--p) * 4); } .xp i { background: url(../art/ui/xp_fill.png) 0 0 / 100% 100%; image-rendering: pixelated; }
+.bb { box-shadow: none; background: none; border: calc(var(--q) * 3) solid transparent; border-image: url(../art/ui/boss_frame.png) 3 12 fill / calc(var(--q) * 3) calc(var(--q) * 12) stretch; image-rendering: pixelated; height: calc(var(--p) * 12); }
+.bb i { background: url(../art/ui/boss_fill.png) 0 0 / 100% 100%; image-rendering: pixelated; }
+.coins, .chead > span, .cn { display: inline-flex; align-items: center; gap: 4px; font-size: 24px; }
+.chead h2 { font-size: 24px; } .cpn h4, .lo h4, .pc h3 { font-size: 24px; } .cpn h4 small, .lo h4 small, .pc h3 small { font-size: 12px; }
+.cpn, .lol, .lor, .loinfo { box-shadow: none; background: rgba(20, 10, 6, .35); }
+.dim, .loinfo p, .tipline, .wdesc, .arow small, .stats { font-size: 12px; } .stats.big, .attr4 { font-size: 24px; } .loinfo p b { font-size: 24px; }
+.attr4 span, .stats span { display: inline-flex; align-items: center; gap: 4px; } .attr4 .pi, .stats .pi { width: calc(var(--p) * 8); }
+@media (orientation: portrait) { .btn { font-size: 24px; } .ctabs button, .ptabs button { font-size: 12px; } .card b { font-size: 12px; } .stats.big, .attr4 { font-size: 12px; } .loinfo p b { font-size: 12px; } .cpn h4, .lo h4, .pc h3, .chead h2 { font-size: 24px; } }
+.arow { grid-template-columns: auto 1fr 2.2em 2.2em 2em; } .arow b { display: inline-flex; align-items: center; gap: 4px; font-size: 24px; } .arow .pi { width: calc(var(--p) * 8); } @media (orientation: portrait) { .arow b { font-size: 12px; } }
+@media (orientation: portrait) { .lo .bag, #prep .bag { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.bag > div { min-width: 0; } .pcols { gap: 1vw; } .wsel { gap: 4px; } .wsel button { min-width: 0; padding: 2px; } .slots { gap: 4px; }
+
+/* ---------- 主界面 v2：像素水墨（照三国终章：插画铺满、右侧宣纸留白放书法标题） ---------- */
+#title { background: #efd8be; }
+.tart { inset: 0; background: url(../art/title/art.png) 0 50% / cover no-repeat; image-rendering: pixelated; }
+.tart::after { background: none; }
+.tbox { width: 36%; right: 2%; gap: 10px; padding-bottom: 2vh; }
+.logo { line-height: 0; } .logo img { height: min(52vh, 30vw); image-rendering: pixelated; }
+.seal { right: -8px; top: auto; bottom: 4%; font-size: 12px; writing-mode: vertical-rl; letter-spacing: .3em; padding: 8px 4px; background: #b8281a; color: #fff3e0; box-shadow: 0 0 0 2px #efd8be, 0 0 0 4px #b8281a; }
+.sub { color: #3a2418; text-shadow: none; font-size: 24px; letter-spacing: .15em; } .sub s { background: #3a2418; height: 2px; width: 36px; }
+.en { color: #7a6450; font-size: 12px; }
+.ttop .btn.mini { font-size: 12px; }
+@media (orientation: portrait) {
+  #title { background: #efd8be; }
+  .tart { inset: 0 0 38% 0; background-position: 38% 50%; } .tart::after { background: linear-gradient(180deg, rgba(239, 216, 190, 0) 70%, #efd8be); }
+  .tbox { width: 100%; right: 0; height: 44%; justify-content: flex-end; padding-bottom: calc(4vh + env(safe-area-inset-bottom)); }
+  .logo img { height: auto; width: min(52vw, 30vh); } .seal { right: -22px; }
+  .sub { font-size: 12px; }
+}
+#pause .cbox { height: auto; max-height: 94vh; } #pause .cbody { flex: 0 1 auto; min-height: 0; overflow-y: auto; } @media (orientation: portrait) { #pause .cbox { height: 100%; max-height: none; } #pause .cbody { flex: 1 1 auto; } }
+.slots { grid-template-columns: repeat(5, minmax(0, 1fr)); }

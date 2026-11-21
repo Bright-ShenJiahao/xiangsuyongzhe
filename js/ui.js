@@ -25,7 +25,12 @@
   PAL.i = '#8ad8ff'; PAL.j = '#e8f8ff';
   ICON.nova = Array.from({ length: 16 }, (_, y) => Array.from({ length: 16 }, (_, x) => { const d = Math.hypot(x - 7.5, y - 7.5); return d > 5.6 && d < 7.4 ? ((x + y) % 3 ? 'i' : 'j') : d < 2.2 ? 'j' : (d > 3.4 && d < 4.2 && (x * y) % 2 ? 'i' : '.'); }).join(''));
   ICON.axe = ICON.axe.map(r => r.replace(/c/g, 'd'));
-  function iconCanvas(name) { const c = document.createElement('canvas'); c.width = c.height = 16; const g = c.getContext('2d'); (ICON[name] || ICON.sword).forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); } })); return c; }
+  // 像素图标（art/ui，尺寸见 js/uiart.js）：k = 放大倍数
+  const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_staff', axe: 'bk_axe', nova: 'bk_nova' };
+  function pi(name, k = 2) { const im = new Image(); im.className = 'pi'; im.alt = ''; im.draggable = false; im.src = 'art/ui/' + name + '.png'; const s = (window.UIART || {})[name]; if (s) { im.width = s[0] * k; im.height = s[1] * k; } return im; }
+  const piH = (name, k) => pi(name, k).outerHTML;
+  function iconCanvas(name) { return pi(BOOK[name] || name); }
+  function iconCanvasOld(name) { const c = document.createElement('canvas'); c.width = c.height = 16; const g = c.getContext('2d'); (ICON[name] || ICON.sword).forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); } })); return c; }
 
   // ================= 主界面 =================
   $('bStart').onclick = () => openPrep(true);
@@ -73,7 +78,7 @@
     for (const a of DATA.attrs) {
       const base = DATA.attrBase + (P.free[a.id] || 0), fin = c.A[a.id], cls = fin > base ? 'up' : fin < base ? 'dn' : '';
       const r = document.createElement('div'); r.className = 'arow';
-      r.innerHTML = `<b>${a.name}</b><small>${a.desc}</small><button ${P.free[a.id] ? '' : 'disabled'}>−</button><button ${left ? '' : 'disabled'}>＋</button><em class="${cls}">${fin}</em>`;
+      r.innerHTML = `<b>${piH(a.id, 1)}${a.name}</b><small>${a.desc}</small><button ${P.free[a.id] ? '' : 'disabled'}>−</button><button ${left ? '' : 'disabled'}>＋</button><em class="${cls}">${fin}</em>`;
       const [m, p] = r.querySelectorAll('button'); m.onclick = () => { P.free[a.id]--; renderPrep(); }; p.onclick = () => { P.free[a.id] = (P.free[a.id] || 0) + 1; renderPrep(); };
       ar.appendChild(r);
     }
@@ -87,13 +92,13 @@
     for (let i = 0; i < DATA.slotsMax; i++) { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
       if (i === 0) { d.className = 'slot has'; d.appendChild(iconCanvas(W.icon)); d.insertAdjacentHTML('beforeend', `<span>${W.skill}</span>`); d.title = W.desc; }
       else if (i < DATA.slotsOpen) { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
-      else { d.className = 'slot lock'; d.insertAdjacentHTML('beforeend', '🔒'); }
+      else d.className = 'slot lock';
       sl.appendChild(d); }
     // 开局宝物 + 物品栏
     const is = $('iSel'); is.innerHTML = '';
-    for (const id of P.itemOpts) { const it = DATA.startItems.find(x => x.id === id), d = document.createElement('div'); d.className = id === P.item ? 'on' : ''; d.innerHTML = `<em>${it.icon}</em><b>${it.name}</b><small>${it.desc}</small>`; d.onclick = () => { P.item = id; renderPrep(); }; is.appendChild(d); }
+    for (const id of P.itemOpts) { const it = DATA.startItems.find(x => x.id === id), d = document.createElement('div'); d.className = id === P.item ? 'on' : ''; d.innerHTML = `${piH(it.id)}<b>${it.name}</b><small>${it.desc}</small>`; d.onclick = () => { P.item = id; renderPrep(); }; is.appendChild(d); }
     const bag = $('bag'); bag.innerHTML = ''; const it = DATA.startItems.find(x => x.id === P.item);
-    for (let i = 0; i < DATA.bagSize; i++) { const d = document.createElement('div'); if (i === 0 && it) { d.className = 'has'; d.textContent = it.icon; d.title = it.name + '：' + it.desc; } bag.appendChild(d); }
+    for (let i = 0; i < DATA.bagSize; i++) { const d = document.createElement('div'); if (i === 0 && it) { d.className = 'has'; d.appendChild(pi(it.id)); d.title = it.name + '：' + it.desc; } bag.appendChild(d); }
     $('pTip').textContent = '空技能格要在路上拿技能书来填；第 4、5 格以后靠奖励打开。';
   }
   $('aReset').onclick = () => { P.free = {}; renderPrep(); };
@@ -121,13 +126,13 @@
     lastBuild = b || lastBuild || build(); HC = {};
     BATTLE.start({ weapon: lastBuild.weapon, map: 'field', build: lastBuild }); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); tipT = 6;
   }
-  const set = (id, prop, v) => { if (HC[id + prop] === v) return; HC[id + prop] = v; const e = $(id); if (prop === 'text') e.textContent = v; else if (prop === 'w') e.style.width = v; else if (prop === 'show') e.style.display = v ? 'block' : 'none'; else if (prop === 'cls') e.className = v; };
+  const set = (id, prop, v) => { if (HC[id + prop] === v) return; HC[id + prop] = v; const e = $(id); if (prop === 'text') e.textContent = v; else if (prop === 'html') e.innerHTML = v; else if (prop === 'w') e.style.width = v; else if (prop === 'show') e.style.display = v ? 'block' : 'none'; else if (prop === 'cls') e.className = v; };
   const mmss = t => { t = Math.max(0, Math.ceil(t)); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
   function hud(h) {
     set('hpBar', 'w', (h.hp / h.maxHp * 100).toFixed(1) + '%'); set('hpTxt', 'text', `${Math.ceil(h.hp)} / ${h.maxHp}`);
     set('lvTxt', 'text', 'Lv ' + h.lv); set('xpBar', 'w', (h.xp / h.need * 100).toFixed(1) + '%');
     set('clock', 'text', h.bossWave ? '首领战！' : `第 ${h.wave + 1} / ${h.waves} 波 · 剩 ${h.left}`);
-    set('kills', 'text', '击倒 ' + h.kills); set('coins', 'text', '💰 ' + h.coins);
+    set('kills', 'html', piH('kill', 1) + ' ' + h.kills); set('coins', 'html', piH('coin', 1) + ' ' + h.coins);
     const sk = JSON.stringify([h.slots, h.open, h.next]);
     if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.appendChild(iconCanvas(DATA.skills[s.id].icon)); if (s.lv > 1) d.insertAdjacentHTML('beforeend', `<i>${s.lv}</i>`); } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');
@@ -168,7 +173,7 @@
     else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#07101b'; ctx.fillRect(0, 0, cv.width, cv.height); }
     requestAnimationFrame(loop);
   }
-  window.UI = { mod: () => BATTLE, hud, levelUp, result, waveEnd, icon: iconCanvas, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { mod: () => BATTLE, hud, levelUp, result, waveEnd, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   if (window.BOOT) BOOT.progress(.3);
   SPR.load().then(() => { if (window.BOOT) { BOOT.progress(1); BOOT.done(() => show('title')); } else show('title'); requestAnimationFrame(loop); })
