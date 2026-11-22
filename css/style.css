@@ -594,3 +594,24 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #pause .lom .hsi > :first-child { width: 38px; height: 38px; }
 @media (orientation: portrait) { #pause .lom .hport img { height: 100%; } }
 .hadd h4 .btn { margin-left: auto; padding: 0 10px; font-size: 12px; } .hadd h4 .btn + .pts { margin-left: 10px; }
+
+/* 11/22 人物页 v3：框加大、立绘放大压进信息栏、加点竖卡、三列短条、大技能圆章 */
+@media (orientation: landscape) { #pause .cbox { width: min(1480px, 96vw); height: min(860px, 94vh); max-height: none; } #pause .cbody { flex: 1 1 auto; } }
+#pause .lom, #pause .lom .lor { height: 100%; } #pause .lom .lor { overflow: visible; padding: 10px 16px 10px 0; }
+#pause .lom .hport { flex: 0 0 40%; margin-right: -6%; z-index: 0; pointer-events: none; -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent), linear-gradient(#000 85%, transparent); -webkit-mask-composite: source-in; mask-image: linear-gradient(#000 88%, transparent); }
+#pause .lom .hport img { left: 50%; top: 2%; height: 100%; width: auto; transform: translateX(-50%); }
+#pause .lom .lorr { position: relative; z-index: 1; gap: 12px; overflow-y: auto; }
+.hhead { grid-template-columns: auto auto 1fr auto; background: rgba(60, 40, 22, .85); border-color: #c8a060; }
+.hbadge { width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(#f0cc70, #b88a30); color: #2a1a08; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; box-shadow: 0 0 0 2px #fff0c0; }
+.hxp { height: 10px !important; border-radius: 5px !important; } .hlv small { font-size: 12px; color: #c8b890; } #pause .lom .hhead h4 { font-size: 28px !important; }
+.hadd { display: grid !important; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px !important; }
+.hadd h4 { grid-column: 1 / -1; font-size: 17px !important; } .hadd .pts { background: #c8a060; color: #2a1a08; padding: 1px 12px; border-radius: 12px; } .hadd .pts b { color: #2a1a08 !important; }
+.hadd .arow { display: grid !important; grid-template-columns: 1fr 1fr !important; grid-template-areas: "n n" "v v" "m p"; gap: 4px !important; padding: 8px 6px !important; border: 1px solid #6a5030; background: rgba(60, 40, 22, .75); text-align: center; justify-items: center; }
+.hadd .arow > b { grid-area: n; font-size: 15px !important; justify-content: center; } .hadd .arow small { display: none !important; } .hadd .arow em { grid-area: v; font-size: 30px !important; text-align: center !important; font-style: normal; }
+.hadd .arow button:nth-of-type(1) { grid-area: m; width: 100%; } .hadd .arow button:nth-of-type(2) { grid-area: p; width: 100%; } .hadd .arow button { height: 28px !important; }
+#pause .lom .pills { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px; } #pause .lom .pills > div { background: rgba(50, 34, 20, .85); font-size: 15px; padding: 4px 14px 4px 8px; }
+#pause .lom .hsk { gap: 18px; padding-top: 10px; } #pause .lom .hsi { width: 70px; } #pause .lom .hsi > :first-child { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
+.hsi.em > :first-child { box-shadow: none !important; border: 2px dashed #8a6a3a; } .hsi.lk > :first-child { box-shadow: none !important; border: 2px dashed #4a3a28; opacity: .6; font-size: 18px; } .hsi small { font-size: 12px !important; }
+@media (orientation: portrait) { #pause .lom .hport { margin-right: 0; flex: none; height: 200px; } #pause .lom .lorr { overflow: visible; } .hadd .arow em { font-size: 22px !important; } .hadd .arow > b { font-size: 12px !important; } .hadd .arow > b .pi, .hadd .arow > b img { display: none; } #pause .lom .pills { grid-template-columns: 1fr 1fr; } #pause .lom .pills > div { font-size: 12px; } #pause .lom .hsi > :first-child { width: 44px; height: 44px; } #pause .lom .hsi { width: 52px; } #pause .lom .hhead h4 { font-size: 20px !important; } }
+.fst canvas { bottom: 31px !important; max-width: 112px; max-height: 64px; height: auto !important; width: auto; } svg.ped { z-index: 1; } .fst canvas { z-index: 2; }
+.fst canvas { height: 62px !important; max-height: none; max-width: 124px; object-fit: contain; }
