@@ -248,8 +248,10 @@
   // 射程（像素格）：近战招跟着范围加成一起变大
   const reach = S => (S.rg || 9999) * (S.rg && S.rg < 100 ? hero.m.area : 1);
   // 轮到的这本够不着就跳过，看下一本；都够不着就不放
-  const readySlot = () => { const t = nearest(); if (!t) return -1; const d = dist(t, hero);
-    for (let k = 0; k < RUN.open; k++) { const i = (RUN.si + k) % RUN.open, sk = RUN.slots[i]; if (sk && d <= reach(DATA.skills[sk.id])) return i; } return -1; };
+  // 11/22 做法 1：够不着照样跳过，但刚放过的那本不能紧接着再放（要么先轮到别的，要么等 0.5 秒），远程招不会被连刷
+  const readySlot = () => { const t = nearest(); if (!t) return -1; const d = dist(t, hero), n = RUN.slots.slice(0, RUN.open).filter(Boolean).length;
+    for (let k = 0; k < RUN.open; k++) { const i = (RUN.si + k) % RUN.open, sk = RUN.slots[i]; if (!sk || d > reach(DATA.skills[sk.id])) continue;
+      if (n > 1 && i === hero.lastI && G.t - (hero.lastT || 0) < .5) return -1; return i; } return -1; };
   const HWPN = { sword: 'sword', spear: 'spear', bow: 'bow', staff: 'staff' };
   // 技能栏 1→2→3 严格轮流（空格子跳过），没有各自冷却：前摇（能走；翻滚 = 这招作废）→ 出手 → 占时型持续 → 后摇（站定；翻滚取消）
   // 11/21：够不着的招跳过（readySlot）；两招之间空 0.18 秒（hero.gap），这段时间正常跑
@@ -268,7 +270,7 @@
     if (c.ph === 'hold') { if (c.t >= c.dur) { SK.chEnd(); c.ph = 'rc'; c.t = 0; c.dur = c.rc; } return; }
     if (c.ph === 'rc' && c.t >= c.dur) endCast();
   }
-  function endCast() { const c = hero.cs; if (!c) return; if (c.ph === 'hold') SK.chEnd(); RUN.si = (c.i + 1) % RUN.open; hero.cs = null; hero.gap = .18; }
+  function endCast() { const c = hero.cs; if (!c) return; hero.lastI = c.i; hero.lastT = G.t; if (c.ph === 'hold') SK.chEnd(); RUN.si = (c.i + 1) % RUN.open; hero.cs = null; hero.gap = .18; }
   function aimNow(a0) { const t = nearest(); return t ? ang(hero, t) : (a0 != null ? a0 : (hero.f < 0 ? PI : 0)); }
   function faceTo(a) { hero.f = Math.cos(a) < 0 ? -1 : 1; }
   // 给 skills.js 用的接口
