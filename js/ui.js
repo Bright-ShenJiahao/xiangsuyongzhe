@@ -36,6 +36,8 @@
 
   // ================= 主界面 =================
   $('bStart').onclick = () => openPrep(true);
+  // 11/22 图鉴展示用小人（art/figure/<key>/0..3.png，比战斗小人大、更精细），有就替换图鉴里的那一个
+  const FIG = {}; fetch('art/figure/meta.json').then(r => r.json()).then(M => { for (const k in M) FIG[k] = M[k].map(([ax], i) => { const im = new Image(); im.src = `art/figure/${k}/${i}.png`; return { c: im, f: { ax } }; }); }).catch(() => {});
   const PANELS = {
     codex: ['图鉴', () => { const d = document.createElement('div'); d.className = 'codex';
       // 11/22 手办收藏式（铃兰角色一览）：等距立体底座 + 循环播放的像素小人。底座分档：勇者金 / 首领红 / 远程蓝 / 近战灰
@@ -45,13 +47,13 @@
         <polyline points="6,22 50,44 94,22" fill="none" stroke="${hi}" stroke-width="1.6"/><polygon points="50,6 82,22 50,38 18,22" fill="none" stroke="${l}" stroke-width="1" opacity=".6"/>
         <polygon points="36,41 50,48 50,55 36,48" fill="${r}" stroke="${hi}" stroke-width=".8"/></svg>`; };
       const anims = [];
-      const add = (set, names, name, note, tier, lab) => { const e = document.createElement('div'); e.className = 'fig ' + tier; const st = document.createElement('div'); st.className = 'fst';
-        const fr = names.map(n => Array.isArray(n) ? SPR.crop(set, n[0], n[1]) : SPR.crop(set, n)).filter(Boolean);
-        if (fr.length) { const W = 2 * Math.ceil(Math.max(...fr.map(f => Math.max(f.f.ax, f.c.width - f.f.ax)))), H = Math.max(...fr.map(f => f.c.height)), c = document.createElement('canvas'); c.width = W; c.height = H; st.appendChild(c); anims.push({ c, fr, i: 0 }); }
+      const add = (set, names, name, note, tier, lab, figK) => { const e = document.createElement('div'); e.className = 'fig ' + tier; const st = document.createElement('div'); st.className = 'fst';
+        const fr = FIG[figK] && FIG[figK].every(x => x.c.complete) ? FIG[figK] : names.map(n => Array.isArray(n) ? SPR.crop(set, n[0], n[1]) : SPR.crop(set, n)).filter(Boolean); if (fr === FIG[figK]) e.classList.add('big');
+        if (fr.length) { const W = 2 * Math.ceil(Math.max(...fr.map(f => Math.max(f.f.ax, (f.c.naturalWidth || f.c.width) - f.f.ax)))), H = Math.max(...fr.map(f => f.c.height)), c = document.createElement('canvas'); c.width = W; c.height = H; st.appendChild(c); anims.push({ c, fr, i: 0 }); }
         st.insertAdjacentHTML('beforeend', ped(tier, lab)); e.appendChild(st); e.insertAdjacentHTML('beforeend', `<b>${name}</b><small>${note}</small>`); d.appendChild(e); };
       const draw = a => { const g = a.c.getContext('2d'), f = a.fr[a.i % a.fr.length]; g.clearRect(0, 0, a.c.width, a.c.height); g.drawImage(f.c, Math.round(a.c.width / 2 - f.f.ax), a.c.height - f.c.height); };   // 按脚底锚点对齐底座中心
-      for (const h of DATA.heroes) { const n = SPR.count(SPR.heroSet(h.id, 'sword'), 'sword.idle') || 1; add(SPR.heroSet(h.id, 'sword'), Array.from({ length: Math.max(2, n) }, (_, i) => ['sword.idle', i % n]), h.name, h.perk, 'gold', '勇者'); }
-      for (const [k, T] of Object.entries(DATA.enemies)) { const tier = T.boss ? 'red' : T.ranged ? 'blue' : 'grey'; add(k, ['idle0', 'idle1', 'walk0', 'walk1', 'walk2', 'walk3'].filter(n => SPR.crop(k, n)), T.name, T.boss ? '首领' : T.ranged ? '远程' : '近战', tier, T.boss ? '首领' : T.ranged ? '远程' : '近战'); }
+      for (const h of DATA.heroes) { const n = SPR.count(SPR.heroSet(h.id, 'sword'), 'sword.idle') || 1; add(SPR.heroSet(h.id, 'sword'), Array.from({ length: Math.max(2, n) }, (_, i) => ['sword.idle', i % n]), h.name, h.perk, 'gold', '勇者', h.id); }
+      for (const [k, T] of Object.entries(DATA.enemies)) { const tier = T.boss ? 'red' : T.ranged ? 'blue' : 'grey'; add(k, ['idle0', 'idle1', 'walk0', 'walk1', 'walk2', 'walk3'].filter(n => SPR.crop(k, n)), T.name, T.boss ? '首领' : T.ranged ? '远程' : '近战', tier, T.boss ? '首领' : T.ranged ? '远程' : '近战', k); }
       anims.forEach((a, i) => { a.i = i; draw(a); }); const tm = setInterval(() => { if (!d.isConnected) return clearInterval(tm); anims.forEach(a => { a.i++; draw(a); }); }, 400);
       return d; }],
     set: ['设置', () => { const d = document.createElement('div'); d.innerHTML = '<p style="color:#a89878">音量等设置以后加。</p>'; return d; }],
