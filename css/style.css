@@ -553,3 +553,12 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 .fig.gold .ped { --pt: #ffe08a; --ps: #c89a30; } .fig.red .ped { --pt: #f0a0a0; --ps: #a83a3a; } .fig.blue .ped { --pt: #b8d4ff; --ps: #4a70b8; } .fig.grey .ped { --pt: #e6e0d6; --ps: #9a9080; }
 @media (orientation: landscape) { #pause .cbox { width: min(1200px, 96vw); max-width: none; } #pause .lo:has(.lorp) { grid-template-columns: 1.25fr 1.35fr; } }
 .lorp .hport { flex-basis: 36%; } .lorp .stats span { white-space: nowrap; } .lorp .stats small { white-space: nowrap; }
+
+/* 11/22 手办 v2：卡片带光晕，SVG 立体底座，小人站在底座顶面中心 */
+.codex > .fig { background: radial-gradient(ellipse at 50% 38%, #fffaf0 0%, #f1e6d0 45%, #ddcdaa 100%); border-radius: 14px 14px 6px 6px; box-shadow: 0 0 0 2px #c4a878, inset 0 0 0 4px rgba(255, 255, 255, .5), 0 3px 6px rgba(0, 0, 0, .35); padding: 6px 6px 8px; }
+.fig.gold { background: radial-gradient(ellipse at 50% 38%, #fff4d0 0%, #f6d898 50%, #dca858 100%); box-shadow: 0 0 0 2px #e0a840, inset 0 0 0 4px rgba(255, 240, 200, .6), 0 0 10px rgba(255, 200, 80, .5); }
+.fig.red { box-shadow: 0 0 0 2px #c86a5a, inset 0 0 0 4px rgba(255, 255, 255, .5), 0 3px 6px rgba(0, 0, 0, .35); }
+.fst { height: 112px; } .fst canvas { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); margin: 0; height: 64px !important; width: auto; filter: drop-shadow(0 2px 0 rgba(0,0,0,.25)); }
+svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); width: 84px; height: auto; } .ped::before, .ped::after { display: none; }
+.fig b { margin-top: 2px; padding: 1px 10px; background: rgba(255, 255, 255, .55); border-radius: 8px; }
+.fig b { white-space: nowrap; font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
