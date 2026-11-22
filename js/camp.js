@@ -198,7 +198,6 @@
         <div class="cpn"><h4>输出统计</h4>${rows.length ? rows.map(([id, v]) => `<div class="dmgr"><span>${SK[id].name}</span><i><b style="width:${(v / tot * 100).toFixed(1)}%"></b></i><em>${Math.round(v)} · ${Math.round(v / tot * 100)}%</em></div>`).join('') : '<p class="dim">没有打出伤害</p>'}</div></div>`;
     } else if (tab === 'shi') {
       if (!loot.length) { body.innerHTML = `<p class="dim center">这一波没有战利品<br><small>每站第 3 波必掉技能书；精英掉书，小头目掉宝物；行商那里也能买</small></p>`; return; }
-      if (rep.field) body.insertAdjacentHTML('beforeend', `<div class="mline">「${['嘿嘿，好货不等人！', '铜钱带够了吗？', '买两件，咕噜开心！', '这些可都是从勇者身上……咳，捡来的。'][Math.random() * 4 | 0]}」</div>`);
       const g = document.createElement('div'); g.className = 'cards' + (rep.field ? ' shelf' : ''); body.appendChild(g);
       loot.forEach((o, i) => { const t = thing(o), d = card(t, o);
         btnTo(d, o.kind === 'book' ? '学会' : o.kind === 'use' ? '吃掉' : '收下', () => { if (learn(o)) { if (rep.pickOne) loot = []; else loot.splice(i, 1); render(); } }, true);
