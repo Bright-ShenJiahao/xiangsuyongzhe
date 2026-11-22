@@ -643,7 +643,7 @@
     const Wm = W / s, Hm = H / s;
     { const now = performance.now(), dt = Math.min(.1, (now - (cam.tm || now)) / 1000), tx = Math.max(0, Math.min(MAPW - Wm, hero.x - Wm / 2)), ty = Math.max(0, Math.min(MAPH - Hm, hero.y - 20 * K - Hm / 2)), k = 1 - Math.exp(-12 * dt);
       cam.tm = now; if (cam.snap || cam.x == null || Math.abs(tx - cam.x) > Wm || Math.abs(ty - cam.y) > Hm) { cam.x = tx; cam.y = ty; cam.snap = false; } else { cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; } }   // 镜头平滑跟随
-    const sh = G.shake > 0 ? rd(R(-2, 2)) * u : 0;
+    const sh = G.shake > 0 && !G.paused ? rd(R(-2, 2)) * u : 0;
     ctx.setTransform(1, 0, 0, 1, sh, 0);
     if (MIMG.complete && MIMG.naturalWidth) { const k = MIMG.naturalWidth / MAPW; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(MIMG, cam.x * k, cam.y * k, Wm * k, Hm * k, 0, 0, W, H); ctx.imageSmoothingEnabled = false; }
     else { ctx.fillStyle = '#6a4a2a'; ctx.fillRect(0, 0, W, H); }
