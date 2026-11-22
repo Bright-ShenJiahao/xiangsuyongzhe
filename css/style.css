@@ -500,3 +500,9 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
   #title.t2.v5 .tart::after, #title.t2.v6 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 28, 0) 50%, #0d1626 66%); }
   #title.t2.v5 .tbox, #title.t2.v6 .tbox { right: 0; width: 100%; }
 }
+
+#title.t2.v7 .tart { background-image: url(../art/title/art7.webp); background-position: 30% 50%; }
+#title.t2.v7 .tart::after { background: linear-gradient(270deg, rgba(8, 14, 28, .6) 0%, rgba(8, 14, 28, .2) 30%, rgba(8, 14, 28, 0) 45%); }
+#title.t2.v7 .tart::before { left: 44%; top: 4%; } #title.t2.v7 .tbox { left: auto; right: 3%; width: 40%; }
+@media (orientation: portrait), (max-width: 600px) { #title.t2.v7 .tart { background-size: auto 56%; background-position: 34% 6%; }
+  #title.t2.v7 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 28, 0) 50%, #0d1626 66%); } #title.t2.v7 .tbox { right: 0; width: 100%; } }
