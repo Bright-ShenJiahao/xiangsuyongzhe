@@ -4,7 +4,7 @@
   const IW = 1672, IH = 941;
   const P = { moon: [663, 124, 150], torch: [[140, 167], [383, 222]], gem: [351, 355], crystal: [636, 303] };
   const flies = Array.from({ length: 14 }, () => ({ x: Math.random() * IW * .62, y: 560 + Math.random() * 360, p: Math.random() * 7, s: .4 + Math.random() * .8, r: 1 + Math.random() * 1.6 }));
-  let cv, g, run = false;
+  let cv, g, run = false, t0 = 0; const bgImg = new Image(); bgImg.onload = () => { t0 = performance.now(); }; bgImg.src = 'art/title/art13.webp';   // 11/22 主图先出来，光影等主图加载完再 1 秒淡入
   function rect() {   // 背景图在屏幕上的位置和缩放
     const el = cv.parentElement, W = el.clientWidth, H = el.clientHeight, cs = getComputedStyle(el), sz = cs.backgroundSize, [bx, by] = cs.backgroundPosition.split(' ').map(v => parseFloat(v) / 100);
     let s; if (sz.startsWith('auto')) s = parseFloat(sz.split(' ')[1]) / 100 * H / IH; else s = Math.max(W / IW, H / IH);
@@ -14,7 +14,7 @@
   function frame(t) {
     if (!run) return; requestAnimationFrame(frame);
     const dpr = Math.min(2, devicePixelRatio || 1), R = rect(); if (cv.width !== Math.round(R.W * dpr)) { cv.width = Math.round(R.W * dpr); cv.height = Math.round(R.H * dpr); }
-    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, R.W, R.H); g.globalCompositeOperation = 'lighter'; t /= 1000;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, R.W, R.H); if (!t0) return; g.globalAlpha = Math.min(1, (performance.now() - t0) / 1000 - .3);  if (g.globalAlpha <= 0) return; g.globalCompositeOperation = 'lighter'; t /= 1000;
     const X = x => R.ox + x * R.s, Y = y => R.oy + y * R.s, S = v => v * R.s, [mx, my, mr] = P.moon;
     glow(X(mx), Y(my), S(mr * 1.9), '170,205,255', .32 + .12 * Math.sin(t * .9));                       // ① 月光
     P.torch.forEach(([x, y], i) => { const f = .5 + .25 * Math.sin(t * 9 + i * 3) + .15 * Math.sin(t * 23 + i); glow(X(x), Y(y), S(40 + 8 * f), '255,140,50', .4 + .25 * f); });   // ③ 火把
