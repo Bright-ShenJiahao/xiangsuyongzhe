@@ -6,7 +6,7 @@
   const rd = Math.round;
   let screen = 'title', last = performance.now();
   const fieldImg = new Image(); fieldImg.crossOrigin = 'anonymous'; fieldImg.src = DATA.maps[0].img;
-  try { if (localStorage.getItem('xsyz-title') !== 'old') document.getElementById('title').classList.add('t2', 'v' + (localStorage.getItem('xsyz-tart') || '10')); } catch (e) { document.getElementById('title').classList.add('t2'); }   // 11/22 新主界面（月夜 + 旧地图水彩），旧的可在调试面板切回
+  try { if (localStorage.getItem('xsyz-title') !== 'old') document.getElementById('title').classList.add('t2', 'v' + (['8', '9', '10', '11'].includes(localStorage.getItem('xsyz-tart')) ? localStorage.getItem('xsyz-tart') : '10')); } catch (e) { document.getElementById('title').classList.add('t2'); }   // 11/22 新主界面（月夜 + 旧地图水彩），旧的可在调试面板切回
   const store = { get: k => { try { return localStorage.getItem('xsyz-' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('xsyz-' + k, v); } catch (e) {} } };
   const touch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window; if (touch) document.body.classList.add('touch');
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
