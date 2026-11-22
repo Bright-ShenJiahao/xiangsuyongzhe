@@ -28,7 +28,7 @@
     if (o.kind === 'book') { const j = r.slots.findIndex((s, k) => !s && k < r.open); if (j >= 0) { r.slots[j] = { id: o.id, lv: 1, xp: o.xp || 0 }; toast(`${SK[o.id].name} 自动装上第 ${j + 1} 格` + (r.tipP ? '' : ' · 按 P 调整顺序')); r.tipP = 1; return true; } }   // 技能栏有空位就直接装上
     if (o.kind === 'item') { const g = r.gear.indexOf(null); if (g >= 0) { r.gear[g] = { kind: 'item', id: o.id }; B().recompute(); return true; } }   // 11/23 宝物格有空就直接生效
     const i = r.bag.indexOf(null); if (i < 0) { toast('物品栏满了，先卖掉点东西'); return false; }
-    r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : { kind: o.kind, id: o.id };
+    r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : { kind: o.kind, id: o.id }; if (inFight()) r.bag[i].fresh = 1;
     return true;
   }
   // 点锁着的技能格：花铜钱解锁（第 4 格第 2 站起 50，第 5 格第 5 站起 78，每站涨 7%；第 4 / 8 站打完也会免费开）
@@ -63,7 +63,7 @@
     const oc = (arr, t, cls, empty) => arr.forEach((o, i) => { const d = document.createElement('div'); d.className = cls + (o ? ' has' : ''); d.innerHTML = o ? `<span>${o.id}</span>` : empty; if (sel && sel.t === t && sel.i === i) d.classList.add('sel'); d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); om.appendChild(d); });
     oc(r.oath, 'o', 'oath', ''); om.insertAdjacentHTML('beforeend', '<div class="gap"></div>'); oc(r.mv, 'm', 'mv', '<span>身法</span>');
     const cell = (grid, arr, t) => arr.forEach((o, i) => { const d = document.createElement('div'); const th = thing(o);
-      if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); if (o.kind === 'book') { d.appendChild(UI.skIcon(o.id)); d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else d.appendChild(iconEl(th)); }
+      if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); if (o.kind === 'book') { d.appendChild(UI.skIcon(o.id)); d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else d.appendChild(iconEl(th)); if (o.fresh && inFight()) d.insertAdjacentHTML('beforeend', '<em class="nw">新</em>'); }
       if (sel && sel.t === t && sel.i === i) d.classList.add('sel');
       d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); grid.appendChild(d); });
     L.insertAdjacentHTML('beforeend', `<h4>宝物 ${r.gear.filter(Boolean).length}/${r.gear.length} <small>放在这里就生效</small></h4>`);
@@ -74,6 +74,7 @@
     if (sel) { const el = box.querySelector(`[data-t="${sel.t}"][data-i="${sel.i}"]`) || box.querySelector('.slot.sel'); if (el) popAt(el, sel.t === 'L' ? info => lockInfo(info, sel.i, box) : info => fillInfo(info, box, true), box); }
     box.querySelectorAll('[data-t]').forEach(el => { el.onmouseenter = () => { if (sel || matchMedia('(hover: none)').matches) return; const q = { t: el.dataset.t, i: +el.dataset.i }; if (!curOf(q)) return; popAt(el, info => fillInfo(info, box, false, q), box, 1); }; el.onmouseleave = () => { if (!sel) document.querySelectorAll('.loinfo.pop').forEach(e => e.remove()); }; });
   }
+  const inFight = () => { const G = B().g && B().g(); return !!(G && !G.fe && !G.over); };
   const ARR0 = (r, q) => q.t === 's' ? r.slots : q.t === 'g' ? r.gear : q.t === 'o' ? r.oath : q.t === 'm' ? r.mv : r.bag;
   function curOf(q) { const r = R(); if (!q) return null; if (q.t === 's') { const s = r.slots[q.i]; return s && { kind: 'book', id: s.id, lv: s.lv, xp: s.xp || 0, slot: true }; } return (q.t === 'g' ? r.gear : r.bag)[q.i]; }
   function lvTag(s) { const k = B().skillInfo(s); return `<b class="lvb">${k.L}</b><s class="pb${k.next ? '' : ' max'}" style="--p:${k.next ? Math.min(100, k.xp / k.next * 100) : 100}%"></s>`; }
@@ -97,14 +98,15 @@
     if (!withBtn) return; const cs = sel;
     const btns = document.createElement('div'); btns.className = 'lob'; info.appendChild(btns);
     const btn = (label, fn, gold) => { const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.textContent = label; b.onclick = e => { e.stopPropagation(); info.remove(); fn(); }; btns.appendChild(b); };
-    if (cs.t === 's') { if (r.slots.filter(Boolean).length > 1) btn('卸下', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = { kind: 'book', id: cur.id, lv: cur.lv, xp: cur.xp }; r.slots[cs.i] = null; sel = null; loadout(box); }); }
+    const F = inFight(); if (F) btns.insertAdjacentHTML('beforeend', '<small class="dim">战斗中：卸下、卖要等站末</small>');
+    if (cs.t === 's') { if (!F && r.slots.filter(Boolean).length > 1) btn('卸下', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = { kind: 'book', id: cur.id, lv: cur.lv, xp: cur.xp }; r.slots[cs.i] = null; sel = null; loadout(box); }); }
     else {
       if (cur.kind === 'book') btn('装上', () => { const j = r.slots.slice(0, r.open).indexOf(null); if (j < 0) return toast('技能格满了：拖到一个技能格上替换'); pick({ t: 's', i: j }, box); }, true);
       const A = cs.t === 'g' ? r.gear : r.bag;
       if (cur.kind === 'item' && cs.t === 'b') btn('放上', () => { const j = r.gear.indexOf(null); if (j < 0) return toast('宝物格满了：拖到一件宝物上替换'); r.gear[j] = cur; r.bag[cs.i] = null; sel = null; B().recompute(); loadout(box); }, true);
-      if (cs.t === 'g') btn('收进物品栏', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = cur; r.gear[cs.i] = null; sel = null; B().recompute(); loadout(box); });
+      if (cs.t === 'g' && !F) btn('收进物品栏', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = cur; r.gear[cs.i] = null; sel = null; B().recompute(); loadout(box); });
       if (cur.kind === 'use') btn('吃掉', () => { learn(cur); A[cs.i] = null; sel = null; loadout(box); }, true);
-      btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; A[cs.i] = null; sel = null; B().recompute(); loadout(box); refreshCoin(); });
+      if (!F) btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; A[cs.i] = null; sel = null; B().recompute(); loadout(box); refreshCoin(); });
     }
   }
   // ---------- 属性页：升级攒的属性点手动加；这次结算 / 暂停里加的点，离开前都能退 ----------
@@ -166,6 +168,14 @@
     const fit = (o, q) => !o || q.t === 'b' || q.t === 's' || (q.t === 'g' ? o.kind === 'item' : q.t === 'o' ? o.kind === 'oath' && !o.mv : q.t === 'm' ? o.kind === 'oath' && !!o.mv : true);
     const MSG = { g: '宝物格只能放宝物', o: '这里只能放誓约印记', m: '身法格只能放身法印记' };
     if (!fit(a, p) || !fit(b, sel)) { toast(MSG[!fit(a, p) ? p.t : sel.t]); sel = null; return loadout(box); }
+    // 11/23 战斗中：可以调技能顺序、往空格里装、用这一站新拿到的东西替换；其他换装 / 卸下 / 卖都要等站末
+    if (inFight() && !(a && b && a.id === b.id)) {
+      const eq = q => q.t !== 'b', same = sel.t === p.t && eq(p);
+      const ok = (sel.t === 'b' && p.t === 'b') || (same && sel.t === 's') || (same && sel.t === 'g')
+        || (!eq(sel) && eq(p) && (!b || (a && a.fresh)))     // 物品栏 → 装备格：空格，或拿新东西替换
+        || (eq(sel) && !eq(p) && b && b.fresh);               // 装备格 → 物品栏里的新东西：等于用新的替换
+      if (!ok) { toast('战斗中只能调顺序、填空格、用新拿到的替换；其他打完这一站再整理'); sel = null; return loadout(box); }
+    }
     // 同一招合并 = 升级
     if (a && b && a.id === b.id && (a.kind === 'book' || !a.kind) && (b.kind === 'book' || !b.kind)) { b.lv += a.lv; put(sel, null); toast(`${SK[b.id].name} 升到 Lv${b.lv}`); }
     else {

@@ -986,3 +986,5 @@ body.fe #hud .top .clock, body.fe #combo { display: none !important; }
 #camp.fshop .cbox { width: min(820px, 92vw) !important; }
 body.shopOn #feed { opacity: 0; }
 @media (min-width: 761px) and (orientation: landscape) { #camp.fshop { justify-content: flex-end !important; padding-right: 3vw; } }
+
+.full .nw, .bag > div .nw { position: absolute; right: 2px; top: 1px; font: normal 11px WenKai, serif; color: #fff; background: #d83a2a; padding: 0 3px; z-index: 2; }

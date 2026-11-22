@@ -422,6 +422,7 @@
   // ---------- 11/22 站末在战场上结算（哈迪斯式）：掉落在地上走过去捡；公主在中间，靠近她跳 3 个修炼光球 + 1 颗刷新水晶；地精商人；三扇门 ----------
   const IMG = {}; const img = n => IMG[n] || (IMG[n] = Object.assign(new Image(), { src: 'art/ui2/' + n + '.png' }));
   function fieldEnd(loot) {
+    for (const o of [...RUN.bag, ...RUN.gear]) if (o) delete o.fresh;   // 站末：「新拿到」标记清掉
     G.paused = false; G.waveOn = false; const g = MAP.ground, cy = (g.y0 + g.y1) / 2 - 10 * K, [gl, gr] = ground(cy), cx = (gl + gr) / 2, ly = cy + 88 * K, n = loot.length;   // 11/23 位置按地图固定
     G.fe = { t: 0, items: loot.map((o, i) => Object.assign({ x: cx + (i - (n - 1) / 2) * 30 * K, y: ly, st: 0 }, o)),
       pr: { x: cx, y: cy, near: 0, orbs: null, cr: null, said: 0, arm: dist(hero, { x: cx, y: cy }) > 40 }, mer: { x: gl + 40 * K, y: cy + 10 * K, st: 0 }, doors: [], warn: 0 };
