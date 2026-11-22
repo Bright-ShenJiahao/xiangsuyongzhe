@@ -855,3 +855,6 @@ img.skic { box-sizing: border-box; padding: 6%; border-radius: 6px; background: 
 #camp.fshop .cbox { width: min(980px, 96vw) !important; height: auto !important; max-height: 64vh; margin-bottom: 2vh; border: 18px solid transparent !important; border-image: url(../art/ui/card.png) 6 fill / 18px stretch !important; image-rendering: pixelated; background: none !important; box-shadow: 0 -6px 24px rgba(0,0,0,.6) !important; animation: fshopIn .25s ease-out; }
 #camp.fshop .ctabs { display: none !important; } #camp.fshop .chead h2 { font-size: 22px; }
 @keyframes fshopIn { from { transform: translateY(40px); opacity: 0; } }
+/* 11/22 技能图标第二版自带深色底和边框：去掉代码加的底和金边 */
+img.skic { padding: 0 !important; background: none !important; box-shadow: none !important; border-radius: 3px; }
+.skIc > img.skic { box-shadow: 0 0 0 2px #e0b24a, 0 2px 6px rgba(0,0,0,.35) !important; border-radius: 4px !important; }

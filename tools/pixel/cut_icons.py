@@ -39,8 +39,8 @@ SW = ['sword', 'whirl', 'guard', 'wave', 'phantom', 'flash', 'storm', 'holysword
 SP = ['spear', 'sweep', 'javelin', 'hundred', 'rising', 'drill', 'leap', 'dragon']
 BW = ['bow', 'fan', 'homing', 'rain', 'barrage', 'pierce', 'cyclone', 'starfall']
 ST = ['staff', 'nova', 'chain', 'pillar', 'orbs', 'thunder', 'blizzard', 'abyss']
-for f, ids, rc, gp in (('sword', SW, [4, 4], 10), ('spear', SP, [4, 4], 10), ('bow', BW, [4, 4], 10), ('staff_b', ['_book'] + ST, [3, 3, 3], 3)):
+for f, ids, rc, gp in (('v2_sword', SW, [4, 4], 10), ('v2_spear', SP, [4, 4], 10), ('v2_bow', BW, [4, 4], 10), ('v2_staff', ST, [4, 4], 10)):   # 11/22 第二版：满底方形小画
   for k, im in zip(ids, cut(f'art/src/skillicons/{f}.png', rc, gp)):
     if k != '_book': im.save(f'art/ui2/sk/{k}.png')
-for k, im in zip(['bk_sword', 'bk_spear', 'bk_bow', 'bk_wand'], cut('art/src/skillicons/books4.png', [4])): im.save(f'art/ui2/{k}.png')
+
 print('ok')
