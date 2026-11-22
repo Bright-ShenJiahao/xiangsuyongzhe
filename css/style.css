@@ -376,7 +376,7 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 @keyframes tierGlow { 50% { box-shadow: 0 0 2px 0 rgba(255, 207, 58, .3); } }
 .ic.tr::after { inset: -1px; }
 .tn1 { color: #e6e2d6 !important; } .tn2 { color: #6ab8ff !important; } .tn3 { color: #c890ff !important; } .tn4 { color: #ffd84a !important; }
-.card.ct1 { border-top: 3px solid #c8c4b8; } .card.ct2 { border-top: 3px solid #4aa0ff; } .card.ct3 { border-top: 3px solid #b070ff; } .card.ct4 { border-top: 3px solid #ffcf3a; }
+/* 11/22 行商卡顶边色去掉：border-top 会挤掉 border-image，让书卡比宝物卡矮一截 */
 
 /* 11/22 选人：两格，竖排小人 + 名字 + 被动 */
 .wsel.csel { grid-template-columns: repeat(2, 1fr); margin-bottom: 6px; }
@@ -480,3 +480,11 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 @media (orientation: portrait) { .wm { width: 100vw; } .wmn b { font-size: 11px; padding: 1px 4px; } .wmn i { width: 14px; height: 14px; } .wmn small { display: none; } .wmbar { flex-wrap: wrap; } }
 @media (orientation: portrait) { #wmap { justify-content: flex-start; } .wmscroll { width: 100vw; height: 82vh; overflow-x: auto; overflow-y: hidden; }
   .wm { width: auto; height: 82vh; } .wmn b { font-size: 13px; } .wmn i { width: 18px; height: 18px; } }
+/* 11/22 卡片对齐：图标格固定 48×48（框正好包住图标），书名一行，说明固定 3 行高，按钮贴底 */
+.card .ic { flex: none; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; position: relative; }
+.card .ic .pi, .cbody > .cards .card .ic .pi { width: 44px !important; height: 44px; object-fit: contain; }
+.card .ic.tr::after { inset: 0; border-radius: 4px; }
+.card b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.3; }
+.card p.desc { flex: none; height: 4.5em; line-height: 1.5; align-items: flex-start; -webkit-line-clamp: 3; }
+.card .cb { margin-top: auto; }
+@media (max-width: 600px) { .card .ic { width: 36px; height: 36px; } .card .ic .pi, .cbody > .cards .card .ic .pi { width: 32px !important; height: 32px; } }
