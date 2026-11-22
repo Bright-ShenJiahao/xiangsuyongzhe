@@ -422,8 +422,37 @@
   function setDoors(cards, pick) { const f = G.fe, n = cards.length, cx = f.pr.x, y = f.pr.y - 70 * K; f.doors = cards.map((c, i) => ({ c, x: cx + (i - (n - 1) / 2) * 70 * K, y, st: 0 })); f.pick = pick; }
   const SKUL = (o, r) => Math.hypot(o.x - hero.x, (o.y - hero.y) * YS) < r * K;
   function xiuOrbs() { const P = G.fe.pr, L = CAMP.rollXiu(3 + (hero.fx.xiuOpt || 0)); P.orbs = L.map((o, i) => Object.assign({ x: P.x + (i - (L.length - 1) / 2) * 40 * K, y: P.y + 40 * K, st: 0 }, o)); P.cr = P.cr || { x: P.x + (L.length / 2 + .6) * 40 * K, y: P.y + 40 * K, st: 0, n: 0 }; }
+  // 11/22 不打仗的门：宝箱 / 篝火 / 特价商人在原地演出（奇遇还是弹卡片）
+  function fieldRest(k) {
+    const f = G.fe, x = f.pr.x + 110 * K, y = f.pr.y + 10 * K; f.doors = [];
+    if (k === 'shop') { RUN.shop = null; RUN.rr = 0; f.mer2 = { x, y, st: 0 }; toastMsg('特价商人：「今天全部八折！」'); return showRoute(true); }
+    f.rest = { k, x, y, st: 0, t: 0 };
+    toastMsg(k === 'chest' ? '路边有个宝箱，走过去打开' : '篝火旁坐着一个老兵：「坐下歇歇吧。」');
+  }
+  function restTick(dt) {
+    const f = G.fe, o = f.rest; o.t += dt;
+    if (o.k === 'chest' && !o.open) { if (SKUL(o, 18)) o.st += dt; else o.st = 0; if (o.st > .3) { o.open = 1; const L = []; for (let i = 0; i < 3; i++) { const id = randBook(); if (id && !L.includes(id)) L.push(id); }
+        if (!L.length) { RUN.coins += 30; toastMsg('箱子里只有 30 铜钱'); f.rest = null; return showRoute(true); }
+        o.books = L.map((id, i) => ({ kind: 'book', id, x: o.x + (i - (L.length - 1) / 2) * 36 * K, y: o.y + 34 * K, st: 0 })); toastMsg('三本书选一本'); } return; }
+    if (o.k === 'chest') { for (const b of o.books) { if (SKUL(b, 14)) b.st += dt; else b.st = 0; if (b.st > .3) { CAMP.learn(b); f.rest = null; return showRoute(true); } } return; }
+    if (o.k === 'fire') { if (SKUL(o, 22)) o.st += dt; else o.st = 0; if (o.st > 1) { const h0 = hero.hp; hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .5); nums.push({ x: hero.x, y: hero.y - 44 * K, v: Math.round(hero.hp - h0), t: 0, col: '#7cff8a' }); RUN.xiu++; f.pr.said = 0; toastMsg('回复 50% 生命，修炼 +1（去找露米娜）'); f.rest = null; showRoute(true); } }
+  }
+  function restDraw(label, ring) {
+    const f = G.fe;
+    const M2 = f.mer2; if (M2) { SPR.draw(ctx, 'goblin', 'idle0', 0, X(M2.x), Y(M2.y), M2.x > hero.x, u, {}); label('特价商人 · 八折', X(M2.x), Y(M2.y) + 3 * u, '#ffb070'); ring(M2, 14, M2.st / .4, '#ffb070'); }
+    const o = f.rest; if (!o) return; const x = X(o.x), y = Y(o.y);
+    if (o.k === 'chest') { const im = img('chest'); if (!o.open && im.complete) ctx.drawImage(im, x - 14 * u, y - 24 * u, 28 * u, 28 * u); if (!o.open) { label('宝箱', x, y + 5 * u); ring(o, 14, o.st / .3, '#ffe08a'); }
+      if (o.books) for (const b of o.books) { const S = DATA.skills[b.id], bi = img(({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[S.sys]), bx = X(b.x), by = Y(b.y) - rd((5 + Math.sin(G.t * 3 + b.x) * 2) * u);
+        ctx.fillStyle = 'rgba(255,220,120,.3)'; ctx.beginPath(); ctx.arc(bx, by, 13 * u, 0, 7); ctx.fill(); if (bi.complete) ctx.drawImage(bi, bx - 10 * u, by - 10 * u, 20 * u, 20 * u); label(S.name, bx, by + 12 * u, ['#e6e2d6', '#e6e2d6', '#6ab8ff', '#c890ff', '#ffd84a'][S.tier]); ring(b, 15, b.st / .3, '#fff'); } }
+    if (o.k === 'fire') { for (let k = 0; k < 3; k++) { const fl = 1 + .25 * Math.sin(G.t * 12 + k * 2); ctx.fillStyle = ['#ff6a20', '#ffb040', '#fff0a0'][k]; ctx.beginPath(); ctx.ellipse(x, y - (8 + k * 3) * u, (9 - k * 3) * u * fl, (12 - k * 3) * u * fl, 0, 0, 7); ctx.fill(); }
+      ctx.fillStyle = '#5a3418'; ctx.fillRect(x - 12 * u, y - 2 * u, 24 * u, 4 * u); if (Math.random() < .3) parts.push({ x: o.x + R(-6, 6) * K, y: o.y - 14 * K, vx: R(-8, 8) * K, vy: -40 * K, t: 0, T: .7, col: '#ffb040', g: 0 });
+      const gl = ctx.createRadialGradient(x, y - 10 * u, 0, x, y - 10 * u, 50 * u); gl.addColorStop(0, 'rgba(255,150,60,.35)'); gl.addColorStop(1, 'rgba(255,150,60,0)'); ctx.fillStyle = gl; ctx.fillRect(x - 50 * u, y - 60 * u, 100 * u, 100 * u);
+      label('篝火 · 站一会儿', x, y + 5 * u, '#ffd0a0'); ring(o, 18, o.st, '#7cff8a'); }
+  }
   function fieldTick(dt) {
     const f = G.fe; if (!f || G.paused) return; f.t += dt;
+    if (f.rest) restTick(dt);
+    const M2 = f.mer2; if (M2) { if (SKUL(M2, 24)) M2.st += dt; else if (M2.st > 0) M2.st = 0; if (M2.st > .4) { M2.st = -99; G.paused = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '特价商人 · 全部八折', tab: 'shang', only: 'shang', disc: .8, goText: '离开 ▶', after: () => { G.paused = false; M2.st = -1.5; } }); return; } if (M2.st < 0 && !SKUL(M2, 24)) M2.st = 0; }
     for (let i = f.items.length - 1; i >= 0; i--) { const o = f.items[i]; if (f.t > .6 && SKUL(o, 16)) { if (CAMP.learn(o)) { f.items.splice(i, 1); for (let k = 0; k < 10; k++) { const a = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(a) * 50 * K, vy: Math.sin(a) * 50 * K, t: 0, T: .4, col: '#ffe08a', g: 0 }); } } else { o.x += (o.x - hero.x) * .5; o.y += (o.y - hero.y) * .5; } } }
     const P = f.pr;
     if (!P.orbs && SKUL(P, 40)) { if (RUN.xiu > 0) { xiuOrbs(); P.said = 1; } else if (!P.said) { P.said = 2; toastMsg('露米娜：「再坚持一下，勇者。」'); } }
@@ -467,6 +496,7 @@
         ctx.fillStyle = '#b07bff'; ctx.beginPath(); ctx.moveTo(x, y - 12 * u); ctx.lineTo(x + 7 * u, y - 2 * u); ctx.lineTo(x, y + 6 * u); ctx.lineTo(x - 7 * u, y - 2 * u); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#efe0ff'; ctx.lineWidth = u; ctx.stroke();
         label(cost ? `刷新 ${cost} 铜钱` : `刷新（${free - c.n}）`, x, y + 8 * u, '#e6d4ff', 5); ring(c, 12, c.st / .5, '#e6d4ff'); if (G.st === 1 && !c.n) label('站上来刷新修炼', x, y - 24 * u, '#c8b890', 5); } }
     const M = f.mer; SPR.draw(ctx, 'goblin', 'idle0', 0, X(M.x), Y(M.y), M.x < hero.x ? false : true, u, {}); label('地精商人', X(M.x), Y(M.y) + 3 * u, '#ffd860'); ring(M, 14, M.st / .4, '#ffd860');
+    restDraw(label, ring);
     if (f.sign) { const x = X(f.sign.x), y = Y(f.sign.y); ctx.fillStyle = '#6a4420'; ctx.fillRect(x - 2 * u, y - 18 * u, 4 * u, 18 * u); ctx.fillStyle = '#c8a06a'; ctx.fillRect(x - 30 * u, y - 30 * u, 60 * u, 14 * u); ctx.strokeStyle = '#4a2e12'; ctx.lineWidth = u; ctx.strokeRect(x - 30 * u, y - 30 * u, 60 * u, 14 * u); ctx.font = `${Math.round(5.5 * u)}px WenKai, Pix, serif`; ctx.fillStyle = '#3a2410'; ctx.fillText('按 P 整理技能栏', x, y - 28 * u); }
     ctx.restore();
   }
@@ -493,7 +523,7 @@
     let cards;
     if (combatOnly) cards = [fight, e1, e2];
     else { const rs = shuffle(DATA.rests.slice()).map(R0 => Object.assign({ rest: true, sub: '不占站数' }, R0)); cards = shuffle([fight, Math.random() < .5 ? e1 : rs[1], rs[0]]); }
-    const pick = c => { if (!c.rest) { G.fe = null; G.eliteType = c.et; return go(c.k); } G.paused = true; doRest(c.k); };
+    const pick = c => { if (!c.rest) { G.fe = null; G.eliteType = c.et; return go(c.k); } if (G.fe && c.k !== 'event') return fieldRest(c.k); G.paused = true; doRest(c.k); };
     if (G.fe) return setDoors(cards, pick);
     UI.route({ st: n, cards }, pick);
   }
@@ -720,6 +750,7 @@
       // 本段胜利：清场，进下一段（第 1 站第 2 段之后会触发公主）；已经是最后一段就结算这一站
       wave: () => { if (!G || G.endT != null || !G.waveOn || G.pr) return; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z));
         if (G.wi < STN().waves.length - 1 && !STN().waves[G.wi + 1].boss) { G.wt = G.T; return; } G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; },
+      rest: k => G && G.fe && fieldRest(k),
       station: () => { if (!G || G.endT != null || !G.waveOn) return; const n = STN().waves.length; G.wi = STN().waves[n - 1].boss ? n - 2 : n - 1; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z)); G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; },
       boss: () => G && (foes.forEach(z => !z.dead && kill(z)), G.st = DATA.stations.length, G.wi = 1, nextWave()), god: () => G && (G.god = !G.god), clear: () => G && (G.q = [], warns.length = 0, foes.forEach(z => !z.T.boss && !z.dead && kill(z)), G.wt = Math.max(G.wt, G.T - .1)), skip: () => G && G.W && (G.wt = G.T), st: n => G && (G.st = n, G.wi = -1), lvl: () => G && addXp(need() / (hero.xpMul || 1) - G.xp + .01), win: () => G && (G.boss ? kill(G.boss) : (G.st = DATA.stations.length, G.wi = 1, nextWave(), bossIn(), kill(G.boss))), heal: () => hero && (hero.hp = hero.maxHp), route: () => G && (G.paused = true, showRoute()), spawn: (t, tier) => G && spawn(t, { x: hero.x + R(60, 120) * K * (Math.random() < .5 ? -1 : 1), y: hero.y + R(-20, 20) * K }, tier), state: () => ({ G, hero, foes, RUN, u, s, W, H }) },
   };
