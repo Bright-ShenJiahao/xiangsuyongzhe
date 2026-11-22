@@ -1,4 +1,4 @@
-"""11/22 法杖宝珠：男主蓝圆珠 → 红圆珠；女主杖身换深色木、蓝珠 → 紫色六芒星。改打包好的图集（recolor_capes 之后跑）。
+"""11/22 法杖宝珠：男主蓝圆珠 → 红圆珠；女主杖身换金色、保留蓝宝珠（11/22 跟立绘）。改打包好的图集（recolor_capes 之后跑）。
 只动 hero:staff.* 帧；宝珠 = 帧里偏蓝的连通块（女主披风是亮蓝 → 只取最靠上的那块且面积小的）。"""
 import json, os, numpy as np
 from PIL import Image
@@ -32,8 +32,8 @@ def run(name, female):
         hair_skin = (r > 225) & (g > 170) & (b > 150)
         wood &= ~hair_skin
         L_ = ((r + g + b) / 3)[..., None]; t = np.clip((L_ - 140) / 110, 0, 1)
-        sub[wood, :3] = (np.array([70, 40, 28]) + (np.array([140, 92, 60]) - np.array([70, 40, 28])) * t)[wood].astype(np.uint8)
-      if m is not None:
+        sub[wood, :3] = (np.array([120, 78, 20]) + (np.array([250, 214, 110]) - np.array([120, 78, 20])) * t)[wood].astype(np.uint8)   # 11/22 跟立绘：金色杖身
+      if m is not None and not female:   # 11/22 女主保留原来的蓝宝珠（跟立绘）
         ys, xs = np.nonzero(m); cy, cx = ys.mean(), xs.mean(); R = max(np.ptp(ys), np.ptp(xs)) / 2 + .5
         if not female:
           bb = sub[..., 2].astype(float); t = np.clip((bb - 140) / 115, 0, 1)

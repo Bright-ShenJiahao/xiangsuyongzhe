@@ -1,4 +1,4 @@
-"""11/22 披风换色：男主黄 → 深炭灰（亮面带灰蓝），女主黄 → 亮蓝。直接改打包好的图集（build_hero30 / build_heroine 之后跑）。
+"""11/22 披风换色：男主黄 → 深灰紫（跟立绘），女主黄 → 亮蓝。直接改打包好的图集（build_hero30 / build_heroine 之后跑）。
 黄色判定：r>150、g>0.7r、b<0.55g（头发橙、皮肤、木头都不进）。保留原来的明暗。"""
 import numpy as np, os
 from PIL import Image
@@ -17,5 +17,5 @@ def run(path, dark, light):
   L = ((r + g) / 2)[..., None]; t = np.clip((L - 150) / 105, 0, 1)
   new = np.array(dark) + (np.array(light) - np.array(dark)) * t
   a[m, :3] = new[m]; Image.fromarray(a.clip(0, 255).astype(np.uint8)).save(path); print(path, int(m.sum()))
-run(os.path.join(R0, 'art/hero/atlas.png'), (34, 36, 44), (104, 116, 138))
+run(os.path.join(R0, 'art/hero/atlas.png'), (40, 34, 50), (122, 108, 140))   # 11/22 跟立绘：深灰紫
 run(os.path.join(R0, 'art/heroF/atlas.png'), (30, 96, 190), (120, 196, 255))
