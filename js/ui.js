@@ -73,6 +73,9 @@
     const cs = $('cSel'); cs.innerHTML = '';
     for (const h of DATA.heroes) { const b = document.createElement('button'); b.className = h.id === P.hero ? 'on' : ''; const cr = SPR.crop(SPR.heroSet(h.id, P.weapon), P.weapon + '.idle', 0); if (cr) b.appendChild(cr.c);
       b.insertAdjacentHTML('beforeend', `<span>${h.name}</span><small>${h.perk}</small>`); b.onclick = () => { P.hero = h.id; store.set('hero', h.id); renderPrep(); }; cs.appendChild(b); }
+    { const h = DATA.heroes.find(x => x.id === P.hero), c0 = DATA.calc(build()), W0 = DATA.weapons[P.weapon];   // 11/22 角色卡（铃兰式：人物 + 属性 + 兵器槽）
+      $('hInfo').innerHTML = `<h5>${h.name}</h5><p>${h.desc}</p><div class="hperk">特长 · ${h.perk}</div><div class="hst"><span>生命</span><b>${c0.hp}</b><span>移速</span><b>${pct(c0.move - 1)}</b><span>翻滚CD</span><b>${h.id === 'f' ? '−20%' : '—'}</b><span>经验</span><b>${pct(c0.xp - 1)}</b></div><div class="hslot"></div>`;
+      const sl = $('hInfo').querySelector('.hslot'); sl.appendChild(iconCanvas(W0.icon)); sl.insertAdjacentHTML('beforeend', `<span>${W0.name}<small>起手招 · ${W0.skill}</small></span>`); }
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(w.icon)); b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
@@ -185,17 +188,19 @@
   let toastT = 0; function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1800); }
   $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); BATTLE.roll(); });
   // 11/22 卡带世界地图：打完一章出来，已通关的亮、下一章可选、其余被乱码盖着
-  function worldMap(done) {
+  function worldMap(done) {   // 11/22 势力地图：领地染色 + 旗帜 + 关系；已平定的亮、下一章可选、其余锁着
     const box = $('wmNodes'); box.innerHTML = ''; let pick = null; const cleared = 1;
-    $('wmTitle').textContent = '卡带世界 · 选择下一章'; $('wmGo').disabled = true; $('wmHint').textContent = '点地图上的地点';
-    DATA.chapters.forEach((c, i) => { const d = document.createElement('div'), st = c.id <= cleared ? 'done' : c.id === cleared + 1 ? 'next' : 'lock';
-      d.className = 'wmn ' + st; d.style.left = c.x * 100 + '%'; d.style.top = c.y * 100 + '%';
-      d.innerHTML = `<i></i><b>${st === 'lock' ? '？？？' : c.name}</b><small>${st === 'done' ? '已通关' : st === 'next' ? c.game : '被乱码覆盖'}</small>`;
-      d.onclick = () => { if (st === 'lock') return toast('先打通前面的章节'); if (st === 'done') return toast('这里已经恢复平静了');
-        for (const x of box.children) x.classList.remove('sel'); d.classList.add('sel'); pick = c; $('wmHint').textContent = `「${c.name}」还在制作中，敬请期待`; $('wmGo').disabled = false; };
+    $('wmTitle').textContent = '世界势力 · 选择下一章'; $('wmGo').disabled = true; $('wmHint').textContent = '点地图上的旗帜';
+    const flag = (o, st, rel) => `<div class="wf" style="--fc:${o.c}"><em>${o.sym}</em></div><b>${o.name}</b><small class="rel r-${rel}">${rel}</small>`;
+    for (const c of DATA.chapters) { const z = document.createElement('div'); z.className = 'wmz'; Object.assign(z.style, { left: (c.x - c.rx) * 100 + '%', top: (c.y - c.ry) * 100 + '%', width: c.rx * 200 + '%', height: c.ry * 200 + '%', '--fc': c.c }); box.appendChild(z); }
+    const cap = document.createElement('div'); cap.className = 'wmn cap'; cap.style.left = DATA.capital.x * 100 + '%'; cap.style.top = DATA.capital.y * 100 + '%'; cap.innerHTML = flag(DATA.capital, '', DATA.capital.rel); cap.onclick = () => toast('王都 · 公主在这里等你'); box.appendChild(cap);
+    DATA.chapters.forEach(c => { const d = document.createElement('div'), st = c.id <= cleared ? 'done' : c.id === cleared + 1 ? 'next' : 'lock', rel = st === 'done' ? '已平定' : c.rel;
+      d.className = 'wmn ' + st; d.style.left = c.x * 100 + '%'; d.style.top = c.y * 100 + '%'; d.innerHTML = flag(c, st, rel);
+      d.onclick = () => { if (st === 'lock') return toast(`第 ${c.id} 章 · ${c.land}：先打通前面的章节`); if (st === 'done') return toast('这里已经恢复平静了');
+        for (const x of box.children) x.classList.remove('sel'); d.classList.add('sel'); pick = c; $('wmHint').textContent = `第 ${c.id} 章「${c.name}」· ${c.land} · 首领 ${c.boss}（制作中）`; $('wmGo').disabled = false; };
       box.appendChild(d); });
     $('wmGo').onclick = () => { overlay('wmap', false); done(pick); }; overlay('wmap', true);
-    const sc = $('wmScroll'); sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) * .55;   // 手机竖屏：地图横向可拖，先对准中间
+    const sc = $('wmScroll'); sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) * .45;
   }
   function result(r) {
     if (r.win && !r.mapShown) return worldMap(() => result(Object.assign({}, r, { mapShown: true })));
