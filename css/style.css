@@ -645,3 +645,15 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #pause .lom .hsi small { font-size: 15px !important; }
 @media (orientation: portrait) { .hhead2 .hmini canvas { height: 48px !important; } .hh2t b { font-size: 24px; } .hh2t small { font-size: 13px; } .hh2t h4 { font-size: 22px !important; } #pause .lom .pills > div { font-size: 14px; padding: 4px 10px 4px 6px; } #pause .lom .pills span > * { width: 20px !important; height: 20px !important; } .hadd .arow > b { font-size: 13px !important; } .hadd .arow em { font-size: 24px !important; } }
 #pause .lom .pills > div { font-size: 17px; padding: 4px 16px 4px 10px; } #pause .lom .pills span > * { width: 24px !important; height: 24px !important; } .hadd .arow { padding: 5px 6px !important; } .hadd .arow em { font-size: 28px !important; } #pause .lom .hsk { padding-top: 8px; } #pause .lom .lorr { gap: 8px; }
+/* 11/22 人物页 v6：开放式，去掉内层边框，靠留白和淡金分隔线分组 */
+#pause .lom .lor, #pause .lom .lol { box-shadow: none !important; background: none !important; border: 0 !important; }
+#pause .lom .lorr { background: none; }
+#pause .lom .hhead2 { background: none; border: 0; padding: 4px 0 12px; position: relative; }
+#pause .lom .hhead2::after, .hadd::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(220, 180, 100, .55) 20%, rgba(220, 180, 100, .55) 80%, transparent); }
+.hadd { position: relative; padding-bottom: 14px; }
+.hadd .arow { border: 0 !important; background: none !important; }
+.hadd .arow + .arow { box-shadow: -1px 0 0 rgba(220, 180, 100, .18); }
+#pause .lom .pills > div { background: linear-gradient(90deg, rgba(255, 235, 200, .07), rgba(255, 235, 200, .02)) !important; clip-path: none; border-bottom: 1px solid rgba(220, 180, 100, .12); border-radius: 0; }
+#pause .lom .hsk { border-top: 0; position: relative; } #pause .lom .hsk::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(220, 180, 100, .55) 20%, rgba(220, 180, 100, .55) 80%, transparent); }
+#pause .lom .hsi small { border: 0 !important; background: none !important; color: #d8c8a8 !important; }
+#pause .lo.lom { box-shadow: none !important; background: none !important; }
