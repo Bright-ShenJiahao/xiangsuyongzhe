@@ -994,3 +994,5 @@ body.shopOn #feed { opacity: 0; }
 .oic.mv { background: radial-gradient(circle at 40% 35%, #3aa88a, #10483a); box-shadow: 0 0 0 3px #c8d4dc, 0 0 0 5px #1a2a2a; }
 .oathrow > div.full { display: flex; align-items: center; justify-content: center; position: relative; } .oathrow .oic { width: 70%; height: 70%; font-size: 22px; }
 .oimg { width: 100% !important; height: auto !important; image-rendering: auto; } .oathrow > div.full .oimg { width: 86% !important; } .card .oimg { width: 48px !important; } .loinfo.pop .ic .oimg { width: 44px !important; }
+
+.bad { color: #ff8a7a; }

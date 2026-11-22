@@ -45,6 +45,26 @@ window.DATA = {
     { id: 'bento', name: '便当', icon: '🍱', desc: '每波开始回复 6% 生命', fx: { waveHeal: .06 }, price: 43 },
     { id: 'hourglass', name: '沙漏', icon: '⏳', desc: '出手速度 +8%', fx: { spd: .08 }, price: 46 },
     { id: 'clover', name: '四叶草', icon: '🍀', desc: '暴击率 +8%', fx: { crit: .08 }, price: 40 },
+    // 11/23 新宝物（同名合并升级，倍率同誓约印记；fx 随等级涨，cost 固定）
+    { id: 'curse_crown', name: '诅咒王冠', fx: { dmg: .15 }, cost: { take: .15 }, d: m => `所有伤害 +${Math.round(15 * m)}%<br><span class="bad">受到伤害 +15%</span>`, price: 42 },
+    { id: 'berserk', name: '狂战士项链', fx: { low: .20 }, cost: { healMul: -.3 }, d: m => `生命低于 30% 时，伤害 +${Math.round(20 * m)}%<br><span class="bad">受到治疗 −30%</span>`, price: 38 },
+    { id: 'glass_sword', name: '玻璃剑', fx: { dmg: .20 }, cost: { hpMul: -.2 }, d: m => `所有伤害 +${Math.round(20 * m)}%<br><span class="bad">生命上限 −20%</span>`, price: 44 },
+    { id: 'heavy_armor', name: '沉重铠甲', fx: { take: -.10 }, cost: { move: -.1 }, cap: { take: -.2 }, d: m => `受到伤害 −${Math.min(20, Math.round(10 * m))}%<br><span class="bad">移速 −10%</span>`, price: 40 },
+    { id: 'greed_bag', name: '贪婪钱袋', fx: { coinMul: .15 }, cost: { take: .15 }, d: m => `铜钱获得 +${Math.round(15 * m)}%<br><span class="bad">受到伤害 +15%</span>`, price: 36 },
+    { id: 'guild', name: '商会徽章', fx: { shop: -.08 }, cost: { freeRoll: 1 }, d: m => `商店价格 −${Math.round(8 * m)}%；翻一翻货架第一次免费`, price: 34 },
+    { id: 'piggy', name: '存钱罐', fx: { interest: .05, icap: 6 }, d: m => `每站结束按身上铜钱给 ${Math.round(5 * m)}% 利息（最多 ${Math.round(6 * m)}）`, price: 30 },
+    { id: 'sheath', name: '剑鞘', w: 'sword', fx: { sspd_sword: .05 }, d: m => `剑系技能出手快 ${Math.round(5 * m)}%`, price: 24 },
+    { id: 'sword_edge', name: '磨亮的剑刃', w: 'sword', fx: { sdmg_sword: .08 }, d: m => `剑系技能伤害 +${Math.round(8 * m)}%`, price: 30 },
+    { id: 'holy_shard', name: '圣剑碎片', w: 'sword', fx: { sdmg_sword: .15 }, d: m => `剑系技能伤害 +${Math.round(15 * m)}%`, price: 46 },
+    { id: 'spear_tassel', name: '红枪缨', w: 'spear', fx: { sspd_spear: .05 }, d: m => `枪系技能出手快 ${Math.round(5 * m)}%`, price: 24 },
+    { id: 'spear_head', name: '长枪头', w: 'spear', fx: { sdmg_spear: .08 }, d: m => `枪系技能伤害 +${Math.round(8 * m)}%`, price: 30 },
+    { id: 'dragon_shaft', name: '龙骑士枪柄', w: 'spear', fx: { sdmg_spear: .15 }, d: m => `枪系技能伤害 +${Math.round(15 * m)}%`, price: 46 },
+    { id: 'finger_tab', name: '皮护指', w: 'bow', fx: { sspd_bow: .05 }, d: m => `弓系技能出手快 ${Math.round(5 * m)}%`, price: 24 },
+    { id: 'quiver', name: '鹰羽箭袋', w: 'bow', fx: { sdmg_bow: .08 }, d: m => `弓系技能伤害 +${Math.round(8 * m)}%`, price: 30 },
+    { id: 'elf_string', name: '精灵弓弦', w: 'bow', fx: { sdmg_bow: .15 }, d: m => `弓系技能伤害 +${Math.round(15 * m)}%`, price: 46 },
+    { id: 'prism', name: '水晶棱镜', w: 'staff', fx: { sspd_staff: .05 }, d: m => `法杖技能出手快 ${Math.round(5 * m)}%`, price: 24 },
+    { id: 'mana_vial', name: '魔力药瓶', w: 'staff', fx: { sdmg_staff: .08 }, d: m => `法杖技能伤害 +${Math.round(8 * m)}%`, price: 30 },
+    { id: 'sage_tome', name: '贤者法典', w: 'staff', fx: { sdmg_staff: .15 }, d: m => `法杖技能伤害 +${Math.round(15 * m)}%`, price: 46 },
   ],
   // 现实习惯（备战页随机抽 3 个选 1，也可以不选）：一好一坏，现实里的小毛病带进了游戏
   // 人物（11/22）：不锁兵器，只管长相 + 一个被动
@@ -245,7 +265,8 @@ window.DATA = {
 window.DATA.calc = function (b) {
   const DATA = window.DATA;
   const fx = {}, add = o => { for (const k in (o || {})) fx[k] = (fx[k] || 0) + o[k]; };
-  for (const id of (b.items || [b.item])) add((DATA.startItems.find(i => i.id === id) || {}).fx); add((DATA.habits.find(h => h.id === b.habit) || {}).fx);
+  for (const e of (b.items || [b.item])) { const id = e && e.id || e, it = DATA.startItems.find(i => i.id === id) || {}, m = DATA.oathLv[Math.min(5, (e && e.lv) || 1) - 1];
+    const f = {}; for (const k in (it.fx || {})) { f[k] = it.fx[k] * (it.d ? m : 1); if (it.cap && it.cap[k] != null) f[k] = it.cap[k] < 0 ? Math.max(it.cap[k], f[k]) : Math.min(it.cap[k], f[k]); } add(f); add(it.cost); } add((DATA.habits.find(h => h.id === b.habit) || {}).fx);
   const A = {}; for (const a of DATA.attrs) A[a.id] = (b.attrs && b.attrs[a.id] || 0) + (b.train && b.train[a.id] || 0) + (fx[a.id] || 0);
   const W = DATA.weapons[b.weapon] || DATA.weapons.sword, type = W.type || 'str';
   const out = {
@@ -264,6 +285,9 @@ window.DATA.calc = function (b) {
   return out;
 };
 // 能掉 / 能买的书：还没拿到的；第一章初阶、中阶一直有，高阶第 4 站起（精英、小头目随时可能掉），宗师第一章不出
+window.DATA.SYSK = { '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff' };
+// 能掉 / 能卖的宝物：武器专属的只在带了这一系技能时出
+window.DATA.itemPool = function (run) { const S = window.DATA.skills, has = new Set([...run.slots, ...run.bag].filter(x => x && (x.kind === 'book' || !x.kind) && S[x.id]).map(x => window.DATA.SYSK[S[x.id].sys])); return window.DATA.startItems.filter(i => i.id !== 'purse' && (!i.w || has.has(i.w))); };
 window.DATA.bookPool = function (own, st, rich) {
   const S = window.DATA.skills, ids = Object.keys(S).filter(id => !own.has(id) && S[id].tier < 4 && (S[id].tier < 3 || st >= 4 || rich));
   const w = id => [0, 3, 2, 1][S[id].tier]; return ids.flatMap(id => Array(w(id)).fill(id));   // 初阶 3 : 中阶 2 : 高阶 1
