@@ -38,9 +38,11 @@
   $('bStart').onclick = () => openPrep(true);
   const PANELS = {
     codex: ['图鉴', () => { const d = document.createElement('div'); d.className = 'codex';
-      const add = (r, name, note) => { const e = document.createElement('div'); if (r) e.appendChild(r.c); e.insertAdjacentHTML('beforeend', `<b style="color:#ffd860;font-weight:400">${name}</b><br><small style="color:#c8b890">${note}</small>`); d.appendChild(e); };
-      add(SPR.crop('hero', 'idle', 0), '勇者', '深夜打游戏被吸进来的玩家');
-      for (const [k, T] of Object.entries(DATA.enemies)) add(SPR.crop(k, 'idle0') || SPR.crop(k, 'walk0'), T.name, T.boss ? '首领' : T.ranged ? '远程' : '近战');
+      // 11/22 手办收藏式（铃兰角色一览）：小人站在等距底座上，底座颜色分档：勇者金 / 首领红 / 远程蓝 / 近战灰
+      const add = (r, name, note, tier) => { const e = document.createElement('div'); e.className = 'fig ' + tier; const st = document.createElement('div'); st.className = 'fst';
+        if (r) st.appendChild(r.c); st.insertAdjacentHTML('beforeend', '<div class="ped"><i></i></div>'); e.appendChild(st); e.insertAdjacentHTML('beforeend', `<b>${name}</b><small>${note}</small>`); d.appendChild(e); };
+      for (const h of DATA.heroes) add(SPR.crop(SPR.heroSet(h.id, 'sword'), 'sword.idle', 0), h.name, h.perk, 'gold');
+      for (const [k, T] of Object.entries(DATA.enemies)) add(SPR.crop(k, 'idle0') || SPR.crop(k, 'walk0'), T.name, T.boss ? '首领' : T.ranged ? '远程' : '近战', T.boss ? 'red' : T.ranged ? 'blue' : 'grey');
       return d; }],
     set: ['设置', () => { const d = document.createElement('div'); d.innerHTML = '<p style="color:#a89878">音量等设置以后加。</p>'; return d; }],
     help: ['帮助', () => { const d = document.createElement('div'); d.innerHTML = `<p>· 深夜两点，你被吸进了游戏机。打倒首领才能回去。</p>
