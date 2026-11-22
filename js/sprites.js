@@ -21,7 +21,7 @@
   // 画质：默认像素（11/22 用户看过高清后定：还是像素好）；localStorage xsyz-hd = 1 时用高清（调试面板切换，切完刷新）
   // 11/22 新画风试用（HD 像素 2.5 头身）：localStorage xsyz-style = new 时男主拿剑、普通哥布林换新图
   const NEW = false;   // 11/22 用户定：保持像素画风，新画风停用（素材留在 art/heroN、art/goblin_n）
-  const HD = (() => { try { return localStorage.getItem('xsyz-hd') === '1'; } catch (e) { return false; } })();
+  const HD = false;   // 11/22 用户定像素；高清图只做了几种，开着会让其余怪物消失，停用
   // 一张「原图集」：base 画布 + 帧表 { 名字: [{x,y,w,h,ax,ay}, …] }
   const SETS = {};
   function brown(c) {   // 纯黑描边 → 深褐
