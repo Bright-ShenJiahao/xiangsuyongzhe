@@ -185,7 +185,7 @@
     $('cTitle').textContent = rep.title || `第 ${rep.st} 站 结束`;
     $('cGo').textContent = rep.goText ? rep.goText : rep.boss ? '挑战首领 ▶' : '选下一站 ▶';
     $('cHint').textContent = rep.goText ? '' : `击倒 ${rep.kills} · 铜钱 +${rep.coins} · 经验 +${rep.xp}`;
-    render(); $('camp').classList.toggle('fshop', !!rep.field); $('camp').classList.add('on');
+    render(); $('camp').classList.toggle('fshop', !!rep.field); $('camp').classList.add('on'); document.body.classList.toggle('shopOn', !!rep.field);
   }
   function refreshCoin() { const r = R(); for (const id of ['cCoin', 'pCoin']) $(id).innerHTML = coinTxt(r.coins); if (rep && rep.field) $('cCoin').innerHTML = `<span class="pc"></span>${UI.pxNum(r.coins, '#ffe08a')}`; }
   function render() {
@@ -251,7 +251,7 @@
   }
   $('cGo').onclick = () => {
     commit(); const r = R(); if (!rep.pickOne) for (const o of loot) r.coins += thing(o).sell; loot = [];   // 没处理的自动卖掉
-    $('camp').classList.remove('on'); if (rep.after) rep.after(); else B().nextWave();
+    $('camp').classList.remove('on'); document.body.classList.remove('shopOn'); if (rep.after) rep.after(); else B().nextWave();
   };
 
   // ---------- 暂停页 = 备战 ----------

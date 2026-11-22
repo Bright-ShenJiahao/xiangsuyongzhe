@@ -977,3 +977,12 @@ body.fe #hud .top .clock, body.fe #combo { display: none !important; }
 #camp.fshop .center .btn { background: #d8c8a0 !important; }
 #camp.fshop .cfoot .dim { color: #7a5a30; }
 @media (orientation: portrait), (max-width: 760px) { #camp.fshop .shelf .card { margin-bottom: 10px; } }
+/* 11/23 商店半透明：能看见后面的场景 */
+#camp.fshop { background: none !important; }
+#camp.fshop .cbox { background: rgba(242, 226, 188, .72) !important; }
+#camp.fshop .cards.shelf { background: rgba(122, 74, 34, .72) !important; }
+#camp.fshop .shelf .card { background: rgba(168, 112, 58, .78) !important; }
+#camp.fshop .chead h2 { text-shadow: 1px 1px 0 #f2e2bc, -1px -1px 0 #f2e2bc !important; }
+#camp.fshop .cbox { width: min(820px, 92vw) !important; }
+body.shopOn #feed { opacity: 0; }
+@media (min-width: 761px) and (orientation: landscape) { #camp.fshop { justify-content: flex-end !important; padding-right: 3vw; } }
