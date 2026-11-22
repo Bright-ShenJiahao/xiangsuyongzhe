@@ -821,3 +821,8 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 }
 .pnHead #heroCv { flex-basis: 130px; width: 130px; height: 130px; } #hInfo .pills b, #hInfo .pills span { white-space: nowrap; }
 @media (orientation: portrait), (max-width: 760px) { .pnHead { flex-direction: column; align-items: stretch; } .pnHead #heroCv { display: none; } #hInfo .pills { gap: 5px 8px; } #hInfo .pills > div { font-size: 12.5px; } }
+/* 选人挪到右栏顶部 */
+.pnPick { display: flex; align-items: center; gap: 14px; } .pnPick > span { font-size: 15px; color: var(--pp-sub); font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif; font-weight: 700; }
+.pnPick .pnSel { position: static !important; } .pnSel button { width: 64px; height: 64px; } .pnSel button canvas { height: 34px !important; }
+@media (orientation: portrait), (max-width: 760px) { .pnSel button { width: 54px; height: 54px; } }
+.pnR { gap: 10px; padding-top: 16px; } .pnHead { padding-bottom: 8px; } .pnSec { padding-top: 8px; }
