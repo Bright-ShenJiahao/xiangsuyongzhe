@@ -671,3 +671,4 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #pause .lom .hsi small { color: #5a3a18 !important; } #pause .lom .hsi.em > :first-child { border-color: #a8844a !important; background: rgba(255,255,255,.3) !important; } #pause .lom .hsi.lk > :first-child { border-color: #b8a07a !important; background: rgba(0,0,0,.05) !important; }
 #pause .lom .lorr .dim { color: #7a6040; }
 #pause .lom .lorr { padding-bottom: 10px; } #pause .lom .hsk { padding-bottom: 4px; }
+.fst, .fig.big .fst { height: 118px !important; }
