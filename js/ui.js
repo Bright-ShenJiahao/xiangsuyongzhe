@@ -171,9 +171,10 @@
   function hud(h) {
     set('hpBar', 'w', (h.hp / h.maxHp * 100).toFixed(1) + '%'); set('hpTxt', 'text', `${Math.ceil(h.hp)} / ${h.maxHp}`);
     set('lvTxt', 'text', 'Lv ' + h.lv); set('xpBar', 'w', h.need ? (h.xp / h.need * 100).toFixed(1) + '%' : '100%');
-    set('clock', 'html', h.bossWave ? '<em>⌛</em><b>首领战</b>' : `<em>⌛</em><b>${h.left == null ? '--:--' : mmss(h.left)}</b><small>第 ${h.st} / ${h.sts} 站</small>`);
+    set('clock', 'html', h.bossWave ? '<em>⌛</em><b>首领战</b>' : `<em>⌛</em><b>${pxNum(h.left == null ? '00:00' : mmss(h.left), h.left != null && h.left < 5.5 ? '#ff8a6a' : '#f4ecd8')}</b><small>第 ${h.st} / ${h.sts} 站</small>`);
     // 11/22 右侧击倒 / 连击（群侠式）：连击到 10 / 25 / 50 / 100 放大闪一下，3 秒没杀到就断
-    set('kN', 'text', h.kills); set('cN', 'text', h.combo > 1 ? h.combo : '');
+    if (HC.k !== h.kills) { HC.k = h.kills; set('kN', 'html', pxNum(h.kills, '#f4ecd8')); }
+    { const c = h.combo, col = c >= 100 ? '#ff4a6a' : c >= 50 ? '#ff7040' : c >= 25 ? '#ffb050' : c >= 10 ? '#ffe08a' : '#8a5a2a'; if (HC.c !== c) { HC.c = c; set('cN', 'html', c > 1 ? pxNum(c, col) : ''); } }
     { const c = h.combo, big = c >= 100 ? 4 : c >= 50 ? 3 : c >= 25 ? 2 : c >= 10 ? 1 : 0; set('combo', 'cls', 'cb' + big + (c > 1 ? ' on' : '') + (h.comboT < 1 && c > 1 ? ' fade' : ''));
       if (c && c !== HC.lastC) { HC.lastC = c; const e = $('cN'); e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); } }
     set('clock', 'cls', 'clock' + (h.left != null && h.left < 5.5 && !h.bossWave ? ' warn' : ''));
@@ -219,7 +220,13 @@
       b.onclick = () => { const res = pickFn(i); ops.innerHTML = `<p class="evres">${res}</p>`; const go = document.createElement('button'); go.className = 'btn gold'; go.textContent = '继续 ▶'; go.onclick = () => { overlay('route', false); back(); }; ops.appendChild(go); }; ops.appendChild(b); });
     box.appendChild(d); overlay('route', true);
   }
-  let toastT = 0; function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1800); }
+  // 11/23 左下角播报：一条条往上滚，4.5 秒后淡出
+  function feed(t) { const box = $('feed'); if (!box) return; const e = document.createElement('div'); e.textContent = t; box.appendChild(e); while (box.children.length > 5) box.firstChild.remove(); setTimeout(() => e.classList.add('out'), 4000); setTimeout(() => e.remove(), 4600); }
+  // 11/23 像素数字（5×7 方块字 + 硬边深褐描边 + 右下投影），用于时间和击倒 / 连击
+  const PXG = { 0: '01110100011001110101110011000101110', 1: '00100011000010000100001000010001110', 2: '01110100010000100010001000100011111', 3: '11110000010000101110000010000111110', 4: '00010001100101010010111110001000010', 5: '11111100001111000001000011000101110', 6: '00110010001000011110100011000101110', 7: '11111000010001000100010000100001000', 8: '01110100011000101110100011000101110', 9: '01110100011000101111000010001001100', ':': '00000001000010000000001000010000000' };
+  function pxNum(str, fg) { str = String(str); let o = '', f = '', d = ''; const W = str.length * 7 + 2;
+    [...str].forEach((ch, j) => { const g = PXG[ch]; if (!g) return; for (let i = 0; i < 35; i++) if (g[i] === '1') { const x = j * 7 + i % 5 + 1, y = (i / 5 | 0) + 1; o += `<rect x="${x - 1}" y="${y - 1}" width="4" height="3"/>`; d += `<rect x="${x}" y="${y + 1}" width="4" height="2"/>`; f += `<rect x="${x}" y="${y}" width="2" height="1"/>`; } });
+    return `<svg class="pxn" viewBox="0 0 ${W} 10" style="width:${W / 10}em" shape-rendering="crispEdges"><g fill="#1e1008">${d}${o}</g><g fill="${fg}">${f}</g></svg>`; } function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1800); }
   $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); BATTLE.roll(); });
   // 11/22 卡带世界地图：打完一章出来，已通关的亮、下一章可选、其余被乱码盖着
   function worldMap(done) {   // 11/22 势力地图：领地染色 + 旗帜 + 关系；已平定的亮、下一章可选、其余锁着
@@ -262,7 +269,7 @@
     else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#07101b'; ctx.fillRect(0, 0, cv.width, cv.height); }
     requestAnimationFrame(loop);
   }
-  window.UI = { softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来

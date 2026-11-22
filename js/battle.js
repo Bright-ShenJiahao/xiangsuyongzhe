@@ -86,6 +86,7 @@
 
   // ---------- 敌人 ----------
   // 生成一只敌人：tier = 'elite' / 'mini'（精英 / 小头目）。at 给了就生在那里，否则离勇者 135–190 格的地面上
+  function edgeSpawn() { const g = MAP.ground, y = R(g.y0, g.y1), [l, r] = ground(y); return { x: Math.abs(l - hero.x) > Math.abs(r - hero.x) ? l + 4 * K : r - 4 * K, y }; }
   function spawnPos() {
     const g = MAP.ground; let best = null;
     for (let i = 0; i < 14; i++) {
@@ -149,6 +150,8 @@
   }
   function kill(z) {
     z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; G.wk++; G.combo = (G.combo || 0) + 1; G.comboT = 3; G.maxCombo = Math.max(G.maxCombo || 0, G.combo);
+    { const E = DATA.econ, v = z.tier === 'elite' ? E.elite : z.tier === 'mini' ? E.mini : Math.random() < 1 / E.perKills ? 1 : 0;   // 11/23 铜钱掉在地上，要走过去捡
+      if (v && !z.T.boss) G.gc.push({ x: z.x, y: z.y, v, t: 0, h: 0, vh: 90, vx: R(-20, 20) * K }); }
     if (z.tier === 'elite') { G.wElite++; G.drops.push({ kind: 'book' }); }   // 固定精英掉书，路线精英掉宝物
     if (z.tier === 'mini') { G.wMini++; G.drops.push({ kind: 'item' }); }
     for (let i = 0; i < 7; i++) parts.push({ x: z.x, y: z.y - 10 * K, vx: R(-45, 45) * K, vy: R(-70, -10) * K, t: 0, T: R(.4, .8), col: ['#8fd14a', '#5a8a2a', '#e8e0c8', '#c49a5c'][i % 4], g: 200 * K, sz: i < 3 ? 2 : 1 });
@@ -314,7 +317,7 @@
   function nextWave() {   // 进下一站（第 1 段）；站打完 → 路线卡
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();
-    G.wi = -1; Object.assign(G, { wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], cleared: false, endT: null, timeout: false });
+    G.wi = -1; Object.assign(G, { wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gc: [], thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
     nextPhase(); banner(G.W.boss ? '首领战！' : `第 ${G.st} 站`, 1.6); G.paused = false;
   }
   // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
@@ -396,7 +399,10 @@
   // 一波结算：铜钱、经验、回血、战利品（固定书、精英 / 小头目掉落）
   function waveEnd() {
     G.paused = true; foes = foes.filter(z => !z.flee); if (hero.cs) { if (hero.cs.ph === 'hold') SK.chEnd(); hero.cs = null; } SK.reset(); const E = DATA.econ, fx = hero.fx, cl = G.cleared && !G.timeout;
-    const cw = Math.round((E.waveCoin[0] + E.waveCoin[1] * (G.st - 1) + Math.floor(G.wk / E.perKills) + G.wElite * E.elite + G.wMini * E.mini + (cl ? E.clear : 0) + (fx.waveCoin || 0)) * (1 + (fx.coinMul || 0)) * (G.route === 'elite' ? 1.5 : 1) * (RUN.coinBoost ? 1.5 : 1));
+    const cw = Math.round((E.waveCoin[0] + E.waveCoin[1] * (G.st - 1) + (cl ? E.clear : 0) + (fx.waveCoin || 0)) * (1 + (fx.coinMul || 0)) * (G.route === 'elite' ? 1.5 : 1) * (RUN.coinBoost ? 1.5 : 1));
+    { const left = G.gc.reduce((a, c) => a + c.v, 0) + (G.thief ? G.thief.bag : 0), st = Math.round(left * .2);   // 站末：地上没捡的铜钱帮你收回，咕噜顺走 20%
+      if (left) { RUN.coins += Math.round((left - st) * cMul()); UI.feed(st ? `地上还剩 ${left} 铜钱，帮你捡了回来……被小咕噜顺走了 ${st}` : `地上的 ${left} 铜钱帮你捡了回来`); } G.gc = []; G.thief = null;
+      const cb = Math.floor((G.maxCombo || 0) / 10) * 2; if (cb) { RUN.coins += cb; UI.feed(`最高连击 ${G.maxCombo}，奖励 ${cb} 铜钱`); } G.maxCombo = 0; }
     RUN.coins += cw; if (RUN.coinBoost && G.wi === STN().waves.length - 1) RUN.coinBoost = 0;
     const xp0 = G.xp, lv0 = G.lv; addXp(E.waveXp + G.st + Math.floor(G.wk / E.xpPerKills) + G.wElite * E.xpElite + G.wMini * E.xpMini + (cl ? E.xpClear : 0));
     hero.hp = Math.min(hero.maxHp, hero.hp + E.waveHeal + hero.maxHp * (fx.waveHeal || 0));
@@ -565,13 +571,61 @@
     }
     return '什么都没有发生。';
   }
+  const cMul = () => (1 + (hero.fx.coinMul || 0)) * (G.route === 'elite' ? 1.5 : 1) * (RUN.coinBoost ? 1.5 : 1);
+  // 11/23 地上的铜钱：弹出落地，靠近就吸过来；放着 10 秒以上会招来小咕噜偷钱，撞到它钱会掉出来
+  function coinTick(dt) {
+    const mag = 40 + (hero.fx.waveCoin || 0) * 8;
+    for (const c of G.gc) { c.t += dt; if (c.h > 0 || c.vh > 0) { c.vh -= 300 * dt; c.h = Math.max(0, c.h + c.vh * dt); c.x += c.vx * dt; if (c.h === 0) { c.vh = 0; c.vx = 0; } }
+      const d = dist(c, hero); if (c.t > .35 && d < mag && !hero.dead) { const k = Math.min(1, dt * (6 + 300 / Math.max(d, 5))); c.x += (hero.x - c.x) * k; c.y += (hero.y - c.y) * k; }
+      if (c.t > .35 && d < 9) { c.got = 1; G.cf += c.v * cMul(); const n = Math.floor(G.cf); G.cf -= n; RUN.coins += n; parts.push({ x: hero.x, y: hero.y - 30 * K, vx: 0, vy: -40 * K, t: 0, T: .3, col: '#ffe08a', g: 0 }); } }
+    G.gc = G.gc.filter(c => !c.got);
+    let T = G.thief;
+    if (!T && !G.fe && G.gc.some(c => c.t > 10)) { const p = edgeSpawn(); T = G.thief = { x: p.x, y: p.y, ex: p.x, ey: p.y, bag: 0, n: 0, st: 'go', t: 0, f: 1 }; UI.feed('一只小咕噜溜进来偷钱了！'); }
+    if (!T) return; T.t += dt;
+    let tx = T.ex, ty = T.ey;
+    if (T.st === 'go') { let best = null, bd = 1e9; for (const c of G.gc) if (c.t > 6) { const d = dist(c, T); if (d < bd) { bd = d; best = c; } } if (!best || T.n >= 3) T.st = 'run'; else { tx = best.x; ty = best.y; if (bd < 8) { const s = Math.ceil(best.v * .5); T.bag += s; best.v -= s; T.n++; if (best.v <= 0) G.gc = G.gc.filter(c => c !== best); } } }
+    const dx = tx - T.x, dy = ty - T.y, dd = Math.hypot(dx, dy) || 1, sp = (T.st === 'run' ? 130 : 105) * K * dt; T.f = dx < 0 ? -1 : 1;
+    if (dd <= sp) { T.x = tx; T.y = ty; if (T.st === 'run') { if (T.bag) UI.feed(`小咕噜偷走了 ${T.bag} 铜钱`); G.thief = null; return; } } else { T.x += dx / dd * sp; T.y += dy / dd * sp; }
+    if (dist(T, hero) < 22 && T.bag && !hero.dead) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`抓到小咕噜！${T.bag} 铜钱掉了出来`); T.bag = 0; T.st = 'run'; T.n = 9; }
+  }
+  function coinDraw() {
+    for (const c of G.gc) { const u0 = u; { const u = u0 * 2; const x = X(c.x), y = Y(c.y) - c.h * u * .2, w = Math.max(1, Math.round(Math.abs(Math.cos(c.t * 5)) * 3)) * u, big = c.v > 2 ? 1 : 0;
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x - 3 * u, Y(c.y) + u, 6 * u, u);
+      for (let j = 0; j <= big * 2; j++) { const oy = y - j * 2 * u; ctx.fillStyle = '#5a3208'; ctx.fillRect(x - w - u, oy - 4 * u, 2 * w + 2 * u, 6 * u); ctx.fillStyle = '#e8a830'; ctx.fillRect(x - w, oy - 3 * u, 2 * w, 4 * u); ctx.fillStyle = '#ffe890'; ctx.fillRect(x - w, oy - 3 * u, Math.max(u, w / 2), 2 * u); }
+      if (c.t > 8 && Math.floor(c.t * 4) % 2) { ctx.fillStyle = '#fff'; ctx.fillRect(x + 4 * u, y - 7 * u, u, u); } } }
+    const T = G.thief; if (T) { shadow(T.x, T.y, 16); SPR.draw(ctx, 'goblin', 'walk' + (Math.floor(T.t * 14) % 6), 0, X(T.x), Y(T.y), T.f < 0, u, { k: .6 });
+      if (T.bag) { const x = X(T.x), y = Y(T.y) - 30 * u; ctx.fillStyle = '#3a2410'; ctx.fillRect(x - 5 * u, y - 4 * u, 10 * u, 9 * u); ctx.fillStyle = '#b08850'; ctx.fillRect(x - 4 * u, y - 3 * u, 8 * u, 7 * u); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - u, y - 5 * u, 2 * u, 2 * u); } }
+  }
+  // ---------- 11/23 地图氛围：光柱 / 火光火星 / 落叶 / 萤火虫，位置全部取自地图本身（MAP.amb，原图像素） ----------
+  const AMB = { leaves: [], flies: [], sparks: [] };
+  function ambDraw(dt) {
+    const A = MAP.amb; if (!A) return; const q = MAPW / 1672, P = (x, y) => [X(x * q), Y(y * q)], t = G.t;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (const [x, y, w, h] of A.rays || []) { const [sx, sy] = P(x, y), L = h * q * s, Wd = w * q * s * .35; for (let i = 0; i < 3; i++) { const a = .05 + .03 * Math.sin(t * .6 + i * 2 + x), ox = (i - 1) * Wd * .7;
+      const g = ctx.createLinearGradient(sx, sy, sx + L * .45, sy + L); g.addColorStop(0, `rgba(255,236,170,${a})`); g.addColorStop(1, 'rgba(255,236,170,0)'); ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(sx + ox, sy); ctx.lineTo(sx + ox + Wd * .5, sy); ctx.lineTo(sx + ox + L * .45 + Wd, sy + L); ctx.lineTo(sx + ox + L * .45 - Wd * .2, sy + L); ctx.fill(); } }
+    for (const [x, y, k] of A.fires) { const [sx, sy] = P(x, y), r = (26 + 4 * Math.sin(t * 9 + x) + 3 * Math.sin(t * 23 + y)) * k * s * q, g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
+      g.addColorStop(0, 'rgba(255,190,90,.38)'); g.addColorStop(.5, 'rgba(255,120,40,.12)'); g.addColorStop(1, 'rgba(255,80,20,0)'); ctx.fillStyle = g; ctx.fillRect(sx - r, sy - r, 2 * r, 2 * r);
+      if (Math.random() < dt * 7 * k) AMB.sparks.push({ x: x + R(-4, 4) * k, y: y - 4, vx: R(-6, 6), vy: R(-38, -20), t: 0, T: R(.6, 1.2) }); }
+    for (const p of AMB.sparks) { p.t += dt; p.x += (p.vx + Math.sin(p.t * 6) * 8) * dt; p.y += p.vy * dt; const [sx, sy] = P(p.x, p.y), a = 1 - p.t / p.T; ctx.fillStyle = `rgba(255,${160 + 80 * a | 0},70,${a})`; ctx.fillRect(sx, sy, u, u); }
+    AMB.sparks = AMB.sparks.filter(p => p.t < p.T);
+    if (AMB.flies.length < 16 && A.flies) { const [x0, y0, x1, y1] = A.flies[Math.random() * A.flies.length | 0]; AMB.flies.push({ x: R(x0, x1), y: R(y0, y1), ph: R(0, 7), t: 0, T: R(5, 9) }); }
+    for (const f of AMB.flies) { f.t += dt; f.x += Math.sin(f.t * .8 + f.ph) * 10 * dt; f.y += Math.cos(f.t * .6 + f.ph * 2) * 7 * dt; const a = Math.min(1, f.t, f.T - f.t) * (.5 + .5 * Math.sin(f.t * 3 + f.ph)), [sx, sy] = P(f.x, f.y);
+      ctx.fillStyle = `rgba(210,255,120,${.25 * a})`; ctx.fillRect(sx - u, sy - u, 3 * u, 3 * u); ctx.fillStyle = `rgba(240,255,190,${a})`; ctx.fillRect(sx, sy, u, u); }
+    AMB.flies = AMB.flies.filter(f => f.t < f.T);
+    ctx.restore();
+    if (A.leaf && AMB.leaves.length < 9 && Math.random() < dt * 1.2) { const [x0, x1, y0, y1] = A.leaf; AMB.leaves.push({ x: R(x0, x1), y: R(y0, y1), t: 0, ph: R(0, 7), c: Math.random() < .5 ? 0 : 1 }); }
+    for (const l of AMB.leaves) { l.t += dt; l.y += 22 * dt; l.x += (Math.sin(l.t * 1.6 + l.ph) * 18 + 6) * dt; const [sx, sy] = P(l.x, l.y), fl = Math.sin(l.t * 3 + l.ph) > 0, a = Math.min(1, l.t, (12 - l.t) / 2);
+      ctx.globalAlpha = Math.max(0, a); ctx.fillStyle = l.c ? '#c8b040' : '#8ab040'; ctx.fillRect(sx, sy, (fl ? 3 : 2) * u, (fl ? 2 : 3) * u); ctx.fillStyle = l.c ? '#7a6020' : '#4a7020'; ctx.fillRect(sx + u, sy + u, u, u); ctx.globalAlpha = 1; }
+    AMB.leaves = AMB.leaves.filter(l => l.t < 12);
+  }
   function toastMsg(t) { UI.toast && UI.toast(t); }
   function bossIn() { if (G.bossOut) return; G.bossOut = true; G.boss = spawn(G.W.boss || MAP.boss); G.boss.cd = 2.5; banner('哥布林王 出现了！', 2.4); G.shake = .3; }
 
   // ---------- 每帧更新 ----------
   function update(dt) {
     G.t += dt; hero.t += dt; if (G.lvUpT > 0) G.lvUpT -= dt;
-    if (G.comboT > 0 && (G.comboT -= dt) <= 0) G.combo = 0;   // 11/22 连击：3 秒没杀到怪就断
+    if (G.comboT > 0 && (G.comboT -= dt) <= 0) G.combo = 0; coinTick(dt);   // 11/22 连击：3 秒没杀到怪就断
     if (G.banner) { G.banner.left -= dt; if (G.banner.left <= 0) G.banner = null; }
     G.shake = Math.max(0, G.shake - dt);
     if (G.winT != null && (G.winT -= dt) <= 0 && !G.over) { G.over = 'win'; return end(); }
@@ -660,7 +714,7 @@
       const p = w.t / .55, r = (14 + 10 * (1 - p)) * u; ctx.fillStyle = `rgba(30,10,5,${.25 + .25 * p})`; ctx.beginPath(); ctx.ellipse(X(w.x), Y(w.y), r, r / YS, 0, 0, 7); ctx.fill();
       ctx.fillStyle = w.tier ? '#ffcf3a' : '#d8402a'; for (let a = 0; a < PI * 2; a += .2) ctx.fillRect(X(w.x) + rd(Math.cos(a) * r), Y(w.y) + rd(Math.sin(a) * r / YS), u, u);
     }
-    SK.drawUnder(ctx, X, Y, u); chargePreview();
+    SK.drawUnder(ctx, X, Y, u); chargePreview(); coinDraw();
     for (const o of shots) if (o.k === 'fire') {   // 火球落点：地上的影子越来越大
       const p = o.t / o.T, r = o.r * u * (.3 + .7 * p); ctx.fillStyle = `rgba(255,90,30,${.15 + .2 * p})`; ctx.beginPath(); ctx.ellipse(X(o.x), Y(o.y), r, r / YS * .8, 0, 0, 7); ctx.fill();
     }
@@ -694,7 +748,7 @@
       else if (o.k === 'harrow') { const a = Math.atan2(o.vy, o.vx); for (let j = 0; j < 9; j++) { ctx.fillStyle = j < 2 ? '#e8ecf4' : j > 6 ? '#e8e0c8' : '#8a5a2a'; ctx.fillRect(X(o.x) - rd(Math.cos(a) * j * 1.6 * u), Y(o.y) - rd(Math.sin(a) * j * 1.6 * u), u + 1, u + 1); } }
       else if (o.k === 'fire') { const p = o.t / o.T, hy = (1 - p) * 120; for (let j = 0; j < 5; j++) { ctx.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; ctx.fillRect(X(o.x) - q / 2 - rd(j * 3 * u * (1 - p)), Y(o.y) - rd((hy + j * 7) * u) - q / 2, q, q); } }
     }
-    SK.drawOver(ctx, X, Y, u); princessDraw(); fieldDraw();
+    SK.drawOver(ctx, X, Y, u); princessDraw(); fieldDraw(); { const n = performance.now(), adt = Math.min(.1, (n - (AMB.tm || n)) / 1000); AMB.tm = n; ambDraw(G.paused ? 0 : adt); }
     if (G.lvUpT > 0 && !hero.dead) {   // 11/22：升级字跳在勇者头上（跟着人走，弹两下再慢慢淡出）
       const t = 2.2 - G.lvUpT, hop = t < .6 ? Math.abs(Math.sin(t / .6 * PI * 2)) * 10 : 0, a = Math.min(1, G.lvUpT / .5), x = X(hero.x), y = Y(hero.y) - (44 + hop + Math.min(t, .3) * 8) * u;
       ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = `bold ${Math.round(8 * u)}px Pix, monospace`;
@@ -753,7 +807,7 @@
     stop() { G = null; },
     run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1, xpFrac: () => G ? Math.min(1, G.xp / need()) : 0, xpTxt: () => G ? `${Math.floor(G.xp)} / ${need()}` : '', st: () => G ? G.st : 1,
     skillInfo: sk => { const S = DATA.skills[sk.id], L = profL(sk), T = G ? skillT(S, sk) : { wu: S.wu, rc: S.rc }; return { dmg: G ? skillDmg(S, sk) : S.dmg, wu: T.wu, rc: T.rc, cd: T.wu + T.rc + (S.hold || 0), L, xp: sk.xp || 0, next: DATA.prof[L] || null }; }, profL,
-    debug: {   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）
+    debug: { tp(fx, fy) { hero.x = MAPW * fx; hero.y = MAPH * fy; cam.snap = true; }, coin() { for (let i = 0; i < 6; i++) G.gc.push({ x: hero.x + R(60, 120) * K, y: hero.y + R(-20, 20) * K, v: 2, t: 11, h: 0, vh: 0, vx: 0 }); },   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）
       // 本段胜利：清场，进下一段（第 1 站第 2 段之后会触发公主）；已经是最后一段就结算这一站
       wave: () => { if (!G || G.endT != null || !G.waveOn || G.pr) return; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z));
         if (G.wi < STN().waves.length - 1 && !STN().waves[G.wi + 1].boss) { G.wt = G.T; return; } G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; },

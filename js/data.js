@@ -23,7 +23,7 @@ window.DATA = {
     { id: 'boots', name: '轻便靴', icon: '👢', desc: '移动速度 +10%', fx: { move: .1 }, price: 24 },
     { id: 'purse', name: '钱袋', icon: '💰', desc: '开局铜钱 +30', fx: { coin: 30 }, price: 24 },
     { id: 'whet', name: '磨刀石', icon: '🪨', desc: '所有伤害 +10%', fx: { dmg: .1 }, price: 26 },
-    { id: 'magnet', name: '磁石', icon: '🧲', desc: '每波铜钱 +3', fx: { waveCoin: 3 }, price: 24 },
+    { id: 'magnet', name: '磁石', icon: '🧲', desc: '吸铜钱的范围变大，每站铜钱 +3', fx: { waveCoin: 3 }, price: 24 },
     { id: 'bento', name: '便当', icon: '🍱', desc: '每波开始回复 6% 生命', fx: { waveHeal: .06 }, price: 43 },
     { id: 'hourglass', name: '沙漏', icon: '⏳', desc: '出手速度 +8%', fx: { spd: .08 }, price: 46 },
     { id: 'clover', name: '四叶草', icon: '🍀', desc: '暴击率 +8%', fx: { crit: .08 }, price: 40 },
@@ -192,6 +192,8 @@ window.DATA = {
   maps: [
     { id: 'field', name: '哥布林森林', img: 'art/map/forest3.webp', w: 2508, h: 1412,   // 11/21 哥布林森林扩图版：图 1672×941，世界按 1.5 倍算（forest / forest2 / 打谷场 field 都留着）
       open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
+      // 11/23 地图氛围（原图像素）：火 = 营火锅 + 两支火把；光 = 左上林间光柱；叶 = 从树冠带落下；萤 = 两侧草丛和底部灌木
+      amb: { fires: [[907, 172, 1.4], [59, 768, 1], [1613, 768, 1]], rays: [[150, 20, 300, 270], [470, 40, 240, 230]], leaf: [0, 1672, 0, 120], flies: [[0, 240, 300, 600], [1380, 240, 1672, 600], [0, 820, 1672, 941]] },
       desc: '游戏里的第一站。密林深处的哥布林营地，哥布林从林子里一波波涌出来。',
       // 能走的地面（地图像素）：y0–y1 之间，每一行的左右边界见 pts [y, 左, 右]（11/21 改回原图；加大版 field_big 和 tools/extend_map.py 留着）
       ground: {"y0":412,"y1":1282,"pts":[[412,675,2078],[495,570,2160],[600,450,2212],[720,278,2280],[840,158,2362],[945,38,2475],[1230,30,2478],[1282,90,2430]]}, grade: [['saturate', .94]] },
