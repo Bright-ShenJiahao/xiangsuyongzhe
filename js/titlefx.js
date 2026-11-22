@@ -3,7 +3,7 @@
 (() => {
   const IW = 1672, IH = 941;
   const P = { moon: [663, 124, 150], torch: [[140, 167], [383, 222]], gem: [351, 355], crystal: [636, 303] };
-  const flies = Array.from({ length: 34 }, () => ({ x: Math.random() * IW * .72, y: 200 + Math.random() * 720, p: Math.random() * 7, s: .4 + Math.random() * .8, r: 1 + Math.random() * 1.6 }));
+  const flies = Array.from({ length: 14 }, () => ({ x: Math.random() * IW * .62, y: 560 + Math.random() * 360, p: Math.random() * 7, s: .4 + Math.random() * .8, r: 1 + Math.random() * 1.6 }));
   let cv, g, run = false;
   function rect() {   // 背景图在屏幕上的位置和缩放
     const el = cv.parentElement, W = el.clientWidth, H = el.clientHeight, cs = getComputedStyle(el), sz = cs.backgroundSize, [bx, by] = cs.backgroundPosition.split(' ').map(v => parseFloat(v) / 100);
@@ -21,8 +21,8 @@
     const gp = .5 + .5 * Math.sin(t * 2.2); glow(X(P.gem[0]), Y(P.gem[1]), S(28 + 8 * gp), '90,150,255', .5 + .35 * gp);                                          // ④ 宝珠
     const cp = .5 + .5 * Math.sin(t * 1.6 + 1); glow(X(P.crystal[0]), Y(P.crystal[1]), S(24 + 7 * cp), '160,220,255', .45 + .35 * cp);                          // ④ 水晶
     if ((t % 4.2) < .35) { const k = 1 - (t % 4.2) / .35, x = X(P.gem[0]), y = Y(P.gem[1]), l = S(20) * k; g.strokeStyle = `rgba(220,240,255,${.8 * k})`; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - l, y); g.lineTo(x + l, y); g.moveTo(x, y - l); g.lineTo(x, y + l); g.stroke(); }
-    for (const f of flies) { const x = f.x + Math.sin(t * f.s + f.p) * 30, y = f.y + Math.cos(t * f.s * .7 + f.p) * 18 - (t * 6 * f.s) % 120, a = .35 + .35 * Math.sin(t * 2 * f.s + f.p);   // ⑤ 萤火
-      glow(X(x), Y(y), S(f.r * 9), '200,255,150', a * .7); g.fillStyle = `rgba(245,255,215,${Math.min(1, a * 1.6)})`; g.fillRect(X(x) - 1.5, Y(y) - 1.5, 3, 3); }
+    for (const f of flies) { const x = f.x + Math.sin(t * f.s + f.p) * 30, y = f.y + Math.cos(t * f.s * .7 + f.p) * 18 - (t * 4 * f.s) % 60, a = .35 + .35 * Math.sin(t * 2 * f.s + f.p);   // ⑤ 萤火
+      glow(X(x), Y(y), S(f.r * 5), '200,255,150', a * .6); g.fillStyle = `rgba(245,255,215,${Math.min(1, a * 1.6)})`; g.fillRect(X(x) - 1.5, Y(y) - 1.5, 3, 3); }
     g.globalCompositeOperation = 'source-over';
   }
   function init() { const el = document.querySelector('#title .tart'); if (!el || cv) return; cv = document.createElement('canvas'); cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none'; el.appendChild(cv); g = cv.getContext('2d');
