@@ -861,3 +861,6 @@ body.fpx .pnName h5 { font-size: 48px !important; } body.fpx .pnSec h4, body.fpx
 .arow { grid-template-columns: 6.5em 1fr 2.4em !important; }
 /* 11/22 暂停页固定大小：切换「技能 / 属性」不再变宽变高 */
 @media (orientation: landscape) { #pause .cbox { width: min(1000px, 96vw) !important; height: min(640px, 94vh) !important; max-height: none !important; } #pause .cbody { flex: 1 1 auto !important; overflow-y: auto; } }
+/* 11/22 按钮文字居中：letter-spacing 会在最后一个字后面多留一格，用 text-indent 抵消；上下用 flex 居中 */
+.btn { display: inline-flex !important; align-items: center; justify-content: center; text-indent: .1em; line-height: 1 !important; }
+.pnFoot .btn { height: 46px; padding-top: 0 !important; padding-bottom: 0 !important; }
