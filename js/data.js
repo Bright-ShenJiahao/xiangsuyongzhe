@@ -102,7 +102,7 @@ window.DATA = {
   // ex = 额外的精英 / 小头目；hp = 这一站的血量倍率
   codes: { G: 'goblin', K: 'gob_blade', A: 'gob_archer', S: 'gob_kid', W: 'wolf_free', D: 'gob_shield', T: 'gob_thrower', B: 'gob_bomb', H: 'gob_ghost', R: 'gob_wolf', P: 'gob_boar', M: 'gob_mage', O: 'gob_rock' },
   stations: [
-    { hp: 1.00, name: '森林外围', waves: [{ G: 6, S: 3 }, { G: 8, S: 4 }, { G: 8, S: 4, K: 2, A: 1 }] },
+    { hp: 1.00, name: '森林外围', waves: [{ G: 6, S: 3 }, { G: 8, S: 4 }, { G: 8, S: 4, K: 2, A: 1, ex: [['mini', 'gob_blade']] }] },
     { hp: 1.06, name: '森林外围', waves: [{ G: 8, S: 3, K: 3 }, { G: 9, S: 3, K: 3, A: 2 }, { G: 10, S: 4, K: 4, A: 3, ex: [['elite', 'gob_blade']] }] },
     { hp: 1.15, name: '森林外围', waves: [{ G: 9, S: 3, K: 4, A: 2, W: 3 }, { G: 10, K: 4, A: 3, W: 4 }, { G: 10, K: 5, A: 3, W: 4, ex: [['mini', 'gob_chief']] }] },
     { hp: 1.25, name: '森林深处', waves: [{ G: 10, K: 4, A: 3, D: 3, T: 2 }, { G: 10, K: 5, A: 3, D: 4, T: 3 }, { G: 11, K: 5, D: 4, T: 3, W: 3, ex: [['elite', 'gob_shaman']] }] },
@@ -142,7 +142,9 @@ window.DATA = {
     { id: 6, name: '黑暗之地', land: '东南焦土', c: '#a040e0', sym: '冥', rel: '敌对', x: .79, y: .76, rx: .14, ry: .17, boss: '???' },
   ],
   capital: { name: '王都', c: '#ffe07a', sym: '冠', rel: '信赖', x: .59, y: .33 },   // 公主露米娜在这，不打仗
-  waveT: 30,                             // 每波固定 30 秒（11/21 用户定，先这样试）
+  waveT: 30,
+  // 11/22 一站 = 一场连续战斗：3 段不停顿（段落时间如下，越往后越长），第 3 段打完才结算。第 1 站第 3 段前公主出现（三选一）
+  phaseT: [[15, 15, 30], [20, 25, 35], [25, 30, 40], [30, 30, 45], [30, 35, 45], [35, 35, 50], [35, 40, 50], [40, 40, 60], [40, 45, 0]],                             // 每波固定 30 秒（11/21 用户定，先这样试）
   countMul: 2.4,   // 11/22 数量再加一些（2 → 2.4）                           // 出怪数量 = 表上 × 2（30 秒一波、不再清场，怪要多）
   // 精英 / 小头目：血、伤害、体型倍率（群侠四档）
   tiers: { elite: { hp: 2.5, dmg: 1.25, size: 1.15, name: '精英' }, mini: { hp: 7, dmg: 1.5, size: 1.35, reach: 1.2, wind: .1, name: '小头目' } },
@@ -151,7 +153,7 @@ window.DATA = {
   econ: { startCoin: 18, waveCoin: [10, 2], perKills: 3, elite: 5, mini: 8, clear: 0, waveHeal: 4,
     waveXp: 8, xpPerKills: 4, xpElite: 3, xpMini: 5, xpClear: 0, xpMul: 1.3, maxLv: 12 },
   // 行商：书价、开格价、刷新价（每站涨 7%）；出售拿基价的 35%
-  price: { book: 22, slot4: 50, slot5: 78, slot4At: 2, slot5At: 5, stUp: .07, sell: .35, refresh: [4, 2, 3], refreshMax: 4, itemLimit: 2 },
+  price: { book: 22, slot4: 60, slot5: 120, slot4At: 2, slot5At: 5, stUp: .07, sell: .35, refresh: [4, 2, 3], refreshMax: 4, itemLimit: 2 },
   // 修炼（照三国终章）：每升一级攒一次，三选一，品阶 普通/精良/稀有/绝世，每次机会可刷新 2 次
   rarity: [{ name: '普通', col: '#e8e0d0', add: 1, p: .55 }, { name: '精良', col: '#6fb8ff', add: 2, p: .3 }, { name: '稀有', col: '#c58cff', add: 3, p: .12 }, { name: '绝世', col: '#ffb347', add: 3, extra: 2, p: .03 }],
   consumables: [{ id: 'meat', name: '烤肉', icon: '🍖', desc: '回复 40% 生命', heal: .4 }],

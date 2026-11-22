@@ -18,8 +18,8 @@
   }
   function iconEl(t) { const s = document.createElement('span'); s.className = 'ic' + (t.tier ? ' tr t' + t.tier : ''); if (t.icon) s.appendChild(t.icon); else s.textContent = t.emoji; return s; }
   // 学会一本书：已经有这一招就升一级，否则放进背包
-  function learn(o) {
-    const r = R();
+  function learn(o, quiet) {
+    const r = R(); const toast = quiet ? () => {} : toast0;
     if (o.kind === 'book') {
       const has = r.slots.find(s => s && s.id === o.id) || r.bag.find(b => b && b.kind === 'book' && b.id === o.id);
       if (has) { has.lv += o.lv || 1; toast(`${SK[o.id].name} 升到 Lv${has.lv}`); return true; }
@@ -36,12 +36,11 @@
     const r = R(), n = i + 1, p = slotPrice(n); info.insertAdjacentHTML('beforeend', `<span class="ic">${UI.piH('lock')}</span>`);
     const q = document.createElement('p'); info.appendChild(q);
     if (i > r.open) { q.innerHTML = `<b>第 ${n} 格</b><br>先解锁第 ${r.open + 1} 格。`; return; }
-    if (p.st < p.at) { q.innerHTML = `<b>第 ${n} 格</b><br>第 ${p.at} 站起可以花铜钱解锁；打完第 ${p.free} 站也会免费开。`; return; }
-    q.innerHTML = `<b>第 ${n} 格</b><br>技能栏多开一格，多放一招轮流出手。打完第 ${p.free} 站也会免费开。`;
+    q.innerHTML = `<b>第 ${n} 格</b><br>技能栏多开一格，多放一招轮流出手。有铜钱随时能买。`;
     const bs = document.createElement('div'); bs.className = 'lob'; info.appendChild(bs); const b = document.createElement('button'); b.className = 'btn mini gold'; b.innerHTML = `解锁 ${UI.piH('coin', 1)}${p.cost}`;
     b.onclick = e => { e.stopPropagation(); if (r.coins < p.cost) return toast('铜钱不够'); r.coins -= p.cost; r.open = Math.max(r.open, n); sel = null; toast(`第 ${n} 格解锁了`); refreshCoin(); loadout(box); }; bs.appendChild(b);
   }
-  let toastT = 0; function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1600); }
+  let toastT = 0; function toast0(s) { toast(s); } function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1600); }
 
   // ---------- 技能搭配（结算页「技能」页签和暂停页共用） ----------
   function loadout(box) {
@@ -150,18 +149,21 @@
   }
 
   // ---------- 波间结算页 ----------
-  const TABS = [['jie', '结算'], ['shi', '拾取'], ['xiu', '修炼'], ['shang', '行商'], ['ji', '技能'], ['shu', '属性']];
+  // 11/22 站末整备只剩 修炼 / 商店 / 背包（技能栏 + 物品栏）。掉落自动进背包，背包满了才出「待收」页；结算只在通关 / 死亡；属性在暂停页看
+  const TABS = [['shi', '待收'], ['xiu', '修炼'], ['shang', '商店'], ['ji', '背包']];
   function open(report) {
-    rep = report; loot = report.loot.map(o => Object.assign({ lv: 1 }, o)); tab = report.tab || 'jie'; sel = null;
-    $('cTitle').textContent = rep.title || `第 ${rep.st} 站 · 第 ${rep.wi + 1} 波 结束`;
-    $('cGo').textContent = rep.goText ? rep.goText : rep.boss ? '挑战首领 ▶' : rep.last ? '选下一站 ▶' : `第 ${rep.wi + 2} 波 ▶`;
-    $('cHint').textContent = rep.last && !rep.boss ? '这一站打完了，出发后三选一决定下一站' : '';
+    rep = report; loot = report.loot.map(o => Object.assign({ lv: 1 }, o)); sel = null;
+    if (!rep.pickOne) loot = loot.filter(o => !learn(o, true));   // 自动收进背包（装不下的留在「待收」）
+    tab = report.tab || (loot.length ? 'shi' : R().xiu ? 'xiu' : 'shang');
+    $('cTitle').textContent = rep.title || `第 ${rep.st} 站 结束`;
+    $('cGo').textContent = rep.goText ? rep.goText : rep.boss ? '挑战首领 ▶' : '选下一站 ▶';
+    $('cHint').textContent = rep.goText ? '' : `击倒 ${rep.kills} · 铜钱 +${rep.coins} · 经验 +${rep.xp}`;
     render(); $('camp').classList.add('on');
   }
   function refreshCoin() { const r = R(); for (const id of ['cCoin', 'pCoin']) $(id).innerHTML = coinTxt(r.coins); }
   function render() {
     const r = R(), tb = $('ctabs'); tb.innerHTML = '';
-    for (const [k, n] of TABS) { const b = document.createElement('button'); b.className = k === tab ? 'on' : ''; const dn = k === 'xiu' ? r.xiu : k === 'shi' ? loot.length : k === 'shu' ? r.pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : ''); b.onclick = () => { if (tab === 'shu' && k !== 'shu') commit(); tab = k; sel = null; render(); }; tb.appendChild(b); }
+    for (const [k, n] of TABS) { if (k === 'shi' && !loot.length && !rep.pickOne) continue; if (rep.pickOne && k !== 'shi') continue; const b = document.createElement('button'); b.className = k === tab ? 'on' : ''; const dn = k === 'xiu' ? r.xiu : k === 'shi' ? loot.length : k === 'shu' ? r.pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : ''); b.onclick = () => { if (tab === 'shu' && k !== 'shu') commit(); tab = k; sel = null; render(); }; tb.appendChild(b); }
     refreshCoin(); const body = $('cBody'); body.innerHTML = ''; body.className = 'cbody t-' + tab;
     if (tab === 'jie') {
       const tot = Object.values(rep.dmg).reduce((s, v) => s + v, 0) || 1, rows = Object.entries(rep.dmg).sort((a, b) => b[1] - a[1]);
@@ -189,7 +191,7 @@
       const fx = B().hero().fx, pm = (1 + (fx.shop || 0)) * (1 + DATA.price.stUp * (rep.st - 1)) * (rep.disc || 1);   // 每站涨 7%
       if (!r.shop) r.shop = rollShop();
       const g = document.createElement('div'); g.className = 'cards'; body.appendChild(g);
-      r.shop.forEach((o, i) => { const d = o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开第 ${r.open + 1} 格</b><small>技能栏多开一格</small><p>${r.open + 1 === 4 ? '第 4 站打完也会免费开' : '第 8 站打完也会免费开'}</p>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
+      r.shop.forEach((o, i) => { const d = o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开第 ${r.open + 1} 格</b><small>技能栏多开一格</small><p>有铜钱随时能买</p>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
         if (o.sold) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已买</p>'); }
         else if (o.kind === 'slot' && o.n !== r.open + 1) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已开</p>'); }
         else btnTo(d, `买 ${UI.piH('coin', 1)}${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; r.coins -= price; o.sold = true; render(); }, true);

@@ -311,21 +311,29 @@
   // 一站 3 波，每波固定 30 秒（不再有清场）。怪分 5 批出（0 / 15% / 30% / 45% / 60% 时），每只出现前地上先亮 0.55 秒的圈。
   // 场上打光了就提前出下一批；全出完还没到时间，就一直零星补哥布林，场上不空。时间到：剩下的怪逃走。首领波不限时。
   const STN = () => DATA.stations[G.st - 1], ITEMS = () => DATA.startItems.filter(i => i.id !== 'purse');
-  function nextWave() {
+  function nextWave() {   // 进下一站（第 1 段）；站打完 → 路线卡
     RUN.dmgW = {};
-    if (G.wi >= STN().waves.length - 1) return stationEnd();   // 这一站打完：出 3 张路线卡
-    G.wi++; G.wave++; const W = STN().waves[G.wi];
-    Object.assign(G, { W, wt: 0, T: W.boss ? 0 : DATA.waveT, waveOn: true, wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], q: [], cleared: false, endT: null, timeout: false });
-    if (W.boss) { G.bossT = 2.2; G.trickle = 6; banner('首领战！', 2); }
-    else {
-      const all = shuffle(Object.entries(DATA.codes).flatMap(([k, c]) => Array(Math.round((W[k] || 0) * DATA.countMul)).fill(c)));
-      const T = G.T, nb = 5; for (let i = 0; i < all.length; i++) G.q.push({ at: T * .15 * Math.floor(i * nb / all.length) + R(0, 2.5), type: all[i] });
-      for (const [tier, t] of W.ex || []) G.q.push({ at: T * .3 + R(0, 2), type: t, tier });
-      if (G.route === 'elite' && G.wi > 0) G.q.push({ at: T * .35, type: G.eliteType || 'gob_blade', tier: 'elite', routeElite: true });   // 精英路线：第 2、3 波各多一只精英（掉宝物）
-      G.q.sort((a, b) => a.at - b.at);
-      banner(`第 ${G.st} 站 · 第 ${G.wi + 1} 波`, 1.6);
-    }
-    G.paused = false;
+    if (G.wi >= STN().waves.length - 1) return stationEnd();
+    G.wi = -1; Object.assign(G, { wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], cleared: false, endT: null, timeout: false });
+    nextPhase(); banner(G.W.boss ? '首领战！' : `第 ${G.st} 站`, 1.6); G.paused = false;
+  }
+  // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
+  function nextPhase() {
+    G.wi++; G.wave++; const W = STN().waves[G.wi], PT = DATA.phaseT[G.st - 1] || [30, 30, 30];
+    Object.assign(G, { W, wt: 0, T: W.boss ? 0 : PT[G.wi] || DATA.waveT, waveOn: true, q: [] });
+    if (W.boss) { G.bossT = 2.2; G.trickle = 6; banner('首领战！', 2); return; }
+    const all = shuffle(Object.entries(DATA.codes).flatMap(([k, c]) => Array(Math.round((W[k] || 0) * DATA.countMul)).fill(c)));
+    const T = G.T, nb = 5; for (let i = 0; i < all.length; i++) G.q.push({ at: T * .15 * Math.floor(i * nb / all.length) + R(0, Math.min(2.5, T * .1)), type: all[i] });
+    for (const [tier, t] of W.ex || []) G.q.push({ at: T * .3 + R(0, 2), type: t, tier });
+    if (G.route === 'elite' && G.wi > 0) G.q.push({ at: T * .35, type: G.eliteType || 'gob_blade', tier: 'elite', routeElite: true });
+    G.q.sort((a, b) => a.at - b.at);
+    if (G.wi > 0) banner(W.ex && W.ex.length ? '强敌来袭！' : '增援！', 1.2);
+  }
+  // 第 1 站第 3 段（小头目）开打前：公主露米娜出现，三选一
+  function princess() {
+    G.paused = true; RUN.metP = true;
+    const E = { name: '露米娜', desc: '一道淡紫色的光落在你身边：「勇者，前面有强大的哥布林……请收下这个！」', opts: [['一本技能书', '随机得一本新技能书（技能栏有空位就直接装上）', 'pbook'], ['一次修炼', '这一站打完多一次修炼', 'xiu'], ['一袋铜钱', '铜钱 +40', 'pcoin']] };
+    UI.event(E, i => doEvent(E.opts[i][2]), () => { nextPhase(); G.paused = false; }, '公主出现了');
   }
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
   function spawner(dt) {
@@ -346,6 +354,7 @@
       G.q.shift(); warnSpawn(o);
     }
     if (!G.q.length && alive.length + warns.length < 6 && G.wt < G.T - 3) for (let i = 0; i < 3; i++) warnSpawn({ type: Math.random() < .7 ? 'goblin' : 'gob_blade' });   // 出完了：零星补怪
+    if (G.wt >= G.T && G.wi < STN().waves.length - 1) { if (G.st === 1 && G.wi === 1 && !RUN.metP) princess(); else nextPhase(); return; }   // 11/22 段落到点：不结算，直接下一段
     if (G.wt >= G.T) { G.timeout = true; for (const z of alive) z.flee = true; G.q = []; warns.length = 0; banner('时间到！敌人撤退了', 1.4); G.endT = 1.4; }
   }
   // 出怪前地上先亮一个圈（0.55 秒），离勇者 135–190 格
@@ -374,8 +383,7 @@
   }
   // 一站打完：免费开格（第 4 站后开第 4 格，第 8 站后开第 5 格），再出 3 张路线卡三选一
   function stationEnd() {
-    if (G.st === 4 && RUN.open < 4) { RUN.open = 4; toastMsg('第 4 格技能栏免费解锁！'); }
-    if (G.st === 8 && RUN.open < 5) { RUN.open = 5; toastMsg('第 5 格技能栏免费解锁！'); }
+    // 11/22 技能格不再免费开，全部在背包页 / 商店花铜钱买
     G.paused = true; showRoute();
   }
   // 11/22 站点卡：战斗 / 精英 / 宝箱 · 篝火 · 行商 · 奇遇（不打仗的卡每章最多 restMax 次，选了不推进站数，做完回来再选）
@@ -385,28 +393,29 @@
     for (let i = 0; i < n - 1; i++) add(DATA.stations[i], seen);
     const now = new Set(); add(DATA.stations[n - 1], now); return { fresh: [...now].filter(t => !seen.has(t)), all: [...now] };
   }
-  function showRoute() {
+  // 11/22 路线（月圆之夜式牌库）：每站打完抽 3 张；选了不打仗的卡（宝箱 / 篝火 / 特价商店 / 奇遇）当场结算，不占站数，然后再抽 3 张只有战斗的卡
+  function showRoute(combatOnly) {
     const n = G.st + 1, go = route => { G.st++; G.wi = -1; G.route = route; nextWave(); };
-    if (n >= DATA.stations.length) return UI.route({ st: n, cards: [{ k: 'boss', av: 'gob_king', name: '哥布林王', sub: '首领', desc: '森林的尽头是哥布林王座。打完 2 波杂兵，哥布林王亲自出来。', btn: '挑战' }] }, () => go('boss'));
+    if (n >= DATA.stations.length) return UI.route({ st: n, cards: [{ k: 'boss', av: 'gob_king', name: '哥布林王', sub: '首领', desc: '森林的尽头是哥布林王座。打完 2 段杂兵，哥布林王亲自出来。', btn: '挑战' }] }, () => go('boss'));
     const S = DATA.stations[n - 1], info = stationInfo(n), main = info.fresh[0] || info.all[info.all.length - 1];
     const fight = { k: 'fight', av: main, name: S.name, sub: `第 ${n} 站 · Lv${n}`, desc: info.fresh.length ? '会出现：' + info.fresh.map(EN).join('、') : '这一段的老对手。', btn: '前往' };
-    const pool = info.all.filter(t => !DATA.enemies[t].ranged), et = pool[Math.random() * pool.length | 0] || 'gob_blade';
-    const elite = { k: 'elite', av: et, et, name: '精英 · ' + DATA.enemies[et].name, sub: `第 ${n} 站 · Lv${n}`, desc: '最后两波各多一只精英。铜钱 +50%，精英必掉技能书。', btn: '挑战' };
-    const cards = [fight, elite];   // 第 2 张固定精英（避免两张一样的战斗卡）
-    if ((RUN.rests || 0) < DATA.restMax) { const R0 = DATA.rests[Math.random() * DATA.rests.length | 0]; cards.push(Object.assign({ rest: true, sub: '休整 · 不推进站数' }, R0)); }
-    else cards.push(n >= 2 ? elite : fight);
-    UI.route({ st: n, rests: DATA.restMax - (RUN.rests || 0), cards }, c => {
+    const pool = shuffle(info.all.filter(t => !DATA.enemies[t].ranged)), mk = et => ({ k: 'elite', av: et, et, name: '精英 · ' + DATA.enemies[et].name, sub: `第 ${n} 站 · Lv${n}`, desc: '后两段各多一只精英。铜钱 +50%，精英必掉技能书。', btn: '挑战' });
+    const e1 = mk(pool[0] || 'gob_blade'), e2 = mk(pool[1] || pool[0] || 'gob_blade');
+    let cards;
+    if (combatOnly) cards = [fight, e1, e2];
+    else { const rs = shuffle(DATA.rests.slice()).map(R0 => Object.assign({ rest: true, sub: '不占站数' }, R0)); cards = shuffle([fight, Math.random() < .5 ? e1 : rs[1], rs[0]]); }
+    UI.route({ st: n, cards }, c => {
       if (!c.rest) { G.eliteType = c.et; return go(c.k); }
-      RUN.rests = (RUN.rests || 0) + 1; doRest(c.k);
+      doRest(c.k);
     });
   }
   function ownBooks() { return new Set([...RUN.slots, ...RUN.bag].filter(x => x && (x.kind === 'book' || !x.kind)).map(x => x.id)); }
   function randBook(minTier) { const all = DATA.bookPool(ownBooks(), Math.max(G.st, minTier >= 3 ? 4 : 1), minTier >= 3); const f = all.filter(id => DATA.skills[id].tier >= (minTier || 1)); const L = f.length ? f : all; return L[Math.random() * L.length | 0]; }
   function doRest(k) {
-    const back = () => showRoute(), base = { st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], after: back, goText: '回到路线 ▶' };
+    const back = () => showRoute(true), base = { st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], after: back, goText: '回到路线 ▶' };
     if (k === 'chest') { const L = []; for (let i = 0; i < 3; i++) { const id = randBook(); if (id && !L.some(o => o.id === id)) L.push({ kind: 'book', id }); } return CAMP.open(Object.assign(base, { title: '宝箱 · 三本书选一本', tab: 'shi', loot: L, pickOne: true })); }
     if (k === 'fire') { hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .5); RUN.xiu++; RUN.xopt = null; RUN.xrr = 0; return CAMP.open(Object.assign(base, { title: '篝火 · 回复 50% 生命，修炼一次', tab: 'xiu' })); }
-    if (k === 'shop') { RUN.shop = null; RUN.rr = 0; return CAMP.open(Object.assign(base, { title: '咕噜的摊子 · 全部八折', tab: 'shang', disc: .8 })); }
+    if (k === 'shop') { RUN.shop = null; RUN.rr = 0; return CAMP.open(Object.assign(base, { title: '地精特价商店 · 全部八折', tab: 'shang', disc: .8 })); }
     const used = RUN.evUsed || (RUN.evUsed = []), L = DATA.events.filter(e => !used.includes(e.id)), E = (L.length ? L : DATA.events)[Math.random() * (L.length || DATA.events.length) | 0]; used.push(E.id);
     UI.event(E, i => doEvent(E.opts[i][2]), back);
   }
@@ -425,6 +434,8 @@
       case 'full': heal(1); return '生命回满了。';
       case 'attr2': { const a = A[Math.random() * A.length | 0]; train(a, 2); return `${DATA.attrs.find(x => x.id === a).name} +2。`; }
       case 'coin25': RUN.coins += 25; return '咕噜给了你 25 铜钱。';
+      case 'pbook': { const id = randBook(1); if (id) { give({ kind: 'book', id }); return `露米娜递给你一本「${DATA.skills[id].name}」。`; } RUN.coins += 40; return '露米娜给了你 40 铜钱。'; }
+      case 'pcoin': RUN.coins += 40; return '露米娜给了你 40 铜钱。';
       case 'heal60': heal(.6); return '回复了 60% 生命。';
       case 'xiu': RUN.xiu++; return '修炼次数 +1（下次结算时用）。';
     }

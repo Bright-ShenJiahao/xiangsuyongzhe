@@ -206,10 +206,10 @@
     overlay('route', true);
   }
   // 奇遇：描述 + 两个选项；选完显示结果，点继续回到选站
-  function event(E, pickFn, back) {
-    $('rtTitle').innerHTML = '奇遇'; const box = $('rtCards'); box.innerHTML = ''; box.className = 'rcards ev';
+  function event(E, pickFn, back, title) {
+    $('rtTitle').innerHTML = title || '奇遇'; const box = $('rtCards'); box.innerHTML = ''; box.className = 'rcards ev';
     const d = document.createElement('div'); d.className = 'evbox'; d.innerHTML = `<b>${E.name}</b><p>${E.desc}</p>`; const ops = document.createElement('div'); ops.className = 'evops'; d.appendChild(ops);
-    E.opts.forEach(([label, hint], i) => { const b = document.createElement('button'); b.className = 'btn' + (i ? '' : ' gold'); b.innerHTML = `${label}<small>${hint}</small>`;
+    E.opts.forEach(([label, hint], i) => { const b = document.createElement('button'); b.className = 'btn gold'; b.innerHTML = `${label}<small>${hint}</small>`;
       b.onclick = () => { const res = pickFn(i); ops.innerHTML = `<p class="evres">${res}</p>`; const go = document.createElement('button'); go.className = 'btn gold'; go.textContent = '继续 ▶'; go.onclick = () => { overlay('route', false); back(); }; ops.appendChild(go); }; ops.appendChild(b); });
     box.appendChild(d); overlay('route', true);
   }
