@@ -657,3 +657,17 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #pause .lom .hsk { border-top: 0; position: relative; } #pause .lom .hsk::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(220, 180, 100, .55) 20%, rgba(220, 180, 100, .55) 80%, transparent); }
 #pause .lom .hsi small { border: 0 !important; background: none !important; color: #d8c8a8 !important; }
 #pause .lo.lom { box-shadow: none !important; background: none !important; }
+/* 11/22 人物页 v7：浅色羊皮纸底（跟世界地图同色系），只换这一块；字改深棕 */
+#pause .lo.lom { background: radial-gradient(ellipse at 30% 40%, #f6edd8, #e9dcbc 60%, #dccaa2) !important; box-shadow: inset 0 0 0 1px #b8965c, inset 0 0 40px rgba(120, 80, 30, .18) !important; color: #3a2814; }
+#pause .lom .hport img { -webkit-mask-image: linear-gradient(#000 88%, transparent); mask-image: linear-gradient(#000 88%, transparent); filter: drop-shadow(3px 4px 0 rgba(90, 60, 20, .18)); }
+#pause .lom .hh2t b { color: #3a2814; } #pause .lom .hh2t small { color: #8a7050; } #pause .lom .hh2t h4 { color: #5a3a18 !important; }
+#pause .lom .hxp2 { background: #3a3448; }
+#pause .lom .hadd h4 { color: #5a3a18 !important; } #pause .lom .hadd .arow > b { color: #7a4a18 !important; } #pause .lom .hadd .arow em { color: #3a2814 !important; }
+#pause .lom .hadd .arow + .arow { box-shadow: -1px 0 0 rgba(140, 100, 50, .25); }
+#pause .lom .hadd .arow button:nth-of-type(1) { background: #cdbb98; color: #6a5030; border: 0; }
+#pause .lom .pills > div { background: linear-gradient(90deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, .2)) !important; border-bottom: 1px solid rgba(140, 100, 50, .2); }
+#pause .lom .pills span { color: #6a5030; } #pause .lom .pills b { color: #2a1a0a; font-weight: 500; }
+#pause .lom .hhead2::after, #pause .lom .hadd::after, #pause .lom .hsk::before { background: linear-gradient(90deg, transparent, rgba(150, 105, 45, .6) 20%, rgba(150, 105, 45, .6) 80%, transparent); }
+#pause .lom .hsi small { color: #5a3a18 !important; } #pause .lom .hsi.em > :first-child { border-color: #a8844a !important; background: rgba(255,255,255,.3) !important; } #pause .lom .hsi.lk > :first-child { border-color: #b8a07a !important; background: rgba(0,0,0,.05) !important; }
+#pause .lom .lorr .dim { color: #7a6040; }
+#pause .lom .lorr { padding-bottom: 10px; } #pause .lom .hsk { padding-bottom: 4px; }
