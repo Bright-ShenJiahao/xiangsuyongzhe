@@ -259,7 +259,7 @@
       b.onclick = () => { if (ptab === 'shu' && k !== 'shu') commit(); ptab = k; sel = null; pauseRender(); }; tb.appendChild(b); }
     refreshCoin(); if (ptab === 'ji') loadout($('pBody')); else attrPanel($('pBody'));
   }
-  function pauseOpen() { sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); }
+  function pauseOpen() { UI.newDot(false); sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); }
 
   window.CAMP = { learn, rollXiu, open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
 })();

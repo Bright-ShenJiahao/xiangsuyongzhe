@@ -921,3 +921,8 @@ img.skic { padding: 0 !important; background: none !important; box-shadow: none 
 .attrlo .lor .stats.big { row-gap: 2px; font-size: 14px; } .attrlo .lor .stats.big .pi { width: 18px; } .attrlo .lor h5 { margin-top: 4px; } .attrlo .lol .dim { margin: 4px 0 0; font-size: 13px; color: #c8b890; }
 .loinfo.pop .ic .skic { width: 44px; height: 44px; object-fit: cover; }
 .attrlo .lor .stats.big { margin: 2px 0 0 !important; padding: 0 !important; } .attrlo .lor h4 { margin-bottom: 0; } .attrlo .lor { gap: 2px; } .attrlo .lor h5 { margin: 6px 0 0; }
+
+/* 11/23 宝物 5 格；暂停按钮红点；播报字更大 */
+.lo .bag.gear { grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: 330px; }
+#bPause { position: relative; } #bPause.dot::after { content: ''; position: absolute; right: -3px; top: -3px; width: 12px; height: 12px; border-radius: 50%; background: #ff3a3a; box-shadow: 0 0 0 2px #1a1008; animation: dotP 1s ease-in-out infinite alternate; } @keyframes dotP { to { transform: scale(1.25); } }
+#feed div { font-size: 22px; } @media (orientation: portrait), (max-width: 760px) { #feed div { font-size: 17px; } .lo .bag.gear { grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: none; } }

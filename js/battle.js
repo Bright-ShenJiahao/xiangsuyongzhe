@@ -344,7 +344,8 @@
   function princessTick(dt) {
     const p = G.pr; p.t += dt;
     if (!p.done) {
-      const hit = p.t > .8 && p.orbs.find(o => Math.hypot(o.x - hero.x, (o.y - hero.y) * YS) < 20 * K);
+      for (const o of p.orbs) { if (p.t > .8 && Math.hypot(o.x - hero.x, (o.y - hero.y) * YS) < 20 * K) o.st = (o.st || 0) + dt; else o.st = 0; }
+      const hit = p.orbs.find(o => o.st > .7);
       if (hit || p.t >= p.T) { const o = hit || p.orbs[0]; p.done = o; p.t2 = 0; toastMsg(doEvent(o.k)); for (let k = 0; k < 20; k++) { const an = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(an) * 60 * K, vy: Math.sin(an) * 60 * K, t: 0, T: .6, col: o.c, g: 0 }); } }
     } else if ((p.t2 += dt) > 1.2) { G.pr = null; nextPhase(); }
   }
@@ -420,10 +421,10 @@
   // ---------- 11/22 站末在战场上结算（哈迪斯式）：掉落在地上走过去捡；公主在中间，靠近她跳 3 个修炼光球 + 1 颗刷新水晶；地精商人；三扇门 ----------
   const IMG = {}; const img = n => IMG[n] || (IMG[n] = Object.assign(new Image(), { src: 'art/ui2/' + n + '.png' }));
   function fieldEnd(loot) {
-    G.paused = false; G.waveOn = false; const hx = hero.x, hy = hero.y, g = MAP.ground, cy = Math.min(g.y1 - 60 * K, Math.max(g.y0 + 80 * K, hy));
-    G.fe = { t: 0, items: loot.map((o, i) => { const a = i / Math.max(1, loot.length) * PI * 2 + .5; return Object.assign({ x: hx + Math.cos(a) * 34 * K, y: hy + Math.sin(a) * 22 * K }, o); }),
-      pr: { x: hx, y: cy - 70 * K, near: 0, orbs: null, cr: null, said: 0 }, mer: { x: hx - 120 * K, y: cy + 10 * K, st: 0 }, doors: [], warn: 0 };
-    if (G.st === 1) G.fe.sign = { x: hx + 110 * K, y: cy + 50 * K };
+    G.paused = false; G.waveOn = false; const g = MAP.ground, cy = (g.y0 + g.y1) / 2 - 10 * K, [gl, gr] = ground(cy), cx = (gl + gr) / 2, ly = cy + 88 * K, n = loot.length;   // 11/23 位置按地图固定
+    G.fe = { t: 0, items: loot.map((o, i) => Object.assign({ x: cx + (i - (n - 1) / 2) * 30 * K, y: ly, st: 0 }, o)),
+      pr: { x: cx, y: cy, near: 0, orbs: null, cr: null, said: 0, arm: dist(hero, { x: cx, y: cy }) > 40 }, mer: { x: gl + 40 * K, y: cy + 10 * K, st: 0 }, doors: [], warn: 0 };
+    if (G.st === 1) G.fe.sign = { x: cx + ((n - 1) / 2 + 1.6) * 30 * K, y: ly + 6 * K };
     stationEnd();
   }
   function setDoors(cards, pick) { const f = G.fe, n = cards.length, cx = f.pr.x, y = f.pr.y - 70 * K; f.doors = cards.map((c, i) => ({ c, x: cx + (i - (n - 1) / 2) * 70 * K, y, st: 0 })); f.pick = pick; }
@@ -441,7 +442,7 @@
     if (o.k === 'chest' && !o.open) { if (SKUL(o, 18)) o.st += dt; else o.st = 0; if (o.st > .3) { o.open = 1; const L = []; for (let i = 0; i < 3; i++) { const id = randBook(); if (id && !L.includes(id)) L.push(id); }
         if (!L.length) { RUN.coins += 30; toastMsg('箱子里只有 30 铜钱'); f.rest = null; return showRoute(true); }
         o.books = L.map((id, i) => ({ kind: 'book', id, x: o.x + (i - (L.length - 1) / 2) * 36 * K, y: o.y + 34 * K, st: 0 })); toastMsg('三本书选一本'); } return; }
-    if (o.k === 'chest') { for (const b of o.books) { if (SKUL(b, 14)) b.st += dt; else b.st = 0; if (b.st > .3) { CAMP.learn(b); f.rest = null; return showRoute(true); } } return; }
+    if (o.k === 'chest') { for (const b of o.books) { if (SKUL(b, 14)) b.st += dt; else b.st = 0; if (b.st > .3) { CAMP.learn(b, true); gotFeed(b); f.rest = null; return showRoute(true); } } return; }
     if (o.k === 'fire') { if (SKUL(o, 22)) o.st += dt; else o.st = 0; if (o.st > 1) { const h0 = hero.hp; hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .5); nums.push({ x: hero.x, y: hero.y - 44 * K, v: Math.round(hero.hp - h0), t: 0, col: '#7cff8a' }); RUN.xiu++; f.pr.said = 0; toastMsg('回复 50% 生命，修炼 +1（去找露米娜）'); f.rest = null; showRoute(true); } }
   }
   function restDraw(label, ring) {
@@ -460,12 +461,13 @@
     const f = G.fe; if (!f || G.paused) return; f.t += dt;
     if (f.rest) restTick(dt);
     const M2 = f.mer2; if (M2) { if (M2.st < 0) { if (!SKUL(M2, 30)) M2.st = 0; } else if (SKUL(M2, 24)) M2.st += dt; else M2.st = 0; if (M2.st > .4) { M2.st = -99; G.paused = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '特价商人 · 全部八折', tab: 'shang', only: 'shang', field: 1, disc: .8, goText: '离开 ▶', after: () => { G.paused = false; M2.st = -1; } }); return; } if (M2.st < 0 && !SKUL(M2, 24)) M2.st = 0; }
-    for (let i = f.items.length - 1; i >= 0; i--) { const o = f.items[i]; if (f.t > .6 && SKUL(o, 16)) { if (CAMP.learn(o)) { f.items.splice(i, 1); for (let k = 0; k < 10; k++) { const a = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(a) * 50 * K, vy: Math.sin(a) * 50 * K, t: 0, T: .4, col: '#ffe08a', g: 0 }); } } else { o.x += (o.x - hero.x) * .5; o.y += (o.y - hero.y) * .5; } } }
+    for (let i = f.items.length - 1; i >= 0; i--) { const o = f.items[i]; if (f.t > .6 && SKUL(o, 16)) o.st += dt; else o.st = 0; if (o.st > .6) { o.st = 0; if (CAMP.learn(o, true)) { gotFeed(o); f.items.splice(i, 1); for (let k = 0; k < 10; k++) { const a = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(a) * 50 * K, vy: Math.sin(a) * 50 * K, t: 0, T: .4, col: '#ffe08a', g: 0 }); } } else { o.x += (o.x - hero.x) * .5; o.y += (o.y - hero.y) * .5; } } }
     const P = f.pr;
-    if (!P.orbs && SKUL(P, 40)) { if (RUN.xiu > 0) { xiuOrbs(); P.said = 1; } else P.said = 2; }
-    if (P.orbs && f.t > .5) {
+    if (!P.arm && !SKUL(P, 40)) P.arm = true;
+    if (!P.orbs && P.arm && SKUL(P, 26)) { if (RUN.xiu > 0) { xiuOrbs(); P.said = 1; P.ot = f.t; } else P.said = 2; }
+    if (P.orbs && f.t - (P.ot || 0) > 1) {   // 光球出现 1 秒内碰到不算；站上去转满一圈（0.8 秒）才拿
       for (const o of P.orbs) { if (SKUL(o, 15)) o.st += dt; else o.st = 0;
-        if (o.st > .25) { for (const [a, v] of o.adds) RUN.train[a] = (RUN.train[a] || 0) + v; RUN.xiu--; recompute(); toastMsg(`修炼：${o.adds.map(([a, v]) => DATA.attrs.find(x => x.id === a).name + ' +' + v).join('、')}`);
+        if (o.st > .8) { for (const [a, v] of o.adds) RUN.train[a] = (RUN.train[a] || 0) + v; RUN.xiu--; recompute(); toastMsg(`修炼：${o.adds.map(([a, v]) => DATA.attrs.find(x => x.id === a).name + ' +' + v).join('、')}`);
           for (let k = 0; k < 16; k++) { const an = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(an) * 60 * K, vy: Math.sin(an) * 60 * K, t: 0, T: .5, col: DATA.rarity[o.q].col, g: 0 }); }
           if (RUN.xiu > 0) { P.cr.n = 0; xiuOrbs(); } else { P.orbs = null; P.cr = null; P.said = 3; } return; } }
       const c = P.cr; if (c) { if (SKUL(c, 14)) c.st += dt; else c.st = 0;
@@ -494,22 +496,26 @@
       else { const im = img(c.icon); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 15 * u, y - 40 * u, 30 * u, 30 * u); }
       label(c.name, x, y - h - 10 * u, el ? '#ffb070' : rs ? '#9ef0b0' : '#fff3d0'); if (c.sub) label(c.sub, x, y + 2 * u, '#c8b890', 5); ring({ x: d.x, y: d.y }, 10, d.st / .35, '#ffe08a'); }
     for (const o of f.items) { const im = img(o.kind === 'book' ? ({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[DATA.skills[o.id].sys] : o.kind === 'item' ? o.id : o.id), x = X(o.x), y = Y(o.y) - rd((4 + Math.sin(G.t * 3 + o.x) * 2) * u);
-      ctx.fillStyle = 'rgba(255,220,120,.25)'; ctx.beginPath(); ctx.arc(x, y, 11 * u, 0, 7); ctx.fill(); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); }
+      ctx.fillStyle = 'rgba(255,220,120,.25)'; ctx.beginPath(); ctx.arc(x, y, 11 * u, 0, 7); ctx.fill(); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); ring(o, 13, o.st / .6, '#ffe08a'); }
     const P = f.pr, px = X(P.x), py = Y(P.y);
+    ctx.save(); ctx.globalAlpha = .5 + .15 * Math.sin(G.t * 2); ctx.strokeStyle = '#c8a8ff'; ctx.lineWidth = 2 * u; ctx.setLineDash([4 * u, 4 * u]); ctx.beginPath(); ctx.ellipse(px, py + 30 * u, 62 * u, 62 * u / YS * .9, 0, 0, 7); ctx.stroke(); ctx.fillStyle = 'rgba(200,170,255,.07)'; ctx.fill(); ctx.restore();
     const gl = ctx.createRadialGradient(px, py - 20 * u, 0, px, py - 20 * u, 40 * u); gl.addColorStop(0, 'rgba(220,190,255,.5)'); gl.addColorStop(1, 'rgba(220,190,255,0)'); ctx.fillStyle = gl; ctx.fillRect(px - 40 * u, py - 60 * u, 80 * u, 80 * u);
     SPR.drawHero(ctx, P.orbs ? 'big' : 'idle', Math.floor(G.t * 3) % 2, px, py - rd(Math.sin(G.t * 2) * 2 * u), P.x > hero.x, u, { w: 'staff', c: 'p' });
     if (!P.orbs) { label(RUN.xiu > 0 ? `露米娜 · 修炼 ×${RUN.xiu}` : '露米娜', px, py + 4 * u, '#e6d4ff'); say(px, py - 44 * u, RUN.xiu > 0 ? ['辛苦了，勇者。', '过来，我帮你修炼。'] : ['再坚持一下，勇者。', '前面会更危险……'], 0); }
     if (P.orbs) { for (const o of P.orbs) { const Q = DATA.rarity[o.q], x = X(o.x), y = Y(o.y) - rd((5 + Math.sin(G.t * 3 + o.x) * 2) * u), r = 12 * u;
         const g2 = ctx.createRadialGradient(x, y, 0, x, y, r * 1.8); g2.addColorStop(0, Q.col + 'aa'); g2.addColorStop(1, Q.col + '00'); ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(x, y, r * 1.8, 0, 7); ctx.fill();
         ctx.fillStyle = 'rgba(20,14,30,.8)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.strokeStyle = Q.col; ctx.lineWidth = u; ctx.stroke();
-        const im = img(o.adds[0][0] === 'end' ? 'guard' : o.adds[0][0]); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 8 * u, y - 8 * u, 16 * u, 16 * u);
-        o.adds.forEach(([a, v], k) => label(`+${v} ${DATA.attrs.find(t => t.id === a).name}`, x, y + r + 2 * u + k * 7 * u, Q.col)); ring(o, 14, o.st / .25, '#fff'); }
+        const im = img(o.adds[0][0] === 'end' ? 'amulet' : o.adds[0][0]); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 8 * u, y - 8 * u, 16 * u, 16 * u);
+        o.adds.forEach(([a, v], k) => label(`+${v} ${DATA.attrs.find(t => t.id === a).name}`, x, y + r + 2 * u + k * 7 * u, Q.col)); ring(o, 14, o.st / .8, '#fff'); }
       const c = P.cr; if (c) { const x = X(c.x), y = Y(c.y), free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1);
         ctx.fillStyle = '#b07bff'; ctx.beginPath(); ctx.moveTo(x, y - 12 * u); ctx.lineTo(x + 7 * u, y - 2 * u); ctx.lineTo(x, y + 6 * u); ctx.lineTo(x - 7 * u, y - 2 * u); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#efe0ff'; ctx.lineWidth = u; ctx.stroke();
         label(cost ? `刷新 ${cost} 铜钱` : `刷新（${free - c.n}）`, x, y + 8 * u, '#e6d4ff', 5); ring(c, 12, c.st / .5, '#e6d4ff'); if (G.st === 1 && !c.n) label('站上来刷新修炼', x, y - 24 * u, '#c8b890', 5); } }
     const M = f.mer; SPR.draw(ctx, 'goblin', 'idle0', 0, X(M.x), Y(M.y), M.x < hero.x ? false : true, u, {}); label('地精商人', X(M.x), Y(M.y) + 3 * u, '#ffd860'); say(X(M.x), Y(M.y) - 44 * u, ['嘿嘿，要买点什么？', '好货不等人！', '铜钱带够了吗？'], 2.1); ring(M, 14, M.st / .4, '#ffd860');
     restDraw(label, ring);
-    if (f.sign) { const x = X(f.sign.x), y = Y(f.sign.y); ctx.fillStyle = '#6a4420'; ctx.fillRect(x - 2 * u, y - 18 * u, 4 * u, 18 * u); ctx.fillStyle = '#c8a06a'; ctx.fillRect(x - 30 * u, y - 30 * u, 60 * u, 14 * u); ctx.strokeStyle = '#4a2e12'; ctx.lineWidth = u; ctx.strokeRect(x - 30 * u, y - 30 * u, 60 * u, 14 * u); ctx.font = `${Math.round(5.5 * u)}px WenKai, Pix, serif`; ctx.fillStyle = '#3a2410'; ctx.fillText('按 P 整理技能栏', x, y - 28 * u); }
+    if (f.sign) { const S = f.sign, near = dist(S, hero) < 40, hop = near ? Math.abs(Math.sin(G.t * 8)) * 4 : 0, x = X(S.x), y = Y(S.y) - hop * u, on = Math.floor(G.t * 2.5) % 2;   // 11/23 地上的像素 P 键帽
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x - 11 * u, Y(S.y) + u, 22 * u, 3 * u); ctx.fillStyle = '#3a2a1a'; ctx.fillRect(x - 11 * u, y - 18 * u, 22 * u, 20 * u); ctx.fillStyle = on || near ? '#f4e8c8' : '#cfc0a0'; ctx.fillRect(x - 10 * u, y - 17 * u, 20 * u, 15 * u); ctx.fillStyle = '#9a8a6a'; ctx.fillRect(x - 10 * u, y - 2 * u, 20 * u, 3 * u);
+      ctx.fillStyle = '#3a2a1a'; ctx.font = `${Math.round(11 * u)}px Pix, monospace`; ctx.fillText('P', x, y - 16 * u); if (on || near) { ctx.strokeStyle = 'rgba(255,230,140,.8)'; ctx.lineWidth = u; ctx.strokeRect(x - 12 * u, y - 19 * u, 24 * u, 22 * u); }
+      label(UI.pKey ? UI.pKey() : '按下 P 整理', x, y + 5 * u, '#ffe8a0', 6.5); }
     ctx.restore();
   }
   // 一站打完：免费开格（第 4 站后开第 4 格，第 8 站后开第 5 格），再出 3 张路线卡三选一
@@ -551,20 +557,20 @@
   }
   function doEvent(fx) {   // 返回结果文字
     const r = Math.random(), A = DATA.attrs.map(a => a.id), heal = p => { hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * p); };
-    const train = (a, v) => { RUN.train[a] = (RUN.train[a] || 0) + v; recompute(); }, give = o => CAMP.learn(o);
+    const train = (a, v) => { RUN.train[a] = (RUN.train[a] || 0) + v; recompute(); }, give = o => { CAMP.learn(o, true); gotFeed(o); };
     switch (fx) {
       case 'con2': train('con', 2); heal(0); return '体魄 +2，生命上限提高了。';
       case 'end2': train('end', 2); return '耐力 +2。旧盾还挺结实。';
-      case 'book2': { const id = randBook(2); if (id) { give({ kind: 'book', id }); return `得到一本「${DATA.skills[id].name}」。`; } RUN.coins += 30; return '没有新书了，换成 30 铜钱。'; }
+      case 'book2': { const id = randBook(2); if (id) { give({ kind: 'book', id }); return '得到一本技能书。'; } RUN.coins += 30; return '没有新书了，换成 30 铜钱。'; }
       case 'prof': { const L = RUN.slots.filter(Boolean); if (!L.length) return '技能栏是空的……'; const sk = L[Math.random() * L.length | 0], lv = profL(sk); if (lv >= 7) return `「${DATA.skills[sk.id].name}」已经练满了。`; sk.xp = DATA.prof[lv]; return `「${DATA.skills[sk.id].name}」熟练度 +1 格。`; }
-      case 'rift': if (r < .5) { const id = randBook(3); if (id) { give({ kind: 'book', id }); return `摸出一本「${DATA.skills[id].name}」！`; } } hero.hp = Math.max(1, hero.hp - hero.maxHp * .2); return '被乱码咬了一口，掉了 20% 生命。';
-      case 'gamble': if (RUN.coins < 20) return '铜钱不够，咕噜把杯子收了回去。'; RUN.coins -= 20; if (r < .5) { const it = ITEMS()[Math.random() * ITEMS().length | 0]; give({ kind: 'item', id: it.id }); return `猜中了！得到「${it.name}」。`; } return '没猜中。咕噜笑得很开心。';
+      case 'rift': if (r < .5) { const id = randBook(3); if (id) { give({ kind: 'book', id }); return '摸出一本技能书！'; } } hero.hp = Math.max(1, hero.hp - hero.maxHp * .2); return '被乱码咬了一口，掉了 20% 生命。';
+      case 'gamble': if (RUN.coins < 20) return '铜钱不够，咕噜把杯子收了回去。'; RUN.coins -= 20; if (r < .5) { const it = ITEMS()[Math.random() * ITEMS().length | 0]; give({ kind: 'item', id: it.id }); return '猜中了！得到一件宝物。'; } return '没猜中。咕噜笑得很开心。';
       case 'kid': RUN.coinBoost = 1; return '小哥布林跑了。下一站铜钱 +50%。';
       case 'save': RUN.save = true; return '已存档。第一次倒下时会满血复活。';
       case 'full': heal(1); return '生命回满了。';
       case 'attr2': { const a = A[Math.random() * A.length | 0]; train(a, 2); return `${DATA.attrs.find(x => x.id === a).name} +2。`; }
       case 'coin25': RUN.coins += 25; return '咕噜给了你 25 铜钱。';
-      case 'pbook': { const id = randBook(1); if (id) { give({ kind: 'book', id }); return `露米娜递给你一本「${DATA.skills[id].name}」。`; } RUN.coins += 40; return '露米娜给了你 40 铜钱。'; }
+      case 'pbook': { const id = randBook(1); if (id) { give({ kind: 'book', id }); return '露米娜递给你一本技能书。'; } RUN.coins += 40; return '露米娜给了你 40 铜钱。'; }
       case 'pcoin': RUN.coins += 40; return '露米娜给了你 40 铜钱。';
       case 'heal60': heal(.6); return '回复了 60% 生命。';
       case 'xiu': RUN.xiu++; return '修炼次数 +1（下次结算时用）。';
@@ -580,8 +586,8 @@
       if (c.t > .35 && d < 9) { c.got = 1; G.cf += c.v * cMul(); const n = Math.floor(G.cf); G.cf -= n; RUN.coins += n; parts.push({ x: hero.x, y: hero.y - 30 * K, vx: 0, vy: -40 * K, t: 0, T: .3, col: '#ffe08a', g: 0 }); } }
     G.gc = G.gc.filter(c => !c.got);
     for (const o of G.gi) { o.t += dt; if (o.t > .4 && dist(o, hero) < 14 && !hero.dead) { o.got = 1;   // 11/23 书 / 宝物也要走过去捡
-      if (o.kind === 'book') { const id = randBook(); if (id) { CAMP.learn({ kind: 'book', id }, true); UI.feed(`捡到一本技能书，请按下 P 键看看`); } else { RUN.coins += 30; UI.feed('捡到 30 铜钱'); } }
-      else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; CAMP.learn({ kind: 'item', id: it.id }, true); UI.feed(`捡到一件宝物，请按下 P 键看看`); } } }
+      if (o.kind === 'book') { const id = randBook(); if (id) { CAMP.learn({ kind: 'book', id }, true); gotFeed({ kind: 'book' }); } else { RUN.coins += 30; UI.feed('捡到 30 铜钱'); } }
+      else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; CAMP.learn({ kind: 'item', id: it.id }, true); gotFeed({ kind: 'item' }); } } }
     G.gi = G.gi.filter(o => !o.got);
     let T = G.thief;
     if (!T && !G.fe && G.gc.some(c => c.t > 10)) { const p = edgeSpawn(); T = G.thief = { x: p.x, y: p.y, ex: p.x, ey: p.y, bag: 0, n: 0, st: 'go', t: 0, f: 1 }; UI.feed('一只小咕噜溜进来偷钱了！'); }
@@ -630,6 +636,7 @@
       ctx.globalAlpha = Math.max(0, a); ctx.fillStyle = l.c ? '#c8b040' : '#8ab040'; ctx.fillRect(sx, sy, (fl ? 3 : 2) * u, (fl ? 2 : 3) * u); ctx.fillStyle = l.c ? '#7a6020' : '#4a7020'; ctx.fillRect(sx + u, sy + u, u, u); ctx.globalAlpha = 1; }
     AMB.leaves = AMB.leaves.filter(l => l.t < 12);
   }
+  function gotFeed(o) { const k = o.kind === 'book' ? '一本技能书' : o.kind === 'item' ? '一件宝物' : ''; if (k) { UI.feed(`获得${k}，${UI.pTip()}`); UI.newDot(); } }
   function toastMsg(t) { UI.toast && UI.toast(t); }
   function bossIn() { if (G.bossOut) return; G.bossOut = true; G.boss = spawn(G.W.boss || MAP.boss); G.boss.cd = 2.5; banner('哥布林王 出现了！', 2.4); G.shake = .3; }
 

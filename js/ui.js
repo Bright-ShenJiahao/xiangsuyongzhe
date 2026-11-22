@@ -269,7 +269,10 @@
     else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#07101b'; ctx.fillRect(0, 0, cv.width, cv.height); }
     requestAnimationFrame(loop);
   }
-  window.UI = { feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  const isTouch = () => matchMedia('(hover: none)').matches;
+  const pTip = () => isTouch() ? '点右上角 ⏸ 看看' : '按 P 看看', pKey = () => isTouch() ? '点右上角 ⏸ 整理' : '按下 P 整理';
+  const newDot = v => { const b = $('bPause'); if (b) b.classList.toggle('dot', v !== false); };
+  window.UI = { pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来
