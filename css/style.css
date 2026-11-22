@@ -531,15 +531,14 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 .wmz { opacity: .7; } .hst span { white-space: nowrap; }
 
 /* 11/22 暂停页勇者栏：左立绘右属性 */
-#pause .cbox { max-width: min(1200px, 96vw); }
-.lor.lorp { flex-direction: row; gap: 10px; } .lorr { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.hport { flex: 0 0 40%; position: relative; min-height: 220px; overflow: hidden; background: radial-gradient(ellipse at 50% 70%, rgba(232, 184, 74, .16), transparent 65%);
-  -webkit-mask-image: linear-gradient(#000 75%, transparent); mask-image: linear-gradient(#000 75%, transparent); }
-.hport img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-.hport i { position: absolute; left: 20%; right: 20%; top: 8%; bottom: 0; background: rgba(0, 0, 0, .35); border-radius: 45% 45% 10% 10% / 30% 30% 5% 5%; color: #6a5a48; font-style: normal; display: flex; align-items: center; justify-content: center; font-size: 13px; }
-.hport img + i { display: none; }
-.lorr h4 { display: flex; align-items: center; gap: 6px; margin: 0; } .hmini canvas { height: 32px; width: auto; image-rendering: pixelated; }
-@media (orientation: portrait) { .lor.lorp { flex-direction: column; } .hport { flex: none; height: 170px; min-height: 0; } }
+
+ 
+
+
+
+
+ 
+
 /* 11/22 图鉴：手办底座 */
 .codex { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; }
 .codex > .fig { background: linear-gradient(#f3ead8, #e2d3b4); box-shadow: 0 0 0 2px #b89a68; border-radius: 10px 10px 4px 4px; padding: 8px 6px; color: #3a2a1a; display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -551,8 +550,8 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 .ped::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 20px; background: var(--pt, #d8cfc0); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 .ped i { position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%); width: 14px; height: 9px; background: rgba(0,0,0,.25); z-index: 1; }
 .fig.gold .ped { --pt: #ffe08a; --ps: #c89a30; } .fig.red .ped { --pt: #f0a0a0; --ps: #a83a3a; } .fig.blue .ped { --pt: #b8d4ff; --ps: #4a70b8; } .fig.grey .ped { --pt: #e6e0d6; --ps: #9a9080; }
-@media (orientation: landscape) { #pause .cbox { width: min(1200px, 96vw); max-width: none; } #pause .lo:has(.lorp) { grid-template-columns: 1.25fr 1.35fr; } }
-.lorp .hport { flex-basis: 36%; } .lorp .stats span { white-space: nowrap; } .lorp .stats small { white-space: nowrap; }
+
+  
 
 /* 11/22 手办 v2：卡片带光晕，SVG 立体底座，小人站在底座顶面中心 */
 .codex > .fig { background: radial-gradient(ellipse at 50% 38%, #fffaf0 0%, #f1e6d0 45%, #ddcdaa 100%); border-radius: 14px 14px 6px 6px; box-shadow: 0 0 0 2px #c4a878, inset 0 0 0 4px rgba(255, 255, 255, .5), 0 3px 6px rgba(0, 0, 0, .35); padding: 6px 6px 8px; }
@@ -564,113 +563,111 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 .fig b { white-space: nowrap; font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 
 /* 11/22 铃兰式人物页 v2 */
-.lor.lorp { position: relative; overflow: visible; padding-left: 0; }
-.lorp .hport { flex: 0 0 38%; min-height: 0; overflow: visible; -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent); }
-.lorp .hport img { left: -14%; top: -12%; width: 128%; height: 124%; object-fit: cover; object-position: top center; filter: drop-shadow(4px 4px 0 rgba(0,0,0,.25)); }
-.hhead { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 6px 10px; background: rgba(255, 240, 210, .07); border: 1px solid rgba(200, 160, 90, .35); }
-.hhead .hmini canvas { height: 44px; } .hlv b { font-size: 18px; color: #f0e0c0; font-weight: 400; } .hxp { height: 6px; background: #2a2018; border-radius: 3px; overflow: hidden; margin-top: 3px; } .hxp i { display: block; height: 100%; background: linear-gradient(90deg, #8ad04a, #c8f070); }
-.hhead h4 { margin: 0 !important; font-size: 22px !important; color: #f0d890; }
+
+
+
+
+   
+
 .pills { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
 .pills > div { display: flex; justify-content: space-between; align-items: center; padding: 3px 14px 3px 8px; background: linear-gradient(90deg, rgba(255, 240, 210, .12), rgba(255, 240, 210, .04)); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, 0 100%, 6px 50%); font-size: 14px; }
 .pills span { color: #c8b890; white-space: nowrap; display: flex; align-items: center; gap: 4px; } .pills b { font-weight: 400; color: #f0e0c0; }
-.hsk { display: flex; gap: 8px; justify-content: center; padding-top: 4px; border-top: 1px solid rgba(200, 160, 90, .25); }
-.hsi { width: 58px; display: flex; flex-direction: column; align-items: center; gap: 2px; } .hsi > :first-child { width: 44px; height: 44px; border-radius: 50%; box-shadow: 0 0 0 2px var(--tc, #6a5a48); background: rgba(0,0,0,.3); } .hsi small { font-size: 11px; white-space: nowrap; color: #a89878; }
-.hsi.tr::after { display: none; }
-@media (orientation: portrait) { .lorp .hport img { left: 0; top: 0; width: 100%; height: 100%; } .pills > div { font-size: 12px; padding: 2px 10px 2px 6px; } .hsi { width: 48px; } .hsi > :first-child { width: 36px; height: 36px; } }
+
+  
+
+@media (orientation: portrait) {  .pills > div { font-size: 12px; padding: 2px 10px 2px 6px; }   }
 .pills span > * { width: 20px !important; height: 20px !important; flex: none; } .pills > div { padding-top: 2px; padding-bottom: 2px; }
 
 /* 11/22 暂停页合并成一个框：立绘 | 头牌 / 加点 / 属性 / 技能 */
-#pause .lo.lom { grid-template-columns: 1fr !important; } #pause .lom .lor { padding: 10px 14px 10px 0; }
-#pause .lom .hport { flex-basis: 34%; } #pause .lom .lorr { gap: 7px; }
-.hadd { display: flex; flex-direction: column; gap: 0; } .hadd h4 { font-size: 15px !important; margin: 0 0 2px !important; display: flex; align-items: baseline; gap: 6px; } .hadd h4 .pts { margin-left: auto; }
-.hadd .arow { padding: 2px 0; min-height: 0; grid-template-columns: 90px 1fr auto auto 30px; } .hadd .arow small { font-size: 11px !important; color: #9a8a70; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.hadd .arow b { font-size: 15px !important; } .hadd .arow button { height: 24px; min-width: 26px; padding: 0; } .hadd .arow em { font-size: 17px; text-align: right; }
-.hadd .lob { margin-top: 4px; } .hadd .lob .btn { padding: 2px 10px; font-size: 12px; }
-#pause .lom .pills > div { padding-top: 1px; padding-bottom: 1px; font-size: 13px; }
-@media (orientation: portrait) { .hadd .arow { grid-template-columns: 70px 1fr auto auto 24px; } #pause .lom .lor { padding: 8px; } }
-#pause .lom .hport img { left: 50%; top: 0; width: auto; height: 108%; transform: translateX(-50%); object-fit: contain; }
-.hadd h4 small, .hadd .lob .dim { display: none; } .hadd .lob { margin-top: 2px; }
-#pause .lom .pills { gap: 3px 10px; } #pause .lom .hhead { padding: 3px 10px; } #pause .lom .hhead .hmini canvas { height: 36px; } #pause .lom .lorr { gap: 5px; }
-#pause .lom .hsi > :first-child { width: 38px; height: 38px; }
-@media (orientation: portrait) { #pause .lom .hport img { height: 100%; } }
-.hadd h4 .btn { margin-left: auto; padding: 0 10px; font-size: 12px; } .hadd h4 .btn + .pts { margin-left: 10px; }
+ 
+ 
+  
+ 
+  
+ 
+
+
+
+ 
+   
+
+
+ 
 
 /* 11/22 人物页 v3：框加大、立绘放大压进信息栏、加点竖卡、三列短条、大技能圆章 */
-@media (orientation: landscape) { #pause .cbox { width: min(1480px, 96vw); height: min(860px, 94vh); max-height: none; } #pause .cbody { flex: 1 1 auto; } }
-#pause .lom, #pause .lom .lor { height: 100%; } #pause .lom .lor { overflow: visible; padding: 10px 16px 10px 0; }
-#pause .lom .hport { flex: 0 0 40%; margin-right: -6%; z-index: 0; pointer-events: none; -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent), linear-gradient(#000 85%, transparent); -webkit-mask-composite: source-in; mask-image: linear-gradient(#000 88%, transparent); }
-#pause .lom .hport img { left: 50%; top: 2%; height: 100%; width: auto; transform: translateX(-50%); }
-#pause .lom .lorr { position: relative; z-index: 1; gap: 12px; overflow-y: auto; }
-.hhead { grid-template-columns: auto auto 1fr auto; background: rgba(60, 40, 22, .85); border-color: #c8a060; }
-.hbadge { width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(#f0cc70, #b88a30); color: #2a1a08; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; box-shadow: 0 0 0 2px #fff0c0; }
-.hxp { height: 10px !important; border-radius: 5px !important; } .hlv small { font-size: 12px; color: #c8b890; } #pause .lom .hhead h4 { font-size: 28px !important; }
-.hadd { display: grid !important; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px !important; }
-.hadd h4 { grid-column: 1 / -1; font-size: 17px !important; } .hadd .pts { background: #c8a060; color: #2a1a08; padding: 1px 12px; border-radius: 12px; } .hadd .pts b { color: #2a1a08 !important; }
-.hadd .arow { display: grid !important; grid-template-columns: 1fr 1fr !important; grid-template-areas: "n n" "v v" "m p"; gap: 4px !important; padding: 8px 6px !important; border: 1px solid #6a5030; background: rgba(60, 40, 22, .75); text-align: center; justify-items: center; }
-.hadd .arow > b { grid-area: n; font-size: 15px !important; justify-content: center; } .hadd .arow small { display: none !important; } .hadd .arow em { grid-area: v; font-size: 30px !important; text-align: center !important; font-style: normal; }
-.hadd .arow button:nth-of-type(1) { grid-area: m; width: 100%; } .hadd .arow button:nth-of-type(2) { grid-area: p; width: 100%; } .hadd .arow button { height: 28px !important; }
-#pause .lom .pills { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px; } #pause .lom .pills > div { background: rgba(50, 34, 20, .85); font-size: 15px; padding: 4px 14px 4px 8px; }
-#pause .lom .hsk { gap: 18px; padding-top: 10px; } #pause .lom .hsi { width: 70px; } #pause .lom .hsi > :first-child { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
-.hsi.em > :first-child { box-shadow: none !important; border: 2px dashed #8a6a3a; } .hsi.lk > :first-child { box-shadow: none !important; border: 2px dashed #4a3a28; opacity: .6; font-size: 18px; } .hsi small { font-size: 12px !important; }
-@media (orientation: portrait) { #pause .lom .hport { margin-right: 0; flex: none; height: 200px; } #pause .lom .lorr { overflow: visible; } .hadd .arow em { font-size: 22px !important; } .hadd .arow > b { font-size: 12px !important; } .hadd .arow > b .pi, .hadd .arow > b img { display: none; } #pause .lom .pills { grid-template-columns: 1fr 1fr; } #pause .lom .pills > div { font-size: 12px; } #pause .lom .hsi > :first-child { width: 44px; height: 44px; } #pause .lom .hsi { width: 52px; } #pause .lom .hhead h4 { font-size: 20px !important; } }
+
+ 
+
+
+
+
+
+  
+
+  
+
+  
+  
+ 
+  
+  
+
 .fst canvas { bottom: 31px !important; max-width: 112px; max-height: 64px; height: auto !important; width: auto; } svg.ped { z-index: 1; } .fst canvas { z-index: 2; }
 .fst canvas { height: 62px !important; max-height: none; max-width: 124px; object-fit: contain; }
 .fig.big .fst canvas { height: 76px !important; max-width: 130px; } .fig.big .fst { height: 118px; }
 
 /* 11/22 人物页 v4：立绘光环、压进信息栏、两列属性、技能章放大沉底、经验条底色 */
-#pause .lom .hport { margin-right: -60px; overflow: visible; -webkit-mask-image: none; mask-image: none; }
-#pause .lom .hport::before { content: ''; position: absolute; left: 50%; top: 42%; width: 88%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 220, 140, .22) 0%, rgba(255, 200, 110, .1) 45%, transparent 70%), repeating-conic-gradient(from 0deg, rgba(255, 220, 150, .09) 0 4deg, transparent 4deg 15deg);
-  box-shadow: 0 0 0 2px rgba(230, 190, 110, .25), inset 0 0 0 14px rgba(0,0,0,.08), inset 0 0 0 16px rgba(230, 190, 110, .18); }
-#pause .lom .hport img { z-index: 1; -webkit-mask-image: linear-gradient(#000 85%, transparent); mask-image: linear-gradient(#000 85%, transparent); }
-#pause .lom .lorr { padding-left: 20px; background: linear-gradient(90deg, transparent, rgba(20, 12, 6, .55) 60px); }
-#pause .lom .pills { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; } #pause .lom .pills > div { font-size: 16px; padding: 6px 16px 6px 10px; }
-.hxp { background: linear-gradient(90deg, #4a3a1a, #2a2010) !important; box-shadow: inset 0 0 0 1px rgba(200, 160, 90, .4); }
-#pause .lom .lorr { display: flex; flex-direction: column; } #pause .lom .hsk { margin-top: auto; gap: 26px; padding: 14px 0 6px; }
-#pause .lom .hsi { width: 90px; } #pause .lom .hsi > :first-child { width: 72px; height: 72px; } #pause .lom .hsi > :first-child canvas, #pause .lom .hsi > :first-child img { width: 70% !important; height: auto; }
-#pause .lom .hsi small { margin-top: 4px; padding: 1px 10px; background: rgba(60, 40, 22, .9); border: 1px solid #8a6a3a; border-radius: 9px; font-size: 13px !important; color: #e8dcc2; }
-.hsi.em > :first-child { border-color: #c8a060 !important; border-width: 2px !important; background: rgba(200, 160, 90, .06) !important; } .hsi.lk > :first-child { border-color: #8a6a3a !important; opacity: .8 !important; }
-@media (orientation: portrait) { #pause .lom .hport { margin-right: 0; } #pause .lom .lorr { padding-left: 0; background: none; } #pause .lom .hsi { width: 58px; } #pause .lom .hsi > :first-child { width: 48px; height: 48px; } #pause .lom .pills > div { font-size: 13px; padding: 3px 10px 3px 6px; } #pause .lom .hsk { gap: 8px; } }
+
+
+
+
+ 
+
+ 
+  
+
+ 
+
 
 /* 11/22 人物页 v5：铃兰式头牌、字和图标放大、去光环 */
-#pause .lom .hport::before { display: none; }
-.hhead2 { display: flex; align-items: center; gap: 14px; padding: 8px 16px; background: rgba(60, 40, 22, .7); border: 1px solid rgba(200, 160, 90, .5); }
-.hhead2 .hmini canvas { height: 72px !important; width: auto; image-rendering: pixelated; }
-.hh2r { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.hh2t { display: flex; align-items: baseline; gap: 10px; } .hlvic { color: #e05a3a; font-size: 22px; } .hh2t b { font-size: 34px; font-weight: 500; color: #f0e0c0; line-height: 1; } .hh2t small { font-size: 18px; color: #a89878; }
-.hh2t h4 { margin: 0 0 0 auto !important; font-size: 30px !important; color: #f0d890; }
-.hxp2 { height: 12px; background: #1a2030; border-radius: 6px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); } .hxp2 i { display: block; height: 100%; background: linear-gradient(#b8e070, #7ab838); border-radius: 6px; }
-#pause .lom .pills > div { font-size: 19px; padding: 8px 18px 8px 12px; } #pause .lom .pills span { gap: 8px; } #pause .lom .pills span > * { width: 28px !important; height: 28px !important; }
-.hadd .arow > b { font-size: 18px !important; } .hadd .arow > b .pi, .hadd .arow > b img, .hadd .arow > b canvas { width: 26px !important; height: 26px !important; } .hadd .arow em { font-size: 34px !important; } .hadd h4 { font-size: 19px !important; } .hadd .pts { font-size: 17px; }
-#pause .lom .hsi small { font-size: 15px !important; }
-@media (orientation: portrait) { .hhead2 .hmini canvas { height: 48px !important; } .hh2t b { font-size: 24px; } .hh2t small { font-size: 13px; } .hh2t h4 { font-size: 22px !important; } #pause .lom .pills > div { font-size: 14px; padding: 4px 10px 4px 6px; } #pause .lom .pills span > * { width: 20px !important; height: 20px !important; } .hadd .arow > b { font-size: 13px !important; } .hadd .arow em { font-size: 24px !important; } }
-#pause .lom .pills > div { font-size: 17px; padding: 4px 16px 4px 10px; } #pause .lom .pills span > * { width: 24px !important; height: 24px !important; } .hadd .arow { padding: 5px 6px !important; } .hadd .arow em { font-size: 28px !important; } #pause .lom .hsk { padding-top: 8px; } #pause .lom .lorr { gap: 8px; }
+
+
+
+
+   
+
+ 
+  
+    
+
+
+     
 /* 11/22 人物页 v6：开放式，去掉内层边框，靠留白和淡金分隔线分组 */
-#pause .lom .lor, #pause .lom .lol { box-shadow: none !important; background: none !important; border: 0 !important; }
-#pause .lom .lorr { background: none; }
-#pause .lom .hhead2 { background: none; border: 0; padding: 4px 0 12px; position: relative; }
-#pause .lom .hhead2::after, .hadd::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(220, 180, 100, .55) 20%, rgba(220, 180, 100, .55) 80%, transparent); }
-.hadd { position: relative; padding-bottom: 14px; }
-.hadd .arow { border: 0 !important; background: none !important; }
-.hadd .arow + .arow { box-shadow: -1px 0 0 rgba(220, 180, 100, .18); }
-#pause .lom .pills > div { background: linear-gradient(90deg, rgba(255, 235, 200, .07), rgba(255, 235, 200, .02)) !important; clip-path: none; border-bottom: 1px solid rgba(220, 180, 100, .12); border-radius: 0; }
-#pause .lom .hsk { border-top: 0; position: relative; } #pause .lom .hsk::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(220, 180, 100, .55) 20%, rgba(220, 180, 100, .55) 80%, transparent); }
-#pause .lom .hsi small { border: 0 !important; background: none !important; color: #d8c8a8 !important; }
-#pause .lo.lom { box-shadow: none !important; background: none !important; }
+
+
+
+
+
+
+
+
+ 
+
+
 /* 11/22 人物页 v7：浅色羊皮纸底（跟世界地图同色系），只换这一块；字改深棕 */
-#pause .lo.lom { background: radial-gradient(ellipse at 30% 40%, #f6edd8, #e9dcbc 60%, #dccaa2) !important; box-shadow: inset 0 0 0 1px #b8965c, inset 0 0 40px rgba(120, 80, 30, .18) !important; color: #3a2814; }
-#pause .lom .hport img { -webkit-mask-image: linear-gradient(#000 88%, transparent); mask-image: linear-gradient(#000 88%, transparent); filter: drop-shadow(3px 4px 0 rgba(90, 60, 20, .18)); }
-#pause .lom .hh2t b { color: #3a2814; } #pause .lom .hh2t small { color: #8a7050; } #pause .lom .hh2t h4 { color: #5a3a18 !important; }
-#pause .lom .hxp2 { background: #3a3448; }
-#pause .lom .hadd h4 { color: #5a3a18 !important; } #pause .lom .hadd .arow > b { color: #7a4a18 !important; } #pause .lom .hadd .arow em { color: #3a2814 !important; }
-#pause .lom .hadd .arow + .arow { box-shadow: -1px 0 0 rgba(140, 100, 50, .25); }
-#pause .lom .hadd .arow button:nth-of-type(1) { background: #cdbb98; color: #6a5030; border: 0; }
-#pause .lom .pills > div { background: linear-gradient(90deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, .2)) !important; border-bottom: 1px solid rgba(140, 100, 50, .2); }
-#pause .lom .pills span { color: #6a5030; } #pause .lom .pills b { color: #2a1a0a; font-weight: 500; }
-#pause .lom .hhead2::after, #pause .lom .hadd::after, #pause .lom .hsk::before { background: linear-gradient(90deg, transparent, rgba(150, 105, 45, .6) 20%, rgba(150, 105, 45, .6) 80%, transparent); }
-#pause .lom .hsi small { color: #5a3a18 !important; } #pause .lom .hsi.em > :first-child { border-color: #a8844a !important; background: rgba(255,255,255,.3) !important; } #pause .lom .hsi.lk > :first-child { border-color: #b8a07a !important; background: rgba(0,0,0,.05) !important; }
-#pause .lom .lorr .dim { color: #7a6040; }
-#pause .lom .lorr { padding-bottom: 10px; } #pause .lom .hsk { padding-bottom: 4px; }
+
+
+  
+
+  
+
+
+
+ 
+
+  
+
+ 
 .fst, .fig.big .fst { height: 118px !important; }
 .fst canvas, .fig.big .fst canvas { height: auto !important; max-width: none !important; max-height: none !important; }
 /* 11/22 主视觉 ⑧：男女主 + 哥布林，月夜油画风；人物在左，右边暗处放标题 */
@@ -682,21 +679,21 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 @media (orientation: landscape) and (min-width: 601px) { #title.t2.v8 .tbox { width: 34%; right: 2%; } }
 /* ===== 11/22 羊皮纸主题（备战页 + 暂停页）：深色木框外壳 + 浅色纸面内页，开放式无内框 ===== */
 :root { --pp-ink: #3a2814; --pp-sub: #7a6040; --pp-gold: #a8742a; --pp-line: rgba(150, 105, 45, .45); --pp-good: #3a8a2a; --pp-bad: #b8402a; }
-#prep .panel, #pause .cbody { background: radial-gradient(ellipse at 35% 35%, #f8f0dc, #ecdfc0 60%, #dfcca4) !important; box-shadow: inset 0 0 0 1px #b8965c, inset 0 0 50px rgba(120, 80, 30, .16) !important; color: var(--pp-ink); border-image: none !important; border: 0 !important; }
-#prep .panel h3, #prep .panel h4, #pause .cbody h4 { color: #5a3a18 !important; } #prep .panel h3 small, #prep .panel h4 small, #pause .cbody h4 small, #prep .dim, #pause .cbody .dim, #prep .wdesc small { color: var(--pp-sub) !important; }
-#prep .wdesc, #prep .arow small, #prep .stats, #pause .cbody p { color: var(--pp-ink) !important; } .wsk { color: var(--pp-gold); font-weight: 500; }
-#prep .wsel button, #prep .habits > div, #prep .items > div, #pause .cbody .card { border: 1px solid rgba(150, 105, 45, .35) !important; border-image: none !important; background: rgba(255, 255, 255, .42) !important; color: var(--pp-ink) !important; box-shadow: none !important; border-radius: 6px; }
+#prep .panel{ background: radial-gradient(ellipse at 35% 35%, #f8f0dc, #ecdfc0 60%, #dfcca4) !important; box-shadow: inset 0 0 0 1px #b8965c, inset 0 0 50px rgba(120, 80, 30, .16) !important; color: var(--pp-ink); border-image: none !important; border: 0 !important; }
+#prep .panel h3, #prep .panel h4{ color: #5a3a18 !important; } #prep .panel h3 small, #prep .panel h4 small, #prep .dim, #prep .wdesc small { color: var(--pp-sub) !important; }
+#prep .wdesc, #prep .arow small, #prep .stats{ color: var(--pp-ink) !important; } .wsk { color: var(--pp-gold); font-weight: 500; }
+#prep .wsel button, #prep .habits > div, #prep .items > div{ border: 1px solid rgba(150, 105, 45, .35) !important; border-image: none !important; background: rgba(255, 255, 255, .42) !important; color: var(--pp-ink) !important; box-shadow: none !important; border-radius: 6px; }
 #prep .wsel .on, #prep .habits .on, #prep .items .on { background: #fff4d2 !important; border: 2px solid #d09a38 !important; box-shadow: 0 0 0 3px rgba(230, 170, 60, .25) !important; }
 #prep .habits i, #prep .habits b, #prep .items b { color: var(--pp-ink) !important; } #prep .habits .good, #prep .items small { color: var(--pp-good) !important; } #prep .habits .bad { color: var(--pp-bad) !important; }
 #prep .csel button small { color: var(--pp-good) !important; } #prep .stats b { color: var(--pp-ink) !important; }
 #prep .arow { border-bottom: 1px solid rgba(150, 105, 45, .2) !important; } #prep .arow b { color: #7a4a18 !important; } #prep .arow em { color: var(--pp-ink) !important; }
-#prep .slots > div, #prep .bag > div, #pause .cbody .slots > div, #pause .cbody .bag > div { border-image: none !important; border: 1px dashed rgba(150, 105, 45, .55) !important; background: rgba(255, 255, 255, .35) !important; color: var(--pp-sub) !important; border-radius: 6px; }
-#prep .slots > div.has, #prep .bag > div.has, #pause .cbody .slots > div.has, #pause .cbody .bag > div.has { border-style: solid !important; background: rgba(255, 255, 255, .6) !important; }
-#prep .slots > div.lock, #pause .cbody .slots > div.lock { background: rgba(120, 90, 50, .12) !important; }
-#prep .slot span, #pause .cbody .slot span { color: var(--pp-ink) !important; } #prep .slot u, #pause .cbody .slot u { color: var(--pp-sub); }
-#pause .cbody .lob, #pause .cbody .loinfo, #pause .cbody .cpn { background: rgba(255, 255, 255, .35) !important; box-shadow: none !important; border: 1px solid rgba(150, 105, 45, .25) !important; color: var(--pp-ink) !important; }
-#pause .cbody .lo:not(.lom) .lol, #pause .cbody .lo:not(.lom) .lor { background: none !important; box-shadow: none !important; }
-#pause .lo.lom { background: none !important; box-shadow: none !important; }
+#prep .slots > div, #prep .bag > div{ border-image: none !important; border: 1px dashed rgba(150, 105, 45, .55) !important; background: rgba(255, 255, 255, .35) !important; color: var(--pp-sub) !important; border-radius: 6px; }
+#prep .slots > div.has, #prep .bag > div.has{ border-style: solid !important; background: rgba(255, 255, 255, .6) !important; }
+#prep .slots > div.lock{ background: rgba(120, 90, 50, .12) !important; }
+#prep .slot span{ color: var(--pp-ink) !important; } #prep .slot u{ color: var(--pp-sub); }
+
+
+
 /* 备战页第一栏：立绘 + 像素小人 + 信息 */
 #prep .hstage { flex: 1 1 auto; min-height: 220px; display: flex; gap: 0; position: relative; }
 #prep .pport { flex: 0 0 48%; position: relative; overflow: hidden; } #prep .pport img { position: absolute; left: 50%; top: 0; height: 112%; transform: translateX(-50%); -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
@@ -705,16 +702,16 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #prep .hst { background: rgba(255, 255, 255, .35); border-left-color: var(--pp-gold); } #prep .hst span { color: var(--pp-sub); } #prep .hst b { color: var(--pp-ink); }
 #prep .hslot { background: rgba(255, 255, 255, .35); } #prep .hslot small { color: var(--pp-sub); }
 @media (orientation: portrait) { #prep .hstage { min-height: 200px; } #prep .pport { flex-basis: 45%; } }
-#prep .slots > div.lock::after, #pause .cbody .slots > div.lock::after { content: '🔒'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; opacity: .55; }
-#prep .slots > div.lock, #pause .cbody .slots > div.lock { position: relative; }
+#prep .slots > div.lock::after{ content: '🔒'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; opacity: .55; }
+#prep .slots > div.lock{ position: relative; }
 #prep .stats span { color: var(--pp-sub) !important; } #prep .hslot span { color: var(--pp-ink) !important; }
-#pause .cbody .lo:not(.lom) { display: block; } #pause .cbody .lo:not(.lom) .lol { padding: 14px 24px; }
-#pause .cbody .lo:not(.lom) .slots { max-width: 760px; gap: 14px; } #pause .cbody .lo:not(.lom) .slots > div { min-height: 130px; }
-#pause .cbody .lo:not(.lom) .bag { max-width: 900px; gap: 10px; } #pause .cbody .lo:not(.lom) .bag > div { min-height: 92px; }
-#pause .cbody .lo:not(.lom) h4 { font-size: 22px !important; margin-top: 10px !important; } #pause .cbody .slot span { font-size: 15px !important; }
-#pause .cbody .loinfo { min-height: 120px; font-size: 16px; padding: 12px 16px; }
-@media (orientation: portrait) { #pause .cbody .lo:not(.lom) .slots > div { min-height: 70px; } #pause .cbody .lo:not(.lom) .bag > div { min-height: 60px; } #pause .cbody .lo:not(.lom) .lol { padding: 8px; } }
-#pause .cbody .lo:not(.lom) .bag > div .pi, #pause .cbody .lo:not(.lom) .bag > div canvas { width: 64% !important; height: auto; }
+ 
+ 
+ 
+ 
+
+
+
 /* 11/22 主视觉 ⑨⑩⑪：像素画风男女主（3 张），排法同 ⑧ */
 #title.t2.v9 .tart { background-image: url(../art/title/art9.webp); background-position: 30% 50%; }
 #title.t2.v9 .tart::after { background: linear-gradient(270deg, rgba(6, 10, 18, .65) 0%, rgba(6, 10, 18, .2) 30%, rgba(6, 10, 18, 0) 45%); }
@@ -729,9 +726,9 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #title.t2.v11 .tart::before { left: 44%; top: 4%; } #title.t2.v11 .tbox { left: auto; right: 2%; width: 36%; }
 @media (orientation: portrait), (max-width: 600px) { #title.t2.v11 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v11 .tart::after { background: linear-gradient(180deg, rgba(6,10,18,0) 50%, #070b12 66%); } #title.t2.v11 .tbox { right: 0; width: 100%; } }
 /* 11/22 羊皮纸 v2：半透明纸面，透出后面的地图；标题用宋体衬线，正文黑体 */
-#prep .panel, #pause .cbody { background: radial-gradient(ellipse at 35% 35%, rgba(250, 242, 222, .86), rgba(236, 222, 190, .8) 60%, rgba(222, 204, 164, .74)) !important; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
-#prep .panel h3, #prep .panel h4, #pause .cbody h4, #prep .hinfo h5, .hh2t h4, .hh2t b, .hadd .arow em, #prep .arow em { font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif !important; font-weight: 700 !important; letter-spacing: .04em; }
-#prep .panel, #pause .cbody { font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+#prep .panel{ background: radial-gradient(ellipse at 35% 35%, rgba(250, 242, 222, .86), rgba(236, 222, 190, .8) 60%, rgba(222, 204, 164, .74)) !important; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+#prep .panel h3, #prep .panel h4, #prep .hinfo h5, #prep .arow em { font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif !important; font-weight: 700 !important; letter-spacing: .04em; }
+#prep .panel{ font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
 #prep .panel h3 { font-size: 22px !important; border-bottom: 1px solid var(--pp-line); padding-bottom: 4px; }
 #prep .slots + p, #prep .dim { color: #6a5030 !important; }
 /* 11/22 备战页立绘压进信息栏：立绘铺满整块，信息叠在右侧半透明纸面上 */
@@ -775,8 +772,8 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #title.t2.v12 .tart::after { background: linear-gradient(270deg, rgba(6, 8, 14, .6) 0%, rgba(6, 8, 14, .15) 30%, rgba(6, 8, 14, 0) 45%); }
 #title.t2.v12 .tart::before { left: 44%; top: 4%; } #title.t2.v12 .tbox { left: auto; right: 2%; width: 34%; }
 @media (orientation: portrait), (max-width: 600px) { #title.t2.v12 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v12 .tart::after { background: linear-gradient(180deg, rgba(6,8,14,0) 50%, #06080e 66%); } #title.t2.v12 .tbox { right: 0; width: 100%; } }
-#pause .lom .pills { margin-bottom: 6px; } #pause .lom .hadd { padding-top: 10px; border-top: 0; } #pause .lom .hadd::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(150,105,45,.6) 20%, rgba(150,105,45,.6) 80%, transparent); }
-#pause .lom .hadd h4 { font-size: 0 !important; } #pause .lom .hadd h4 > * { font-size: 15px; } #pause .lom .hadd h4::before { content: "加点"; font-size: 19px; margin-right: auto; } #pause .lom .hsk { padding-bottom: 18px; }
+  
+   
 /* ===== 11/22 选人出发页（铃兰角色详情式），跟暂停页同一套羊皮纸 ===== */
 #prep { padding: 0 !important; }
 .pnew { position: relative; width: min(1500px, 96vw); height: min(860px, 94vh); margin: auto; display: grid; grid-template-columns: 44% 1fr; color: var(--pp-ink);
@@ -839,18 +836,23 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #prep .pnItem > div { display: grid !important; grid-template-columns: 36px 1fr; grid-template-rows: auto auto; column-gap: 8px; } #prep .pnItem > div > :first-child { grid-row: 1 / 3; } #prep .pnItem b { font-size: 14px; } #prep .pnItem small { text-align: left; font-size: 12px; }
 .pnR { gap: 8px; } .pnHead #heroCv { flex-basis: 110px; width: 110px; height: 110px; } .pnWep button > :first-child { width: 68px !important; height: 68px !important; } .skI { padding: 8px 14px; } .skLv { margin-top: 8px; } .pnSec h4 { margin-bottom: 6px; }
 /* 11/22 字体：标题霞鹜文楷（OFL，三国终章同款子集），像素体试用版（xsyz-font=pixel） */
-@font-face { font-family: WenKai; src: url(../art/font/kai.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: WenKai; src: url(../art/font/kai.woff2) format('woff2'); font-display: block; }
 @font-face { font-family: FPixel; src: url(../art/font/fpixel.woff2) format('woff2'); font-display: swap; }
-.pnName h5, .pnSec h4, .skIt b, .pnPick > span, #pause .cbody h4, .hh2t h4, .hh2t b, .hadd .arow em, #pause .lom .hadd h4::before { font-family: WenKai, "Songti SC", "STSong", serif !important; font-weight: 400 !important; }
+.pnName h5, .pnSec h4, .skIt b, .pnPick > span{ font-family: WenKai, "Songti SC", "STSong", serif !important; font-weight: 400 !important; }
 .pnName h5 { font-size: 42px !important; }
-body.fpx .pnew, body.fpx .pnew *, body.fpx #pause .cbody, body.fpx #pause .cbody * { font-family: FPixel, monospace !important; font-weight: 400 !important; -webkit-font-smoothing: none; }
+body.fpx .pnew, body.fpx .pnew *{ font-family: FPixel, monospace !important; font-weight: 400 !important; -webkit-font-smoothing: none; }
 /* 立绘放大往右压（铃兰比例） */
 @media (orientation: landscape) and (min-width: 761px) {
   .pnew { grid-template-columns: 40% 1fr; } .pnL { overflow: visible; z-index: 0; } .pnR { position: relative; z-index: 1; padding-left: 40px; background: linear-gradient(90deg, rgba(242, 232, 206, 0), rgba(242, 232, 206, .78) 60px); }
   .pnL img { height: 135% !important; top: -2% !important; left: 66% !important; -webkit-mask-image: linear-gradient(#000 62%, transparent 74%); mask-image: linear-gradient(#000 62%, transparent 74%); }
 }
 /* 像素字必须是 12 的整数倍才清晰 */
-body.fpx .pnew *, body.fpx #pause .cbody * { font-size: 12px !important; }
+body.fpx .pnew *{ font-size: 12px !important; }
 body.fpx .pnName h5 { font-size: 48px !important; } body.fpx .pnSec h4, body.fpx .skIt b, body.fpx #hInfo .pills > div, body.fpx #hInfo .pills span, body.fpx #hInfo .pills b, body.fpx .skIb p, body.fpx .pnWep button span, body.fpx #hInfo .hperk, body.fpx .pnFoot .btn { font-size: 24px !important; }
-body.fpx #pause .cbody h4, body.fpx #pause .cbody .pills > div, body.fpx #pause .cbody .pills span, body.fpx #pause .cbody .pills b, body.fpx .hh2t h4, body.fpx .hh2t b, body.fpx .hadd .arow em, body.fpx .hadd .arow > b { font-size: 24px !important; }
-body.fpx .hh2t h4 { font-size: 36px !important; } body.fpx .skLv li, body.fpx .pnName span, body.fpx .skIt em { font-size: 12px !important; }
+
+ body.fpx .skLv li, body.fpx .pnName span, body.fpx .skIt em { font-size: 12px !important; }
+/* 11/22 选人页立绘：原图分辨率（不放大超过原图），左边不出框 */
+@media (orientation: landscape) and (min-width: 761px) {
+  .pnL { clip-path: inset(0 -80% 0 0); }
+  .pnL img { height: min(118%, 1000px) !important; top: 0 !important; left: 58% !important; -webkit-mask-image: linear-gradient(#000 70%, transparent 86%); mask-image: linear-gradient(#000 70%, transparent 86%); }
+}

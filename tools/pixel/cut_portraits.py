@@ -21,5 +21,5 @@ for k, (x0, x1) in {'m': (0, 667), 'f': (787, 1536)}.items():
   t = np.clip((mn - 150) / 100, 0, 1) * (sp < 60); al = np.ones(mn.shape); al[bg] = 0; al[near] = 1 - t[near]
   mm = (al > .02) & (al < 1); rgb[mm] = np.clip((rgb[mm] - 255 * (1 - al[mm, None])) / al[mm, None], 0, 255)
   im = Image.fromarray(np.dstack([rgb, al * 255]).astype(np.uint8)); bb = im.getbbox(); im = im.crop((max(0, bb[0] - 20), max(0, bb[1] - 20), min(im.width, bb[2] + 20), im.height))
-  im = im.resize((round(im.width * 900 / im.height), 900), Image.LANCZOS); im.save(f'art/portrait/{k}.webp', quality=90)
+  im.save(f'art/portrait/{k}.webp', quality=90)
   b = Image.new('RGB', im.size, (40, 30, 20)); b.paste(im, (0, 0), im); b.save(f'/home/claude/t/chk_{k}_dark.png')

@@ -105,25 +105,15 @@
     const rs = document.createElement('button'); rs.className = 'btn mini'; rs.textContent = '重置本次加点'; rs.disabled = !used;
     rs.onclick = () => { for (const k in r.tmp) r.pts += r.tmp[k]; r.tmp = {}; B().recompute(); redraw(); }; ft.appendChild(rs);
     ft.insertAdjacentHTML('beforeend', '<span class="dim">本次加的点，离开这一页前都能退</span>');
-    const run = B().run(), hid = run.hero === 'f' ? 'f' : 'm', hname = (DATA.heroes.find(x => x.id === hid) || {}).name || '勇者';
-    Rt.classList.add('lorp');   // 11/22 左边高清立绘（art/portrait/m|f.png，没有就剪影占位），右边属性，标题旁像素小人
-    // 11/22 铃兰式人物页：左边大立绘（出框），右边 头牌（像素小人 + Lv + 经验条 + 名字）/ 两列药丸属性 / 技能栏图标
-    const P2 = (ic, n, v) => `<div><span>${UI.piH(ic, 1)}${n}</span><b>${v}</b></div>`;
-    Rt.innerHTML = `<div class="hport"><img src="art/portrait/${hid}.webp" alt="" onerror="this.remove()"><i>立绘</i></div><div class="lorr">
-      <div class="hhead2"><span class="hmini"></span><div class="hh2r"><div class="hh2t"><span class="hlvic">◆</span><b>Lv ${B().lv()}</b><small>${B().xpTxt ? B().xpTxt() : ''}</small><h4>${hname}</h4></div><div class="hxp2"><i style="width:${Math.max(2, Math.round((B().xpFrac ? B().xpFrac() : 0) * 100))}%"></i></div></div></div>
-      <div class="pills">${P2('hp', '生命', Math.ceil(h.hp) + '/' + h.maxHp)}${P2('move', '移速', pct(c.move - 1) + (hid === 'f' ? ' · 翻滚−20%' : ''))}
-        ${P2('str', '剑·枪·斧', pct(.06 * c.A.str + (c.fx.dmg || 0)))}${P2('agi', '弓', pct(.06 * c.A.agi + (c.fx.dmg || 0)))}
-        ${P2('int', '法杖', pct(.06 * c.A.int + (c.fx.dmg || 0)))}${P2('spd', '出手速度', pct(c.spd - 1))}
-        ${P2('area', '范围', pct(c.area - 1))}${P2('crit', '暴击率', Math.round(c.crit * 100) + '%')}
-        ${P2('guard', '物/魔防', c.pdef + '/' + c.mdef)}${P2('xp', '经验', pct(c.xp - 1))}</div>
-      <div class="hsk"></div>${r.habit ? `<p class="dim">现实习惯：${DATA.habits.find(x => x.id === r.habit).name}</p>` : ''}</div>`;
-    // 11/22 合并成一个框（铃兰式）：左边加点那一栏挪进人物栏，排在头牌下面
-    { const ad = document.createElement('div'); ad.className = 'hadd'; while (L.firstChild) ad.appendChild(L.firstChild); Rt.querySelector('.pills').after(ad); L.remove(); wrap.classList.add('lom');
-      { const lb = ad.querySelector('.lob'), bt = lb && lb.querySelector('button'), h4 = ad.querySelector('h4'); if (bt && h4) { bt.textContent = '重置'; h4.insertBefore(bt, h4.querySelector('.pts')); lb.remove(); } }
-      ad.querySelectorAll('.arow small').forEach(x => { x.parentElement.title = x.textContent; }); }
-    { const cr = SPR.crop(SPR.heroSet(hid, run.weapon), run.weapon + '.idle', 0); if (cr) Rt.querySelector('.hmini').appendChild(cr.c);
-      const hk = Rt.querySelector('.hsk'); r.slots.forEach((s2, k) => { const d = document.createElement('div'); d.className = 'hsi' + (k >= r.open ? ' lk' : s2 ? ' tr t' + SK[s2.id].tier : ' em'); if (k >= r.open) { d.innerHTML = '<div>🔒</div><small>未开</small>'; hk.appendChild(d); return; }
-        if (s2) { d.appendChild(UI.icon(SK[s2.id].icon)); d.insertAdjacentHTML('beforeend', `<small class="tn${SK[s2.id].tier}">${SK[s2.id].name}</small>`); } else d.innerHTML = '<div></div><small>空</small>'; hk.appendChild(d); }); }
+    Rt.innerHTML = `<h4>勇者</h4><div class="stats big">
+      <span>${UI.piH('hp', 1)}生命</span><b>${Math.ceil(h.hp)} / ${h.maxHp}</b>
+      <span>${UI.piH('str', 1)}剑 · 枪 · 斧伤害</span><b>${pct(.06 * c.A.str + (c.fx.dmg || 0))}</b>
+      <span>${UI.piH('agi', 1)}弓伤害</span><b>${pct(.06 * c.A.agi + (c.fx.dmg || 0))}</b>
+      <span>${UI.piH('int', 1)}法杖伤害</span><b>${pct(.06 * c.A.int + (c.fx.dmg || 0))}</b>
+      <span>${UI.piH('spd', 1)}出手速度</span><b>${pct(c.spd - 1)}</b><span>${UI.piH('area', 1)}范围</span><b>${pct(c.area - 1)}</b>
+      <span>${UI.piH('crit', 1)}暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>${UI.piH('guard', 1)}物防</span><b>${c.pdef} <small>(受物理 ×${c.pIn.toFixed(2)})</small></b><span>${UI.piH('guard', 1)}魔防</span><b>${c.mdef} <small>(受法术 ×${c.mIn.toFixed(2)})</small></b>
+      <span>${UI.piH('move', 1)}移速</span><b>${pct(c.move - 1)}</b><span>${UI.piH('xp', 1)}经验</span><b>${pct(c.xp - 1)}</b></div>
+      ${r.habit ? `<p class="dim">现实习惯：${DATA.habits.find(x => x.id === r.habit).name}</p>` : ''}`;
   }
   // 拖动：按住技能格或背包里的东西拖到另一个格子上 = 交换 / 装上（PC 鼠标、手机手指都行）；没拖动就还是点选
   let dragged = false;
