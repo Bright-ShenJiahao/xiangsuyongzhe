@@ -593,15 +593,17 @@
     if (dist(T, hero) < 22 && T.bag && !hero.dead) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`抓到小咕噜！${T.bag} 铜钱掉了出来`); T.bag = 0; T.st = 'run'; T.n = 9; }
   }
   function coinDraw() {
-    for (const o of G.gi) { const x = X(o.x), y = Y(o.y) - (10 + Math.sin(o.t * 3) * 2) * u, bk = o.kind === 'book';
+    for (const o of G.gi) { const x = X(o.x), y = Y(o.y) - 4 * u, bk = o.kind === 'book';
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(0, y - 50 * u, 0, Y(o.y)); g.addColorStop(0, 'rgba(255,220,120,0)'); g.addColorStop(1, bk ? 'rgba(140,200,255,.45)' : 'rgba(255,200,90,.45)'); ctx.fillStyle = g; ctx.fillRect(x - 5 * u, y - 50 * u, 10 * u, Y(o.y) - y + 50 * u); ctx.restore();
-      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x - 6 * u, Y(o.y), 12 * u, 2 * u); ctx.fillStyle = '#1e1008'; ctx.fillRect(x - 7 * u, y - 8 * u, 14 * u, 13 * u);
-      if (bk) { ctx.fillStyle = '#5a2a8a'; ctx.fillRect(x - 6 * u, y - 7 * u, 12 * u, 11 * u); ctx.fillStyle = '#e8d8b0'; ctx.fillRect(x + 4 * u, y - 6 * u, 2 * u, 9 * u); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 2 * u, y - 3 * u, 3 * u, 3 * u); }
+      ctx.fillStyle = 'rgba(30,15,5,.45)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + 2 * u, 9 * u, 3 * u, 0, 0, 7); ctx.fill(); if (!bk) { ctx.fillStyle = '#1e1008'; ctx.fillRect(x - 7 * u, y - 8 * u, 14 * u, 13 * u); }
+      if (bk) { ctx.fillStyle = '#1e1008'; ctx.fillRect(x - 8 * u, y - 2 * u, 16 * u, 9 * u); ctx.fillStyle = '#e8d8b0'; ctx.fillRect(x - 7 * u, y + 3 * u, 14 * u, 3 * u); ctx.fillStyle = '#5a2a8a'; ctx.fillRect(x - 7 * u, y - u, 14 * u, 5 * u); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - u, y, 3 * u, 2 * u); }
       else { ctx.fillStyle = '#8a5a2a'; ctx.fillRect(x - 6 * u, y - 7 * u, 12 * u, 11 * u); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 6 * u, y - 3 * u, 12 * u, 2 * u); ctx.fillRect(x - u, y - 4 * u, 2 * u, 4 * u); } }
-    for (const c of G.gc) { const u0 = u; { const u = u0 * 2; const x = X(c.x), y = Y(c.y) - c.h * u * .2, w = Math.max(1, Math.round(Math.abs(Math.cos(c.t * 5)) * 3)) * u, big = c.v > 2 ? 1 : 0;
-      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x - 3 * u, Y(c.y) + u, 6 * u, u);
-      for (let j = 0; j <= big * 2; j++) { const oy = y - j * 2 * u; ctx.fillStyle = '#5a3208'; ctx.fillRect(x - w - u, oy - 4 * u, 2 * w + 2 * u, 6 * u); ctx.fillStyle = '#e8a830'; ctx.fillRect(x - w, oy - 3 * u, 2 * w, 4 * u); ctx.fillStyle = '#ffe890'; ctx.fillRect(x - w, oy - 3 * u, Math.max(u, w / 2), 2 * u); }
-      if (c.t > 8 && Math.floor(c.t * 4) % 2) { ctx.fillStyle = '#fff'; ctx.fillRect(x + 4 * u, y - 7 * u, u, u); } } }
+    for (const c of G.gc) { const u0 = u; { const u = u0 * 1.6; const x = X(c.x), gy = Y(c.y), air = c.h > 0 || c.vh > 0, y = gy - c.h * u * .4, n = c.v > 2 ? 3 : 1;
+      ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, gy + u, 5 * u, 2 * u, 0, 0, 7); ctx.fill();
+      for (let j = 0; j < n; j++) { const ox = (j - (n - 1) / 2) * 4 * u, oy = y - (j % 2) * u;
+        if (air) { const w = Math.max(1, Math.round(Math.abs(Math.cos(c.t * 12)) * 3)) * u; ctx.fillStyle = '#5a3208'; ctx.fillRect(x + ox - w - u, oy - 7 * u, 2 * w + 2 * u, 7 * u); ctx.fillStyle = '#f0b030'; ctx.fillRect(x + ox - w, oy - 6 * u, 2 * w, 5 * u); }
+        else { ctx.fillStyle = '#5a3208'; ctx.fillRect(x + ox - 4 * u, oy - 2 * u, 8 * u, 4 * u); ctx.fillStyle = '#e8a830'; ctx.fillRect(x + ox - 3 * u, oy - 2 * u, 6 * u, 3 * u); ctx.fillStyle = '#ffe890'; ctx.fillRect(x + ox - 2 * u, oy - 2 * u, 3 * u, u); ctx.fillStyle = '#7a4a10'; ctx.fillRect(x + ox - u, oy - u, 2 * u, u); } }
+      if (c.t > 8 && Math.floor(c.t * 4) % 2) { ctx.fillStyle = '#fff'; ctx.fillRect(x + 4 * u, y - 4 * u, u, u); } } }
     const T = G.thief; if (T) { shadow(T.x, T.y, 16); SPR.draw(ctx, 'goblin', 'walk' + (Math.floor(T.t * 14) % 6), 0, X(T.x), Y(T.y), T.f < 0, u, { k: .6 });
       if (T.bag) { const x = X(T.x), y = Y(T.y) - 30 * u; ctx.fillStyle = '#3a2410'; ctx.fillRect(x - 5 * u, y - 4 * u, 10 * u, 9 * u); ctx.fillStyle = '#b08850'; ctx.fillRect(x - 4 * u, y - 3 * u, 8 * u, 7 * u); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - u, y - 5 * u, 2 * u, 2 * u); } }
   }
