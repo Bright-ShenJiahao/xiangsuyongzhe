@@ -715,3 +715,16 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #pause .cbody .loinfo { min-height: 120px; font-size: 16px; padding: 12px 16px; }
 @media (orientation: portrait) { #pause .cbody .lo:not(.lom) .slots > div { min-height: 70px; } #pause .cbody .lo:not(.lom) .bag > div { min-height: 60px; } #pause .cbody .lo:not(.lom) .lol { padding: 8px; } }
 #pause .cbody .lo:not(.lom) .bag > div .pi, #pause .cbody .lo:not(.lom) .bag > div canvas { width: 64% !important; height: auto; }
+/* 11/22 主视觉 ⑨⑩⑪：像素画风男女主（3 张），排法同 ⑧ */
+#title.t2.v9 .tart { background-image: url(../art/title/art9.webp); background-position: 30% 50%; }
+#title.t2.v9 .tart::after { background: linear-gradient(270deg, rgba(6, 10, 18, .65) 0%, rgba(6, 10, 18, .2) 30%, rgba(6, 10, 18, 0) 45%); }
+#title.t2.v9 .tart::before { left: 44%; top: 4%; } #title.t2.v9 .tbox { left: auto; right: 2%; width: 36%; }
+@media (orientation: portrait), (max-width: 600px) { #title.t2.v9 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v9 .tart::after { background: linear-gradient(180deg, rgba(6,10,18,0) 50%, #070b12 66%); } #title.t2.v9 .tbox { right: 0; width: 100%; } }
+#title.t2.v10 .tart { background-image: url(../art/title/art10.webp); background-position: 30% 50%; }
+#title.t2.v10 .tart::after { background: linear-gradient(270deg, rgba(6, 10, 18, .65) 0%, rgba(6, 10, 18, .2) 30%, rgba(6, 10, 18, 0) 45%); }
+#title.t2.v10 .tart::before { left: 44%; top: 4%; } #title.t2.v10 .tbox { left: auto; right: 2%; width: 36%; }
+@media (orientation: portrait), (max-width: 600px) { #title.t2.v10 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v10 .tart::after { background: linear-gradient(180deg, rgba(6,10,18,0) 50%, #070b12 66%); } #title.t2.v10 .tbox { right: 0; width: 100%; } }
+#title.t2.v11 .tart { background-image: url(../art/title/art11.webp); background-position: 30% 50%; }
+#title.t2.v11 .tart::after { background: linear-gradient(270deg, rgba(6, 10, 18, .65) 0%, rgba(6, 10, 18, .2) 30%, rgba(6, 10, 18, 0) 45%); }
+#title.t2.v11 .tart::before { left: 44%; top: 4%; } #title.t2.v11 .tbox { left: auto; right: 2%; width: 36%; }
+@media (orientation: portrait), (max-width: 600px) { #title.t2.v11 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v11 .tart::after { background: linear-gradient(180deg, rgba(6,10,18,0) 50%, #070b12 66%); } #title.t2.v11 .tbox { right: 0; width: 100%; } }
