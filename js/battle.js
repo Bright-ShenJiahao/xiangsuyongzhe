@@ -152,8 +152,8 @@
     z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; G.wk++; G.combo = (G.combo || 0) + 1; G.comboT = 3; G.maxCombo = Math.max(G.maxCombo || 0, G.combo);
     { const E = DATA.econ, v = z.tier === 'elite' ? E.elite : z.tier === 'mini' ? E.mini : Math.random() < 1 / E.perKills ? 1 : 0;   // 11/23 铜钱掉在地上，要走过去捡
       if (v && !z.T.boss) G.gc.push({ x: z.x, y: z.y, v, t: 0, h: 0, vh: 90, vx: R(-20, 20) * K }); }
-    if (z.tier === 'elite') { G.wElite++; G.drops.push({ kind: 'book' }); }   // 固定精英掉书，路线精英掉宝物
-    if (z.tier === 'mini') { G.wMini++; G.drops.push({ kind: 'item' }); }
+    if (z.tier === 'elite') { G.wElite++; G.gi.push({ kind: 'book', x: z.x, y: z.y, t: 0 }); }   // 固定精英掉书，路线精英掉宝物
+    if (z.tier === 'mini') { G.wMini++; G.gi.push({ kind: 'item', x: z.x, y: z.y, t: 0 }); }
     for (let i = 0; i < 7; i++) parts.push({ x: z.x, y: z.y - 10 * K, vx: R(-45, 45) * K, vy: R(-70, -10) * K, t: 0, T: R(.4, .8), col: ['#8fd14a', '#5a8a2a', '#e8e0c8', '#c49a5c'][i % 4], g: 200 * K, sz: i < 3 ? 2 : 1 });
     if (z.T.boss) { G.shake = .5; banner('击败 哥布林王！', 3); G.winT = 2.2; for (const o of foes) if (!o.dead && o !== z) kill(o); return; }
   }
@@ -317,7 +317,7 @@
   function nextWave() {   // 进下一站（第 1 段）；站打完 → 路线卡
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();
-    G.wi = -1; Object.assign(G, { wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gc: [], thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
+    G.wi = -1; Object.assign(G, { wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
     nextPhase(); banner(G.W.boss ? '首领战！' : `第 ${G.st} 站`, 1.6); G.paused = false;
   }
   // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
@@ -337,7 +337,7 @@
   const PRI = [['pbook', '技能书', '#8ad0ff', 'bk_wand'], ['xiu', '修炼', '#b98aff', 'xp'], ['pcoin', '40 铜钱', '#ffd860', 'coin']].map(([k, n, c, ic]) => { const im = new Image(); im.src = 'art/ui2/' + ic + '.png'; return { k, n, c, im }; });
   function princess() {
     RUN.metP = true; const a = hero.f || 1, px = hero.x + 70 * K * a, py = hero.y - 10 * K;
-    for (const z of foes) if (!z.dead && !z.T.boss && Math.hypot(z.x - px, z.y - py) < 150 * K) { z.flee = true; z.fleeT = 0; }   // 公主施法一道光：附近的怪被吓跑淡出
+    for (const z of foes) if (!z.dead && !z.T.boss) { z.flee = true; z.fleeT = 0; } G.q = []; warns.length = 0; if (G.thief) { G.thief.st = 'run'; G.thief.n = 9; }   // 11/23 公主施法：场上所有小怪都被吓跑，小咕噜也溜   // 公主施法一道光：附近的怪被吓跑淡出
         G.pr = { t: 0, T: 5.5, x: px, y: py, orbs: PRI.map((o, i) => Object.assign({ x: px + (i - 1) * 46 * K, y: py + 38 * K }, o)), done: null };
     for (let k = 0; k < 30; k++) { const an = R(0, PI * 2); parts.push({ x: px, y: py - 20 * K, vx: Math.cos(an) * R(20, 70) * K, vy: Math.sin(an) * R(20, 70) * K - 30 * K, t: 0, T: R(.5, 1), col: ['#e6d4ff', '#b98aff', '#fff'][k % 3], g: 0 }); }
   }
@@ -401,7 +401,7 @@
     G.paused = true; foes = foes.filter(z => !z.flee); if (hero.cs) { if (hero.cs.ph === 'hold') SK.chEnd(); hero.cs = null; } SK.reset(); const E = DATA.econ, fx = hero.fx, cl = G.cleared && !G.timeout;
     const cw = Math.round((E.waveCoin[0] + E.waveCoin[1] * (G.st - 1) + (cl ? E.clear : 0) + (fx.waveCoin || 0)) * (1 + (fx.coinMul || 0)) * (G.route === 'elite' ? 1.5 : 1) * (RUN.coinBoost ? 1.5 : 1));
     { const left = G.gc.reduce((a, c) => a + c.v, 0) + (G.thief ? G.thief.bag : 0), st = Math.round(left * .2);   // 站末：地上没捡的铜钱帮你收回，咕噜顺走 20%
-      if (left) { RUN.coins += Math.round((left - st) * cMul()); UI.feed(st ? `地上还剩 ${left} 铜钱，帮你捡了回来……被小咕噜顺走了 ${st}` : `地上的 ${left} 铜钱帮你捡了回来`); } G.gc = []; G.thief = null;
+      if (left) { RUN.coins += Math.round((left - st) * cMul()); UI.feed(st ? `地上还剩 ${left} 铜钱，帮你捡了回来……被小咕噜顺走了 ${st}` : `地上的 ${left} 铜钱帮你捡了回来`); } G.gc = []; G.thief = null; for (const o of G.gi) G.drops.push({ kind: o.kind }); G.gi = [];
       const cb = Math.floor((G.maxCombo || 0) / 10) * 2; if (cb) { RUN.coins += cb; UI.feed(`最高连击 ${G.maxCombo}，奖励 ${cb} 铜钱`); } G.maxCombo = 0; }
     RUN.coins += cw; if (RUN.coinBoost && G.wi === STN().waves.length - 1) RUN.coinBoost = 0;
     const xp0 = G.xp, lv0 = G.lv; addXp(E.waveXp + G.st + Math.floor(G.wk / E.xpPerKills) + G.wElite * E.xpElite + G.wMini * E.xpMini + (cl ? E.xpClear : 0));
@@ -579,6 +579,10 @@
       const d = dist(c, hero); if (c.t > .35 && d < mag && !hero.dead) { const k = Math.min(1, dt * (6 + 300 / Math.max(d, 5))); c.x += (hero.x - c.x) * k; c.y += (hero.y - c.y) * k; }
       if (c.t > .35 && d < 9) { c.got = 1; G.cf += c.v * cMul(); const n = Math.floor(G.cf); G.cf -= n; RUN.coins += n; parts.push({ x: hero.x, y: hero.y - 30 * K, vx: 0, vy: -40 * K, t: 0, T: .3, col: '#ffe08a', g: 0 }); } }
     G.gc = G.gc.filter(c => !c.got);
+    for (const o of G.gi) { o.t += dt; if (o.t > .4 && dist(o, hero) < 14 && !hero.dead) { o.got = 1;   // 11/23 书 / 宝物也要走过去捡
+      if (o.kind === 'book') { const id = randBook(); if (id) { CAMP.learn({ kind: 'book', id }, true); UI.feed(`捡到一本「${DATA.skills[id].name}」，请按下 P 键看看`); } else { RUN.coins += 30; UI.feed('捡到 30 铜钱'); } }
+      else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; CAMP.learn({ kind: 'item', id: it.id }, true); UI.feed(`捡到宝物「${it.name}」，请按下 P 键看看`); } } }
+    G.gi = G.gi.filter(o => !o.got);
     let T = G.thief;
     if (!T && !G.fe && G.gc.some(c => c.t > 10)) { const p = edgeSpawn(); T = G.thief = { x: p.x, y: p.y, ex: p.x, ey: p.y, bag: 0, n: 0, st: 'go', t: 0, f: 1 }; UI.feed('一只小咕噜溜进来偷钱了！'); }
     if (!T) return; T.t += dt;
@@ -589,6 +593,11 @@
     if (dist(T, hero) < 22 && T.bag && !hero.dead) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`抓到小咕噜！${T.bag} 铜钱掉了出来`); T.bag = 0; T.st = 'run'; T.n = 9; }
   }
   function coinDraw() {
+    for (const o of G.gi) { const x = X(o.x), y = Y(o.y) - (10 + Math.sin(o.t * 3) * 2) * u, bk = o.kind === 'book';
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(0, y - 50 * u, 0, Y(o.y)); g.addColorStop(0, 'rgba(255,220,120,0)'); g.addColorStop(1, bk ? 'rgba(140,200,255,.45)' : 'rgba(255,200,90,.45)'); ctx.fillStyle = g; ctx.fillRect(x - 5 * u, y - 50 * u, 10 * u, Y(o.y) - y + 50 * u); ctx.restore();
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x - 6 * u, Y(o.y), 12 * u, 2 * u); ctx.fillStyle = '#1e1008'; ctx.fillRect(x - 7 * u, y - 8 * u, 14 * u, 13 * u);
+      if (bk) { ctx.fillStyle = '#5a2a8a'; ctx.fillRect(x - 6 * u, y - 7 * u, 12 * u, 11 * u); ctx.fillStyle = '#e8d8b0'; ctx.fillRect(x + 4 * u, y - 6 * u, 2 * u, 9 * u); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 2 * u, y - 3 * u, 3 * u, 3 * u); }
+      else { ctx.fillStyle = '#8a5a2a'; ctx.fillRect(x - 6 * u, y - 7 * u, 12 * u, 11 * u); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 6 * u, y - 3 * u, 12 * u, 2 * u); ctx.fillRect(x - u, y - 4 * u, 2 * u, 4 * u); } }
     for (const c of G.gc) { const u0 = u; { const u = u0 * 2; const x = X(c.x), y = Y(c.y) - c.h * u * .2, w = Math.max(1, Math.round(Math.abs(Math.cos(c.t * 5)) * 3)) * u, big = c.v > 2 ? 1 : 0;
       ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x - 3 * u, Y(c.y) + u, 6 * u, u);
       for (let j = 0; j <= big * 2; j++) { const oy = y - j * 2 * u; ctx.fillStyle = '#5a3208'; ctx.fillRect(x - w - u, oy - 4 * u, 2 * w + 2 * u, 6 * u); ctx.fillStyle = '#e8a830'; ctx.fillRect(x - w, oy - 3 * u, 2 * w, 4 * u); ctx.fillStyle = '#ffe890'; ctx.fillRect(x - w, oy - 3 * u, Math.max(u, w / 2), 2 * u); }
@@ -804,10 +813,10 @@
   window.BATTLE = {
     init, start, frame, fit, roll,
     pause(v) { if (G && !G.over) G.paused = v; }, get paused() { return !!(G && G.paused); }, active: () => !!G && !G.over,
-    stop() { G = null; },
+    stop() { G = null; }, g: () => G,
     run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1, xpFrac: () => G ? Math.min(1, G.xp / need()) : 0, xpTxt: () => G ? `${Math.floor(G.xp)} / ${need()}` : '', st: () => G ? G.st : 1,
     skillInfo: sk => { const S = DATA.skills[sk.id], L = profL(sk), T = G ? skillT(S, sk) : { wu: S.wu, rc: S.rc }; return { dmg: G ? skillDmg(S, sk) : S.dmg, wu: T.wu, rc: T.rc, cd: T.wu + T.rc + (S.hold || 0), L, xp: sk.xp || 0, next: DATA.prof[L] || null }; }, profL,
-    debug: { tp(fx, fy) { hero.x = MAPW * fx; hero.y = MAPH * fy; cam.snap = true; }, coin() { for (let i = 0; i < 6; i++) G.gc.push({ x: hero.x + R(60, 120) * K, y: hero.y + R(-20, 20) * K, v: 2, t: 11, h: 0, vh: 0, vx: 0 }); },   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）
+    debug: { tp(fx, fy) { hero.x = MAPW * fx; hero.y = MAPH * fy; cam.snap = true; }, book() { G.gi.push({ kind: 'book', x: hero.x + 30 * K, y: hero.y, t: 0 }, { kind: 'item', x: hero.x + 9 * K, y: hero.y, t: 0 }); }, coin() { for (let i = 0; i < 6; i++) G.gc.push({ x: hero.x + R(60, 120) * K, y: hero.y + R(-20, 20) * K, v: 2, t: 11, h: 0, vh: 0, vx: 0 }); },   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）
       // 本段胜利：清场，进下一段（第 1 站第 2 段之后会触发公主）；已经是最后一段就结算这一站
       wave: () => { if (!G || G.endT != null || !G.waveOn || G.pr) return; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z));
         if (G.wi < STN().waves.length - 1 && !STN().waves[G.wi + 1].boss) { G.wt = G.T; return; } G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; },
