@@ -232,7 +232,7 @@ body.touch .tip { bottom: calc(66px + env(safe-area-inset-bottom)); }
 
 /* ---------- 主界面 v2：像素水墨（照三国终章：插画铺满、右侧宣纸留白放书法标题） ---------- */
 #title { background: #efd8be; }
-.tart { inset: 0; background: url(../art/title/art.png) 0 50% / cover no-repeat; image-rendering: pixelated; }
+.tart { inset: 0; background: #0b1024; }
 .tart::after { background: none; }
 .tbox { width: 36%; right: 2%; gap: 10px; padding-bottom: 2vh; }
 .logo { line-height: 0; } .logo img { height: min(52vh, 30vw); image-rendering: pixelated; }
@@ -424,7 +424,7 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 /* ===== 11/22 新主界面（月圆之夜的月夜 + 歧路旅人的水彩旧地图）：#title.t2 ===== */
 .logo .lg2 { display: none; }
 #title.t2 { background: #0d1626; }
-#title.t2 .tart { inset: 0; background: url(../art/title/art10.webp) 62% 50% / cover no-repeat; image-rendering: auto; }
+#title.t2 .tart { inset: 0; background: url(../art/title/art13.webp) 30% 50% / cover no-repeat; image-rendering: auto; }
 #title.t2 .tart::after { content: ""; background: linear-gradient(90deg, rgba(8, 14, 28, .78) 0%, rgba(8, 14, 28, .45) 28%, rgba(8, 14, 28, 0) 48%); }
 #title.t2 .tart::before { content: ""; position: absolute; left: 66%; top: 8%; width: 22vw; height: 22vw; border-radius: 50%; background: radial-gradient(rgba(220, 235, 255, .35), transparent 65%); animation: moonG 4s ease-in-out infinite; pointer-events: none; }
 @keyframes moonG { 50% { opacity: .35; } }
@@ -446,15 +446,7 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 }
 
 /* 11/22 主视觉 3 / 4：右边空，标题放右边 */
-#title.t2.v3 .tart, #title.t2.v4 .tart { background-image: url(../art/title/art3.webp); background-position: 30% 50%; }
-#title.t2.v4 .tart { background-image: url(../art/title/art4.webp); }
-#title.t2.v3 .tart::after, #title.t2.v4 .tart::after { background: linear-gradient(270deg, rgba(8, 14, 28, .6) 0%, rgba(8, 14, 28, .2) 30%, rgba(8, 14, 28, 0) 45%); }
-#title.t2.v3 .tart::before { left: 45%; top: 4%; } #title.t2.v4 .tart::before { left: 36%; top: 0; }
-#title.t2.v3 .tbox, #title.t2.v4 .tbox { left: auto; right: 3%; width: 40%; }
 @media (orientation: portrait), (max-width: 600px) {
-  #title.t2.v3 .tart, #title.t2.v4 .tart { background-size: auto 56%; background-position: 32% 6%; }
-  #title.t2.v3 .tart::after, #title.t2.v4 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 28, 0) 50%, #0d1626 66%); }
-  #title.t2.v3 .tbox, #title.t2.v4 .tbox { right: 0; width: 100%; }
 }
 
 /* 11/22 主界面载入条（替代加载页） */
@@ -490,22 +482,9 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 @media (max-width: 600px) { .card .ic { width: 36px; height: 36px; } .card .ic .pi, .cbody > .cards .card .ic .pi { width: 32px !important; height: 32px; } }
 
 /* 11/22 主视觉 5 / 6（动画风第二版，右边空） */
-#title.t2.v5 .tart, #title.t2.v6 .tart { background-image: url(../art/title/art5.webp); background-position: 30% 50%; }
-#title.t2.v6 .tart { background-image: url(../art/title/art6.webp); }
-#title.t2.v5 .tart::after, #title.t2.v6 .tart::after { background: linear-gradient(270deg, rgba(8, 14, 28, .55) 0%, rgba(8, 14, 28, .15) 30%, rgba(8, 14, 28, 0) 45%); }
-#title.t2.v5 .tart::before, #title.t2.v6 .tart::before { left: 48%; top: 2%; }
-#title.t2.v5 .tbox, #title.t2.v6 .tbox { left: auto; right: 3%; width: 40%; }
 @media (orientation: portrait), (max-width: 600px) {
-  #title.t2.v5 .tart, #title.t2.v6 .tart { background-size: auto 56%; background-position: 34% 6%; }
-  #title.t2.v5 .tart::after, #title.t2.v6 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 28, 0) 50%, #0d1626 66%); }
-  #title.t2.v5 .tbox, #title.t2.v6 .tbox { right: 0; width: 100%; }
 }
 
-#title.t2.v7 .tart { background-image: url(../art/title/art7.webp); background-position: 30% 50%; }
-#title.t2.v7 .tart::after { background: linear-gradient(270deg, rgba(8, 14, 28, .6) 0%, rgba(8, 14, 28, .2) 30%, rgba(8, 14, 28, 0) 45%); }
-#title.t2.v7 .tart::before { left: 44%; top: 4%; } #title.t2.v7 .tbox { left: auto; right: 3%; width: 40%; }
-@media (orientation: portrait), (max-width: 600px) { #title.t2.v7 .tart { background-size: auto 56%; background-position: 34% 6%; }
-  #title.t2.v7 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 28, 0) 50%, #0d1626 66%); } #title.t2.v7 .tbox { right: 0; width: 100%; } }
 
 /* 11/22 势力地图：领地染色 + 盾形旗帜 + 关系标签 */
 .wmz { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, var(--fc), transparent); opacity: .34; mix-blend-mode: multiply; pointer-events: none; }
@@ -671,12 +650,6 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 .fst, .fig.big .fst { height: 118px !important; }
 .fst canvas, .fig.big .fst canvas { height: auto !important; max-width: none !important; max-height: none !important; }
 /* 11/22 主视觉 ⑧：男女主 + 哥布林，月夜油画风；人物在左，右边暗处放标题 */
-#title.t2.v8 .tart { background-image: url(../art/title/art8.webp); background-position: 30% 50%; }
-#title.t2.v8 .tart::after { background: linear-gradient(270deg, rgba(8, 14, 40, .7) 0%, rgba(8, 14, 40, .25) 30%, rgba(8, 14, 40, 0) 45%); }
-#title.t2.v8 .tart::before { left: 44%; top: 4%; } #title.t2.v8 .tbox { left: auto; right: 3%; width: 40%; }
-@media (orientation: portrait), (max-width: 600px) { #title.t2.v8 .tart { background-size: auto 56%; background-position: 36% 6%; }
-  #title.t2.v8 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 40, 0) 50%, #0b1230 66%); } #title.t2.v8 .tbox { right: 0; width: 100%; } }
-@media (orientation: landscape) and (min-width: 601px) { #title.t2.v8 .tbox { width: 34%; right: 2%; } }
 /* ===== 11/22 羊皮纸主题（备战页 + 暂停页）：深色木框外壳 + 浅色纸面内页，开放式无内框 ===== */
 :root { --pp-ink: #3a2814; --pp-sub: #7a6040; --pp-gold: #a8742a; --pp-line: rgba(150, 105, 45, .45); --pp-good: #3a8a2a; --pp-bad: #b8402a; }
 #prep .panel{ background: radial-gradient(ellipse at 35% 35%, #f8f0dc, #ecdfc0 60%, #dfcca4) !important; box-shadow: inset 0 0 0 1px #b8965c, inset 0 0 50px rgba(120, 80, 30, .16) !important; color: var(--pp-ink); border-image: none !important; border: 0 !important; }
@@ -713,18 +686,6 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 
 
 /* 11/22 主视觉 ⑨⑩⑪：像素画风男女主（3 张），排法同 ⑧ */
-#title.t2.v9 .tart { background-image: url(../art/title/art9.webp); background-position: 30% 50%; }
-#title.t2.v9 .tart::after { background: linear-gradient(270deg, rgba(6, 10, 18, .65) 0%, rgba(6, 10, 18, .2) 30%, rgba(6, 10, 18, 0) 45%); }
-#title.t2.v9 .tart::before { left: 44%; top: 4%; } #title.t2.v9 .tbox { left: auto; right: 2%; width: 36%; }
-@media (orientation: portrait), (max-width: 600px) { #title.t2.v9 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v9 .tart::after { background: linear-gradient(180deg, rgba(6,10,18,0) 50%, #070b12 66%); } #title.t2.v9 .tbox { right: 0; width: 100%; } }
-#title.t2.v10 .tart { background-image: url(../art/title/art10.webp); background-position: 30% 50%; }
-#title.t2.v10 .tart::after { background: linear-gradient(270deg, rgba(6, 10, 18, .65) 0%, rgba(6, 10, 18, .2) 30%, rgba(6, 10, 18, 0) 45%); }
-#title.t2.v10 .tart::before { left: 44%; top: 4%; } #title.t2.v10 .tbox { left: auto; right: 2%; width: 36%; }
-@media (orientation: portrait), (max-width: 600px) { #title.t2.v10 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v10 .tart::after { background: linear-gradient(180deg, rgba(6,10,18,0) 50%, #070b12 66%); } #title.t2.v10 .tbox { right: 0; width: 100%; } }
-#title.t2.v11 .tart { background-image: url(../art/title/art11.webp); background-position: 30% 50%; }
-#title.t2.v11 .tart::after { background: linear-gradient(270deg, rgba(6, 10, 18, .65) 0%, rgba(6, 10, 18, .2) 30%, rgba(6, 10, 18, 0) 45%); }
-#title.t2.v11 .tart::before { left: 44%; top: 4%; } #title.t2.v11 .tbox { left: auto; right: 2%; width: 36%; }
-@media (orientation: portrait), (max-width: 600px) { #title.t2.v11 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v11 .tart::after { background: linear-gradient(180deg, rgba(6,10,18,0) 50%, #070b12 66%); } #title.t2.v11 .tbox { right: 0; width: 100%; } }
 /* 11/22 羊皮纸 v2：半透明纸面，透出后面的地图；标题用宋体衬线，正文黑体 */
 #prep .panel{ background: radial-gradient(ellipse at 35% 35%, rgba(250, 242, 222, .86), rgba(236, 222, 190, .8) 60%, rgba(222, 204, 164, .74)) !important; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
 #prep .panel h3, #prep .panel h4, #prep .hinfo h5, #prep .arow em { font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif !important; font-weight: 700 !important; letter-spacing: .04em; }
@@ -768,10 +729,6 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
   #prep .pc[data-t=w] .wsel.csel button { flex-direction: column; } #prep .pc[data-t=w] .csel button canvas { height: 34px; }
 }
 /* 11/22 主视觉 ⑫：古典油画写实 */
-#title.t2.v12 .tart { background-image: url(../art/title/art12.webp); background-position: 30% 50%; }
-#title.t2.v12 .tart::after { background: linear-gradient(270deg, rgba(6, 8, 14, .6) 0%, rgba(6, 8, 14, .15) 30%, rgba(6, 8, 14, 0) 45%); }
-#title.t2.v12 .tart::before { left: 44%; top: 4%; } #title.t2.v12 .tbox { left: auto; right: 2%; width: 34%; }
-@media (orientation: portrait), (max-width: 600px) { #title.t2.v12 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v12 .tart::after { background: linear-gradient(180deg, rgba(6,8,14,0) 50%, #06080e 66%); } #title.t2.v12 .tbox { right: 0; width: 100%; } }
   
    
 /* ===== 11/22 选人出发页（铃兰角色详情式），跟暂停页同一套羊皮纸 ===== */
