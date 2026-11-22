@@ -838,3 +838,6 @@ body.fpx .pnName h5 { font-size: 48px !important; } body.fpx .pnSec h4, body.fpx
 #title .tart { position: absolute; }
 #title.t2 .tart::before { display: none !important; }   /* 11/22 旧主图的假月光圈，位置不对，月光改由 titlefx 画 */
 .skic { object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+/* 11/22 技能图标：深色方底 + 金边（三国终章式），不再用圆形裁切 */
+img.skic { box-sizing: border-box; padding: 6%; border-radius: 6px; background: radial-gradient(ellipse at 50% 40%, #2a3550 0%, #141a2a 70%, #0c0f18 100%); box-shadow: inset 0 0 0 2px #c9a24a, inset 0 0 0 3px #3a2a10, inset 0 0 12px rgba(0,0,0,.8); object-fit: contain; filter: none; }
+.skIc > img.skic { width: 76px !important; height: 76px !important; border-radius: 8px !important; box-shadow: inset 0 0 0 2px #e0b24a, inset 0 0 0 3px #3a2a10, 0 2px 6px rgba(0,0,0,.35) !important; }
