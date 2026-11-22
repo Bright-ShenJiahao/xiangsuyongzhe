@@ -672,3 +672,4 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #pause .lom .lorr .dim { color: #7a6040; }
 #pause .lom .lorr { padding-bottom: 10px; } #pause .lom .hsk { padding-bottom: 4px; }
 .fst, .fig.big .fst { height: 118px !important; }
+.fst canvas, .fig.big .fst canvas { height: auto !important; max-width: none !important; max-height: none !important; }

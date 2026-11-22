@@ -49,7 +49,8 @@
       const anims = [];
       const add = (set, names, name, note, tier, lab, figK) => { const e = document.createElement('div'); e.className = 'fig ' + tier; const st = document.createElement('div'); st.className = 'fst';
         const fr = FIG[figK] && FIG[figK].every(x => x.c.complete) ? FIG[figK] : names.map(n => Array.isArray(n) ? SPR.crop(set, n[0], n[1]) : SPR.crop(set, n)).filter(Boolean); if (fr === FIG[figK]) e.classList.add('big');
-        if (fr.length) { const W = 2 * Math.ceil(Math.max(...fr.map(f => Math.max(f.f.ax, (f.c.naturalWidth || f.c.width) - f.f.ax)))), H = Math.max(...fr.map(f => f.c.height)), c = document.createElement('canvas'); c.width = W; c.height = H; st.appendChild(c); anims.push({ c, fr, i: 0 }); }
+        if (fr.length) { const W = 2 * Math.ceil(Math.max(...fr.map(f => Math.max(f.f.ax, (f.c.naturalWidth || f.c.width) - f.f.ax)))), H = Math.max(...fr.map(f => f.c.height)), c = document.createElement('canvas'); c.width = W; c.height = H; { const k = fr === FIG[figK] ? 1.1 : 1.6, sc = Math.min(k, 80 / H, 124 / W); c.style.height = Math.round(H * sc) + 'px'; c.style.width = Math.round(W * sc) + 'px'; }   // 统一倍率，保留怪物本身大小差别
+          st.appendChild(c); anims.push({ c, fr, i: 0 }); }
         st.insertAdjacentHTML('beforeend', ped(tier, lab)); e.appendChild(st); e.insertAdjacentHTML('beforeend', `<b>${name}</b><small>${note}</small>`); d.appendChild(e); };
       const draw = a => { const g = a.c.getContext('2d'), f = a.fr[a.i % a.fr.length]; g.clearRect(0, 0, a.c.width, a.c.height); g.drawImage(f.c, Math.round(a.c.width / 2 - f.f.ax), a.c.height - f.c.height); };   // 按脚底锚点对齐底座中心
       for (const h of DATA.heroes) { const n = SPR.count(SPR.heroSet(h.id, 'sword'), 'sword.idle') || 1; add(SPR.heroSet(h.id, 'sword'), Array.from({ length: Math.max(2, n) }, (_, i) => ['sword.idle', i % n]), h.name, h.perk, 'gold', '勇者', h.id); }
