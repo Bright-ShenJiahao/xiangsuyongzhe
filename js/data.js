@@ -33,6 +33,7 @@ window.DATA = {
   heroes: [
     { id: 'm', name: '男主', from: '中国', desc: '熬夜打游戏的年轻人', perk: '经验 +10%' },
     { id: 'f', name: '女主', from: '日本', desc: '剑道部的高中生', perk: '翻滚冷却 −20%' },
+    { id: 'p', name: '公主', desc: '光之王国的公主露米娜', perk: '法杖伤害 +10%' },
   ],
   habits: [
     { id: 'chips', name: '爱吃薯片', good: '体魄 +1', bad: '力量 −1', line: '手上全是油，剑握不稳。', fx: { con: 1, str: -1 } },
