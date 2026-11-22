@@ -329,15 +329,44 @@
     G.q.sort((a, b) => a.at - b.at);
     if (G.wi > 0) banner(W.ex && W.ex.length ? '强敌来袭！' : '增援！', 1.2);
   }
-  // 第 1 站第 3 段（小头目）开打前：公主露米娜出现，三选一
+  // 第 1 站第 3 段（小头目）开打前：公主露米娜在战场上现身，身前放 3 个光球（书 / 修炼 / 铜钱），走过去碰到哪个拿哪个。不暂停；
+  // 这 5 秒不刷新怪，捡完或时间到小头目入场（没捡默认给书）。11/22 用户定 A 方案
+  const PRI = [['pbook', '技能书', '#8ad0ff', 'bk_wand'], ['xiu', '修炼', '#b98aff', 'xp'], ['pcoin', '40 铜钱', '#ffd860', 'coin']].map(([k, n, c, ic]) => { const im = new Image(); im.src = 'art/ui2/' + ic + '.png'; return { k, n, c, im }; });
   function princess() {
-    G.paused = true; RUN.metP = true;
-    const E = { name: '露米娜', desc: '一道淡紫色的光落在你身边：「勇者，前面有强大的哥布林……请收下这个！」', opts: [['一本技能书', '随机得一本新技能书（技能栏有空位就直接装上）', 'pbook'], ['一次修炼', '这一站打完多一次修炼', 'xiu'], ['一袋铜钱', '铜钱 +40', 'pcoin']] };
-    UI.event(E, i => doEvent(E.opts[i][2]), () => { nextPhase(); G.paused = false; }, '公主出现了');
+    RUN.metP = true; const a = hero.f || 1, px = hero.x + 70 * K * a, py = hero.y - 10 * K;
+    for (const z of foes) if (!z.dead && !z.T.boss) { const d = Math.hypot(z.x - px, z.y - py) || 1; if (d < 200 * K) { const k = (200 * K - d) / d; z.x += (z.x - px) * k * .9; z.y += (z.y - py) * k * .9; } z.cc = { k: 'stun', t: 5.5, T: 5.5 }; }   // 圣光：推开周围的怪并定住
+    G.shake = .25;     G.pr = { t: 0, T: 5.5, x: px, y: py, orbs: PRI.map((o, i) => Object.assign({ x: px + (i - 1) * 46 * K, y: py + 38 * K }, o)), done: null };
+    for (let k = 0; k < 30; k++) { const an = R(0, PI * 2); parts.push({ x: px, y: py - 20 * K, vx: Math.cos(an) * R(20, 70) * K, vy: Math.sin(an) * R(20, 70) * K - 30 * K, t: 0, T: R(.5, 1), col: ['#e6d4ff', '#b98aff', '#fff'][k % 3], g: 0 }); }
   }
+  function princessTick(dt) {
+    const p = G.pr; p.t += dt;
+    if (!p.done) {
+      const hit = p.t > .8 && p.orbs.find(o => Math.hypot(o.x - hero.x, (o.y - hero.y) * YS) < 20 * K);
+      if (hit || p.t >= p.T) { const o = hit || p.orbs[0]; p.done = o; p.t2 = 0; toastMsg(doEvent(o.k)); for (let k = 0; k < 20; k++) { const an = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(an) * 60 * K, vy: Math.sin(an) * 60 * K, t: 0, T: .6, col: o.c, g: 0 }); } }
+    } else if ((p.t2 += dt) > 1.2) { G.pr = null; nextPhase(); }
+  }
+  function princessDraw() {
+    const p = G.pr; if (!p) return; const fade = p.done ? Math.max(0, 1 - p.t2 / 1.2) : Math.min(1, p.t / .6);
+    ctx.save(); ctx.globalAlpha = fade;
+    const gl = ctx.createRadialGradient(X(p.x), Y(p.y) - 20 * u, 0, X(p.x), Y(p.y) - 20 * u, 40 * u); gl.addColorStop(0, 'rgba(220,190,255,.55)'); gl.addColorStop(1, 'rgba(220,190,255,0)'); ctx.fillStyle = gl; ctx.fillRect(X(p.x) - 40 * u, Y(p.y) - 60 * u, 80 * u, 80 * u);
+    SPR.drawHero(ctx, 'idle', Math.floor(G.t * 3) % 2, X(p.x), Y(p.y) - rd(Math.sin(G.t * 2) * 2 * u), p.x > hero.x, u, { w: 'staff', c: 'p' });
+    if (!p.done && p.t < 3.2) {   // 对话气泡
+      const tx = '勇者，收下这个！', fs = Math.round(7 * u); ctx.font = `${fs}px WenKai, Pix, serif`; const w = ctx.measureText(tx).width + 8 * u, bx = X(p.x) - w / 2, by = Y(p.y) - 64 * u;
+      ctx.fillStyle = 'rgba(250,244,230,.95)'; ctx.fillRect(bx, by, w, fs + 6 * u); ctx.fillStyle = '#3a2814'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(tx, X(p.x), by + 3 * u);
+    }
+    for (const o of p.orbs) { if (p.done && p.done !== o) continue; const ox = X(o.x), oy = Y(o.y) - rd((6 + Math.sin(G.t * 3 + o.x) * 3) * u), r = 13 * u;
+      const g2 = ctx.createRadialGradient(ox, oy, 0, ox, oy, r * 1.8); g2.addColorStop(0, o.c + 'cc'); g2.addColorStop(1, o.c + '00'); ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(ox, oy, r * 1.8, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(20,14,30,.75)'; ctx.beginPath(); ctx.arc(ox, oy, r, 0, 7); ctx.fill(); ctx.strokeStyle = o.c; ctx.lineWidth = u; ctx.stroke();
+      if (o.im.complete && o.im.naturalWidth) { const sz = r * 1.4; ctx.drawImage(o.im, ox - sz / 2, oy - sz / 2, sz, sz); }
+      if (!p.done) { ctx.font = `${Math.round(6 * u)}px WenKai, Pix, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#1a1008'; ctx.strokeText(o.n, ox, oy + r + 2 * u); ctx.fillStyle = '#fff3d0'; ctx.fillText(o.n, ox, oy + r + 2 * u); } }
+    if (!p.done) { const left = Math.ceil(p.T - p.t); ctx.font = `${Math.round(6 * u)}px WenKai, Pix, serif`; ctx.fillStyle = '#e6d4ff'; ctx.textAlign = 'center'; ctx.fillText(`走过去拿一个（${left}）`, X(p.x), Y(p.y) + 64 * u); }
+    ctx.restore();
+  }
+
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
   function spawner(dt) {
     if (G.winT != null || !G.waveOn) return;
+    if (G.pr) return princessTick(dt);   // 公主现身期间：不刷怪、不计时
     const alive = foes.filter(z => !z.dead && !z.flee && !z.T.boss);
     if (G.W.boss) {   // 首领波：王出场，旁边零星补哥布林
       if (G.bossT != null && (G.bossT -= dt) <= 0) { G.bossT = null; bossIn(); }
@@ -569,7 +598,7 @@
       else if (o.k === 'harrow') { const a = Math.atan2(o.vy, o.vx); for (let j = 0; j < 9; j++) { ctx.fillStyle = j < 2 ? '#e8ecf4' : j > 6 ? '#e8e0c8' : '#8a5a2a'; ctx.fillRect(X(o.x) - rd(Math.cos(a) * j * 1.6 * u), Y(o.y) - rd(Math.sin(a) * j * 1.6 * u), u + 1, u + 1); } }
       else if (o.k === 'fire') { const p = o.t / o.T, hy = (1 - p) * 120; for (let j = 0; j < 5; j++) { ctx.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; ctx.fillRect(X(o.x) - q / 2 - rd(j * 3 * u * (1 - p)), Y(o.y) - rd((hy + j * 7) * u) - q / 2, q, q); } }
     }
-    SK.drawOver(ctx, X, Y, u);
+    SK.drawOver(ctx, X, Y, u); princessDraw();
     if (G.lvUpT > 0 && !hero.dead) {   // 11/22：升级字跳在勇者头上（跟着人走，弹两下再慢慢淡出）
       const t = 2.2 - G.lvUpT, hop = t < .6 ? Math.abs(Math.sin(t / .6 * PI * 2)) * 10 : 0, a = Math.min(1, G.lvUpT / .5), x = X(hero.x), y = Y(hero.y) - (44 + hop + Math.min(t, .3) * 8) * u;
       ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = `bold ${Math.round(8 * u)}px Pix, monospace`;
