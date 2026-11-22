@@ -497,7 +497,7 @@
       else { const im = img(c.icon); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 15 * u, y - 40 * u, 30 * u, 30 * u); }
       label(c.name, x, y - h - 10 * u, el ? '#ffb070' : rs ? '#9ef0b0' : '#fff3d0'); if (c.sub) label(c.sub, x, y + 2 * u, '#c8b890', 5); ring({ x: d.x, y: d.y }, 10, d.st / .35, '#ffe08a'); }
     for (const o of f.items) { const im = img(o.kind === 'book' ? ({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[DATA.skills[o.id].sys] : o.kind === 'item' ? o.id : o.id), x = X(o.x), y = Y(o.y) - 9 * u - rd((0 * Math.sin(G.t * 3 + o.x) * 2) * u);
-      ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + u, 9 * u, 3 * u, 0, 0, 7); ctx.fill(); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); ring(o, 12, o.st / .6, '#ffe08a', 9); }
+      ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + u, 9 * u, 3 * u, 0, 0, 7); ctx.fill(); if (o.kind === 'book') dspr('book_' + ({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff' })[DATA.skills[o.id].sys], x, Y(o.y) + 2 * u); else if (o.kind === 'use') dspr('meat', x, Y(o.y) + 2 * u); else if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); ring(o, 12, o.st / .6, '#ffe08a', 9); }
     const P = f.pr, px = X(P.x), py = Y(P.y);
     ctx.save(); ctx.globalAlpha = .5 + .15 * Math.sin(G.t * 2); ctx.strokeStyle = '#c8a8ff'; ctx.lineWidth = 2 * u; ctx.setLineDash([4 * u, 4 * u]); ctx.beginPath(); ctx.ellipse(px, py + 30 * u, 62 * u, 62 * u / YS * .9, 0, 0, 7); ctx.stroke(); ctx.fillStyle = 'rgba(200,170,255,.07)'; ctx.fill(); ctx.restore();
     const gl = ctx.createRadialGradient(px, py - 20 * u, 0, px, py - 20 * u, 40 * u); gl.addColorStop(0, 'rgba(220,190,255,.5)'); gl.addColorStop(1, 'rgba(220,190,255,0)'); ctx.fillStyle = gl; ctx.fillRect(px - 40 * u, py - 60 * u, 80 * u, 80 * u);
@@ -589,30 +589,32 @@
       if (o.kind === 'book') { const id = randBook(); if (id) { CAMP.learn({ kind: 'book', id }, true); gotFeed({ kind: 'book' }); } else { RUN.coins += 30; UI.feed('捡到 30 铜钱'); } }
       else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; CAMP.learn({ kind: 'item', id: it.id }, true); gotFeed({ kind: 'item' }); } } }
     G.gi = G.gi.filter(o => !o.got);
-    let T = G.thief;
+    let T = G.thief; if (T) { if (T.grab > 0) { T.grab -= dt; T.t += dt; return; } if (T.hurt > 0) T.hurt -= dt; }
     if (!T && !G.fe && G.gc.some(c => c.t > 10)) { const p = edgeSpawn(); T = G.thief = { x: p.x, y: p.y, ex: p.x, ey: p.y, bag: 0, n: 0, st: 'go', t: 0, f: 1 }; UI.feed('一只小咕噜溜进来偷钱了！'); }
     if (!T) return; T.t += dt;
     let tx = T.ex, ty = T.ey;
-    if (T.st === 'go') { let best = null, bd = 1e9; for (const c of G.gc) if (c.t > 6) { const d = dist(c, T); if (d < bd) { bd = d; best = c; } } if (!best || T.n >= 3) T.st = 'run'; else { tx = best.x; ty = best.y; if (bd < 8) { const s = Math.ceil(best.v * .5); T.bag += s; best.v -= s; T.n++; if (best.v <= 0) G.gc = G.gc.filter(c => c !== best); } } }
+    if (T.st === 'go') { let best = null, bd = 1e9; for (const c of G.gc) if (c.t > 6) { const d = dist(c, T); if (d < bd) { bd = d; best = c; } } if (!best || T.n >= 3) T.st = 'run'; else { tx = best.x; ty = best.y; if (bd < 8) { const s = Math.ceil(best.v * .5); T.bag += s; T.grab = .45; best.v -= s; T.n++; if (best.v <= 0) G.gc = G.gc.filter(c => c !== best); } } }
     const dx = tx - T.x, dy = ty - T.y, dd = Math.hypot(dx, dy) || 1, sp = (T.st === 'run' ? 130 : 105) * K * dt; T.f = dx < 0 ? -1 : 1;
     if (dd <= sp) { T.x = tx; T.y = ty; if (T.st === 'run') { if (T.bag) UI.feed(`小咕噜偷走了 ${T.bag} 铜钱`); G.thief = null; return; } } else { T.x += dx / dd * sp; T.y += dy / dd * sp; }
-    if (dist(T, hero) < 22 && T.bag && !hero.dead) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`抓到小咕噜！${T.bag} 铜钱掉了出来`); T.bag = 0; T.st = 'run'; T.n = 9; }
+    if (dist(T, hero) < 22 && T.bag && !hero.dead) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`抓到小咕噜！${T.bag} 铜钱掉了出来`); T.bag = 0; T.hurt = .4; T.st = 'run'; T.n = 9; }
   }
+  // 11/23 掉落物和小咕噜换成出的像素图（art/drop、art/goblin/gob_thief）
+  const DI = {}; const dimg = n => DI[n] || (DI[n] = Object.assign(new Image(), { src: 'art/drop/' + n + '.png' }));
+  const BKS = ['sword', 'spear', 'bow', 'staff'];
+  function dspr(n, x, yb, k) { const im = dimg(n); if (!im.complete || !im.naturalWidth) return; const w = im.naturalWidth * u * (k || 1), h = im.naturalHeight * u * (k || 1); ctx.imageSmoothingEnabled = false; ctx.drawImage(im, x - w / 2, yb - h, w, h); }
   function coinDraw() {
-    for (const o of G.gi) { const x = X(o.x), y = Y(o.y) - 4 * u, bk = o.kind === 'book';
-      ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(0, y - 50 * u, 0, Y(o.y)); g.addColorStop(0, 'rgba(255,220,120,0)'); g.addColorStop(1, bk ? 'rgba(140,200,255,.45)' : 'rgba(255,200,90,.45)'); ctx.fillStyle = g; ctx.fillRect(x - 5 * u, y - 50 * u, 10 * u, Y(o.y) - y + 50 * u); ctx.restore();
-      ctx.fillStyle = 'rgba(30,15,5,.45)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + 2 * u, 9 * u, 3 * u, 0, 0, 7); ctx.fill(); if (!bk) { ctx.fillStyle = '#1e1008'; ctx.fillRect(x - 7 * u, y - 8 * u, 14 * u, 13 * u); }
-      if (bk) { ctx.fillStyle = '#1e1008'; ctx.fillRect(x - 8 * u, y - 2 * u, 16 * u, 9 * u); ctx.fillStyle = '#e8d8b0'; ctx.fillRect(x - 7 * u, y + 3 * u, 14 * u, 3 * u); ctx.fillStyle = '#5a2a8a'; ctx.fillRect(x - 7 * u, y - u, 14 * u, 5 * u); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - u, y, 3 * u, 2 * u); }
-      else { ctx.fillStyle = '#8a5a2a'; ctx.fillRect(x - 6 * u, y - 7 * u, 12 * u, 11 * u); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 6 * u, y - 3 * u, 12 * u, 2 * u); ctx.fillRect(x - u, y - 4 * u, 2 * u, 4 * u); } }
-    for (const c of G.gc) { const u0 = u; { const u = u0 * 1.6; const x = X(c.x), gy = Y(c.y), air = c.h > 0 || c.vh > 0, y = gy - c.h * u * .4, n = c.v > 2 ? 3 : 1;
-      ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, gy + u, 5 * u, 2 * u, 0, 0, 7); ctx.fill();
-      for (let j = 0; j < n; j++) { const ox = (j - (n - 1) / 2) * 4 * u, oy = y - (j % 2) * u;
-        if (air) { const w = Math.max(1, Math.round(Math.abs(Math.cos(c.t * 12)) * 3)) * u; ctx.fillStyle = '#5a3208'; ctx.fillRect(x + ox - w - u, oy - 7 * u, 2 * w + 2 * u, 7 * u); ctx.fillStyle = '#f0b030'; ctx.fillRect(x + ox - w, oy - 6 * u, 2 * w, 5 * u); }
-        else { ctx.fillStyle = '#5a3208'; ctx.fillRect(x + ox - 4 * u, oy - 2 * u, 8 * u, 4 * u); ctx.fillStyle = '#e8a830'; ctx.fillRect(x + ox - 3 * u, oy - 2 * u, 6 * u, 3 * u); ctx.fillStyle = '#ffe890'; ctx.fillRect(x + ox - 2 * u, oy - 2 * u, 3 * u, u); ctx.fillStyle = '#7a4a10'; ctx.fillRect(x + ox - u, oy - u, 2 * u, u); } }
-      if (c.t > 8 && Math.floor(c.t * 4) % 2) { ctx.fillStyle = '#fff'; ctx.fillRect(x + 4 * u, y - 4 * u, u, u); } } }
-    const T = G.thief; if (T) { shadow(T.x, T.y, 16); SPR.draw(ctx, 'goblin', 'walk' + (Math.floor(T.t * 14) % 6), 0, X(T.x), Y(T.y), T.f < 0, u, { k: .6 });
-      if (T.bag) { const x = X(T.x), y = Y(T.y) - 30 * u; ctx.fillStyle = '#3a2410'; ctx.fillRect(x - 5 * u, y - 4 * u, 10 * u, 9 * u); ctx.fillStyle = '#b08850'; ctx.fillRect(x - 4 * u, y - 3 * u, 8 * u, 7 * u); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - u, y - 5 * u, 2 * u, 2 * u); } }
+    for (const o of G.gi) { const x = X(o.x), gy = Y(o.y), bk = o.kind === 'book'; o.c = o.c || BKS[Math.random() * 4 | 0];
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(0, gy - 54 * u, 0, gy); g.addColorStop(0, 'rgba(255,220,120,0)'); g.addColorStop(1, bk ? 'rgba(140,200,255,.45)' : 'rgba(255,200,90,.45)'); ctx.fillStyle = g; ctx.fillRect(x - 5 * u, gy - 54 * u, 10 * u, 54 * u); ctx.restore();
+      ctx.fillStyle = 'rgba(30,15,5,.45)'; ctx.beginPath(); ctx.ellipse(x, gy + u, 10 * u, 3 * u, 0, 0, 7); ctx.fill(); dspr(bk ? 'book_' + o.c : 'chest', x, gy + 2 * u); }
+    for (const c of G.gc) { const x = X(c.x), gy = Y(c.y), air = c.h > 0 || c.vh > 0, y = gy - c.h * u * .4;
+      ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, gy + u, (c.v > 5 ? 9 : c.v > 2 ? 7 : 5) * u, 2 * u, 0, 0, 7); ctx.fill();
+      if (air) dspr('coin' + (Math.floor(c.t * 14) % 4), x, y + u); else dspr(c.v > 5 ? 'pile2' : c.v > 2 ? 'pile1' : 'coin0', x, gy + u);
+      if (c.t > 8 && Math.floor(c.t * 4) % 2) { ctx.fillStyle = '#fff'; ctx.fillRect(x + 5 * u, y - 10 * u, u, u); } }
+    const T = G.thief; if (T) { shadow(T.x, T.y, 14);
+      const n = T.hurt > 0 ? 'hurt' + (T.hurt > .2 ? 0 : 1) : T.grab > 0 ? 'steal' + Math.min(2, Math.floor((1 - T.grab / .45) * 3)) : (T.st === 'run' && T.bag ? 'flee' : 'walk') + (Math.floor(T.t * 14) % 6);
+      SPR.draw(ctx, 'gob_thief', n, 0, X(T.x), Y(T.y), T.f < 0, u, {}); }
   }
+
   // ---------- 11/23 地图氛围：光柱 / 火光火星 / 落叶 / 萤火虫，位置全部取自地图本身（MAP.amb，原图像素） ----------
   const AMB = { leaves: [], flies: [], sparks: [] };
   // 11/23 照三国终章：火用 8 帧火焰序列图（盖在地图画的火上），落叶用桑叶图，光柱用 shaft 图
