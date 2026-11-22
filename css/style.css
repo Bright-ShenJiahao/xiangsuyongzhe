@@ -775,3 +775,5 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #title.t2.v12 .tart::after { background: linear-gradient(270deg, rgba(6, 8, 14, .6) 0%, rgba(6, 8, 14, .15) 30%, rgba(6, 8, 14, 0) 45%); }
 #title.t2.v12 .tart::before { left: 44%; top: 4%; } #title.t2.v12 .tbox { left: auto; right: 2%; width: 34%; }
 @media (orientation: portrait), (max-width: 600px) { #title.t2.v12 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v12 .tart::after { background: linear-gradient(180deg, rgba(6,8,14,0) 50%, #06080e 66%); } #title.t2.v12 .tbox { right: 0; width: 100%; } }
+#pause .lom .pills { margin-bottom: 6px; } #pause .lom .hadd { padding-top: 10px; border-top: 0; } #pause .lom .hadd::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(150,105,45,.6) 20%, rgba(150,105,45,.6) 80%, transparent); }
+#pause .lom .hadd h4 { font-size: 0 !important; } #pause .lom .hadd h4 > * { font-size: 15px; } #pause .lom .hadd h4::before { content: "加点"; font-size: 19px; margin-right: auto; } #pause .lom .hsk { padding-bottom: 18px; }

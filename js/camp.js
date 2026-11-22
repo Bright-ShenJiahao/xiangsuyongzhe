@@ -118,7 +118,7 @@
         ${P2('guard', '物/魔防', c.pdef + '/' + c.mdef)}${P2('xp', '经验', pct(c.xp - 1))}</div>
       <div class="hsk"></div>${r.habit ? `<p class="dim">现实习惯：${DATA.habits.find(x => x.id === r.habit).name}</p>` : ''}</div>`;
     // 11/22 合并成一个框（铃兰式）：左边加点那一栏挪进人物栏，排在头牌下面
-    { const ad = document.createElement('div'); ad.className = 'hadd'; while (L.firstChild) ad.appendChild(L.firstChild); Rt.querySelector('.hhead2').after(ad); L.remove(); wrap.classList.add('lom');
+    { const ad = document.createElement('div'); ad.className = 'hadd'; while (L.firstChild) ad.appendChild(L.firstChild); Rt.querySelector('.pills').after(ad); L.remove(); wrap.classList.add('lom');
       { const lb = ad.querySelector('.lob'), bt = lb && lb.querySelector('button'), h4 = ad.querySelector('h4'); if (bt && h4) { bt.textContent = '重置'; h4.insertBefore(bt, h4.querySelector('.pts')); lb.remove(); } }
       ad.querySelectorAll('.arow small').forEach(x => { x.parentElement.title = x.textContent; }); }
     { const cr = SPR.crop(SPR.heroSet(hid, run.weapon), run.weapon + '.idle', 0); if (cr) Rt.querySelector('.hmini').appendChild(cr.c);
