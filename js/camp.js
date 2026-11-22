@@ -91,20 +91,13 @@
     const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%', used = Object.values(r.tmp).reduce((s, v) => s + v, 0);
     const wrap = document.createElement('div'); wrap.className = 'lo'; box.appendChild(wrap);
     const L = document.createElement('div'), Rt = document.createElement('div'); L.className = 'lol'; Rt.className = 'lor'; wrap.append(L, Rt);
-    L.innerHTML = `<h4>属性 <small>Lv${B().lv()} · 每升一级得 1 点</small><span class="pts">剩余 <b>${r.pts}</b> 点</span></h4>`;
+    L.innerHTML = `<h4>属性 <small>Lv${B().lv()} · 每升一级得 1 次修炼（结算页「修炼」）</small></h4>`;
     for (const a of DATA.attrs) {
       const tr = r.train[a.id] || 0, al = r.alloc[a.id] || 0, tp = r.tmp[a.id] || 0, row = document.createElement('div'); row.className = 'arow';
       const src = [tr && `修炼+${tr}`, al && `加点+${al}`, tp && `<i>本次+${tp}</i>`].filter(Boolean).join(' · ');
-      row.innerHTML = `<b>${UI.piH(a.id, 1)}${a.name}</b><small>${a.desc}${src ? `<br><span class="src">${src}</span>` : ''}</small><button ${tp ? '' : 'disabled'}>−</button><button ${r.pts ? '' : 'disabled'}>＋</button><em class="${tp ? 'gain' : ''}">${c.A[a.id]}</em>`;
-      const [m, p] = row.querySelectorAll('button');
-      m.onclick = () => { r.tmp[a.id]--; if (!r.tmp[a.id]) delete r.tmp[a.id]; r.pts++; B().recompute(); redraw(); };
-      p.onclick = () => { r.tmp[a.id] = tp + 1; r.pts--; B().recompute(); redraw(); };
+      row.innerHTML = `<b>${UI.piH(a.id, 1)}${a.name}</b><small>${a.desc}${src ? `<br><span class="src">${src}</span>` : ''}</small><em class="${tp ? 'gain' : ''}">${c.A[a.id]}</em>`;
       L.appendChild(row);
     }
-    const ft = document.createElement('div'); ft.className = 'lob row'; L.appendChild(ft);
-    const rs = document.createElement('button'); rs.className = 'btn mini'; rs.textContent = '重置本次加点'; rs.disabled = !used;
-    rs.onclick = () => { for (const k in r.tmp) r.pts += r.tmp[k]; r.tmp = {}; B().recompute(); redraw(); }; ft.appendChild(rs);
-    ft.insertAdjacentHTML('beforeend', '<span class="dim">本次加的点，离开这一页前都能退</span>');
     Rt.innerHTML = `<h4>勇者</h4><div class="stats big">
       <span>${UI.piH('hp', 1)}生命</span><b>${Math.ceil(h.hp)} / ${h.maxHp}</b>
       <span>${UI.piH('str', 1)}剑 · 枪 · 斧伤害</span><b>${pct(.06 * c.A.str + (c.fx.dmg || 0))}</b>
