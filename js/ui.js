@@ -83,7 +83,7 @@
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
       const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.hero = store.get('hero') === 'f' ? 'f' : 'm';
       P.free = {}; P.habitOpts = shuffle(DATA.habits).slice(0, 3).map(h => h.id); P.itemOpts = shuffle(DATA.startItems).slice(0, 3).map(i => i.id);
-      P.habit = null; P.item = P.itemOpts[0];   // 11/22 现实习惯删除：永远不选
+      P.habit = null; P.item = null;   // 11/22 开局宝物删除   // 11/22 现实习惯删除：永远不选
  P.hrr = 0;
     }
     renderPrep(); setTab(P.tab); show('prep');
