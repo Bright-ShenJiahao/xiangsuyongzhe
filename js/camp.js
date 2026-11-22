@@ -13,6 +13,8 @@
     if (!o) return null;
     // 出售：书半价（22 / 34 / 52 → 11 / 17 / 26），宝物拿基价的 35%
     if (o.kind === 'book') { const S = SK[o.id]; return { tier: S.tier, icon: UI.bookOf(o.id), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, brief: S.brief, sell: Math.round(DATA.tierPrice[S.tier] * .5) }; }   // 11/22：书卖掉 = 半价（不管用没用过）
+    if (o.kind === 'oath') { const O = DATA.oaths[o.id], L = Math.min(5, o.lv || 1), ic = document.createElement('span'); ic.className = 'oic' + (O.mv ? ' mv' : ''); ic.textContent = O.ch;
+      return { icon: ic, name: O.name, sub: `${O.mv ? '身法印记' : '誓约印记'} · Lv${L}`, desc: O.d(DATA.oathLv[L - 1]) + (L < 5 ? `<br><small class="off">下一级：${O.d(DATA.oathLv[L])}</small>` : '<br><small class="on">已满级</small>'), sell: 10 + 6 * L }; }
     if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物', desc: it.desc, sell: Math.round((it.price || 25) * DATA.price.sell) }; }
     const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 3 };
   }
@@ -24,11 +26,14 @@
       const has = r.slots.find(s => s && s.id === o.id) || r.bag.find(b => b && b.kind === 'book' && b.id === o.id);
       if (has) { has.lv += o.lv || 1; toast(`${SK[o.id].name} 升到 Lv${has.lv}`); return true; }
     }
+    if (o.kind === 'oath') { const O = DATA.oaths[o.id], has = [...r.oath, ...r.mv, ...r.bag].find(x => x && x.kind === 'oath' && x.id === o.id);
+      if (has) { if (has.lv >= 5) { r.coins += 20; toast(`${O.name} 已满级，换成 20 铜钱`); return true; } has.lv++; B().recompute(); toast(`${O.name} 升到 Lv${has.lv}`); return true; }
+      const A = O.mv ? r.mv : r.oath, j = A.indexOf(null); if (j >= 0) { A[j] = { kind: 'oath', id: o.id, lv: 1, mv: !!O.mv }; B().recompute(); return true; } }
     if (o.kind === 'use') { const c = USE(o.id), h = B().hero(); h.hp = Math.min(h.maxHp, h.hp + h.maxHp * c.heal); toast(`吃掉${c.name}，回复生命`); return true; }
     if (o.kind === 'book') { const j = r.slots.findIndex((s, k) => !s && k < r.open); if (j >= 0) { r.slots[j] = { id: o.id, lv: 1, xp: o.xp || 0 }; toast(`${SK[o.id].name} 自动装上第 ${j + 1} 格` + (r.tipP ? '' : ' · 按 P 调整顺序')); r.tipP = 1; return true; } }   // 技能栏有空位就直接装上
     if (o.kind === 'item') { const g = r.gear.indexOf(null); if (g >= 0) { r.gear[g] = { kind: 'item', id: o.id }; B().recompute(); return true; } }   // 11/23 宝物格有空就直接生效
     const i = r.bag.indexOf(null); if (i < 0) { toast('物品栏满了，先卖掉点东西'); return false; }
-    r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : { kind: o.kind, id: o.id }; if (inFight()) r.bag[i].fresh = 1;
+    r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : o.kind === 'oath' ? { kind: 'oath', id: o.id, lv: 1, mv: !!DATA.oaths[o.id].mv } : { kind: o.kind, id: o.id }; if (inFight()) r.bag[i].fresh = 1;
     return true;
   }
   // 点锁着的技能格：花铜钱解锁（第 4 格第 2 站起 50，第 5 格第 5 站起 78，每站涨 7%；第 4 / 8 站打完也会免费开）
@@ -58,9 +63,9 @@
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
     // 11/23 誓约印记 3 格 + 身法 1 格（同一行）
-    L.insertAdjacentHTML('beforeend', '<h4>誓约印记 <small>被动，同名再得升级；最后一格只放身法印记（即将开放）</small></h4>');
+    L.insertAdjacentHTML('beforeend', '<h4>誓约印记 <small>同名升级 · 最后一格放身法</small></h4>');
     const om = document.createElement('div'); om.className = 'bag oathrow'; L.appendChild(om);
-    const oc = (arr, t, cls, empty) => arr.forEach((o, i) => { const d = document.createElement('div'); d.className = cls + (o ? ' has' : ''); d.innerHTML = o ? `<span>${o.id}</span>` : empty; if (sel && sel.t === t && sel.i === i) d.classList.add('sel'); d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); om.appendChild(d); });
+    const oc = (arr, t, cls, empty) => arr.forEach((o, i) => { const d = document.createElement('div'); d.className = cls + (o ? ' has full' : ''); if (o) { d.appendChild(iconEl(thing(o))); d.insertAdjacentHTML('beforeend', `<b class="lvb">${o.lv}</b>`); } else d.innerHTML = empty; if (sel && sel.t === t && sel.i === i) d.classList.add('sel'); d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); om.appendChild(d); });
     oc(r.oath, 'o', 'oath', ''); om.insertAdjacentHTML('beforeend', '<div class="gap"></div>'); oc(r.mv, 'm', 'mv', '<span>身法</span>');
     const cell = (grid, arr, t) => arr.forEach((o, i) => { const d = document.createElement('div'); const th = thing(o);
       if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); if (o.kind === 'book') { d.appendChild(UI.skIcon(o.id)); d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else d.appendChild(iconEl(th)); if (o.fresh && inFight()) d.insertAdjacentHTML('beforeend', '<em class="nw">新</em>'); }
@@ -76,7 +81,7 @@
   }
   const inFight = () => { const G = B().g && B().g(); return !!(G && !G.fe && !G.over); };
   const ARR0 = (r, q) => q.t === 's' ? r.slots : q.t === 'g' ? r.gear : q.t === 'o' ? r.oath : q.t === 'm' ? r.mv : r.bag;
-  function curOf(q) { const r = R(); if (!q) return null; if (q.t === 's') { const s = r.slots[q.i]; return s && { kind: 'book', id: s.id, lv: s.lv, xp: s.xp || 0, slot: true }; } return (q.t === 'g' ? r.gear : r.bag)[q.i]; }
+  function curOf(q) { const r = R(); if (!q) return null; if (q.t === 's') { const s = r.slots[q.i]; return s && { kind: 'book', id: s.id, lv: s.lv, xp: s.xp || 0, slot: true }; } return ARR0(r, q)[q.i]; }
   function lvTag(s) { const k = B().skillInfo(s); return `<b class="lvb">${k.L}</b><s class="pb${k.next ? '' : ' max'}" style="--p:${k.next ? Math.min(100, k.xp / k.next * 100) : 100}%"></s>`; }
   function popAt(el, fill, box, hover) {
     document.querySelectorAll('.loinfo.pop').forEach(e => e.remove());
@@ -256,7 +261,8 @@
     const lvOf = id => { const h = r.slots.find(s => s && s.id === id) || r.bag.find(b => b && b.kind === 'book' && b.id === id); return h ? h.lv : 0; };
     const own = new Set(Object.keys(SK).filter(id => lvOf(id) || loot.some(o => o.kind === 'book' && o.id === id))), pool = DATA.bookPool(own, rep.st), books = [];   // 已经有的书不再出；按品阶抽，价格 22 / 34 / 52
     while (books.length < 2 && pool.length) { const id = pool[Math.random() * pool.length | 0]; if (!books.some(b => b.id === id)) books.push({ kind: 'book', id, lv: 1, xp: 0, price: DATA.tierPrice[SK[id].tier] }); if (pool.every(i => books.some(b => b.id === i))) break; }
-    const L = items.concat(books);
+    const L = items.concat(books), ok = Object.keys(DATA.oaths), pk = () => ({ kind: 'oath', id: ok[Math.random() * ok.length | 0], price: 38 });
+    if (rep.disc) { L.splice(0, 2, pk(), pk()); } else if (Math.random() < .3) L.splice(2, 1, pk());
     return L;
   }
   $('cGo').onclick = () => {

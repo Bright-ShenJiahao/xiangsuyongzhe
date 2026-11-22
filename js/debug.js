@@ -13,6 +13,7 @@
   B('回血', () => UI.mod().debug.heal());
   B('本段胜利', () => UI.mod().debug.wave());
   B('本站胜利', () => UI.mod().debug.station());
+  B('给印记', () => UI.mod().debug.oath());
   B('直接胜利', () => UI.mod().debug.win());
   B('直接开打', () => { if (window.UI) UI.startBattle(); });
   hide.click();   // 默认收起，点「调试」展开（手机上不挡按钮）

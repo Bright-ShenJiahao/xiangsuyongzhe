@@ -17,6 +17,24 @@ window.DATA = {
     { id: 'end', name: '耐力', desc: '物防 +4、魔防 +4 / 点' },   // 11/21 用户加：耐力管两种防御
   ],
   attrBase: 3, attrFree: 5,
+  // 11/23 誓约印记：普通 8 + 身法 6。v = Lv1 数值，等级倍率 oathLv；同名合并升级，最高 Lv5
+  oathLv: [1, 1.4, 1.7, 1.9, 2.0],
+  oaths: {
+    xianfeng: { name: '先锋之誓', ch: '旗', v: .20, d: m => `每站开打头 10 秒，技能伤害 +${Math.round(20 * m)}%` },
+    sanji: { name: '三击之誓', ch: '三', v: .40, d: m => `每放到第 3 招，这一招伤害 +${Math.round(40 * m)}%` },
+    jingshou: { name: '静守之誓', ch: '盾', v: .25, d: m => `站着不动 1 秒后，下一招伤害 +${Math.round(25 * m)}%` },
+    fanji: { name: '反击之誓', ch: '反', v: .20, d: m => `翻滚后的下一招：范围 +${Math.round(20 * m)}%，暴击率 +${Math.round(30 * m)}%` },
+    tulong: { name: '屠龙之誓', ch: '龙', v: .12, d: m => `对精英和首领伤害 +${Math.round(12 * m)}%；打倒精英回复 ${Math.round(5 * m)}% 生命` },
+    jifeng: { name: '疾风之誓', ch: '风', v: .08, d: m => `出手快 ${Math.round(8 * m)}%` },
+    lianzhan: { name: '连斩之誓', ch: '连', v: .12, d: m => `连击到 30 后，6 秒内伤害 +${Math.round(12 * m)}%` },
+    pozhu: { name: '破竹之誓', ch: '竹', v: .04, d: m => `击倒敌人时 ${Math.round(4 * m)}% 几率：下一招不用前摇` },
+    youlong: { name: '游龙步', ch: '龙', mv: 1, d: m => `翻滚距离 +${Math.round(15 * m)}%` },
+    canying: { name: '残影步', ch: '影', mv: 1, d: m => `翻滚后 1 秒内，下一次受击伤害 −${Math.round(20 * m)}%` },
+    qingyu: { name: '轻羽步', ch: '羽', mv: 1, d: m => `翻滚冷却 −${Math.round(8 * m)}%` },
+    jixing: { name: '疾行步', ch: '靴', mv: 1, d: m => `连续跑 2 秒后，移速 +${Math.round(6 * m)}%` },
+    fengren: { name: '风刃步', ch: '刃', mv: 1, d: m => `每次翻滚朝前方扫出 ${m >= 2 ? 3 : m >= 1.7 ? 2 : 1} 道风刃` },
+    zhendi: { name: '震地步', ch: '震', mv: 1, d: m => `翻滚落地震开身边敌人，僵直 ${(.2 * m).toFixed(2)} 秒（同一个敌人 2 秒一次）` },
+  },
   // 开局宝物（备战页随机三选一，放进物品栏）。fx：生效的加成
   startItems: [
     { id: 'amulet', name: '护身符', icon: '🧿', desc: '生命上限 +20', fx: { hp: 20 }, price: 26 },

@@ -51,11 +51,14 @@
   // 属性、修炼、背包里的宝物、现实习惯 → 勇者的各项数值（中途换宝物、修炼后都重算一次）
   // 修炼加的 + 升级加点（已确认的 alloc + 这次结算里还能退的 tmp）
   function trainAll() { const o = {}; for (const src of [RUN.train, RUN.alloc, RUN.tmp]) for (const k in src) o[k] = (o[k] || 0) + src[k]; return o; }
+  const OB = id => (hero.ob && hero.ob[id]) || 0;
   function recompute() {
     const items = RUN.gear.filter(x => x && x.kind === 'item').map(x => x.id);   // 11/23 只有左边宝物格里的宝物生效
     const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit }), m = hero.m;
     m.dmg = (1 + (c.fx.dmg || 0)) * (1 + .03 * (G.lv - 1)); m.spd = c.spd; m.area = c.area; m.move = c.move;
     hero.crit = c.crit; hero.critMul = c.critMul; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.44 : 1.8;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20% hero.A = c.A; hero.fx = c.fx;
+    hero.ob = {}; for (const o of [...(RUN.oath || []), ...(RUN.mv || [])]) if (o && DATA.oaths[o.id]) hero.ob[o.id] = DATA.oathLv[Math.min(5, o.lv || 1) - 1];
+    m.spd *= 1 + .08 * OB('jifeng'); hero.rollMax *= 1 - .08 * OB('qingyu'); hero.rollMul = 1 + .15 * OB('youlong');
     const max = c.hp + 5 * (G.lv - 1); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
     return c;
   }
@@ -81,7 +84,11 @@
     if (running() && !hero.dead && (hero.roll > 0 || hero.rollCd > 0)) { if (Math.max(hero.roll, hero.rollCd) < .2) hero.rollBuf = .2; return; }
     if (!running() || hero.dead) return; hero.rollBuf = 0;
     const [dx, dy] = moveDir(), d = Math.hypot(dx, dy); hero.rvx = d ? dx / d : hero.f; hero.rvy = d ? dy / d : 0; if (dx) hero.f = dx < 0 ? -1 : 1;
-    hero.roll = .3; hero.rollCd = hero.rollMax || 1.8; hero.inv = Math.max(hero.inv, .3);
+    hero.roll = .3; hero.rollCd = hero.rollMax || 1.8; hero.inv = Math.max(hero.inv, .3); hero.rolling = 1;
+    if (OB('canying')) { hero.cyT = 1; } if (OB('fanji')) hero.afterRoll = 3;
+    if (OB('fengren')) { const m = OB('fengren'), n = m >= 2 ? 3 : m >= 1.7 ? 2 : 1, a0 = Math.atan2(hero.rvy, hero.rvx), dmg = skillDmg(DATA.skills.sword, { id: 'sword', lv: 1, xp: 0 }) * .5;
+      for (let k = 0; k < n; k++) { const a = a0 + (k - (n - 1) / 2) * .35; for (let s = 0; s < 14; s++) parts.push({ x: hero.x + Math.cos(a) * s * 8 * K, y: hero.y - 10 * K + Math.sin(a) * s * 8 * K / YS, vx: Math.cos(a) * 40 * K, vy: Math.sin(a) * 40 * K, t: 0, T: .35, col: s % 2 ? '#e8fff4' : '#9ef0d0', g: 0 });
+        for (const z of foes) if (!z.dead && !z.flee) { const dx = z.x - hero.x, dy = (z.y - hero.y) * YS, l = dx * Math.cos(a) + dy * Math.sin(a), w = Math.abs(-dx * Math.sin(a) + dy * Math.cos(a)); if (l > 0 && l < 115 * K && w < 16 * K) hurt(z, dmg, hero, 8, null, { quiet: true }); } } }
     const c = hero.cs; if (c && (c.ph === 'wu' || c.ph === 'rc')) { if (c.ph === 'wu') nums.push({ x: hero.x, y: hero.y - 50 * K, txt: c.S.name + ' 中断', t: 0, col: '#c8b890' }); endCast(); }
   }
 
@@ -137,7 +144,8 @@
     if (T.res === 'iron' && dt === 'phys') d *= .5; else if (T.res === 'spirit') d *= dt === 'phys' ? .5 : 1.25; else if (T.res === 'magic' && dt === 'magic') d *= .5;   // 11/22 体质
     if (z.shieldHp > 0 && from && (from.x - z.x) * z.f > 0 && !(z.cc)) { d *= .3; if (--z.shieldHp <= 0) { z.noShield = true; z.st = 'hurt'; z.t = -.25; z.brk = .45; nums.push({ x: z.x, y: z.y - 40 * K, txt: '盾碎了！', t: 0, col: '#ffcf6a' }); } else for (let i = 0; i < 3; i++) parts.push({ x: z.x + z.f * 10 * K, y: z.y - 16 * K, vx: z.f * R(10, 50) * K, vy: R(-50, -10) * K, t: 0, T: .3, col: '#fff2a0', g: 120 * K }); }   // 盾兵正面挡 70%，挡够次数盾碎
     if (z.curseT > 0) d *= 1.15; if (z.vulnN && z.vulnT > 0) d *= 1 + .05 * z.vulnN; if (z.cc && z.cc.k === 'air' && z.airVuln) d *= 1.3;
-    const crit = Math.random() < hero.crit + (o.crit || 0); if (crit) d *= hero.critMul; d = Math.max(1, rd(d));
+    if ((z.tier || T.boss) && OB('tulong')) d *= 1 + .12 * OB('tulong');
+    const crit = Math.random() < hero.crit + (hero.castCrit || 0) + (o.crit || 0); if (crit) d *= hero.critMul; d = Math.max(1, rd(d));
     status(z, o, d);
     if (sid) { const r = Math.min(d, Math.max(0, z.hp)); RUN.dmgW[sid] = (RUN.dmgW[sid] || 0) + r; RUN.dmgAll[sid] = (RUN.dmgAll[sid] || 0) + r; }
     z.hp -= d; z.flash = .12; nums.push({ x: z.x, y: z.y - (z.T.boss ? 64 : 34) * K, v: d, t: 0, col: crit ? '#ffd84a' : '#ffffff', big: crit });
@@ -150,7 +158,7 @@
     if (z.hp <= 0) kill(z);
   }
   function kill(z) {
-    z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; G.wk++; G.combo = (G.combo || 0) + 1; G.comboT = 3; G.maxCombo = Math.max(G.maxCombo || 0, G.combo);
+    z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; G.wk++; G.combo = (G.combo || 0) + 1; G.comboT = 3; G.maxCombo = Math.max(G.maxCombo || 0, G.combo); if (G.combo >= 30 && OB('lianzhan')) hero.lzT = 6; if (OB('pozhu') && Math.random() < .04 * OB('pozhu')) hero.instant = 1; if (z.tier === 'elite' && OB('tulong')) hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .05 * OB('tulong'));
     { const E = DATA.econ, v = z.tier === 'elite' ? E.elite : z.tier === 'mini' ? E.mini : Math.random() < 1 / E.perKills ? 1 : 0;   // 11/23 铜钱掉在地上，要走过去捡
       if (v && !z.T.boss) G.gc.push({ x: z.x, y: z.y, v, t: 0, h: 0, vh: 90, vx: R(-20, 20) * K }); }
     if (z.tier === 'elite') { G.wElite++; G.gi.push({ kind: 'book', x: z.x, y: z.y, t: 0 }); }   // 固定精英掉书，路线精英掉宝物
@@ -167,7 +175,7 @@
   }
   function damageHero(d, dtype = 'phys') {
     if (hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
-    d *= dtype === 'magic' ? hero.mIn : hero.pIn; hero.hp -= d; hero.inv = .45; hero.hurtT = .25; G.shake = Math.max(G.shake, .15); nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
+    d *= dtype === 'magic' ? hero.mIn : hero.pIn; if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } hero.hp -= d; hero.inv = .45; hero.hurtT = .25; G.shake = Math.max(G.shake, .15); nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
     if (hero.hp <= 0 && RUN.save) { RUN.save = false; hero.hp = hero.maxHp; hero.inv = 2; banner('读档！满血复活', 1.6); return; }
     if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; banner('勇者倒下了……', 99); G.loseT = 1.6; }
   }
@@ -263,10 +271,15 @@
     for (let i = pend.length - 1; i >= 0; i--) { pend[i].t -= dt; if (pend[i].t <= 0) { pend[i].fn(); pend.splice(i, 1); } }
     if (hero.dead) return;
     let c = hero.cs;
-    if (!c) { if (hero.gap > 0) { hero.gap -= dt; return; } const i = readySlot(); if (i < 0) return; const sk = RUN.slots[i], S = DATA.skills[sk.id], T = skillT(S, sk); c = hero.cs = { i, sk, S, ph: 'wu', t: 0, dur: T.wu, rc: T.rc, a: aimNow() }; faceTo(c.a); }
+    if (!c) { if (hero.gap > 0) { hero.gap -= dt; return; } const i = readySlot(); if (i < 0) return; const sk = RUN.slots[i], S = DATA.skills[sk.id], T = skillT(S, sk); c = hero.cs = { i, sk, S, ph: 'wu', t: 0, dur: T.wu, rc: T.rc, a: aimNow(), mul: 1, cr: 0, ar: 0 }; faceTo(c.a);
+      G.castN = (G.castN || 0) + 1; if (OB('sanji') && G.castN % 3 === 0) c.mul *= 1 + .4 * OB('sanji');
+      if (OB('jingshou') && hero.stillT >= 1) { c.mul *= 1 + .25 * OB('jingshou'); hero.stillT = 0; }
+      if (OB('fanji') && hero.afterRoll > 0) { c.cr = .3 * OB('fanji'); c.ar = .2 * OB('fanji'); hero.afterRoll = 0; }
+      if (OB('xianfeng') && (G.stT || 0) < 10) c.mul *= 1 + .2 * OB('xianfeng'); if (hero.lzT > 0) c.mul *= 1 + .12 * OB('lianzhan');
+      if (hero.instant) { hero.instant = 0; c.dur = .08; } }
     c.t += dt;
     if (c.ph === 'wu') { c.a = aimNow(c.a); if (!hero.moving) faceTo(c.a); if (c.t < c.dur) return; faceTo(c.a);
-      const L = profL(c.sk), r = SK.cast({ S: c.S, sk: c.sk, L, d: skillDmg(c.S, c.sk), a: c.a, sid: c.sk.id });
+      const L = profL(c.sk), a0 = hero.m.area; hero.m.area *= 1 + (c.ar || 0); hero.castCrit = c.cr || 0; const r = SK.cast({ S: c.S, sk: c.sk, L, d: skillDmg(c.S, c.sk) * (c.mul || 1), a: c.a, sid: c.sk.id }); hero.m.area = a0;
       if (!r) { hero.cs = null; return; }   // 场上没敌人了：不放，等下一个敌人
       c.sk.xp = (c.sk.xp || 0) + 1; if (profL(c.sk) > L) { nums.push({ x: hero.x, y: hero.y - 52 * K, txt: `${c.S.name} 熟练度 ${profL(c.sk)}/7`, t: 0, col: '#ffd86a' }); }
       if (r !== true && r.hold) { c.ph = 'hold'; c.t = 0; c.dur = r.hold; c.move = r.move || 1; return; }
@@ -274,7 +287,7 @@
     if (c.ph === 'hold') { if (c.t >= c.dur) { SK.chEnd(); c.ph = 'rc'; c.t = 0; c.dur = c.rc; } return; }
     if (c.ph === 'rc' && c.t >= c.dur) endCast();
   }
-  function endCast() { const c = hero.cs; if (!c) return; hero.lastI = c.i; hero.lastT = G.t; if (c.ph === 'hold') SK.chEnd(); RUN.si = (c.i + 1) % RUN.open; hero.cs = null; hero.gap = .18; }
+  function endCast() { const c = hero.cs; if (!c) return; hero.castCrit = 0; hero.lastI = c.i; hero.lastT = G.t; if (c.ph === 'hold') SK.chEnd(); RUN.si = (c.i + 1) % RUN.open; hero.cs = null; hero.gap = .18; }
   function aimNow(a0) { const t = nearest(); return t ? ang(hero, t) : (a0 != null ? a0 : (hero.f < 0 ? PI : 0)); }
   function faceTo(a) { hero.f = Math.cos(a) < 0 ? -1 : 1; }
   // 给 skills.js 用的接口
@@ -318,7 +331,7 @@
   function nextWave() {   // 进下一站（第 1 段）；站打完 → 路线卡
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();
-    G.wi = -1; Object.assign(G, { wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
+    G.wi = -1; Object.assign(G, { wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], stT: 0, thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
     nextPhase(); banner(G.W.boss ? '首领战！' : `第 ${G.st} 站`, 1.6); G.paused = false;
   }
   // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
@@ -449,7 +462,7 @@
   }
   function restDraw(label, ring) {
     const f = G.fe;
-    const M2 = f.mer2; if (M2) { SPR.draw(ctx, 'goblin', 'idle0', 0, X(M2.x), Y(M2.y), M2.x > hero.x, u, {}); label('特价商人 · 八折', X(M2.x), Y(M2.y) + 3 * u, '#ffb070'); say(X(M2.x), Y(M2.y) - 44 * u, ['今天全部八折！', '错过就没了哦～'], 1.2); ring(M2, 14, M2.st / .4, '#ffb070'); }
+    const M2 = f.mer2; if (M2) { SPR.draw(ctx, 'gob_merchant', merFrame(M2), 0, X(M2.x), Y(M2.y), false, u, {}); label('特价商人 · 八折', X(M2.x), Y(M2.y) + 3 * u, '#ffb070'); say(X(M2.x), Y(M2.y) - 44 * u, ['今天全部八折！', '错过就没了哦～'], 1.2); ring(M2, 14, M2.st / .4, '#ffb070'); }
     const o = f.rest; if (!o) return; const x = X(o.x), y = Y(o.y);
     if (o.k === 'chest') { const im = img('chest'); if (!o.open && im.complete) ctx.drawImage(im, x - 14 * u, y - 24 * u, 28 * u, 28 * u); if (!o.open) { label('宝箱', x, y + 5 * u); ring(o, 14, o.st / .3, '#ffe08a'); }
       if (o.books) for (const b of o.books) { const S = DATA.skills[b.id], bi = img(({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[S.sys]), bx = X(b.x), by = Y(b.y) - 9 * u;
@@ -476,7 +489,7 @@
         if (c.st > .5) { c.st = 0; const free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1); c.lock = true; if (cost && RUN.coins < cost) toastMsg('铜钱不够'); else { RUN.coins -= cost; c.n++; const keep = c; xiuOrbs(); P.cr = keep; } } }
     }
     const M = f.mer; if (M.st < 0) { if (!SKUL(M, 30)) M.st = 0; } else if (SKUL(M, 24)) M.st += dt; else M.st = 0;   // 离开商店后要先走开才能再进
-    if (M.st > .4) { M.st = -99; G.lock = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '地精商人', tab: 'shang', only: 'shang', field: 1, goText: '离开 ▶', after: () => { G.lock = false; M.st = -1; } }); return; }
+    if (M.st > .4) { M.st = -99; G.lock = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '地精商人', tab: 'shang', only: 'shang', field: 1, goText: '离开 ▶', after: () => { G.lock = false; M.st = -1; M.dealT = G.t + 1.6; } }); return; }
     if (M.st < 0 && !SKUL(M, 24)) M.st = 0;
     for (const d of f.doors) { if (Math.abs(d.x - hero.x) < 22 * K && Math.abs(d.y - hero.y) < 18 * K) d.st += dt; else d.st = 0;
       if (d.st > .35) { if ((RUN.xiu > 0 || f.items.length) && !f.warn) { f.warn = 1; d.st = -1; toastMsg(RUN.xiu > 0 ? '还有修炼没拿（去找露米娜），再走进门就出发' : '地上还有东西没捡，再走进门就出发'); return; }
@@ -603,6 +616,7 @@
   const DI = {}; const dimg = n => DI[n] || (DI[n] = Object.assign(new Image(), { src: 'art/drop/' + n + '.png' }));
   const BKS = ['sword', 'spear', 'bow', 'staff'];
   function dspr(n, x, yb, k) { const im = dimg(n); if (!im.complete || !im.naturalWidth) return; const w = im.naturalWidth * u * (k || 1), h = im.naturalHeight * u * (k || 1); ctx.imageSmoothingEnabled = false; ctx.drawImage(im, x - w / 2, yb - h, w, h); }
+  const merFrame = M => (M.dealT > G.t ? 'deal' : dist(M, hero) < 60 ? 'wave' : 'idle') + (Math.floor(G.t * 2.5) % 2);
   function coinDraw() {
     for (const o of G.gi) { const x = X(o.x), gy = Y(o.y), bk = o.kind === 'book'; o.c = o.c || BKS[Math.random() * 4 | 0];
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(0, gy - 54 * u, 0, gy); g.addColorStop(0, 'rgba(255,220,120,0)'); g.addColorStop(1, bk ? 'rgba(140,200,255,.45)' : 'rgba(255,200,90,.45)'); ctx.fillStyle = g; ctx.fillRect(x - 5 * u, gy - 54 * u, 10 * u, 54 * u); ctx.restore();
@@ -659,10 +673,13 @@
     if (G.winT != null && (G.winT -= dt) <= 0 && !G.over) { G.over = 'win'; return end(); }
     if (hero.dead) { hero.deadT += dt; if ((G.loseT -= dt) <= 0 && !G.over) { G.over = 'lose'; return end(); } }
     else {
-      hero.rollCd -= dt; hero.inv -= dt; hero.hurtT -= dt; if (hero.rollBuf > 0) { hero.rollBuf -= dt; if (hero.roll <= 0 && hero.rollCd <= 0) roll(); }
-      if (hero.roll > 0) { hero.roll -= dt; hero.x += hero.rvx * 240 * K * dt; hero.y += hero.rvy * 182 * K * dt; if (Math.random() < .7) parts.push({ x: hero.x, y: hero.y, vx: R(-10, 10) * K, vy: R(-10, 0) * K, t: 0, T: .3, col: '#e6dcb4', g: 0 }); }
+      hero.rollCd -= dt; hero.inv -= dt; hero.hurtT -= dt; if (hero.cyT > 0) hero.cyT -= dt; if (hero.afterRoll > 0) hero.afterRoll -= dt; if (hero.lzT > 0) hero.lzT -= dt;
+      hero.stillT = hero.moving ? 0 : (hero.stillT || 0) + dt; if (!G.fe) G.stT = (G.stT || 0) + dt;
+      if (hero.rolling && hero.roll <= 0) { hero.rolling = 0; if (OB('zhendi')) { const sec = .2 * OB('zhendi'); G.shake = Math.max(G.shake, .1); fx.push({ k: 'ring', x: hero.x, y: hero.y, t: 0, T: .35, r: 46 });
+        for (const z of foes) if (!z.dead && !z.flee && dist(z, hero) < 46 && !(z.zdT > G.t)) { z.zdT = G.t + 2; hurt(z, 1, hero, 30, null, { cc: ['stun', z.T.boss || z.tier === 'mini' ? sec / 2 : sec], quiet: true }); } } } if (hero.rollBuf > 0) { hero.rollBuf -= dt; if (hero.roll <= 0 && hero.rollCd <= 0) roll(); }
+      if (hero.roll > 0) { hero.roll -= dt; hero.x += hero.rvx * 240 * K * dt * (hero.rollMul || 1); hero.y += hero.rvy * 182 * K * dt * (hero.rollMul || 1); if (Math.random() < .7) parts.push({ x: hero.x, y: hero.y, vx: R(-10, 10) * K, vy: R(-10, 0) * K, t: 0, T: .3, col: '#e6dcb4', g: 0 }); }
       else { const c = hero.cs, root = false, mm = !c ? 1 : c.ph === 'wu' ? (c.S.charge ? .5 : 1) : c.ph === 'hold' ? c.move : (!c.move && c.t < SKF.get(c.sk.id).hitT) ? 1 : .4;   // 11/22：出手那一下不减速，之后的后摇 40% 慢走（翻滚取消）
-        const [dx, dy] = root ? [0, 0] : moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { hero.mvx = (hero.mvx || 0) * .9 + dx / (d || 1) * .1; hero.mvy = (hero.mvy || 0) * .9 + dy / (d || 1) * .1; hero.mvT = (hero.mvT || 0) + dt; } else hero.mvT = 0; if (hero.moving) { const k = Math.min(1, d), v = 85 * hero.m.move * mm * K; hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (!c || c.ph !== 'hold') hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
+        const [dx, dy] = root ? [0, 0] : moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { hero.mvx = (hero.mvx || 0) * .9 + dx / (d || 1) * .1; hero.mvy = (hero.mvy || 0) * .9 + dy / (d || 1) * .1; hero.mvT = (hero.mvT || 0) + dt; } else hero.mvT = 0; if (hero.moving) { const k = Math.min(1, d), v = 85 * hero.m.move * mm * K * (OB('jixing') && hero.mvT > 2 ? 1 + .06 * OB('jixing') : 1); hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (!c || c.ph !== 'hold') hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
       clampG(hero, 8 * K); weapon(dt);
     }
     if (!hero.dead) { SK.tick(dt);
@@ -750,7 +767,7 @@
     if (G.pr) { const p = G.pr; list.push({ y: p.y, d: () => { const fade = p.done ? Math.max(0, 1 - p.t2 / 1.2) : Math.min(1, p.t / .6); ctx.save(); ctx.globalAlpha = fade; shadow(p.x, p.y, 26); SPR.drawHero(ctx, p.t < 1.1 ? 'big' : 'idle', Math.floor(G.t * 3) % 2, X(p.x), Y(p.y), p.x > hero.x, u, { w: 'staff', c: 'p' }); ctx.restore(); } }); }
     if (G.fe) { const P = G.fe.pr, M = G.fe.mer;   // 11/23 公主、商人和勇者按前后排序，脚下有影子
       list.push({ y: P.y, d: () => { shadow(P.x, P.y, 26); SPR.drawHero(ctx, P.orbs ? 'big' : 'idle', Math.floor(G.t * 3) % 2, X(P.x), Y(P.y), P.x > hero.x, u, { w: 'staff', c: 'p' }); } });
-      list.push({ y: M.y, d: () => { shadow(M.x, M.y, 26); SPR.draw(ctx, 'goblin', 'idle' + (Math.floor(G.t * 2) % 2), 0, X(M.x), Y(M.y), M.x < hero.x ? false : true, u, {}); } }); }
+      list.push({ y: M.y, d: () => { shadow(M.x, M.y, 30); SPR.draw(ctx, 'gob_merchant', merFrame(M), 0, X(M.x), Y(M.y), false, u, {}); } }); }
     list.sort((a, b) => a.y - b.y);
     for (const o of list) {
       if (o.d) { o.d(); continue; }
@@ -841,7 +858,7 @@
     stop() { G = null; }, g: () => G,
     run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1, xpFrac: () => G ? Math.min(1, G.xp / need()) : 0, xpTxt: () => G ? `${Math.floor(G.xp)} / ${need()}` : '', st: () => G ? G.st : 1,
     skillInfo: sk => { const S = DATA.skills[sk.id], L = profL(sk), T = G ? skillT(S, sk) : { wu: S.wu, rc: S.rc }; return { dmg: G ? skillDmg(S, sk) : S.dmg, wu: T.wu, rc: T.rc, cd: T.wu + T.rc + (S.hold || 0), L, xp: sk.xp || 0, next: DATA.prof[L] || null }; }, profL,
-    debug: { tp(fx, fy) { hero.x = MAPW * fx; hero.y = MAPH * fy; cam.snap = true; }, book() { G.gi.push({ kind: 'book', x: hero.x + 30 * K, y: hero.y, t: 0 }, { kind: 'item', x: hero.x + 9 * K, y: hero.y, t: 0 }); }, coin() { for (let i = 0; i < 6; i++) G.gc.push({ x: hero.x + R(60, 120) * K, y: hero.y + R(-20, 20) * K, v: 2, t: 11, h: 0, vh: 0, vx: 0 }); },   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）
+    debug: { oath(id) { const ks = Object.keys(DATA.oaths); CAMP.learn({ kind: 'oath', id: id || ks[Math.random() * ks.length | 0] }); }, tp(fx, fy) { hero.x = MAPW * fx; hero.y = MAPH * fy; cam.snap = true; }, book() { G.gi.push({ kind: 'book', x: hero.x + 30 * K, y: hero.y, t: 0 }, { kind: 'item', x: hero.x + 9 * K, y: hero.y, t: 0 }); }, coin() { for (let i = 0; i < 6; i++) G.gc.push({ x: hero.x + R(60, 120) * K, y: hero.y + R(-20, 20) * K, v: 2, t: 11, h: 0, vh: 0, vx: 0 }); },   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）
       // 本段胜利：清场，进下一段（第 1 站第 2 段之后会触发公主）；已经是最后一段就结算这一站
       wave: () => { if (!G || G.endT != null || !G.waveOn || G.pr) return; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z));
         if (G.wi < STN().waves.length - 1 && !STN().waves[G.wi + 1].boss) { G.wt = G.T; return; } G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; },

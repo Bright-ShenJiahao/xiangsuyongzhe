@@ -988,3 +988,8 @@ body.shopOn #feed { opacity: 0; }
 @media (min-width: 761px) and (orientation: landscape) { #camp.fshop { justify-content: flex-end !important; padding-right: 3vw; } }
 
 .full .nw, .bag > div .nw { position: absolute; right: 2px; top: 1px; font: normal 11px WenKai, serif; color: #fff; background: #d83a2a; padding: 0 3px; z-index: 2; }
+
+/* 11/23 誓约印记临时图标（出图前） */
+.oic { display: inline-flex !important; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #c0402a, #6a1a10); box-shadow: 0 0 0 3px #e8b84a, 0 0 0 5px #3a2410; color: #ffe8c0; font: 400 20px WenKai, serif; }
+.oic.mv { background: radial-gradient(circle at 40% 35%, #3aa88a, #10483a); box-shadow: 0 0 0 3px #c8d4dc, 0 0 0 5px #1a2a2a; }
+.oathrow > div.full { display: flex; align-items: center; justify-content: center; position: relative; } .oathrow .oic { width: 70%; height: 70%; font-size: 22px; }
