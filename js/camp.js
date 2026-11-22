@@ -26,8 +26,9 @@
     }
     if (o.kind === 'use') { const c = USE(o.id), h = B().hero(); h.hp = Math.min(h.maxHp, h.hp + h.maxHp * c.heal); toast(`吃掉${c.name}，回复生命`); return true; }
     if (o.kind === 'book') { const j = r.slots.findIndex((s, k) => !s && k < r.open); if (j >= 0) { r.slots[j] = { id: o.id, lv: 1, xp: o.xp || 0 }; toast(`${SK[o.id].name} 自动装上第 ${j + 1} 格` + (r.tipP ? '' : ' · 按 P 调整顺序')); r.tipP = 1; return true; } }   // 技能栏有空位就直接装上
-    const i = r.bag.indexOf(null); if (i < 0) { toast('背包满了，先卖掉点东西'); return false; }
-    r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : { kind: o.kind, id: o.id }; if (o.kind === 'item') B().recompute();
+    if (o.kind === 'item') { const g = r.gear.indexOf(null); if (g >= 0) { r.gear[g] = { kind: 'item', id: o.id }; B().recompute(); return true; } }   // 11/23 宝物格有空就直接生效
+    const i = r.bag.indexOf(null); if (i < 0) { toast('物品栏满了，先卖掉点东西'); return false; }
+    r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : { kind: o.kind, id: o.id };
     return true;
   }
   // 点锁着的技能格：花铜钱解锁（第 4 格第 2 站起 50，第 5 格第 5 站起 78，每站涨 7%；第 4 / 8 站打完也会免费开）
@@ -45,8 +46,8 @@
   // ---------- 技能搭配（结算页「技能」页签和暂停页共用） ----------
   function loadout(box) {
     const r = R(), h = B().hero(); box.innerHTML = '';
-    const wrap = document.createElement('div'); wrap.className = 'lo solo'; box.appendChild(wrap);
-    const L = document.createElement('div'); L.className = 'lol'; wrap.append(L);
+    const wrap = document.createElement('div'); wrap.className = 'lo gearlo'; box.appendChild(wrap);
+    const L = document.createElement('div'), Rt = document.createElement('div'); L.className = 'lol'; Rt.className = 'lor'; wrap.append(L, Rt);
     let cyc = 0; r.slots.slice(0, r.open).forEach(s => { if (s) cyc += B().skillInfo(s).cd; });
     L.insertAdjacentHTML('beforeend', `<h4>技能栏 <small>按 1→2→3 顺序轮流自动出手 · 一轮约 ${cyc.toFixed(1)} 秒</small></h4>`);
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
@@ -56,16 +57,23 @@
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
-    L.insertAdjacentHTML('beforeend', '<h4>背包 <small>宝物放着就生效；技能书直接拖到技能格上装上（点一下再点格子也行）</small></h4>');
-    const bg = document.createElement('div'); bg.className = 'bag'; L.appendChild(bg);
-    r.bag.forEach((o, i) => { const d = document.createElement('div'); const t = thing(o);
-      if (t) { d.className = 'has ' + o.kind + (t.tier ? ' tr t' + t.tier : ''); d.appendChild(iconEl(t)); if (o.kind === 'book') d.insertAdjacentHTML('beforeend', `<i>${B().profL(o) ? B().profL(o) + '/7' : '书'}</i>`); }
-      if (sel && sel.t === 'b' && sel.i === i) d.classList.add('sel');
-      d.onclick = () => dragged || pick({ t: 'b', i }, box); drag(d, { t: 'b', i }, !!o, box); bg.appendChild(d); });
+    // 11/23 誓约印记 3 格 + 身法 1 格（同一行）
+    L.insertAdjacentHTML('beforeend', '<h4>誓约印记 · 身法 <small>印记：被动，同名再得升级（即将开放）</small></h4>');
+    const om = document.createElement('div'); om.className = 'bag oathrow'; L.appendChild(om);
+    r.oath.forEach((o, i) => { const d = document.createElement('div'); d.className = 'oath' + (o ? ' has' : ''); d.textContent = o ? o.id : ''; om.appendChild(d); });
+    om.insertAdjacentHTML('beforeend', '<div class="gap"></div>'); const mv = document.createElement('div'); mv.className = 'has mv'; mv.innerHTML = '<span>翻滚</span>'; mv.title = '身法：翻滚（默认）。以后可换成其他身法'; om.appendChild(mv);
+    const cell = (grid, arr, t) => arr.forEach((o, i) => { const d = document.createElement('div'); const th = thing(o);
+      if (th) { d.className = 'has ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); d.appendChild(iconEl(th)); if (o.kind === 'book') d.insertAdjacentHTML('beforeend', `<i>${B().profL(o) ? B().profL(o) + '/7' : '书'}</i>`); }
+      if (sel && sel.t === t && sel.i === i) d.classList.add('sel');
+      d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); grid.appendChild(d); });
+    L.insertAdjacentHTML('beforeend', `<h4>宝物 ${r.gear.filter(Boolean).length}/${r.gear.length} <small>放在这里就生效</small></h4>`);
+    const gg = document.createElement('div'); gg.className = 'bag gear'; L.appendChild(gg); cell(gg, r.gear, 'g');
+    Rt.insertAdjacentHTML('beforeend', '<h4>物品栏 <small>收纳，不生效；拖到左边格子才生效</small></h4>');
+    const bg = document.createElement('div'); bg.className = 'bag'; Rt.appendChild(bg); cell(bg, r.bag, 'b');
     // 选中东西的说明和按钮
-    const info = document.createElement('div'); info.className = 'loinfo'; L.appendChild(info);
+    const info = document.createElement('div'); info.className = 'loinfo'; Rt.appendChild(info);
     if (sel && sel.t === 'L') { lockInfo(info, sel.i, box); return; }
-    const cur = sel && (sel.t === 's' ? r.slots[sel.i] && { kind: 'book', id: r.slots[sel.i].id, lv: 1, xp: r.slots[sel.i].xp || 0, slot: true } : r.bag[sel.i]);
+    const cur = sel && (sel.t === 's' ? r.slots[sel.i] && { kind: 'book', id: r.slots[sel.i].id, lv: 1, xp: r.slots[sel.i].xp || 0, slot: true } : (sel.t === 'g' ? r.gear : r.bag)[sel.i]);
     if (cur) {
       const t = thing(cur); info.appendChild(iconEl(t));
       let txt = `<b class="${t.tier ? 'tn' + t.tier : ''}">${t.name}</b> <small>${t.sub}</small><br>${t.desc}`;
@@ -73,11 +81,14 @@
       const p = document.createElement('p'); p.innerHTML = txt; info.appendChild(p);
       const btns = document.createElement('div'); btns.className = 'lob'; info.appendChild(btns);
       const btn = (label, fn, gold) => { const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.textContent = label; b.onclick = e => { e.stopPropagation(); fn(); }; btns.appendChild(b); };
-      if (sel.t === 's') { if (r.slots.filter(Boolean).length > 1) btn('卸下', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('背包满了'); r.bag[j] = { kind: 'book', id: cur.id, lv: cur.lv }; r.slots[sel.i] = null; sel = null; loadout(box); }); }
+      if (sel.t === 's') { if (r.slots.filter(Boolean).length > 1) btn('卸下', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = { kind: 'book', id: cur.id, lv: cur.lv }; r.slots[sel.i] = null; sel = null; loadout(box); }); }
       else {
         if (cur.kind === 'book') btn('装上', () => { const j = r.slots.slice(0, r.open).indexOf(null); if (j < 0) return toast('技能格满了：点一个技能格来替换'); pick({ t: 's', i: j }, box); }, true);
-        if (cur.kind === 'use') btn('吃掉', () => { learn(cur); r.bag[sel.i] = null; sel = null; loadout(box); }, true);
-        btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; r.bag[sel.i] = null; sel = null; if (cur.kind === 'item') B().recompute(); loadout(box); refreshCoin(); });
+        const A = sel.t === 'g' ? r.gear : r.bag;
+        if (cur.kind === 'item' && sel.t === 'b') btn('放上', () => { const j = r.gear.indexOf(null); if (j < 0) return toast('宝物格满了：拖到一件宝物上替换'); r.gear[j] = cur; r.bag[sel.i] = null; sel = null; B().recompute(); loadout(box); }, true);
+        if (sel.t === 'g') btn('收进物品栏', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = cur; r.gear[sel.i] = null; sel = null; B().recompute(); loadout(box); });
+        if (cur.kind === 'use') btn('吃掉', () => { learn(cur); A[sel.i] = null; sel = null; loadout(box); }, true);
+        btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; A[sel.i] = null; sel = null; B().recompute(); loadout(box); refreshCoin(); });
       }
     } else info.innerHTML = '<p class="dim">点一下查看说明；拖到另一个格子上，或先后点两个格子，都能交换位置。</p>';
   }
@@ -86,7 +97,7 @@
   const redraw = () => $('pause').classList.contains('on') ? pauseRender() : render();
   function attrPanel(box) {
     const r = R(), h = B().hero(); box.innerHTML = '';
-    const c = DATA.calc({ weapon: r.weapon, attrs: r.attrs, train: B().trainAll(), items: r.bag.filter(x => x && x.kind === 'item').map(x => x.id), habit: r.habit });
+    const c = DATA.calc({ weapon: r.weapon, attrs: r.attrs, train: B().trainAll(), items: r.gear.filter(x => x && x.kind === 'item').map(x => x.id), habit: r.habit });
     const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%', used = Object.values(r.tmp).reduce((s, v) => s + v, 0);
     const wrap = document.createElement('div'); wrap.className = 'lo'; box.appendChild(wrap);
     const L = document.createElement('div'), Rt = document.createElement('div'); L.className = 'lol'; Rt.className = 'lor'; wrap.append(L, Rt);
@@ -132,13 +143,14 @@
   }
   function pick(p, box) {
     const r = R();
-    if (!sel) { if (p.t === 'b' && !r.bag[p.i]) return; sel = p; return loadout(box); }
+    if (!sel) { if ((p.t === 'b' && !r.bag[p.i]) || (p.t === 'g' && !r.gear[p.i])) return; sel = p; return loadout(box); }
     if (sel.t === p.t && sel.i === p.i) { sel = null; return loadout(box); }
-    const get = q => q.t === 's' ? r.slots[q.i] : r.bag[q.i], put = (q, v) => { if (q.t === 's') r.slots[q.i] = v; else r.bag[q.i] = v; };
+    const ARR = q => q.t === 's' ? r.slots : q.t === 'g' ? r.gear : r.bag, get = q => ARR(q)[q.i], put = (q, v) => { ARR(q)[q.i] = v; };
     let a = get(sel), b = get(p);
     const toSlot = (o, q) => q.t !== 's' || !o || o.kind === 'book' || o.lv;   // 技能格只能放技能
     const asSlot = o => o && o.kind === 'book' ? { id: o.id, lv: 1, xp: o.xp || 0 } : o, asBag = o => o && !o.kind ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : o;   // 熟练度跟着书走
-    if ((a && p.t === 's' && !toSlot(a, p)) || (b && sel.t === 's' && !toSlot(b, sel))) { toast('技能格只能放技能书'); sel = p.t === 'b' && b ? p : null; return loadout(box); }
+    if ((a && p.t === 's' && !toSlot(a, p)) || (b && sel.t === 's' && !toSlot(b, sel))) { toast('技能格只能放技能书'); sel = p.t !== 's' && b ? p : null; return loadout(box); }
+    if ((a && p.t === 'g' && a.kind !== 'item') || (b && sel.t === 'g' && b.kind !== 'item')) { toast('宝物格只能放宝物'); sel = p.t !== 's' && b ? p : null; return loadout(box); }
     // 同一招合并 = 升级
     if (a && b && a.id === b.id && (a.kind === 'book' || !a.kind) && (b.kind === 'book' || !b.kind)) { b.lv += a.lv; put(sel, null); toast(`${SK[b.id].name} 升到 Lv${b.lv}`); }
     else {

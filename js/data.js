@@ -49,7 +49,7 @@ window.DATA = {
     { id: 'gamer', name: '网瘾少年', good: '经验 +20%', bad: '生命上限 −10%', line: '越玩越会玩。', fx: { xp: .2, hpMul: -.1 } },
     { id: 'otaku', name: '宅', good: '每波铜钱 +4', bad: '移速 −8%', line: '不想动，钱自己过来。', fx: { waveCoin: 4, move: -.08 } },
   ],
-  slotsMax: 5, slotsOpen: 3, bagSize: 8,
+  slotsMax: 5, slotsOpen: 3, bagSize: 16, gearSize: 12, oathSize: 3,
   // 技能书（11/21 第二批定稿，文档：剑 / 枪 / 弓 / 法杖的技能书）。
   // 出招：技能栏 1→2→3 严格轮流；每招 wu 前摇（能走，前摇中翻滚 = 这招作废）→ 出手 → rc 后摇（站定，翻滚可取消）。
   //   hold：占时型持续多久（这段时间不轮到下一招，能走，翻滚不取消）。没有各自冷却。

@@ -40,8 +40,8 @@
       m: { dmg: 1, spd: 1, area: 1, move: 1 }, crit: .01, critMul: 1.5, pIn: 1, mIn: 1, xpMul: 1, fx: {}, A: {} };
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
     RUN = { hero: b.hero || 'm', weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0,   /* 11/22 属性加点删除，只靠修炼 */ alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
-      bag: Array(DATA.bagSize).fill(null), coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
-    RUN.slots[0] = { id: b.weapon, lv: 1, xp: 0 }; if (b.item) RUN.bag[0] = { kind: 'item', id: b.item };
+      bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: null, coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
+    RUN.slots[0] = { id: b.weapon, lv: 1, xp: 0 }; if (b.item) RUN.gear[0] = { kind: 'item', id: b.item };
     recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0);
     foes = []; shots = []; fx = []; parts = []; nums = []; tele = []; burns = []; pend = []; warns.length = 0;
     if (!SK) SK = SKILLS(API); SK.reset(); hero.cs = null;
@@ -52,7 +52,7 @@
   // 修炼加的 + 升级加点（已确认的 alloc + 这次结算里还能退的 tmp）
   function trainAll() { const o = {}; for (const src of [RUN.train, RUN.alloc, RUN.tmp]) for (const k in src) o[k] = (o[k] || 0) + src[k]; return o; }
   function recompute() {
-    const items = RUN.bag.filter(x => x && x.kind === 'item').map(x => x.id);
+    const items = RUN.gear.filter(x => x && x.kind === 'item').map(x => x.id);   // 11/23 只有左边宝物格里的宝物生效
     const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit }), m = hero.m;
     m.dmg = (1 + (c.fx.dmg || 0)) * (1 + .03 * (G.lv - 1)); m.spd = c.spd; m.area = c.area; m.move = c.move;
     hero.crit = c.crit; hero.critMul = c.critMul; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.44 : 1.8;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20% hero.A = c.A; hero.fx = c.fx;
