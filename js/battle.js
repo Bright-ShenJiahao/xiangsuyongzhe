@@ -40,7 +40,7 @@
       m: { dmg: 1, spd: 1, area: 1, move: 1 }, crit: .01, critMul: 1.5, pIn: 1, mIn: 1, xpMul: 1, fx: {}, A: {} };
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
     RUN = { hero: b.hero || 'm', weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0,   /* 11/22 属性加点删除，只靠修炼 */ alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
-      bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: null, coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
+      bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
     RUN.slots[0] = { id: b.weapon, lv: 1, xp: 0 }; if (b.item) RUN.gear[0] = { kind: 'item', id: b.item };
     recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0);
     foes = []; shots = []; fx = []; parts = []; nums = []; tele = []; burns = []; pend = []; warns.length = 0;
@@ -427,7 +427,7 @@
     if (G.st === 1) G.fe.sign = { x: cx + ((n - 1) / 2 + 1.6) * 30 * K, y: ly + 6 * K };
     stationEnd();
   }
-  function setDoors(cards, pick) { const f = G.fe, n = cards.length, cx = f.pr.x, y = f.pr.y - 70 * K; f.doors = cards.map((c, i) => ({ c, x: cx + (i - (n - 1) / 2) * 70 * K, y, st: 0 })); f.pick = pick; }
+  function setDoors(cards, pick) { const f = G.fe, n = cards.length, cx = f.pr.x, y = MAP.ground.y0 + 58 * K; f.doors = cards.map((c, i) => ({ c, x: cx + (i - (n - 1) / 2) * 70 * K, y, st: 0 })); f.pick = pick; }
   const SKUL = (o, r) => Math.hypot(o.x - hero.x, (o.y - hero.y) * YS) < r * K;
   function xiuOrbs() { const P = G.fe.pr, L = CAMP.rollXiu(3 + (hero.fx.xiuOpt || 0)); P.orbs = L.map((o, i) => Object.assign({ x: P.x + (i - (L.length - 1) / 2) * 40 * K, y: P.y + 40 * K, st: 0 }, o)); P.cr = P.cr || { x: P.x + (L.length / 2 + .6) * 40 * K, y: P.y + 40 * K, st: 0, n: 0 }; }
   // 11/22 不打仗的门：宝箱 / 篝火 / 特价商人在原地演出（奇遇还是弹卡片）
@@ -615,15 +615,21 @@
   }
   // ---------- 11/23 地图氛围：光柱 / 火光火星 / 落叶 / 萤火虫，位置全部取自地图本身（MAP.amb，原图像素） ----------
   const AMB = { leaves: [], flies: [], sparks: [] };
+  // 11/23 照三国终章：火用 8 帧火焰序列图（盖在地图画的火上），落叶用桑叶图，光柱用 shaft 图
+  const FXI = {}; const fxi = n => FXI[n] || (FXI[n] = Object.assign(new Image(), { src: 'art/fx/map/' + n + '.webp' })); const okI = i => i.complete && i.naturalWidth;
   function ambDraw(dt) {
     const A = MAP.amb; if (!A) return; const q = MAPW / 1672, P = (x, y) => [X(x * q), Y(y * q)], t = G.t;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    for (const [x, y, w, h] of A.rays || []) { const [sx, sy] = P(x, y), L = h * q * s, Wd = w * q * s * .35; for (let i = 0; i < 3; i++) { const a = .05 + .03 * Math.sin(t * .6 + i * 2 + x), ox = (i - 1) * Wd * .7;
+    { const sh = fxi('shaft'); if (okI(sh)) for (const [x, y, w, h] of A.rays || []) { const [sx, sy] = P(x, y); ctx.globalAlpha = .55 + .2 * Math.sin(t * .5 + x); ctx.drawImage(sh, sx - w * q * s * .2, sy, w * q * s * 1.2, h * q * s); } ctx.globalAlpha = 1; }
+    for (const [x, y, w, h] of A.rays || []) { const [sx, sy] = P(x, y), L = h * q * s, Wd = w * q * s * .35; for (let i = 0; i < 3; i++) { const a = .12 + .05 * Math.sin(t * .6 + i * 2 + x), ox = (i - 1) * Wd * .7;
       const g = ctx.createLinearGradient(sx, sy, sx + L * .45, sy + L); g.addColorStop(0, `rgba(255,236,170,${a})`); g.addColorStop(1, 'rgba(255,236,170,0)'); ctx.fillStyle = g;
       ctx.beginPath(); ctx.moveTo(sx + ox, sy); ctx.lineTo(sx + ox + Wd * .5, sy); ctx.lineTo(sx + ox + L * .45 + Wd, sy + L); ctx.lineTo(sx + ox + L * .45 - Wd * .2, sy + L); ctx.fill(); } }
-    for (const [x, y, k] of A.fires) { const [sx, sy] = P(x, y), r = (26 + 4 * Math.sin(t * 9 + x) + 3 * Math.sin(t * 23 + y)) * k * s * q, g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
+    for (const [x, y, k] of A.fires) { const [sx, sy] = P(x, y - 14 * k), r = (26 + 4 * Math.sin(t * 9 + x) + 3 * Math.sin(t * 23 + y)) * k * s * q, g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
       g.addColorStop(0, 'rgba(255,190,90,.38)'); g.addColorStop(.5, 'rgba(255,120,40,.12)'); g.addColorStop(1, 'rgba(255,80,20,0)'); ctx.fillStyle = g; ctx.fillRect(sx - r, sy - r, 2 * r, 2 * r);
       if (Math.random() < dt * 7 * k) AMB.sparks.push({ x: x + R(-4, 4) * k, y: y - 4, vx: R(-6, 6), vy: R(-38, -20), t: 0, T: R(.6, 1.2) }); }
+    ctx.globalCompositeOperation = 'source-over';
+    for (const [x, y, k, kind, hh] of A.fires) { const im = fxi(kind); if (!okI(im)) continue; const fw = im.naturalWidth / 8, f = Math.floor(t * 12 + x) % 8, h = hh * q * s, w = h * fw / im.naturalHeight, [sx, sy] = P(x, y); ctx.drawImage(im, f * fw, 0, fw, im.naturalHeight, sx - w / 2, sy - h, w, h); }
+    ctx.globalCompositeOperation = 'lighter';
     for (const p of AMB.sparks) { p.t += dt; p.x += (p.vx + Math.sin(p.t * 6) * 8) * dt; p.y += p.vy * dt; const [sx, sy] = P(p.x, p.y), a = 1 - p.t / p.T; ctx.fillStyle = `rgba(255,${160 + 80 * a | 0},70,${a})`; ctx.fillRect(sx, sy, u, u); }
     AMB.sparks = AMB.sparks.filter(p => p.t < p.T);
     if (AMB.flies.length < 16 && A.flies) { const [x0, y0, x1, y1] = A.flies[Math.random() * A.flies.length | 0]; AMB.flies.push({ x: R(x0, x1), y: R(y0, y1), ph: R(0, 7), t: 0, T: R(5, 9) }); }
@@ -631,9 +637,10 @@
       ctx.fillStyle = `rgba(210,255,120,${.25 * a})`; ctx.fillRect(sx - u, sy - u, 3 * u, 3 * u); ctx.fillStyle = `rgba(240,255,190,${a})`; ctx.fillRect(sx, sy, u, u); }
     AMB.flies = AMB.flies.filter(f => f.t < f.T);
     ctx.restore();
-    if (A.leaf && AMB.leaves.length < 9 && Math.random() < dt * 1.2) { const [x0, x1, y0, y1] = A.leaf; AMB.leaves.push({ x: R(x0, x1), y: R(y0, y1), t: 0, ph: R(0, 7), c: Math.random() < .5 ? 0 : 1 }); }
-    for (const l of AMB.leaves) { l.t += dt; l.y += 22 * dt; l.x += (Math.sin(l.t * 1.6 + l.ph) * 18 + 6) * dt; const [sx, sy] = P(l.x, l.y), fl = Math.sin(l.t * 3 + l.ph) > 0, a = Math.min(1, l.t, (12 - l.t) / 2);
-      ctx.globalAlpha = Math.max(0, a); ctx.fillStyle = l.c ? '#c8b040' : '#8ab040'; ctx.fillRect(sx, sy, (fl ? 3 : 2) * u, (fl ? 2 : 3) * u); ctx.fillStyle = l.c ? '#7a6020' : '#4a7020'; ctx.fillRect(sx + u, sy + u, u, u); ctx.globalAlpha = 1; }
+    if (A.leaf && AMB.leaves.length < 22 && Math.random() < dt * 3) { const [x0, x1, y0, y1] = A.leaf; AMB.leaves.push({ x: R(x0, x1), y: R(y0, y1), t: 0, ph: R(0, 7), c: Math.random() < .5 ? 0 : 1, n: Math.random() * 4 | 0, sz: R(9, 14) }); }
+    for (const l of AMB.leaves) { l.t += dt; l.y += 34 * dt; l.x += (Math.sin(l.t * 1.6 + l.ph) * 18 + 6) * dt; const [sx, sy] = P(l.x, l.y), a = Math.min(1, l.t, (12 - l.t) / 2), im = fxi('sang' + l.n);
+      ctx.globalAlpha = Math.max(0, a); if (okI(im)) { const w = l.sz * q * s, fl = Math.cos(l.t * 3 + l.ph); ctx.save(); ctx.translate(sx, sy); ctx.rotate(Math.sin(l.t * 1.3 + l.ph) * 1.2); ctx.scale(fl, 1); ctx.drawImage(im, -w / 2, -w / 2, w, w * im.naturalHeight / im.naturalWidth); ctx.restore(); }
+      ctx.globalAlpha = 1; }
     AMB.leaves = AMB.leaves.filter(l => l.t < 12);
   }
   function gotFeed(o) { const k = o.kind === 'book' ? '一本技能书' : o.kind === 'item' ? '一件宝物' : ''; if (k) { UI.feed(`获得${k}，${UI.pTip()}`); UI.newDot(); } }
@@ -796,7 +803,7 @@
     for (const n of nums) { const y = Y(n.y) - n.t * 22 * u; if (n.txt) { ctx.font = `${7 * u}px Pix, monospace`; ctx.textAlign = 'center'; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#2a160e'; ctx.strokeText(n.txt, X(n.x), y); ctx.fillStyle = n.col; ctx.fillText(n.txt, X(n.x), y); } else num(n.v, X(n.x), y, n.col, n.big ? nk + 1 : nk); }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (joy.on) { const dpr = W / innerWidth; ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.arc(joy.sx * dpr, joy.sy * dpr, 40 * dpr, 0, 7); ctx.fill(); const jx = joy.x - joy.sx, jy = joy.y - joy.sy, d = Math.hypot(jx, jy), k = Math.min(1, 40 / (d || 1)); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc((joy.sx + jx * k) * dpr, (joy.sy + jy * k) * dpr, 18 * dpr, 0, 7); ctx.fill(); }
-    UI.hud({ combo: G.combo || 0, comboT: G.comboT || 0, roll: Math.max(0, hero.rollCd) / (hero.rollMax || 1.8), rollT: Math.max(0, hero.rollCd), lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
+    UI.hud({ fe: !!G.fe, combo: G.combo || 0, comboT: G.comboT || 0, roll: Math.max(0, hero.rollCd) / (hero.rollMax || 1.8), rollT: Math.max(0, hero.rollCd), lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
   }
   // 蓄力类前摇：脚下画金色预警（瞬光斩半圆、贯星箭长线、跃龙击圆圈 + 地裂）
   function chargePreview() {

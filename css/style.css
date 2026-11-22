@@ -926,3 +926,7 @@ img.skic { padding: 0 !important; background: none !important; box-shadow: none 
 .lo .bag.gear { grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: 330px; }
 #bPause { position: relative; } #bPause.dot::after { content: ''; position: absolute; right: -3px; top: -3px; width: 12px; height: 12px; border-radius: 50%; background: #ff3a3a; box-shadow: 0 0 0 2px #1a1008; animation: dotP 1s ease-in-out infinite alternate; } @keyframes dotP { to { transform: scale(1.25); } }
 #feed div { font-size: 22px; } @media (orientation: portrait), (max-width: 760px) { #feed div { font-size: 17px; } .lo .bag.gear { grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: none; } }
+
+.lo .bag.oathrow { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+/* 11/23 站末结算时隐藏计时和连击 */
+body.fe #hud .top .clock, body.fe #combo { display: none !important; }

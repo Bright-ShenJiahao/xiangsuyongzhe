@@ -58,10 +58,9 @@
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
     // 11/23 誓约印记 3 格 + 身法 1 格（同一行）
-    L.insertAdjacentHTML('beforeend', '<h4>誓约印记 · 身法 <small>印记：被动，同名再得升级（即将开放）</small></h4>');
+    L.insertAdjacentHTML('beforeend', '<h4>誓约印记 <small>被动，同名再得升级；身法类印记会强化翻滚（即将开放）</small></h4>');
     const om = document.createElement('div'); om.className = 'bag oathrow'; L.appendChild(om);
     r.oath.forEach((o, i) => { const d = document.createElement('div'); d.className = 'oath' + (o ? ' has' : ''); d.textContent = o ? o.id : ''; om.appendChild(d); });
-    om.insertAdjacentHTML('beforeend', '<div class="gap"></div>'); const mv = document.createElement('div'); mv.className = 'has mv'; mv.innerHTML = '<span>翻滚</span>'; mv.title = '身法：翻滚（默认）。以后可换成其他身法'; om.appendChild(mv);
     const cell = (grid, arr, t) => arr.forEach((o, i) => { const d = document.createElement('div'); const th = thing(o);
       if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); if (o.kind === 'book') { d.appendChild(UI.skIcon(o.id)); d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else d.appendChild(iconEl(th)); }
       if (sel && sel.t === t && sel.i === i) d.classList.add('sel');

@@ -171,7 +171,8 @@
   function hud(h) {
     set('hpBar', 'w', (h.hp / h.maxHp * 100).toFixed(1) + '%'); set('hpTxt', 'text', `${Math.ceil(h.hp)} / ${h.maxHp}`);
     set('lvTxt', 'text', 'Lv ' + h.lv); set('xpBar', 'w', h.need ? (h.xp / h.need * 100).toFixed(1) + '%' : '100%');
-    set('clock', 'html', h.bossWave ? '<em>⌛</em><b>首领战</b>' : `<em>⌛</em><b>${pxNum(h.left == null ? '00:00' : mmss(h.left), h.left != null && h.left < 5.5 ? '#ff8a6a' : '#f4ecd8')}</b><small>第 ${h.st} / ${h.sts} 站</small>`);
+    document.body.classList.toggle('fe', !!h.fe);
+    set('clock', 'html', h.bossWave ? '<em>⌛</em><b>首领战</b>' : `<em>⌛</em><b>${pxNum(h.left == null ? '00:00' : mmss(h.left), h.left != null && h.left < 5.5 ? '#ff8a6a' : '#f4ecd8')}</b>`);
     // 11/22 右侧击倒 / 连击（群侠式）：连击到 10 / 25 / 50 / 100 放大闪一下，3 秒没杀到就断
     if (HC.k !== h.kills) { HC.k = h.kills; set('kN', 'html', pxNum(h.kills, '#f4ecd8')); }
     { const c = h.combo, col = c >= 100 ? '#ff4a6a' : c >= 50 ? '#ff7040' : c >= 25 ? '#ffb050' : c >= 10 ? '#ffe08a' : '#8a5a2a'; if (HC.c !== c) { HC.c = c; set('cN', 'html', c > 1 ? pxNum(c, col) : ''); } }
