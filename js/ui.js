@@ -104,7 +104,9 @@
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(w.icon)); b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
-    const W = DATA.weapons[P.weapon]; $('wDesc').innerHTML = `<b class="wsk">起手招：${W.skill}</b>　${W.desc}<br><small style="color:#c8b890">吃「${DATA.attrs.find(a => a.id === W.type).name}」加成。之后的技能书什么系都会出，可以混着带。</small>`;
+    const W = DATA.weapons[P.weapon], SK0 = DATA.skills[P.weapon] || {}, AT = DATA.attrs.find(a => a.id === W.type);   // 11/22 起手技能介绍（铃兰式：上面选兵器，下面讲技能）
+    $('wDesc').innerHTML = `<div class="skI"><div class="skIc">${iconCanvas(W.icon).outerHTML}</div><div class="skIb"><div class="skIt"><b>${SK0.name || W.skill}</b><em>${SK0.dt === 'magic' ? '魔法' : '物理'}</em><em>吃「${AT.name}」</em></div><p>${SK0.desc || W.desc}</p></div></div>
+      <ul class="skLv">${['l3', 'l5', 'l7'].filter(k => SK0[k]).map(k => `<li><i>Lv${k.slice(1)}</i>${SK0[k]}</li>`).join('')}</ul>`;
     // 属性
     const c = DATA.calc(build()), left = DATA.attrFree - used(); $("aLeft").textContent = left ? `剩余 ${left} 点（可带进游戏）` : "剩余 0 点";
     const ar = $('aRows'); ar.innerHTML = '';

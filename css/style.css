@@ -826,3 +826,15 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 .pnPick .pnSel { position: static !important; } .pnSel button { width: 64px; height: 64px; } .pnSel button canvas { height: 34px !important; }
 @media (orientation: portrait), (max-width: 760px) { .pnSel button { width: 54px; height: 54px; } }
 .pnR { gap: 10px; padding-top: 16px; } .pnHead { padding-bottom: 8px; } .pnSec { padding-top: 8px; }
+/* 起手技能介绍 */
+#prep .pnSec .wdesc { text-align: left; margin-top: 14px; }
+.skI { display: flex; gap: 16px; align-items: center; padding: 12px 16px; background: rgba(255, 255, 255, .45); border-radius: 10px; border: 1px solid rgba(150, 105, 45, .3); }
+.skIc > * { width: 64px !important; height: 64px !important; border-radius: 50%; box-shadow: 0 0 0 3px #e8a820; }
+.skIb { flex: 1; min-width: 0; } .skIt { display: flex; align-items: center; gap: 8px; } .skIt b { font-size: 22px; color: #4a2e12; font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif; }
+.skIt em { font-style: normal; font-size: 12px; padding: 1px 8px; border-radius: 9px; background: #e8d6ae; color: #6a4818; } .skIb p { margin: 4px 0 0; font-size: 16px; color: var(--pp-ink); }
+.skLv { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.skLv li { font-size: 14px; color: var(--pp-ink); padding: 6px 10px; background: rgba(255,255,255,.3); border-left: 3px solid #c49a52; } .skLv i { font-style: normal; font-weight: 700; color: #a8742a; margin-right: 6px; }
+@media (orientation: portrait), (max-width: 760px) { .skLv { grid-template-columns: 1fr; } .skIc > * { width: 48px !important; height: 48px !important; } .skIt b { font-size: 18px; } .skIb p { font-size: 14px; } }
+#prep .pnItem > div { flex-direction: row !important; padding: 6px 10px !important; gap: 8px !important; text-align: left; } #prep .pnItem .pi { width: 36px !important; height: 36px; flex: none; }
+#prep .pnItem > div { display: grid !important; grid-template-columns: 36px 1fr; grid-template-rows: auto auto; column-gap: 8px; } #prep .pnItem > div > :first-child { grid-row: 1 / 3; } #prep .pnItem b { font-size: 14px; } #prep .pnItem small { text-align: left; font-size: 12px; }
+.pnR { gap: 8px; } .pnHead #heroCv { flex-basis: 110px; width: 110px; height: 110px; } .pnWep button > :first-child { width: 68px !important; height: 68px !important; } .skI { padding: 8px 14px; } .skLv { margin-top: 8px; } .pnSec h4 { margin-bottom: 6px; }
