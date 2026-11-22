@@ -171,9 +171,13 @@
   function hud(h) {
     set('hpBar', 'w', (h.hp / h.maxHp * 100).toFixed(1) + '%'); set('hpTxt', 'text', `${Math.ceil(h.hp)} / ${h.maxHp}`);
     set('lvTxt', 'text', 'Lv ' + h.lv); set('xpBar', 'w', h.need ? (h.xp / h.need * 100).toFixed(1) + '%' : '100%');
-    set('clock', 'text', h.bossWave ? '首领站 · 首领战！' : `第 ${h.st}/${h.sts} 站 · 第 ${h.wi + 1}/3 波 · ${h.left == null ? '' : mmss(h.left)}`);
-    set('clock', 'cls', h.left != null && h.left < 5.5 && !h.bossWave ? 'warn' : '');
-    set('kills', 'html', piH('kill', 1) + ' ' + h.kills); set('coins', 'html', piH('coin', 1) + ' ' + h.coins);
+    set('clock', 'html', h.bossWave ? '<em>⌛</em><b>首领战</b>' : `<em>⌛</em><b>${h.left == null ? '--:--' : mmss(h.left)}</b><small>第 ${h.st} / ${h.sts} 站</small>`);
+    // 11/22 右侧击倒 / 连击（群侠式）：连击到 10 / 25 / 50 / 100 放大闪一下，3 秒没杀到就断
+    set('kN', 'text', h.kills); set('cN', 'text', h.combo > 1 ? h.combo : '');
+    { const c = h.combo, big = c >= 100 ? 4 : c >= 50 ? 3 : c >= 25 ? 2 : c >= 10 ? 1 : 0; set('combo', 'cls', 'cb' + big + (c > 1 ? ' on' : '') + (h.comboT < 1 && c > 1 ? ' fade' : ''));
+      if (c && c !== HC.lastC) { HC.lastC = c; const e = $('cN'); e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); } }
+    set('clock', 'cls', 'clock' + (h.left != null && h.left < 5.5 && !h.bossWave ? ' warn' : ''));
+ set('coins', 'html', piH('coin', 1) + ' ' + h.coins);
     const sk = JSON.stringify([h.slots, h.open, h.next]);
     if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.classList.add('tr', 't' + DATA.skills[s.id].tier); d.appendChild(skIcon(s.id)); { const L = BATTLE.profL(s); if (L) d.insertAdjacentHTML('beforeend', `<i>${L}</i>`); } } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');

@@ -858,3 +858,25 @@ img.skic { box-sizing: border-box; padding: 6%; border-radius: 6px; background: 
 /* 11/22 技能图标第二版自带深色底和边框：去掉代码加的底和金边 */
 img.skic { padding: 0 !important; background: none !important; box-shadow: none !important; border-radius: 3px; }
 .skIc > img.skic { box-shadow: 0 0 0 2px #e0b24a, 0 2px 6px rgba(0,0,0,.35) !important; border-radius: 4px !important; }
+
+/* ===== 11/22 战斗 HUD（群侠式）：顶部正中 经验条 + 沙漏时间；血条移到底部正中；右侧大号 击倒 / 连击 ===== */
+#hud .top .hp { position: fixed; left: 50%; bottom: 22px; top: auto; transform: translateX(-50%); width: min(560px, 44vw); height: 26px; z-index: 6; }
+#hud .top .hp span { font-size: 15px; }
+#hud .top .lv { position: fixed; left: 50%; top: 10px; transform: translateX(-50%); width: min(640px, 50vw); display: flex; align-items: center; gap: 8px; }
+#hud .top .lv .xp { flex: 1; height: 10px; }
+#hud .top .clock { position: fixed; left: 50%; top: 30px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: none !important; padding: 0 !important; }
+#hud .clock em { font-style: normal; font-size: 26px; filter: drop-shadow(0 2px 2px #000); }
+#hud .clock b { font-family: WenKai, serif; font-size: 34px; font-weight: 400; color: #f4ecd8; letter-spacing: .06em; text-shadow: 0 0 0 #000, 2px 2px 0 #1a1008, -1px -1px 0 #1a1008, 1px -1px 0 #1a1008, -1px 1px 0 #1a1008; }
+#hud .clock small { font-size: 13px; color: #d8c8a8; text-shadow: 1px 1px 0 #000; margin-left: 4px; }
+#hud .clock.warn b { color: #ff8a6a; animation: clkW .5s ease-in-out infinite alternate; } @keyframes clkW { to { transform: scale(1.08); } }
+#hud .top .kills { display: none !important; }
+#combo { position: fixed; right: 18px; top: 34%; z-index: 6; display: grid; justify-items: end; pointer-events: none; font-family: WenKai, serif; color: #f4ecd8; }
+#combo b { font-size: 54px; line-height: 1; font-weight: 400; text-shadow: 3px 3px 0 #1a1008, -1px -1px 0 #1a1008, 2px -1px 0 #1a1008, -1px 2px 0 #1a1008; }
+#combo span { font-size: 22px; color: #e8c070; margin: -2px 0 10px; text-shadow: 2px 2px 0 #1a1008; } #combo #cN, #combo .cl { opacity: 0; transition: opacity .3s; } #combo.on #cN, #combo.on .cl { opacity: 1; } #combo.fade #cN, #combo.fade .cl { opacity: .45; }
+#combo #cN { font-size: 46px; } #combo.cb1 #cN { color: #ffe08a; } #combo.cb2 #cN { color: #ffb050; font-size: 54px; } #combo.cb3 #cN { color: #ff7040; font-size: 62px; } #combo.cb4 #cN { color: #ff4a6a; font-size: 70px; }
+#combo #cN.pop { animation: cPop .18s ease-out; } @keyframes cPop { from { transform: scale(1.35); } }
+@media (orientation: portrait), (max-width: 760px) { #hud .top .hp { width: 62vw; bottom: 150px; height: 20px; } #hud .top .lv { width: 60vw; top: calc(8px + env(safe-area-inset-top)); } #hud .top .clock { top: calc(24px + env(safe-area-inset-top)); } #hud .clock b { font-size: 24px; } #hud .clock em { font-size: 18px; }
+  #combo { top: 22%; right: 8px; } #combo b { font-size: 34px; } #combo span { font-size: 14px; } #combo #cN { font-size: 30px; } }
+#hud .top { justify-content: flex-end; } #hud .top .coins { margin-left: 0; }
+@media (orientation: portrait), (max-width: 760px) { #hud .top .lv { width: 52vw; left: 40%; } #hud .top .clock { left: 40%; } }
+@media (orientation: portrait), (max-width: 760px) { #hud .top .lv { width: 46vw; left: 33%; } #hud .top .clock { left: 33%; } }
