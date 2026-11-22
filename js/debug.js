@@ -14,7 +14,7 @@
   B('直接胜利', () => UI.mod().debug.win());
   B('直接开打', () => { if (window.UI) UI.startBattle(); });
   B('主界面：' + (localStorage.getItem('xsyz-title') === 'old' ? '旧' : '新'), () => { localStorage.setItem('xsyz-title', localStorage.getItem('xsyz-title') === 'old' ? 'new' : 'old'); location.reload(); });   // 11/22 新旧主界面对比
-  B('主视觉：' + (localStorage.getItem('xsyz-tart') || '2'), () => { const v = { 2: '3', 3: '4', 4: '5', 5: '6', 6: '7', 7: '8', 8: '9', 9: '10', 10: '11', 11: '2' }[localStorage.getItem('xsyz-tart') || '2']; localStorage.setItem('xsyz-tart', v); location.reload(); });   // 11/22 三张主视觉对比
+  B('主视觉：' + (localStorage.getItem('xsyz-tart') || '2'), () => { const v = { 2: '3', 3: '4', 4: '5', 5: '6', 6: '7', 7: '8', 8: '9', 9: '10', 10: '11', 11: '12', 12: '2' }[localStorage.getItem('xsyz-tart') || '2']; localStorage.setItem('xsyz-tart', v); location.reload(); });   // 11/22 三张主视觉对比
   hide.click();   // 默认收起，点「调试」展开（手机上不挡按钮）
   box.addEventListener('pointerdown', e => e.stopPropagation());
   addEventListener('DOMContentLoaded', () => document.body.appendChild(box)); if (document.body) document.body.appendChild(box);
