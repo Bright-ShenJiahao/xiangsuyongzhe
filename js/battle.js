@@ -363,7 +363,7 @@
     for (const o of p.orbs) { if (p.done && p.done !== o) continue; const ox = X(o.x), oy = Y(o.y) - 13 * u, r = 13 * u; ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(ox, Y(o.y) + 2 * u, 12 * u, 3.5 * u, 0, 0, 7); ctx.fill();
       const g2 = ctx.createRadialGradient(ox, oy, 0, ox, oy, r * 1.8); g2.addColorStop(0, o.c + 'cc'); g2.addColorStop(1, o.c + '00'); ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(ox, oy, r * 1.8, 0, 7); ctx.fill();
       ctx.fillStyle = 'rgba(20,14,30,.75)'; ctx.beginPath(); ctx.arc(ox, oy, r, 0, 7); ctx.fill(); ctx.strokeStyle = o.c; ctx.lineWidth = u; ctx.stroke();
-      if (o.im.complete && o.im.naturalWidth) { const sz = r * 1.4; ctx.drawImage(o.im, ox - sz / 2, oy - sz / 2, sz, sz); }
+      if (o.im.complete && o.im.naturalWidth) { const sz = r * 1.4; ctx.drawImage(o.im, ox - sz / 2, oy - sz / 2, sz, sz); } if (!p.done && o.st > 0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.arc(ox, oy, r + 3 * u, -PI / 2, -PI / 2 + PI * 2 * Math.min(1, o.st / .7)); ctx.stroke(); }
       if (!p.done) { ctx.font = `${Math.round(6 * u)}px WenKai, Pix, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#1a1008'; ctx.strokeText(o.n, ox, oy + r + 2 * u); ctx.fillStyle = '#fff3d0'; ctx.fillText(o.n, ox, oy + r + 2 * u); } }
     if (!p.done) { const left = Math.ceil(p.T - p.t); ctx.font = `${Math.round(6 * u)}px WenKai, Pix, serif`; ctx.fillStyle = '#e6d4ff'; ctx.textAlign = 'center'; ctx.fillText(`走过去拿一个（${left}）`, X(p.x), Y(p.y) + 64 * u); }
     ctx.restore();
@@ -471,8 +471,8 @@
         if (o.st > .8) { for (const [a, v] of o.adds) RUN.train[a] = (RUN.train[a] || 0) + v; RUN.xiu--; recompute(); toastMsg(`修炼：${o.adds.map(([a, v]) => DATA.attrs.find(x => x.id === a).name + ' +' + v).join('、')}`);
           for (let k = 0; k < 16; k++) { const an = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(an) * 60 * K, vy: Math.sin(an) * 60 * K, t: 0, T: .5, col: DATA.rarity[o.q].col, g: 0 }); }
           if (RUN.xiu > 0) { P.cr.n = 0; xiuOrbs(); } else { P.orbs = null; P.cr = null; P.said = 3; } return; } }
-      const c = P.cr; if (c) { if (SKUL(c, 14)) c.st += dt; else c.st = 0;
-        if (c.st > .5) { c.st = 0; const free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1); if (cost && RUN.coins < cost) { toastMsg('铜钱不够'); c.st = -1; } else { RUN.coins -= cost; c.n++; const keep = c; xiuOrbs(); P.cr = keep; } } }
+      const c = P.cr; if (c) { if (!SKUL(c, 20)) c.lock = false; if (SKUL(c, 14) && !c.lock) c.st += dt; else c.st = 0;
+        if (c.st > .5) { c.st = 0; const free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1); c.lock = true; if (cost && RUN.coins < cost) toastMsg('铜钱不够'); else { RUN.coins -= cost; c.n++; const keep = c; xiuOrbs(); P.cr = keep; } } }
     }
     const M = f.mer; if (M.st < 0) { if (!SKUL(M, 30)) M.st = 0; } else if (SKUL(M, 24)) M.st += dt; else M.st = 0;   // 离开商店后要先走开才能再进
     if (M.st > .4) { M.st = -99; G.lock = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '地精商人', tab: 'shang', only: 'shang', field: 1, goText: '离开 ▶', after: () => { G.lock = false; M.st = -1; } }); return; }
@@ -489,7 +489,7 @@
   function fieldDraw() {
     const f = G.fe; if (!f) return; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     const label = (t, x, y, col, sz) => { ctx.font = `${Math.round((sz || 6) * u)}px WenKai, Pix, serif`; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#1a1008'; ctx.strokeText(t, x, y); ctx.fillStyle = col || '#fff3d0'; ctx.fillText(t, x, y); };
-    const ring = (o, r, p, col) => { if (p <= 0) return; ctx.strokeStyle = col; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.arc(X(o.x), Y(o.y), r * u, -PI / 2, -PI / 2 + PI * 2 * Math.min(1, p)); ctx.stroke(); };
+    const ring = (o, r, p, col, dy) => { if (p <= 0) return; ctx.strokeStyle = col; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.arc(X(o.x), Y(o.y) - (dy || 0) * u, r * u, -PI / 2, -PI / 2 + PI * 2 * Math.min(1, p)); ctx.stroke(); };
     for (const d of f.doors) { const x = X(d.x), y = Y(d.y), w = 46 * u, h = 58 * u, c = d.c, el = c.k === 'elite', rs = c.rest;
       const gl = ctx.createRadialGradient(x, y - h / 2, 0, x, y - h / 2, w); gl.addColorStop(0, rs ? 'rgba(120,220,160,.45)' : el ? 'rgba(255,140,60,.45)' : c.k === 'boss' ? 'rgba(255,60,60,.5)' : 'rgba(140,180,255,.4)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gl; ctx.fillRect(x - w, y - h * 1.3, w * 2, h * 1.5);
       ctx.fillStyle = '#1a1210'; ctx.beginPath(); ctx.moveTo(x - w / 2, y); ctx.lineTo(x - w / 2, y - h + w / 2); ctx.arc(x, y - h + w / 2, w / 2, PI, 0); ctx.lineTo(x + w / 2, y); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#c9a24a'; ctx.lineWidth = 2 * u; ctx.stroke();
@@ -497,7 +497,7 @@
       else { const im = img(c.icon); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 15 * u, y - 40 * u, 30 * u, 30 * u); }
       label(c.name, x, y - h - 10 * u, el ? '#ffb070' : rs ? '#9ef0b0' : '#fff3d0'); if (c.sub) label(c.sub, x, y + 2 * u, '#c8b890', 5); ring({ x: d.x, y: d.y }, 10, d.st / .35, '#ffe08a'); }
     for (const o of f.items) { const im = img(o.kind === 'book' ? ({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[DATA.skills[o.id].sys] : o.kind === 'item' ? o.id : o.id), x = X(o.x), y = Y(o.y) - 9 * u - rd((0 * Math.sin(G.t * 3 + o.x) * 2) * u);
-      ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + u, 9 * u, 3 * u, 0, 0, 7); ctx.fill(); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); ring(o, 13, o.st / .6, '#ffe08a'); }
+      ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + u, 9 * u, 3 * u, 0, 0, 7); ctx.fill(); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); ring(o, 12, o.st / .6, '#ffe08a', 9); }
     const P = f.pr, px = X(P.x), py = Y(P.y);
     ctx.save(); ctx.globalAlpha = .5 + .15 * Math.sin(G.t * 2); ctx.strokeStyle = '#c8a8ff'; ctx.lineWidth = 2 * u; ctx.setLineDash([4 * u, 4 * u]); ctx.beginPath(); ctx.ellipse(px, py + 30 * u, 62 * u, 62 * u / YS * .9, 0, 0, 7); ctx.stroke(); ctx.fillStyle = 'rgba(200,170,255,.07)'; ctx.fill(); ctx.restore();
     const gl = ctx.createRadialGradient(px, py - 20 * u, 0, px, py - 20 * u, 40 * u); gl.addColorStop(0, 'rgba(220,190,255,.5)'); gl.addColorStop(1, 'rgba(220,190,255,0)'); ctx.fillStyle = gl; ctx.fillRect(px - 40 * u, py - 60 * u, 80 * u, 80 * u);
@@ -506,10 +506,10 @@
         const g2 = ctx.createRadialGradient(x, y, 0, x, y, r * 1.8); g2.addColorStop(0, Q.col + 'aa'); g2.addColorStop(1, Q.col + '00'); ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(x, y, r * 1.8, 0, 7); ctx.fill();
         ctx.fillStyle = 'rgba(20,14,30,.8)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.strokeStyle = Q.col; ctx.lineWidth = u; ctx.stroke();
         const im = img(o.adds[0][0] === 'end' ? 'amulet' : o.adds[0][0]); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 8 * u, y - 8 * u, 16 * u, 16 * u);
-        o.adds.forEach(([a, v], k) => label(`+${v} ${DATA.attrs.find(t => t.id === a).name}`, x, y + r + 2 * u + k * 7 * u, Q.col)); ring(o, 14, o.st / .8, '#fff'); }
+        o.adds.forEach(([a, v], k) => label(`+${v} ${DATA.attrs.find(t => t.id === a).name}`, x, y + r + 2 * u + k * 7 * u, Q.col)); ring(o, 15, o.st / .8, '#fff', 12); }
       const c = P.cr; if (c) { const x = X(c.x), y = Y(c.y), free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1);
         ctx.fillStyle = '#b07bff'; ctx.beginPath(); ctx.moveTo(x, y - 12 * u); ctx.lineTo(x + 7 * u, y - 2 * u); ctx.lineTo(x, y + 6 * u); ctx.lineTo(x - 7 * u, y - 2 * u); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#efe0ff'; ctx.lineWidth = u; ctx.stroke();
-        label(cost ? `刷新 ${cost} 铜钱` : `刷新（${free - c.n}）`, x, y + 8 * u, '#e6d4ff', 5); ring(c, 12, c.st / .5, '#e6d4ff'); if (G.st === 1 && !c.n) label('站上来刷新修炼', x, y - 24 * u, '#c8b890', 5); } }
+        label(cost ? `刷新 ${cost} 铜钱` : `刷新（${free - c.n}）`, x, y + 8 * u, '#e6d4ff', 5); ring(c, 12, c.st / .5, '#e6d4ff', 3); if (G.st === 1 && !c.n) label('站上来刷新修炼', x, y - 24 * u, '#c8b890', 5); } }
     const M = f.mer; label('地精商人', X(M.x), Y(M.y) + 3 * u, '#ffd860'); say(X(M.x), Y(M.y) - 44 * u, ['嘿嘿，要买点什么？', '好货不等人！', '铜钱带够了吗？'], 2.1); ring(M, 14, M.st / .4, '#ffd860');
     restDraw(label, ring);
     if (f.sign) { const S = f.sign, near = dist(S, hero) < 40, hop = near ? Math.abs(Math.sin(G.t * 8)) * 4 : 0, x = X(S.x), y = Y(S.y) - hop * u, on = Math.floor(G.t * 2.5) % 2;   // 11/23 地上的像素 P 键帽
