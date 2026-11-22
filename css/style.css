@@ -872,3 +872,9 @@ body.fpx .pnName h5 { font-size: 48px !important; } body.fpx .pnSec h4, body.fpx
 @keyframes tenterPulse { 50% { opacity: .55; } }
 .tenter:disabled { opacity: .35; pointer-events: none; } .tenter:disabled span { animation: none; }
 @media (orientation: portrait), (max-width: 600px) { .tenter { font-size: 22px; gap: 12px; } .tenter s { width: 64px; } }
+
+/* 11/22 主视觉 ⑤：精致像素 · 三人月夜（新默认） */
+#title.t2.v13 .tart { background-image: url(../art/title/art13.webp); background-position: 30% 50%; }
+#title.t2.v13 .tart::after { background: linear-gradient(270deg, rgba(8, 12, 30, .45) 0%, rgba(8, 12, 30, .1) 30%, rgba(8, 12, 30, 0) 42%); }
+#title.t2.v13 .tart::before { left: 44%; top: 4%; } #title.t2.v13 .tbox { left: auto; right: 2%; width: 34%; }
+@media (orientation: portrait), (max-width: 600px) { #title.t2.v13 .tart { background-size: auto 56%; background-position: 32% 6%; } #title.t2.v13 .tart::after { background: linear-gradient(180deg, rgba(8,12,30,0) 50%, #0b1024 66%); } #title.t2.v13 .tbox { right: 0; width: 100%; } }
