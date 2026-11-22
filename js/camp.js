@@ -52,7 +52,7 @@
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
     r.slots.forEach((s, i) => { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
       if (i >= r.open) { d.className = 'slot lock' + (i === r.open ? ' buy' : ''); if (sel && sel.t === 'L' && sel.i === i) d.classList.add('sel'); d.onclick = () => { sel = { t: 'L', i }; loadout(box); }; }
-      else if (s) { d.className = 'slot has tr t' + SK[s.id].tier; d.appendChild(UI.skIcon(s.id)); d.insertAdjacentHTML('beforeend', `<span class="tn${SK[s.id].tier}">${SK[s.id].name}</span><i class="dots">${dots(B().profL(s))}</i>`); }
+      else if (s) { d.className = 'slot has tr t' + SK[s.id].tier; d.appendChild(UI.skIcon(s.id)); d.title = SK[s.id].name + '：' + SK[s.id].desc + ['l3', 'l5', 'l7'].filter(k => SK[s.id][k]).map(k => '\nLv' + k.slice(1) + '：' + SK[s.id][k]).join(''); d.insertAdjacentHTML('beforeend', `<span class="tn${SK[s.id].tier}">${SK[s.id].name}</span><i class="dots">${dots(B().profL(s))}</i>`); }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });

@@ -109,8 +109,7 @@
     const ws = $('wSel'); ws.innerHTML = '';
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
     const W = DATA.weapons[P.weapon], SK0 = DATA.skills[P.weapon] || {}, AT = DATA.attrs.find(a => a.id === W.type);   // 11/22 起手技能介绍（铃兰式：上面选兵器，下面讲技能）
-    $('wDesc').innerHTML = `<div class="skI"><div class="skIc">${skIcon(P.weapon).outerHTML}</div><div class="skIb"><div class="skIt"><b>${SK0.name || W.skill}</b><em>${SK0.dt === 'magic' ? '魔法' : '物理'}</em><em>吃「${AT.name}」</em></div><p>${SK0.desc || W.desc}</p></div></div>
-      <ul class="skLv">${['l3', 'l5', 'l7'].filter(k => SK0[k]).map(k => `<li><i>Lv${k.slice(1)}</i>${SK0[k]}</li>`).join('')}</ul>`;
+    $('wDesc').innerHTML = `<div class="skI" title="${['l3', 'l5', 'l7'].filter(k => SK0[k]).map(k => 'Lv' + k.slice(1) + '：' + SK0[k]).join('\n')}"><div class="skIc">${skIcon(P.weapon).outerHTML}</div><div class="skIb"><div class="skIt"><b>${SK0.name || W.skill}</b><em>${SK0.dt === 'magic' ? '魔法' : '物理'}</em></div><p>${SK0.desc || W.desc}</p></div></div>`;
     // 属性
     const c = DATA.calc(build()), left = DATA.attrFree - used(); $("aLeft").textContent = left ? `剩余 ${left} 点（可带进游戏）` : "剩余 0 点";
     const ar = $('aRows'); ar.innerHTML = '';
