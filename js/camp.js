@@ -107,7 +107,7 @@
     ft.insertAdjacentHTML('beforeend', '<span class="dim">本次加的点，离开这一页前都能退</span>');
     const run = B().run(), hid = run.hero === 'f' ? 'f' : 'm', hname = (DATA.heroes.find(x => x.id === hid) || {}).name || '勇者';
     Rt.classList.add('lorp');   // 11/22 左边高清立绘（art/portrait/m|f.png，没有就剪影占位），右边属性，标题旁像素小人
-    Rt.innerHTML = `<div class="hport"><img src="art/portrait/${hid}.png" alt="" onerror="this.remove()"><i>立绘</i></div><div class="lorr"><h4><span class="hmini"></span>${hname}</h4><div class="stats big">
+    Rt.innerHTML = `<div class="hport"><img src="art/portrait/${hid}.webp" alt="" onerror="this.remove()"><i>立绘</i></div><div class="lorr"><h4><span class="hmini"></span>${hname}</h4><div class="stats big">
       <span>${UI.piH('hp', 1)}生命</span><b>${Math.ceil(h.hp)} / ${h.maxHp}</b>
       <span>${UI.piH('str', 1)}剑 · 枪 · 斧伤害</span><b>${pct(.06 * c.A.str + (c.fx.dmg || 0))}</b>
       <span>${UI.piH('agi', 1)}弓伤害</span><b>${pct(.06 * c.A.agi + (c.fx.dmg || 0))}</b>
