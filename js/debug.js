@@ -11,7 +11,7 @@
   B('时间到', () => UI.mod().debug.skip());
   B('升级', () => UI.mod().debug.lvl());
   B('回血', () => UI.mod().debug.heal());
-  B('本波胜利', () => UI.mod().debug.wave());
+  B('本段胜利', () => UI.mod().debug.wave());
   B('本站胜利', () => UI.mod().debug.station());
   B('直接胜利', () => UI.mod().debug.win());
   B('直接开打', () => { if (window.UI) UI.startBattle(); });

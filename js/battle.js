@@ -658,8 +658,10 @@
     run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1, xpFrac: () => G ? Math.min(1, G.xp / need()) : 0, xpTxt: () => G ? `${Math.floor(G.xp)} / ${need()}` : '', st: () => G ? G.st : 1,
     skillInfo: sk => { const S = DATA.skills[sk.id], L = profL(sk), T = G ? skillT(S, sk) : { wu: S.wu, rc: S.rc }; return { dmg: G ? skillDmg(S, sk) : S.dmg, wu: T.wu, rc: T.rc, cd: T.wu + T.rc + (S.hold || 0), L, xp: sk.xp || 0, next: DATA.prof[L] || null }; }, profL,
     debug: {   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）
-      wave: () => { if (!G || G.endT != null || !G.waveOn) return; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z)); G.cleared = true; G.timeout = false; banner('本波胜利', 1); G.endT = .6; },
-      station: () => { if (!G || G.endT != null || !G.waveOn) return; const n = STN().waves.length; G.wi = STN().waves[n - 1].boss ? n - 2 : n - 1; window.BATTLE.debug.wave(); },
+      // 本段胜利：清场，进下一段（第 1 站第 2 段之后会触发公主）；已经是最后一段就结算这一站
+      wave: () => { if (!G || G.endT != null || !G.waveOn || G.pr) return; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z));
+        if (G.wi < STN().waves.length - 1 && !STN().waves[G.wi + 1].boss) { G.wt = G.T; return; } G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; },
+      station: () => { if (!G || G.endT != null || !G.waveOn) return; const n = STN().waves.length; G.wi = STN().waves[n - 1].boss ? n - 2 : n - 1; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z)); G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; },
       boss: () => G && (foes.forEach(z => !z.dead && kill(z)), G.st = DATA.stations.length, G.wi = 1, nextWave()), god: () => G && (G.god = !G.god), clear: () => G && (G.q = [], warns.length = 0, foes.forEach(z => !z.T.boss && !z.dead && kill(z)), G.wt = Math.max(G.wt, G.T - .1)), skip: () => G && G.W && (G.wt = G.T), st: n => G && (G.st = n, G.wi = -1), lvl: () => G && addXp(need() / (hero.xpMul || 1) - G.xp + .01), win: () => G && (G.boss ? kill(G.boss) : (G.st = DATA.stations.length, G.wi = 1, nextWave(), bossIn(), kill(G.boss))), heal: () => hero && (hero.hp = hero.maxHp), route: () => G && (G.paused = true, showRoute()), spawn: (t, tier) => G && spawn(t, { x: hero.x + R(60, 120) * K * (Math.random() < .5 ? -1 : 1), y: hero.y + R(-20, 20) * K }, tier), state: () => ({ G, hero, foes, RUN, u, s, W, H }) },
   };
 })();
