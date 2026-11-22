@@ -777,3 +777,47 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 @media (orientation: portrait), (max-width: 600px) { #title.t2.v12 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v12 .tart::after { background: linear-gradient(180deg, rgba(6,8,14,0) 50%, #06080e 66%); } #title.t2.v12 .tbox { right: 0; width: 100%; } }
 #pause .lom .pills { margin-bottom: 6px; } #pause .lom .hadd { padding-top: 10px; border-top: 0; } #pause .lom .hadd::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(150,105,45,.6) 20%, rgba(150,105,45,.6) 80%, transparent); }
 #pause .lom .hadd h4 { font-size: 0 !important; } #pause .lom .hadd h4 > * { font-size: 15px; } #pause .lom .hadd h4::before { content: "加点"; font-size: 19px; margin-right: auto; } #pause .lom .hsk { padding-bottom: 18px; }
+/* ===== 11/22 选人出发页（铃兰角色详情式），跟暂停页同一套羊皮纸 ===== */
+#prep { padding: 0 !important; }
+.pnew { position: relative; width: min(1500px, 96vw); height: min(860px, 94vh); margin: auto; display: grid; grid-template-columns: 44% 1fr; color: var(--pp-ink);
+  background: radial-gradient(ellipse at 35% 35%, rgba(250, 242, 222, .9), rgba(236, 222, 190, .85) 60%, rgba(222, 204, 164, .8)); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  box-shadow: inset 0 0 0 1px #b8965c, 0 0 0 6px rgba(40, 26, 14, .6), 0 10px 40px rgba(0, 0, 0, .55), inset 0 0 60px rgba(120, 80, 30, .16); font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+.pnL { position: relative; overflow: hidden; } .pnL img { position: absolute; left: 50%; top: 2%; height: 104%; transform: translateX(-50%); -webkit-mask-image: linear-gradient(#000 84%, transparent); mask-image: linear-gradient(#000 84%, transparent); pointer-events: none; }
+.pnSel { position: absolute; left: 16px; bottom: 16px; display: flex !important; gap: 10px; z-index: 2; }
+.pnSel button { width: 76px; height: 76px; padding: 0 !important; border-radius: 50% !important; background: rgba(250, 242, 222, .92) !important; border: 2px solid #b8965c !important; box-shadow: 0 2px 8px rgba(0,0,0,.3) !important; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0 !important; overflow: hidden; }
+.pnSel button.on { border: 3px solid #e0a830 !important; box-shadow: 0 0 0 3px rgba(240, 190, 70, .45), 0 2px 8px rgba(0,0,0,.3) !important; background: #fff4d2 !important; }
+.pnSel button canvas { height: 40px !important; width: auto; image-rendering: pixelated; } .pnSel button span { font-size: 13px; color: var(--pp-ink); } .pnSel button small { display: none; }
+.pnR { padding: 22px 34px 18px 10px; display: flex; flex-direction: column; gap: 14px; min-width: 0; overflow-y: auto; }
+.pnHead { display: flex; align-items: center; gap: 16px; padding-bottom: 12px; position: relative; }
+.pnHead::after, .pnSec::before { content: ''; position: absolute; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(150, 105, 45, .6) 15%, rgba(150, 105, 45, .6) 85%, transparent); }
+.pnHead::after { bottom: 0; } .pnSec { position: relative; padding-top: 12px; } .pnSec::before { top: 0; }
+.pnHead #heroCv { flex: 0 0 96px; width: 96px; height: 96px; min-height: 0; background: none; }
+#hInfo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.pnName { display: flex; align-items: baseline; gap: 14px; } .pnName h5 { margin: 0; font-size: 36px; color: #4a2e12; font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif; font-weight: 700; letter-spacing: .06em; } .pnName span { color: var(--pp-sub); font-size: 15px; }
+#hInfo .hperk { color: var(--pp-good); font-size: 16px; font-weight: 500; }
+#hInfo .pills { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+#hInfo .pills > div { display: flex; justify-content: space-between; align-items: center; padding: 6px 18px 6px 10px; background: linear-gradient(90deg, rgba(255, 255, 255, .6), rgba(255, 255, 255, .2)); clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); font-size: 17px; }
+#hInfo .pills span { color: #6a5030; display: flex; align-items: center; gap: 8px; } #hInfo .pills span > * { width: 24px !important; height: 24px !important; } #hInfo .pills b { color: #2a1a0a; font-weight: 500; }
+.pnSec h4 { margin: 0 0 10px; font-size: 20px; color: #5a3a18; font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif; font-weight: 700; } .pnSec h4 small { font-size: 13px; color: var(--pp-sub); font-family: sans-serif; font-weight: 400; margin-left: 8px; }
+.pnWep { display: flex; gap: 22px; justify-content: center; }
+.pnWep button { width: 92px; display: flex; flex-direction: column; align-items: center; gap: 6px; background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; cursor: pointer; color: var(--pp-ink); }
+.pnWep button > :first-child { width: 78px !important; height: 78px !important; border-radius: 50%; padding: 10px; box-sizing: border-box; background: radial-gradient(#fff6dc, #e8d2a0); box-shadow: 0 0 0 3px #c49a52, 0 3px 8px rgba(0,0,0,.25); object-fit: contain; }
+.pnWep button.on > :first-child { background: radial-gradient(#fff2c0, #f0c060); box-shadow: 0 0 0 4px #e8a820, 0 0 16px 4px rgba(240, 180, 50, .55); }
+.pnWep button span { font-size: 15px; padding: 1px 14px; border-radius: 10px; background: rgba(255,255,255,.5); } .pnWep button.on span { background: #f0c060; color: #3a2008; font-weight: 600; }
+#prep .pnSec .wdesc { margin: 10px 0 0; text-align: center; font-size: 15px; color: var(--pp-ink) !important; } #prep .pnSec .wdesc small { color: var(--pp-sub) !important; }
+.pnItem { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+#prep .pnItem > div { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 8px !important; background: rgba(255, 255, 255, .42) !important; border: 1px solid rgba(150, 105, 45, .35) !important; border-radius: 10px; cursor: pointer; }
+#prep .pnItem > div.on { background: #fff4d2 !important; border: 2px solid #d09a38 !important; box-shadow: 0 0 0 3px rgba(230,170,60,.25) !important; }
+#prep .pnItem .pi { width: 52px !important; height: 52px; } #prep .pnItem b { font-size: 16px; color: var(--pp-ink) !important; } #prep .pnItem small { font-size: 13px; color: var(--pp-good) !important; text-align: center; }
+.pnFoot { margin-top: auto; display: flex; justify-content: flex-end; gap: 14px; padding-top: 8px; } .pnFoot .btn { min-width: 130px; }
+@media (orientation: portrait), (max-width: 760px) {
+  .pnew { width: 100vw; height: 100%; grid-template-columns: 1fr; grid-template-rows: 42vh auto; overflow-y: auto; box-shadow: none; }
+  .pnL img { height: 108%; top: 0; } .pnSel { left: 10px; bottom: 10px; } .pnSel button { width: 60px; height: 60px; } .pnSel button canvas { height: 30px !important; }
+  .pnR { padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); overflow: visible; gap: 10px; }
+  .pnHead #heroCv { flex-basis: 60px; width: 60px; height: 60px; } .pnName h5 { font-size: 26px; } .pnName span { font-size: 12px; }
+  #hInfo .pills > div { font-size: 13px; padding: 4px 14px 4px 6px; } #hInfo .pills span > * { width: 18px !important; height: 18px !important; }
+  .pnWep { gap: 10px; } .pnWep button { width: 70px; } .pnWep button > :first-child { width: 58px !important; height: 58px !important; padding: 7px; }
+  #prep .pnItem .pi { width: 40px !important; height: 40px; } #prep .pnItem small { font-size: 11px; }
+}
+.pnHead #heroCv { flex-basis: 130px; width: 130px; height: 130px; } #hInfo .pills b, #hInfo .pills span { white-space: nowrap; }
+@media (orientation: portrait), (max-width: 760px) { .pnHead { flex-direction: column; align-items: stretch; } .pnHead #heroCv { display: none; } #hInfo .pills { gap: 5px 8px; } #hInfo .pills > div { font-size: 12.5px; } }

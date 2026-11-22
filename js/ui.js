@@ -83,7 +83,8 @@
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
       const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.hero = store.get('hero') === 'f' ? 'f' : 'm';
       P.free = {}; P.habitOpts = shuffle(DATA.habits).slice(0, 3).map(h => h.id); P.itemOpts = shuffle(DATA.startItems).slice(0, 3).map(i => i.id);
-      P.habit = null; P.item = P.itemOpts[0]; P.hrr = 0;
+      P.habit = null; P.item = P.itemOpts[0];   // 11/22 现实习惯删除：永远不选
+ P.hrr = 0;
     }
     renderPrep(); setTab(P.tab); show('prep');
   }
@@ -97,8 +98,9 @@
       b.insertAdjacentHTML('beforeend', `<span>${h.name}</span><small>${h.perk}</small>`); b.onclick = () => { P.hero = h.id; store.set('hero', h.id); renderPrep(); }; cs.appendChild(b); }
     { const h = DATA.heroes.find(x => x.id === P.hero), c0 = DATA.calc(build()), W0 = DATA.weapons[P.weapon];   // 11/22 角色卡（铃兰式：人物 + 属性 + 兵器槽）
       $('pPort').src = `art/portrait/${P.hero === 'f' ? 'f' : 'm'}.webp`;
-      $('hInfo').innerHTML = `<h5>${h.name}</h5><p>${h.desc}</p><div class="hperk">特长 · ${h.perk}</div><div class="hst"><span>生命</span><b>${c0.hp}</b><span>移速</span><b>${pct(c0.move - 1)}</b><span>翻滚CD</span><b>${h.id === 'f' ? '−20%' : '—'}</b><span>经验</span><b>${pct(c0.xp - 1)}</b></div><div class="hslot"></div>`;
-      const sl = $('hInfo').querySelector('.hslot'); sl.appendChild(iconCanvas(W0.icon)); sl.insertAdjacentHTML('beforeend', `<span>${W0.name}<small>起手招 · ${W0.skill}</small></span>`); }
+      const PL = (ic, n, v) => `<div><span>${piH(ic, 1)}${n}</span><b>${v}</b></div>`, dmgA = W0.type === 'agi' ? 'agi' : W0.type === 'int' ? 'int' : 'str';
+      $('hInfo').innerHTML = `<div class="pnName"><h5>${h.name}</h5><span>${h.desc}</span></div><div class="hperk">◆ 特长 · ${h.perk}</div>
+        <div class="pills">${PL('hp', '生命', c0.hp)}${PL(dmgA, W0.name + '伤害', pct(c0.dmg - 1))}${PL('guard', '物防 / 魔防', c0.pdef + ' / ' + c0.mdef)}${PL('move', '移速', pct(c0.move - 1))}${PL('crit', '暴击率', Math.round(c0.crit * 100) + '%')}${PL('xp', '经验', pct(c0.xp - 1))}</div>`; }
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(w.icon)); b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
