@@ -225,9 +225,9 @@
   function feed(t) { const box = $('feed'); if (!box) return; const e = document.createElement('div'); e.textContent = t; box.appendChild(e); while (box.children.length > 5) box.firstChild.remove(); setTimeout(() => e.classList.add('out'), 4000); setTimeout(() => e.remove(), 4600); }
   // 11/23 像素数字（5×7 方块字 + 硬边深褐描边 + 右下投影），用于时间和击倒 / 连击
   const PXG = { 0: '01110100011001110101110011000101110', 1: '00100011000010000100001000010001110', 2: '01110100010000100010001000100011111', 3: '11110000010000101110000010000111110', 4: '00010001100101010010111110001000010', 5: '11111100001111000001000011000101110', 6: '00110010001000011110100011000101110', 7: '11111000010001000100010000100001000', 8: '01110100011000101110100011000101110', 9: '01110100011000101111000010001001100', ':': '00000001000010000000001000010000000' };
-  function pxNum(str, fg) { str = String(str); let o = '', f = '', d = ''; const W = str.length * 7 + 2;
+  function pxNum(str, fg, ol) { str = String(str); let o = '', f = '', d = ''; const W = str.length * 7 + 2;
     [...str].forEach((ch, j) => { const g = PXG[ch]; if (!g) return; for (let i = 0; i < 35; i++) if (g[i] === '1') { const x = j * 7 + i % 5 + 1, y = (i / 5 | 0) + 1; o += `<rect x="${x - 1}" y="${y - 1}" width="4" height="3"/>`; d += `<rect x="${x}" y="${y + 1}" width="4" height="2"/>`; f += `<rect x="${x}" y="${y}" width="2" height="1"/>`; } });
-    return `<svg class="pxn" viewBox="0 0 ${W} 10" style="width:${W / 10}em" shape-rendering="crispEdges"><g fill="#1e1008">${d}${o}</g><g fill="${fg}">${f}</g></svg>`; }  let toastT = 0; function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1800); }
+    return `<svg class="pxn" viewBox="0 0 ${W} 10" style="width:${W / 10}em" shape-rendering="crispEdges">${ol === 0 ? '' : `<g fill="${ol || '#1e1008'}">${d}${o}</g>`}<g fill="${fg}">${f}</g></svg>`; }  let toastT = 0; function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1800); }
   $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); BATTLE.roll(); });
   // 11/22 卡带世界地图：打完一章出来，已通关的亮、下一章可选、其余被乱码盖着
   function worldMap(done) {   // 11/22 势力地图：领地染色 + 旗帜 + 关系；已平定的亮、下一章可选、其余锁着
@@ -273,7 +273,7 @@
   const isTouch = () => matchMedia('(hover: none)').matches;
   const pTip = () => isTouch() ? '点右上角 ⏸ 看看' : '按 P 看看', pKey = () => isTouch() ? '点右上角 ⏸ 整理' : '按下 P 整理';
   const newDot = v => { const b = $('bPause'); if (b) b.classList.toggle('dot', v !== false); };
-  window.UI = { pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来

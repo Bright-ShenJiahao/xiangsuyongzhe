@@ -187,7 +187,7 @@
     $('cHint').textContent = rep.goText ? '' : `击倒 ${rep.kills} · 铜钱 +${rep.coins} · 经验 +${rep.xp}`;
     render(); $('camp').classList.toggle('fshop', !!rep.field); $('camp').classList.add('on');
   }
-  function refreshCoin() { const r = R(); for (const id of ['cCoin', 'pCoin']) $(id).innerHTML = coinTxt(r.coins); }
+  function refreshCoin() { const r = R(); for (const id of ['cCoin', 'pCoin']) $(id).innerHTML = coinTxt(r.coins); if (rep && rep.field) $('cCoin').innerHTML = `<span class="pc"></span>${UI.pxNum(r.coins, '#ffe08a')}`; }
   function render() {
     const r = R(), tb = $('ctabs'); tb.innerHTML = '';
     for (const [k, n] of TABS) { if (rep.only && k !== rep.only) continue; if (k === 'shi' && !loot.length && !rep.pickOne) continue; if (rep.pickOne && k !== 'shi') continue; const b = document.createElement('button'); b.className = k === tab ? 'on' : ''; const dn = k === 'xiu' ? r.xiu : k === 'shi' ? loot.length : k === 'shu' ? r.pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : ''); b.onclick = () => { if (tab === 'shu' && k !== 'shu') commit(); tab = k; sel = null; render(); }; tb.appendChild(b); }
@@ -208,7 +208,6 @@
       const fx = B().hero().fx, nOpt = 3 + (fx.xiuOpt || 0), rrMax = Math.max(0, 2 + (fx.xiuReroll || 0));
       if (!r.xopt) r.xopt = rollXiu(nOpt);
       body.insertAdjacentHTML('beforeend', `<p class="dim center">还有 ${r.xiu} 次修炼机会 · 三选一</p>`);
-      if (rep.field) body.insertAdjacentHTML('beforeend', `<div class="mline">「${['嘿嘿，好货不等人！', '铜钱带够了吗？', '买两件，咕噜开心！', '这些可都是从勇者身上……咳，捡来的。'][Math.random() * 4 | 0]}」</div>`);
       const g = document.createElement('div'); g.className = 'cards' + (rep.field ? ' shelf' : ''); body.appendChild(g);
       r.xopt.forEach(o => { const Q = DATA.rarity[o.q], d = document.createElement('div'); d.className = 'card xiu q' + o.q;
         d.innerHTML = `${UI.piH(o.adds[0][0])}<b>${DATA.attrs.find(a => a.id === o.adds[0][0]).name}修炼</b><small style="color:${Q.col}">${Q.name}</small>${o.adds.map(([a, v]) => `<p class="plus">+${v} ${DATA.attrs.find(x => x.id === a).name}</p>`).join('')}<p class="dim">${DATA.attrs.find(a => a.id === o.adds[0][0]).desc}</p>`;
@@ -218,12 +217,11 @@
     } else if (tab === 'shang') {
       const fx = B().hero().fx, pm = (1 + (fx.shop || 0)) * (1 + DATA.price.stUp * (rep.st - 1)) * (rep.disc || 1);   // 每站涨 7%
       if (!r.shop) r.shop = rollShop();
-      if (rep.field) body.insertAdjacentHTML('beforeend', `<div class="mline">「${['嘿嘿，好货不等人！', '铜钱带够了吗？', '买两件，咕噜开心！', '这些可都是从勇者身上……咳，捡来的。'][Math.random() * 4 | 0]}」</div>`);
       const g = document.createElement('div'); g.className = 'cards' + (rep.field ? ' shelf' : ''); body.appendChild(g);
       r.shop.forEach((o, i) => { const d = o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开第 ${r.open + 1} 格</b><small>技能栏多开一格</small><p>有铜钱随时能买</p>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
         if (o.sold) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已买</p>'); }
         else if (o.kind === 'slot' && o.n !== r.open + 1) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已开</p>'); }
-        else btnTo(d, `买 ${UI.piH('coin', 1)}${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; r.coins -= price; o.sold = true; render(); }, true);
+        else btnTo(d, rep.field ? `<span class="pc"></span>${UI.pxNum(price, '#3a2410', 0)}` : `买 ${UI.piH('coin', 1)}${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; r.coins -= price; o.sold = true; render(); }, true);
         g.appendChild(d); });
       // 刷新：4 + 2 ×（站 − 1）+ 3 × 已刷次数，每次结算最多刷 4 次
       const [c0, c1, c2] = DATA.price.refresh, cost = Math.round((c0 + c1 * (rep.st - 1) + c2 * r.rr) * (1 + (fx.reroll || 0))), left = DATA.price.refreshMax - r.rr;

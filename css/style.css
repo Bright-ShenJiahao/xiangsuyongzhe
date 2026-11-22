@@ -955,3 +955,25 @@ body.fe #hud .top .clock, body.fe #combo { display: none !important; }
 #camp.fshop .shelf .card { width: auto !important; min-width: 0; }
 @media (orientation: portrait), (max-width: 760px) { #camp.fshop .cards.shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px 6px 0; } #camp.fshop .shelf .card b { font-size: 14px; white-space: nowrap; } #camp.fshop .shelf .card p { min-height: 0; } #camp.fshop .shelf .card .cb { margin: 10px 0 8px; } #camp.fshop .shelf .card .cb .btn::after { display: none; } #camp.fshop .cbox { max-height: 80vh !important; overflow: auto; } }
 #camp.fshop .cbox { max-height: 88vh !important; } #camp.fshop .cbody, #camp.fshop .cbox > div { overflow: visible; } #camp.fshop .center { display: flex !important; justify-content: center; min-height: 40px; }
+
+/* ===== 11/23 地精商人 · 像素对话框风（A）：硬边、台阶缺角、平涂、像素数字 ===== */
+#camp.fshop .cbox { background: #f2e2bc !important; border: 6px solid #3a2410 !important; border-image: none !important; box-shadow: inset 0 0 0 3px #c89a52, inset 0 0 0 6px #3a2410 !important; padding: 18px 22px !important; animation: none;
+  clip-path: polygon(0 9px, 3px 9px, 3px 6px, 6px 6px, 6px 3px, 9px 3px, 9px 0, calc(100% - 9px) 0, calc(100% - 9px) 3px, calc(100% - 6px) 3px, calc(100% - 6px) 6px, calc(100% - 3px) 6px, calc(100% - 3px) 9px, 100% 9px, 100% calc(100% - 9px), calc(100% - 3px) calc(100% - 9px), calc(100% - 3px) calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) calc(100% - 3px), calc(100% - 9px) calc(100% - 3px), calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 3px), 6px calc(100% - 3px), 6px calc(100% - 6px), 3px calc(100% - 6px), 3px calc(100% - 9px), 0 calc(100% - 9px)); }
+#camp.fshop .chead { border-bottom: 4px solid #c89a52 !important; background: none !important; padding: 0 0 6px !important; margin-bottom: 12px; }
+#camp.fshop .chead::before, #camp.fshop .chead::after { display: none !important; }
+#camp.fshop .chead h2 { color: #3a2410 !important; text-shadow: none !important; font-size: 26px !important; }
+#camp.fshop #cCoin { display: flex; align-items: center; gap: 6px; font-size: 24px; background: #3a2410; padding: 4px 8px; box-shadow: 2px 2px 0 #c89a52; }
+#camp.fshop .pc { display: inline-block; width: 14px; height: 14px; background: #e8a830; box-shadow: inset 0 0 0 2px #5a3208, inset 4px 4px 0 -2px #ffe890; image-rendering: pixelated; }
+#camp.fshop .cards.shelf { background: #7a4a22 repeating-conic-gradient(#7a4a22 0 25%, #724420 0 50%) 0 0 / 4px 4px !important; border: none !important; box-shadow: 0 0 0 4px #3a2410 !important; padding: 10px 10px 0 !important; gap: 8px !important; margin: 4px; }
+#camp.fshop .cards.shelf::after { left: 0; right: 0; bottom: 0; height: 12px; background: #5a3418; border: none; box-shadow: inset 0 3px 0 #c88a4a, inset 0 -3px 0 #2a160a; }
+#camp.fshop .shelf .card { background: #a8703a !important; box-shadow: 0 0 0 2px #3a2410, inset 0 3px 0 #c88a4a, inset 0 -3px 0 #6a4220 !important; border: none !important; padding: 10px 6px 0 !important; margin-bottom: 20px; }
+#camp.fshop .shelf .card b { color: #fff3d8 !important; text-shadow: 2px 2px 0 #3a2410 !important; } #camp.fshop .shelf .card small { color: #ffe0a0 !important; } #camp.fshop .shelf .card p { color: #fff !important; text-shadow: 1px 1px 0 #3a2410; } #camp.fshop .shelf .card .hr { display: none; }
+#camp.fshop .shelf .card .ic .pi, #camp.fshop .shelf .card .ic img { image-rendering: pixelated; filter: drop-shadow(2px 2px 0 rgba(40,20,8,.6)) !important; }
+#camp.fshop .shelf .card .cb { margin: 8px 0 10px !important; }
+#camp.fshop .shelf .card .cb .btn { display: inline-flex; align-items: center; gap: 4px; background: #fff3d0 !important; padding: 4px 8px !important; border: none !important; box-shadow: 0 0 0 2px #3a2410, 3px 3px 0 2px #3a2410 !important; font-size: 18px; }
+#camp.fshop .shelf .card .cb .btn::before, #camp.fshop .shelf .card .cb .btn::after { display: none !important; }
+#camp.fshop .shelf .card .cb .btn:hover { background: #fff !important; } #camp.fshop .btn:active { transform: translate(2px, 2px); }
+#camp.fshop .btn:not(.shelf .btn), #camp.fshop #cGo { background: #e8b84a !important; color: #3a2410 !important; border: none !important; border-image: none !important; border-radius: 0 !important; box-shadow: 0 0 0 3px #3a2410, 0 4px 0 3px #3a2410 !important; text-shadow: none !important; padding: 6px 16px !important; }
+#camp.fshop .center .btn { background: #d8c8a0 !important; }
+#camp.fshop .cfoot .dim { color: #7a5a30; }
+@media (orientation: portrait), (max-width: 760px) { #camp.fshop .shelf .card { margin-bottom: 10px; } }
