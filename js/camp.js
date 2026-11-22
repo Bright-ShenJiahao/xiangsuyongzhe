@@ -58,9 +58,10 @@
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
     // 11/23 誓约印记 3 格 + 身法 1 格（同一行）
-    L.insertAdjacentHTML('beforeend', '<h4>誓约印记 <small>被动，同名再得升级；身法类印记会强化翻滚（即将开放）</small></h4>');
+    L.insertAdjacentHTML('beforeend', '<h4>誓约印记 <small>被动，同名再得升级；最后一格只放身法印记（即将开放）</small></h4>');
     const om = document.createElement('div'); om.className = 'bag oathrow'; L.appendChild(om);
-    r.oath.forEach((o, i) => { const d = document.createElement('div'); d.className = 'oath' + (o ? ' has' : ''); d.textContent = o ? o.id : ''; om.appendChild(d); });
+    const oc = (arr, t, cls, empty) => arr.forEach((o, i) => { const d = document.createElement('div'); d.className = cls + (o ? ' has' : ''); d.innerHTML = o ? `<span>${o.id}</span>` : empty; if (sel && sel.t === t && sel.i === i) d.classList.add('sel'); d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); om.appendChild(d); });
+    oc(r.oath, 'o', 'oath', ''); om.insertAdjacentHTML('beforeend', '<div class="gap"></div>'); oc(r.mv, 'm', 'mv', '<span>身法</span>');
     const cell = (grid, arr, t) => arr.forEach((o, i) => { const d = document.createElement('div'); const th = thing(o);
       if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); if (o.kind === 'book') { d.appendChild(UI.skIcon(o.id)); d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else d.appendChild(iconEl(th)); }
       if (sel && sel.t === t && sel.i === i) d.classList.add('sel');
@@ -73,6 +74,7 @@
     if (sel) { const el = box.querySelector(`[data-t="${sel.t}"][data-i="${sel.i}"]`) || box.querySelector('.slot.sel'); if (el) popAt(el, sel.t === 'L' ? info => lockInfo(info, sel.i, box) : info => fillInfo(info, box, true), box); }
     box.querySelectorAll('[data-t]').forEach(el => { el.onmouseenter = () => { if (sel || matchMedia('(hover: none)').matches) return; const q = { t: el.dataset.t, i: +el.dataset.i }; if (!curOf(q)) return; popAt(el, info => fillInfo(info, box, false, q), box, 1); }; el.onmouseleave = () => { if (!sel) document.querySelectorAll('.loinfo.pop').forEach(e => e.remove()); }; });
   }
+  const ARR0 = (r, q) => q.t === 's' ? r.slots : q.t === 'g' ? r.gear : q.t === 'o' ? r.oath : q.t === 'm' ? r.mv : r.bag;
   function curOf(q) { const r = R(); if (!q) return null; if (q.t === 's') { const s = r.slots[q.i]; return s && { kind: 'book', id: s.id, lv: s.lv, xp: s.xp || 0, slot: true }; } return (q.t === 'g' ? r.gear : r.bag)[q.i]; }
   function lvTag(s) { const k = B().skillInfo(s); return `<b class="lvb">${k.L}</b><s class="pb${k.next ? '' : ' max'}" style="--p:${k.next ? Math.min(100, k.xp / k.next * 100) : 100}%"></s>`; }
   function popAt(el, fill, box, hover) {
@@ -154,14 +156,16 @@
   }
   function pick(p, box) {
     const r = R();
-    if (!sel) { if ((p.t === 'b' && !r.bag[p.i]) || (p.t === 'g' && !r.gear[p.i])) return; sel = p; return loadout(box); }
+    if (!sel) { if (!ARR0(r, p)[p.i]) { if (p.t !== 's') return; } sel = p; return loadout(box); }
     if (sel.t === p.t && sel.i === p.i) { sel = null; return loadout(box); }
-    const ARR = q => q.t === 's' ? r.slots : q.t === 'g' ? r.gear : r.bag, get = q => ARR(q)[q.i], put = (q, v) => { ARR(q)[q.i] = v; };
+    const ARR = q => ARR0(r, q), get = q => ARR(q)[q.i], put = (q, v) => { ARR(q)[q.i] = v; };
     let a = get(sel), b = get(p);
     const toSlot = (o, q) => q.t !== 's' || !o || o.kind === 'book' || o.lv;   // 技能格只能放技能
     const asSlot = o => o && o.kind === 'book' ? { id: o.id, lv: 1, xp: o.xp || 0 } : o, asBag = o => o && !o.kind ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : o;   // 熟练度跟着书走
     if ((a && p.t === 's' && !toSlot(a, p)) || (b && sel.t === 's' && !toSlot(b, sel))) { toast('技能格只能放技能书'); sel = p.t !== 's' && b ? p : null; return loadout(box); }
-    if ((a && p.t === 'g' && a.kind !== 'item') || (b && sel.t === 'g' && b.kind !== 'item')) { toast('宝物格只能放宝物'); sel = p.t !== 's' && b ? p : null; return loadout(box); }
+    const fit = (o, q) => !o || q.t === 'b' || q.t === 's' || (q.t === 'g' ? o.kind === 'item' : q.t === 'o' ? o.kind === 'oath' && !o.mv : q.t === 'm' ? o.kind === 'oath' && !!o.mv : true);
+    const MSG = { g: '宝物格只能放宝物', o: '这里只能放誓约印记', m: '身法格只能放身法印记' };
+    if (!fit(a, p) || !fit(b, sel)) { toast(MSG[!fit(a, p) ? p.t : sel.t]); sel = null; return loadout(box); }
     // 同一招合并 = 升级
     if (a && b && a.id === b.id && (a.kind === 'book' || !a.kind) && (b.kind === 'book' || !b.kind)) { b.lv += a.lv; put(sel, null); toast(`${SK[b.id].name} 升到 Lv${b.lv}`); }
     else {

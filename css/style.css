@@ -930,3 +930,5 @@ img.skic { padding: 0 !important; background: none !important; box-shadow: none 
 .lo .bag.oathrow { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 /* 11/23 站末结算时隐藏计时和连击 */
 body.fe #hud .top .clock, body.fe #combo { display: none !important; }
+
+.lo .bag.oathrow { grid-template-columns: repeat(5, minmax(0, 1fr)); } .oathrow .mv span { font-size: 14px; color: #9ee0c0; }
