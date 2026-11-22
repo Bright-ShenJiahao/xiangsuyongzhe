@@ -740,3 +740,10 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #prep .pport img { left: 42% !important; height: 108% !important; -webkit-mask-image: linear-gradient(#000 78%, transparent), linear-gradient(90deg, #000 70%, transparent); -webkit-mask-composite: source-in; mask-image: linear-gradient(#000 78%, transparent); mask-composite: intersect; }
 #prep .hcol { position: relative; z-index: 1; margin-left: 46%; padding: 4px 0 4px 18px; background: linear-gradient(90deg, rgba(245, 235, 210, 0), rgba(245, 235, 210, .82) 18px); min-height: 300px; }
 @media (orientation: portrait) { #prep .hstage, #prep .hcol { min-height: 260px; } #prep .hcol { margin-left: 42%; } }
+/* 11/22 备战页三栏合成一张纸：外层一张半透明羊皮纸，三栏去底，中间淡金竖线分隔 */
+@media (orientation: landscape) {
+  #prep .pcols { background: radial-gradient(ellipse at 35% 35%, rgba(250, 242, 222, .88), rgba(236, 222, 190, .82) 60%, rgba(222, 204, 164, .76)); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); box-shadow: inset 0 0 0 1px #b8965c, 0 0 0 6px rgba(40, 26, 14, .55), 0 8px 30px rgba(0, 0, 0, .5), inset 0 0 60px rgba(120, 80, 30, .16); gap: 0 !important; padding: 6px 0; }
+  #prep .pcols > .panel { background: none !important; box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 8px 22px !important; position: relative; }
+  #prep .pcols > .panel + .panel::before { content: ''; position: absolute; left: 0; top: 4%; bottom: 4%; width: 1px; background: linear-gradient(transparent, rgba(150, 105, 45, .55) 15%, rgba(150, 105, 45, .55) 85%, transparent); }
+  #prep .hcol { background: linear-gradient(90deg, rgba(245, 235, 210, 0), rgba(245, 235, 210, .7) 18px); }
+}
