@@ -488,3 +488,15 @@ body:not(.touch) #bRoll { width: 64px; height: 64px; font-size: 14px; pointer-ev
 .card p.desc { flex: none; height: 4.5em; line-height: 1.5; align-items: flex-start; -webkit-line-clamp: 3; }
 .card .cb { margin-top: auto; }
 @media (max-width: 600px) { .card .ic { width: 36px; height: 36px; } .card .ic .pi, .cbody > .cards .card .ic .pi { width: 32px !important; height: 32px; } }
+
+/* 11/22 主视觉 5 / 6（动画风第二版，右边空） */
+#title.t2.v5 .tart, #title.t2.v6 .tart { background-image: url(../art/title/art5.webp); background-position: 30% 50%; }
+#title.t2.v6 .tart { background-image: url(../art/title/art6.webp); }
+#title.t2.v5 .tart::after, #title.t2.v6 .tart::after { background: linear-gradient(270deg, rgba(8, 14, 28, .55) 0%, rgba(8, 14, 28, .15) 30%, rgba(8, 14, 28, 0) 45%); }
+#title.t2.v5 .tart::before, #title.t2.v6 .tart::before { left: 48%; top: 2%; }
+#title.t2.v5 .tbox, #title.t2.v6 .tbox { left: auto; right: 3%; width: 40%; }
+@media (orientation: portrait), (max-width: 600px) {
+  #title.t2.v5 .tart, #title.t2.v6 .tart { background-size: auto 56%; background-position: 34% 6%; }
+  #title.t2.v5 .tart::after, #title.t2.v6 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 28, 0) 50%, #0d1626 66%); }
+  #title.t2.v5 .tbox, #title.t2.v6 .tbox { right: 0; width: 100%; }
+}
