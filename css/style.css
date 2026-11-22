@@ -616,3 +616,18 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 .fst canvas { bottom: 31px !important; max-width: 112px; max-height: 64px; height: auto !important; width: auto; } svg.ped { z-index: 1; } .fst canvas { z-index: 2; }
 .fst canvas { height: 62px !important; max-height: none; max-width: 124px; object-fit: contain; }
 .fig.big .fst canvas { height: 76px !important; max-width: 130px; } .fig.big .fst { height: 118px; }
+
+/* 11/22 人物页 v4：立绘光环、压进信息栏、两列属性、技能章放大沉底、经验条底色 */
+#pause .lom .hport { margin-right: -60px; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+#pause .lom .hport::before { content: ''; position: absolute; left: 50%; top: 42%; width: 88%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 220, 140, .22) 0%, rgba(255, 200, 110, .1) 45%, transparent 70%), repeating-conic-gradient(from 0deg, rgba(255, 220, 150, .09) 0 4deg, transparent 4deg 15deg);
+  box-shadow: 0 0 0 2px rgba(230, 190, 110, .25), inset 0 0 0 14px rgba(0,0,0,.08), inset 0 0 0 16px rgba(230, 190, 110, .18); }
+#pause .lom .hport img { z-index: 1; -webkit-mask-image: linear-gradient(#000 85%, transparent); mask-image: linear-gradient(#000 85%, transparent); }
+#pause .lom .lorr { padding-left: 20px; background: linear-gradient(90deg, transparent, rgba(20, 12, 6, .55) 60px); }
+#pause .lom .pills { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; } #pause .lom .pills > div { font-size: 16px; padding: 6px 16px 6px 10px; }
+.hxp { background: linear-gradient(90deg, #4a3a1a, #2a2010) !important; box-shadow: inset 0 0 0 1px rgba(200, 160, 90, .4); }
+#pause .lom .lorr { display: flex; flex-direction: column; } #pause .lom .hsk { margin-top: auto; gap: 26px; padding: 14px 0 6px; }
+#pause .lom .hsi { width: 90px; } #pause .lom .hsi > :first-child { width: 72px; height: 72px; } #pause .lom .hsi > :first-child canvas, #pause .lom .hsi > :first-child img { width: 70% !important; height: auto; }
+#pause .lom .hsi small { margin-top: 4px; padding: 1px 10px; background: rgba(60, 40, 22, .9); border: 1px solid #8a6a3a; border-radius: 9px; font-size: 13px !important; color: #e8dcc2; }
+.hsi.em > :first-child { border-color: #c8a060 !important; border-width: 2px !important; background: rgba(200, 160, 90, .06) !important; } .hsi.lk > :first-child { border-color: #8a6a3a !important; opacity: .8 !important; }
+@media (orientation: portrait) { #pause .lom .hport { margin-right: 0; } #pause .lom .lorr { padding-left: 0; background: none; } #pause .lom .hsi { width: 58px; } #pause .lom .hsi > :first-child { width: 48px; height: 48px; } #pause .lom .pills > div { font-size: 13px; padding: 3px 10px 3px 6px; } #pause .lom .hsk { gap: 8px; } }
