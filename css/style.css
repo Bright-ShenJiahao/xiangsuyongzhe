@@ -859,3 +859,5 @@ body.fpx .pnName h5 { font-size: 48px !important; } body.fpx .pnSec h4, body.fpx
 /* 11/22 字体统一：标题 / 名字 / 按钮 / 标签 = 霞鹜文楷；说明文字 = 黑体 */
 .chead h2, .cpn h4, .lo h4, .pc h3, .box h2, #luTitle, .ctabs button, .ptabs button, .btn, #wmTitle, .rcard b, .card b, .wmn b, .codex .fig b, #banner, .banner, .tbox, #hud .top, .arow b, .stats.big span { font-family: WenKai, Pix, "Songti SC", serif !important; font-weight: 400 !important; }
 .arow { grid-template-columns: 6.5em 1fr 2.4em !important; }
+/* 11/22 暂停页固定大小：切换「技能 / 属性」不再变宽变高 */
+@media (orientation: landscape) { #pause .cbox { width: min(1000px, 96vw) !important; height: min(640px, 94vh) !important; max-height: none !important; } #pause .cbody { flex: 1 1 auto !important; overflow-y: auto; } }
