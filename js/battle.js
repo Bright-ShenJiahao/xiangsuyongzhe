@@ -354,7 +354,7 @@
     const p = G.pr; if (!p) return; const fade = p.done ? Math.max(0, 1 - p.t2 / 1.2) : Math.min(1, p.t / .6);
     ctx.save(); ctx.globalAlpha = fade;
     const gl = ctx.createRadialGradient(X(p.x), Y(p.y) - 20 * u, 0, X(p.x), Y(p.y) - 20 * u, 40 * u); gl.addColorStop(0, 'rgba(220,190,255,.55)'); gl.addColorStop(1, 'rgba(220,190,255,0)'); ctx.fillStyle = gl; ctx.fillRect(X(p.x) - 40 * u, Y(p.y) - 60 * u, 80 * u, 80 * u);
-    shadow(p.x, p.y, 26); SPR.drawHero(ctx, p.t < 1.1 ? 'big' : 'idle', Math.floor(G.t * 3) % 2, X(p.x), Y(p.y), p.x > hero.x, u, { w: 'staff', c: 'p' });
+
     if (p.t < 1.1) { const k = p.t / 1.1, r = (10 + 70 * k) * u; ctx.strokeStyle = `rgba(230,210,255,${.8 * (1 - k)})`; ctx.lineWidth = 3 * u * (1 - k) + u; ctx.beginPath(); ctx.ellipse(X(p.x), Y(p.y), r, r / YS, 0, 0, 7); ctx.stroke(); }
     if (!p.done && p.t < 3.2) {   // 对话气泡
       const tx = '勇者，收下这个！', fs = Math.round(7 * u); ctx.font = `${fs}px WenKai, Pix, serif`; const w = ctx.measureText(tx).width + 8 * u, bx = X(p.x) - w / 2, by = Y(p.y) - 64 * u;
@@ -739,11 +739,12 @@
       const p = w.t / .55, r = (14 + 10 * (1 - p)) * u; ctx.fillStyle = `rgba(30,10,5,${.25 + .25 * p})`; ctx.beginPath(); ctx.ellipse(X(w.x), Y(w.y), r, r / YS, 0, 0, 7); ctx.fill();
       ctx.fillStyle = w.tier ? '#ffcf3a' : '#d8402a'; for (let a = 0; a < PI * 2; a += .2) ctx.fillRect(X(w.x) + rd(Math.cos(a) * r), Y(w.y) + rd(Math.sin(a) * r / YS), u, u);
     }
-    SK.drawUnder(ctx, X, Y, u); chargePreview(); coinDraw();
+    SK.drawUnder(ctx, X, Y, u); chargePreview(); coinDraw(); princessDraw(); fieldDraw();   // 11/23 地上的光球、掉落、门画在人物下面
     for (const o of shots) if (o.k === 'fire') {   // 火球落点：地上的影子越来越大
       const p = o.t / o.T, r = o.r * u * (.3 + .7 * p); ctx.fillStyle = `rgba(255,90,30,${.15 + .2 * p})`; ctx.beginPath(); ctx.ellipse(X(o.x), Y(o.y), r, r / YS * .8, 0, 0, 7); ctx.fill();
     }
     const list = foes.map(z => ({ y: z.y, z })); list.push({ y: hero.y, h: 1 });
+    if (G.pr) { const p = G.pr; list.push({ y: p.y, d: () => { const fade = p.done ? Math.max(0, 1 - p.t2 / 1.2) : Math.min(1, p.t / .6); ctx.save(); ctx.globalAlpha = fade; shadow(p.x, p.y, 26); SPR.drawHero(ctx, p.t < 1.1 ? 'big' : 'idle', Math.floor(G.t * 3) % 2, X(p.x), Y(p.y), p.x > hero.x, u, { w: 'staff', c: 'p' }); ctx.restore(); } }); }
     if (G.fe) { const P = G.fe.pr, M = G.fe.mer;   // 11/23 公主、商人和勇者按前后排序，脚下有影子
       list.push({ y: P.y, d: () => { shadow(P.x, P.y, 26); SPR.drawHero(ctx, P.orbs ? 'big' : 'idle', Math.floor(G.t * 3) % 2, X(P.x), Y(P.y), P.x > hero.x, u, { w: 'staff', c: 'p' }); } });
       list.push({ y: M.y, d: () => { shadow(M.x, M.y, 26); SPR.draw(ctx, 'goblin', 'idle' + (Math.floor(G.t * 2) % 2), 0, X(M.x), Y(M.y), M.x < hero.x ? false : true, u, {}); } }); }
@@ -778,7 +779,7 @@
       else if (o.k === 'harrow') { const a = Math.atan2(o.vy, o.vx); for (let j = 0; j < 9; j++) { ctx.fillStyle = j < 2 ? '#e8ecf4' : j > 6 ? '#e8e0c8' : '#8a5a2a'; ctx.fillRect(X(o.x) - rd(Math.cos(a) * j * 1.6 * u), Y(o.y) - rd(Math.sin(a) * j * 1.6 * u), u + 1, u + 1); } }
       else if (o.k === 'fire') { const p = o.t / o.T, hy = (1 - p) * 120; for (let j = 0; j < 5; j++) { ctx.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; ctx.fillRect(X(o.x) - q / 2 - rd(j * 3 * u * (1 - p)), Y(o.y) - rd((hy + j * 7) * u) - q / 2, q, q); } }
     }
-    SK.drawOver(ctx, X, Y, u); princessDraw(); fieldDraw(); { const n = performance.now(), adt = Math.min(.1, (n - (AMB.tm || n)) / 1000); AMB.tm = n; ambDraw(G.paused ? 0 : adt); }
+    SK.drawOver(ctx, X, Y, u); { const n = performance.now(), adt = Math.min(.1, (n - (AMB.tm || n)) / 1000); AMB.tm = n; ambDraw(G.paused ? 0 : adt); }
     if (G.lvUpT > 0 && !hero.dead) {   // 11/22：升级字跳在勇者头上（跟着人走，弹两下再慢慢淡出）
       const t = 2.2 - G.lvUpT, hop = t < .6 ? Math.abs(Math.sin(t / .6 * PI * 2)) * 10 : 0, a = Math.min(1, G.lvUpT / .5), x = X(hero.x), y = Y(hero.y) - (44 + hop + Math.min(t, .3) * 8) * u;
       ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = `bold ${Math.round(8 * u)}px Pix, monospace`;
