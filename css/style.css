@@ -932,3 +932,6 @@ img.skic { padding: 0 !important; background: none !important; box-shadow: none 
 body.fe #hud .top .clock, body.fe #combo { display: none !important; }
 
 .lo .bag.oathrow { grid-template-columns: repeat(5, minmax(0, 1fr)); } .oathrow .mv span { font-size: 14px; color: #9ee0c0; }
+
+/* 11/23 商店在画面正中 */
+#camp.fshop { align-items: center !important; justify-content: center !important; } #camp.fshop .cbox { margin: 0 !important; }
