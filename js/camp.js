@@ -117,6 +117,10 @@
         ${P2('area', '范围', pct(c.area - 1))}${P2('crit', '暴击率', Math.round(c.crit * 100) + '%')}
         ${P2('guard', '物防', c.pdef)}${P2('guard', '魔防', c.mdef)}${P2('xp', '经验', pct(c.xp - 1))}${P2('move', '翻滚CD', hid === 'f' ? '−20%' : '—')}</div>
       <div class="hsk"></div>${r.habit ? `<p class="dim">现实习惯：${DATA.habits.find(x => x.id === r.habit).name}</p>` : ''}</div>`;
+    // 11/22 合并成一个框（铃兰式）：左边加点那一栏挪进人物栏，排在头牌下面
+    { const ad = document.createElement('div'); ad.className = 'hadd'; while (L.firstChild) ad.appendChild(L.firstChild); Rt.querySelector('.hhead').after(ad); L.remove(); wrap.classList.add('lom');
+      { const lb = ad.querySelector('.lob'), bt = lb && lb.querySelector('button'), h4 = ad.querySelector('h4'); if (bt && h4) { bt.textContent = '重置'; h4.insertBefore(bt, h4.querySelector('.pts')); lb.remove(); } }
+      ad.querySelectorAll('.arow small').forEach(x => { x.parentElement.title = x.textContent; }); }
     { const cr = SPR.crop(SPR.heroSet(hid, run.weapon), run.weapon + '.idle', 0); if (cr) Rt.querySelector('.hmini').appendChild(cr.c);
       const hk = Rt.querySelector('.hsk'); r.slots.slice(0, r.open).forEach(s2 => { const d = document.createElement('div'); d.className = 'hsi' + (s2 ? ' tr t' + SK[s2.id].tier : '');
         if (s2) { d.appendChild(UI.icon(SK[s2.id].icon)); d.insertAdjacentHTML('beforeend', `<small class="tn${SK[s2.id].tier}">${SK[s2.id].name}</small>`); } else d.innerHTML = '<div></div><small>空</small>'; hk.appendChild(d); }); }
