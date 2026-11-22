@@ -728,3 +728,9 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #title.t2.v11 .tart::after { background: linear-gradient(270deg, rgba(6, 10, 18, .65) 0%, rgba(6, 10, 18, .2) 30%, rgba(6, 10, 18, 0) 45%); }
 #title.t2.v11 .tart::before { left: 44%; top: 4%; } #title.t2.v11 .tbox { left: auto; right: 2%; width: 36%; }
 @media (orientation: portrait), (max-width: 600px) { #title.t2.v11 .tart { background-size: auto 56%; background-position: 36% 6%; } #title.t2.v11 .tart::after { background: linear-gradient(180deg, rgba(6,10,18,0) 50%, #070b12 66%); } #title.t2.v11 .tbox { right: 0; width: 100%; } }
+/* 11/22 羊皮纸 v2：半透明纸面，透出后面的地图；标题用宋体衬线，正文黑体 */
+#prep .panel, #pause .cbody { background: radial-gradient(ellipse at 35% 35%, rgba(250, 242, 222, .86), rgba(236, 222, 190, .8) 60%, rgba(222, 204, 164, .74)) !important; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+#prep .panel h3, #prep .panel h4, #pause .cbody h4, #prep .hinfo h5, .hh2t h4, .hh2t b, .hadd .arow em, #prep .arow em { font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif !important; font-weight: 700 !important; letter-spacing: .04em; }
+#prep .panel, #pause .cbody { font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+#prep .panel h3 { font-size: 22px !important; border-bottom: 1px solid var(--pp-line); padding-bottom: 4px; }
+#prep .slots + p, #prep .dim { color: #6a5030 !important; }
