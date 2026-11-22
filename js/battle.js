@@ -347,7 +347,7 @@
     if (!p.done) {
       for (const o of p.orbs) { if (p.t > .8 && Math.hypot(o.x - hero.x, (o.y - hero.y) * YS) < 20 * K) o.st = (o.st || 0) + dt; else o.st = 0; }
       const hit = p.orbs.find(o => o.st > .7);
-      if (hit || p.t >= p.T) { const o = hit || p.orbs[0]; p.done = o; p.t2 = 0; toastMsg(doEvent(o.k)); for (let k = 0; k < 20; k++) { const an = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(an) * 60 * K, vy: Math.sin(an) * 60 * K, t: 0, T: .6, col: o.c, g: 0 }); } }
+      if (hit || p.t >= p.T) { const o = hit || p.orbs[Math.random() * p.orbs.length | 0]; p.done = o; p.t2 = 0; toastMsg(doEvent(o.k)); for (let k = 0; k < 20; k++) { const an = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(an) * 60 * K, vy: Math.sin(an) * 60 * K, t: 0, T: .6, col: o.c, g: 0 }); } }
     } else if ((p.t2 += dt) > 1.2) { G.pr = null; nextPhase(); }
   }
   function princessDraw() {
@@ -755,7 +755,7 @@
         shadow(hero.x, hero.y, 26);
         if (hero.inv > 0 && hero.roll <= 0 && hero.hurtT <= 0 && !hero.dead && Math.floor(G.t * 20) % 2) continue;
         const [n, i, st, lg] = heroFrame(), bob = 0, lunge = st === 'strike' ? hero.f * (lg || 0) * u : st === 'hurt' ? -hero.f * 2 * u : 0;
-        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { w: hero.cs ? hero.cs.S.w : HWPN[RUN.weapon] || 'sword', c: RUN.hero });
+        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { w: hero.cs ? hero.cs.S.w : (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword', c: RUN.hero });
       } else {
         const z = o.z, B = z.T.boss || z.T.ai === 'boss', [n0, st] = foeFrame(z), n = z.noShield && SPR.frame(z.type, 'n_' + n0) ? 'n_' + n0 : n0;
         const a = z.dead ? Math.max(0, 1 - Math.max(0, z.deadT - (B ? 2.4 : .9)) / .4) : z.flee ? Math.max(0, 1 - z.fleeT / 1.6) : 1;
