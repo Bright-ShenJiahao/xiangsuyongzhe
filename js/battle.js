@@ -580,8 +580,8 @@
       if (c.t > .35 && d < 9) { c.got = 1; G.cf += c.v * cMul(); const n = Math.floor(G.cf); G.cf -= n; RUN.coins += n; parts.push({ x: hero.x, y: hero.y - 30 * K, vx: 0, vy: -40 * K, t: 0, T: .3, col: '#ffe08a', g: 0 }); } }
     G.gc = G.gc.filter(c => !c.got);
     for (const o of G.gi) { o.t += dt; if (o.t > .4 && dist(o, hero) < 14 && !hero.dead) { o.got = 1;   // 11/23 书 / 宝物也要走过去捡
-      if (o.kind === 'book') { const id = randBook(); if (id) { CAMP.learn({ kind: 'book', id }, true); UI.feed(`捡到一本「${DATA.skills[id].name}」，请按下 P 键看看`); } else { RUN.coins += 30; UI.feed('捡到 30 铜钱'); } }
-      else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; CAMP.learn({ kind: 'item', id: it.id }, true); UI.feed(`捡到宝物「${it.name}」，请按下 P 键看看`); } } }
+      if (o.kind === 'book') { const id = randBook(); if (id) { CAMP.learn({ kind: 'book', id }, true); UI.feed(`捡到一本技能书，请按下 P 键看看`); } else { RUN.coins += 30; UI.feed('捡到 30 铜钱'); } }
+      else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; CAMP.learn({ kind: 'item', id: it.id }, true); UI.feed(`捡到一件宝物，请按下 P 键看看`); } } }
     G.gi = G.gi.filter(o => !o.got);
     let T = G.thief;
     if (!T && !G.fe && G.gc.some(c => c.t > 10)) { const p = edgeSpawn(); T = G.thief = { x: p.x, y: p.y, ex: p.x, ey: p.y, bag: 0, n: 0, st: 'go', t: 0, f: 1 }; UI.feed('一只小咕噜溜进来偷钱了！'); }
