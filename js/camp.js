@@ -198,7 +198,8 @@
         <div class="cpn"><h4>输出统计</h4>${rows.length ? rows.map(([id, v]) => `<div class="dmgr"><span>${SK[id].name}</span><i><b style="width:${(v / tot * 100).toFixed(1)}%"></b></i><em>${Math.round(v)} · ${Math.round(v / tot * 100)}%</em></div>`).join('') : '<p class="dim">没有打出伤害</p>'}</div></div>`;
     } else if (tab === 'shi') {
       if (!loot.length) { body.innerHTML = `<p class="dim center">这一波没有战利品<br><small>每站第 3 波必掉技能书；精英掉书，小头目掉宝物；行商那里也能买</small></p>`; return; }
-      const g = document.createElement('div'); g.className = 'cards'; body.appendChild(g);
+      if (rep.field) body.insertAdjacentHTML('beforeend', `<div class="mline">「${['嘿嘿，好货不等人！', '铜钱带够了吗？', '买两件，咕噜开心！', '这些可都是从勇者身上……咳，捡来的。'][Math.random() * 4 | 0]}」</div>`);
+      const g = document.createElement('div'); g.className = 'cards' + (rep.field ? ' shelf' : ''); body.appendChild(g);
       loot.forEach((o, i) => { const t = thing(o), d = card(t, o);
         btnTo(d, o.kind === 'book' ? '学会' : o.kind === 'use' ? '吃掉' : '收下', () => { if (learn(o)) { if (rep.pickOne) loot = []; else loot.splice(i, 1); render(); } }, true);
         if (!rep.pickOne) btnTo(d, `卖 ${t.sell}`, () => { r.coins += t.sell; loot.splice(i, 1); render(); }); g.appendChild(d); });
@@ -208,7 +209,8 @@
       const fx = B().hero().fx, nOpt = 3 + (fx.xiuOpt || 0), rrMax = Math.max(0, 2 + (fx.xiuReroll || 0));
       if (!r.xopt) r.xopt = rollXiu(nOpt);
       body.insertAdjacentHTML('beforeend', `<p class="dim center">还有 ${r.xiu} 次修炼机会 · 三选一</p>`);
-      const g = document.createElement('div'); g.className = 'cards'; body.appendChild(g);
+      if (rep.field) body.insertAdjacentHTML('beforeend', `<div class="mline">「${['嘿嘿，好货不等人！', '铜钱带够了吗？', '买两件，咕噜开心！', '这些可都是从勇者身上……咳，捡来的。'][Math.random() * 4 | 0]}」</div>`);
+      const g = document.createElement('div'); g.className = 'cards' + (rep.field ? ' shelf' : ''); body.appendChild(g);
       r.xopt.forEach(o => { const Q = DATA.rarity[o.q], d = document.createElement('div'); d.className = 'card xiu q' + o.q;
         d.innerHTML = `${UI.piH(o.adds[0][0])}<b>${DATA.attrs.find(a => a.id === o.adds[0][0]).name}修炼</b><small style="color:${Q.col}">${Q.name}</small>${o.adds.map(([a, v]) => `<p class="plus">+${v} ${DATA.attrs.find(x => x.id === a).name}</p>`).join('')}<p class="dim">${DATA.attrs.find(a => a.id === o.adds[0][0]).desc}</p>`;
         btnTo(d, '修 炼', () => { for (const [a, v] of o.adds) r.train[a] = (r.train[a] || 0) + v; r.xiu--; r.xopt = null; r.xrr = 0; B().recompute(); render(); }, true); g.appendChild(d); });
@@ -217,7 +219,8 @@
     } else if (tab === 'shang') {
       const fx = B().hero().fx, pm = (1 + (fx.shop || 0)) * (1 + DATA.price.stUp * (rep.st - 1)) * (rep.disc || 1);   // 每站涨 7%
       if (!r.shop) r.shop = rollShop();
-      const g = document.createElement('div'); g.className = 'cards'; body.appendChild(g);
+      if (rep.field) body.insertAdjacentHTML('beforeend', `<div class="mline">「${['嘿嘿，好货不等人！', '铜钱带够了吗？', '买两件，咕噜开心！', '这些可都是从勇者身上……咳，捡来的。'][Math.random() * 4 | 0]}」</div>`);
+      const g = document.createElement('div'); g.className = 'cards' + (rep.field ? ' shelf' : ''); body.appendChild(g);
       r.shop.forEach((o, i) => { const d = o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开第 ${r.open + 1} 格</b><small>技能栏多开一格</small><p>有铜钱随时能买</p>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
         if (o.sold) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已买</p>'); }
         else if (o.kind === 'slot' && o.n !== r.open + 1) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已开</p>'); }
@@ -225,7 +228,7 @@
         g.appendChild(d); });
       // 刷新：4 + 2 ×（站 − 1）+ 3 × 已刷次数，每次结算最多刷 4 次
       const [c0, c1, c2] = DATA.price.refresh, cost = Math.round((c0 + c1 * (rep.st - 1) + c2 * r.rr) * (1 + (fx.reroll || 0))), left = DATA.price.refreshMax - r.rr;
-      const w = document.createElement('div'); w.className = 'center'; const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} 刷新货架 ${UI.piH('coin', 1)}${cost} <small>(${left}/${DATA.price.refreshMax})</small>`; rb.disabled = left <= 0;
+      const w = document.createElement('div'); w.className = 'center'; const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} ${rep.field ? '翻一翻货架' : '刷新货架'} ${UI.piH('coin', 1)}${cost} <small>(${left}/${DATA.price.refreshMax})</small>`; rb.disabled = left <= 0;
       rb.onclick = () => { if (r.coins < cost) return toast('铜钱不够'); r.coins -= cost; r.rr++; r.shop = rollShop(); render(); }; w.appendChild(rb); body.appendChild(w);
     } else if (tab === 'ji') loadout(body);
     else if (tab === 'shu') attrPanel(body);
