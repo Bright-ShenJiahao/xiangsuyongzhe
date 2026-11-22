@@ -1,5 +1,5 @@
 /* 像素勇者 · 界面样式：深色木框 + 金边，像素字体（缝合像素字体 Fusion Pixel 12px，OFL，子集见 art/font/） */
-@font-face { font-family: Pix; src: url(../art/font/pixel.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: Pix; src: url(../art/font/kai.woff2?v=2) format('woff2'); font-display: block; }   /* 11/22 像素字停用：Pix 这个名字改指向霞鹜文楷 */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; background: #07101b; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; font-family: Pix, monospace; color: #fff3d0; }
 #cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
@@ -856,3 +856,5 @@ body.fpx .pnName h5 { font-size: 48px !important; } body.fpx .pnSec h4, body.fpx
   .pnL { clip-path: inset(0 -80% 0 0); }
   .pnL img { height: min(118%, 1000px) !important; top: 0 !important; left: 58% !important; -webkit-mask-image: linear-gradient(#000 70%, transparent 86%); mask-image: linear-gradient(#000 70%, transparent 86%); }
 }
+/* 11/22 字体统一：标题 / 名字 / 按钮 / 标签 = 霞鹜文楷；说明文字 = 黑体 */
+.chead h2, .cpn h4, .lo h4, .pc h3, .box h2, #luTitle, .ctabs button, .ptabs button, .btn, #wmTitle, .rcard b, .card b, .wmn b, .codex .fig b, #banner, .banner, .tbox, #hud .top, .arow b, .stats.big span { font-family: WenKai, Pix, "Songti SC", serif !important; font-weight: 400 !important; }

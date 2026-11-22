@@ -38,7 +38,7 @@
   $('bStart').onclick = () => openPrep(true);
   // 11/22 图鉴展示用小人（art/figure/<key>/0..3.png，比战斗小人大、更精细），有就替换图鉴里的那一个
   const FIG = {}; fetch('art/figure/meta.json').then(r => r.json()).then(M => { for (const k in M) FIG[k] = M[k].map(([ax], i) => { const im = new Image(); im.src = `art/figure/${k}/${i}.png`; return { c: im, f: { ax } }; }); }).catch(() => {});
-  try { if (localStorage.getItem('xsyz-font') === 'pixel') document.body.classList.add('fpx'); } catch (e) {}
+
   const PANELS = {
     codex: ['图鉴', () => { const d = document.createElement('div'); d.className = 'codex';
       // 11/22 手办收藏式（铃兰角色一览）：等距立体底座 + 循环播放的像素小人。底座分档：勇者金 / 首领红 / 远程蓝 / 近战灰
