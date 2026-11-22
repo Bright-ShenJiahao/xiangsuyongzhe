@@ -13,7 +13,7 @@
     if (!o) return null;
     // 出售：书半价（22 / 34 / 52 → 11 / 17 / 26），宝物拿基价的 35%
     if (o.kind === 'book') { const S = SK[o.id]; return { tier: S.tier, icon: UI.bookOf(o.id), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, brief: S.brief, sell: Math.round(DATA.tierPrice[S.tier] * .5) }; }   // 11/22：书卖掉 = 半价（不管用没用过）
-    if (o.kind === 'oath') { const O = DATA.oaths[o.id], L = Math.min(5, o.lv || 1), ic = document.createElement('span'); ic.className = 'oic' + (O.mv ? ' mv' : ''); ic.textContent = O.ch;
+    if (o.kind === 'oath') { const O = DATA.oaths[o.id], L = Math.min(5, o.lv || 1), ic = UI.pi('oath/' + o.id); ic.classList.add('oimg');
       return { icon: ic, name: O.name, sub: `${O.mv ? '身法印记' : '誓约印记'} · Lv${L}`, desc: O.d(DATA.oathLv[L - 1]) + (L < 5 ? `<br><small class="off">下一级：${O.d(DATA.oathLv[L])}</small>` : '<br><small class="on">已满级</small>'), sell: 10 + 6 * L }; }
     if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物', desc: it.desc, sell: Math.round((it.price || 25) * DATA.price.sell) }; }
     const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 3 };
