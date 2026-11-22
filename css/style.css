@@ -837,3 +837,4 @@ body.fpx .pnName h5 { font-size: 48px !important; } body.fpx .pnSec h4, body.fpx
 @media (orientation: portrait), (max-width: 600px) { #title.t2.v13 .tart { background-size: auto 56%; background-position: 32% 6%; } #title.t2.v13 .tart::after { background: linear-gradient(180deg, rgba(8,12,30,0) 50%, #0b1024 66%); } #title.t2.v13 .tbox { right: 0; width: 100%; } }
 #title .tart { position: absolute; }
 #title.t2 .tart::before { display: none !important; }   /* 11/22 旧主图的假月光圈，位置不对，月光改由 titlefx 画 */
+.skic { object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }

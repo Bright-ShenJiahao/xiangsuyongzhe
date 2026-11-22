@@ -27,7 +27,10 @@
   ICON.nova = Array.from({ length: 16 }, (_, y) => Array.from({ length: 16 }, (_, x) => { const d = Math.hypot(x - 7.5, y - 7.5); return d > 5.6 && d < 7.4 ? ((x + y) % 3 ? 'i' : 'j') : d < 2.2 ? 'j' : (d > 3.4 && d < 4.2 && (x * y) % 2 ? 'i' : '.'); }).join(''));
   ICON.axe = ICON.axe.map(r => r.replace(/c/g, 'd'));
   // 像素图标（art/ui，尺寸见 js/uiart.js）：k = 放大倍数
-  const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_staff', wand: 'bk_wand', axe: 'bk_axe', nova: 'bk_nova' };
+  // 11/22 技能书：同一系共用一本（剑 / 枪 / 弓 / 法杖）；技能图标：每个技能单独一张 art/ui2/sk/<id>.png
+  const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_wand', nova: 'bk_wand', wand: 'bk_wand', staff: 'bk_wand', axe: 'bk_axe' };
+  const SYSBK = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' };
+  const bookOf = id => pi(SYSBK[(DATA.skills[id] || {}).sys] || 'bk_sword'), skIcon = id => { const im = pi('sk/' + id); im.classList.add('skic'); return im; };
   function pi(name, k = 2) { if (name === 'end') name = 'guard';   // 耐力没有单独的图标，先用盾
     const im = new Image(); im.className = 'pi'; im.alt = ''; im.draggable = false; im.src = 'art/ui2/' + name + '.png'; const s = (window.UIART || {})[name]; if (s) { im.width = s[0] * k; im.height = s[1] * k; } return im; }
   const piH = (name, k) => pi(name, k).outerHTML;
@@ -104,9 +107,9 @@
         <div class="pills">${PL('hp', '生命', c0.hp)}${PL(dmgA, W0.name + '伤害', pct(c0.dmg - 1))}${PL('guard', '物防 / 魔防', c0.pdef + ' / ' + c0.mdef)}${PL('move', '移速', pct(c0.move - 1))}${PL('crit', '暴击率', Math.round(c0.crit * 100) + '%')}${PL('xp', '经验', pct(c0.xp - 1))}</div>`; }
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
-    for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id === 'staff' ? 'wand' : w.icon)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
+    for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
     const W = DATA.weapons[P.weapon], SK0 = DATA.skills[P.weapon] || {}, AT = DATA.attrs.find(a => a.id === W.type);   // 11/22 起手技能介绍（铃兰式：上面选兵器，下面讲技能）
-    $('wDesc').innerHTML = `<div class="skI"><div class="skIc">${iconCanvas(W.icon).outerHTML}</div><div class="skIb"><div class="skIt"><b>${SK0.name || W.skill}</b><em>${SK0.dt === 'magic' ? '魔法' : '物理'}</em><em>吃「${AT.name}」</em></div><p>${SK0.desc || W.desc}</p></div></div>
+    $('wDesc').innerHTML = `<div class="skI"><div class="skIc">${skIcon(P.weapon).outerHTML}</div><div class="skIb"><div class="skIt"><b>${SK0.name || W.skill}</b><em>${SK0.dt === 'magic' ? '魔法' : '物理'}</em><em>吃「${AT.name}」</em></div><p>${SK0.desc || W.desc}</p></div></div>
       <ul class="skLv">${['l3', 'l5', 'l7'].filter(k => SK0[k]).map(k => `<li><i>Lv${k.slice(1)}</i>${SK0[k]}</li>`).join('')}</ul>`;
     // 属性
     const c = DATA.calc(build()), left = DATA.attrFree - used(); $("aLeft").textContent = left ? `剩余 ${left} 点（可带进游戏）` : "剩余 0 点";
@@ -173,7 +176,7 @@
     set('clock', 'cls', h.left != null && h.left < 5.5 && !h.bossWave ? 'warn' : '');
     set('kills', 'html', piH('kill', 1) + ' ' + h.kills); set('coins', 'html', piH('coin', 1) + ' ' + h.coins);
     const sk = JSON.stringify([h.slots, h.open, h.next]);
-    if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.classList.add('tr', 't' + DATA.skills[s.id].tier); d.appendChild(iconCanvas(DATA.skills[s.id].icon)); { const L = BATTLE.profL(s); if (L) d.insertAdjacentHTML('beforeend', `<i>${L}</i>`); } } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
+    if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.classList.add('tr', 't' + DATA.skills[s.id].tier); d.appendChild(skIcon(s.id)); { const L = BATTLE.profL(s); if (L) d.insertAdjacentHTML('beforeend', `<i>${L}</i>`); } } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');
     set('lvUp', 'cls', '');   // 11/22：升级字改成画在勇者头上，角落的不再显示
     // 右下角翻滚按钮：冷却时一圈暗色扇面倒转，中间显示剩余秒数
@@ -252,7 +255,7 @@
     else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#07101b'; ctx.fillRect(0, 0, cv.width, cv.height); }
     requestAnimationFrame(loop);
   }
-  window.UI = { mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来

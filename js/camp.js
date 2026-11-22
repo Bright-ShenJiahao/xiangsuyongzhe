@@ -12,7 +12,7 @@
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
     // 出售：书半价（22 / 34 / 52 → 11 / 17 / 26），宝物拿基价的 35%
-    if (o.kind === 'book') { const S = SK[o.id]; return { tier: S.tier, icon: UI.icon(S.icon), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, brief: S.brief, sell: Math.round(DATA.tierPrice[S.tier] * .5) }; }   // 11/22：书卖掉 = 半价（不管用没用过）
+    if (o.kind === 'book') { const S = SK[o.id]; return { tier: S.tier, icon: UI.bookOf(o.id), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, brief: S.brief, sell: Math.round(DATA.tierPrice[S.tier] * .5) }; }   // 11/22：书卖掉 = 半价（不管用没用过）
     if (o.kind === 'item') { const it = ITEM(o.id); return { icon: UI.pi(o.id), name: it.name, sub: '宝物', desc: it.desc, sell: Math.round((it.price || 25) * DATA.price.sell) }; }
     const c = USE(o.id); return { icon: UI.pi(o.id), name: c.name, sub: '消耗品', desc: c.desc, sell: 3 };
   }
@@ -52,7 +52,7 @@
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
     r.slots.forEach((s, i) => { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
       if (i >= r.open) { d.className = 'slot lock' + (i === r.open ? ' buy' : ''); if (sel && sel.t === 'L' && sel.i === i) d.classList.add('sel'); d.onclick = () => { sel = { t: 'L', i }; loadout(box); }; }
-      else if (s) { d.className = 'slot has tr t' + SK[s.id].tier; d.appendChild(UI.icon(SK[s.id].icon)); d.insertAdjacentHTML('beforeend', `<span class="tn${SK[s.id].tier}">${SK[s.id].name}</span><i class="dots">${dots(B().profL(s))}</i>`); }
+      else if (s) { d.className = 'slot has tr t' + SK[s.id].tier; d.appendChild(UI.skIcon(s.id)); d.insertAdjacentHTML('beforeend', `<span class="tn${SK[s.id].tier}">${SK[s.id].name}</span><i class="dots">${dots(B().profL(s))}</i>`); }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
