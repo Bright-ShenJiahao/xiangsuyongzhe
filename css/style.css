@@ -864,3 +864,11 @@ body.fpx .pnName h5 { font-size: 48px !important; } body.fpx .pnSec h4, body.fpx
 /* 11/22 按钮文字居中：letter-spacing 会在最后一个字后面多留一格，用 text-indent 抵消；上下用 flex 居中 */
 .btn { display: inline-flex !important; align-items: center; justify-content: center; text-indent: .1em; line-height: 1 !important; }
 .pnFoot .btn { height: 46px; padding-top: 0 !important; padding-bottom: 0 !important; }
+/* 11/22 主界面：去掉副标题和英文；「—— 进入游戏 ——」铃兰式细线按钮，标题区下移到底部偏上 */
+#title .sub, #title .en, #title .seal { display: none !important; }
+.tenter { all: unset; cursor: pointer; display: flex; align-items: center; gap: 18px; margin: 28px auto 0; padding: 10px 6px; font-family: WenKai, serif; font-size: 28px; letter-spacing: .3em; text-indent: .3em; color: #fff3d8; text-shadow: 0 2px 6px #000, 0 0 18px rgba(255, 220, 140, .45); }
+.tenter s { display: block; width: 110px; height: 1px; background: linear-gradient(90deg, transparent, rgba(255, 236, 190, .9)); } .tenter s:last-child { transform: scaleX(-1); }
+.tenter span { animation: tenterPulse 2.4s ease-in-out infinite; } .tenter:hover span { color: #ffe08a; }
+@keyframes tenterPulse { 50% { opacity: .55; } }
+.tenter:disabled { opacity: .35; pointer-events: none; } .tenter:disabled span { animation: none; }
+@media (orientation: portrait), (max-width: 600px) { .tenter { font-size: 22px; gap: 12px; } .tenter s { width: 64px; } }
