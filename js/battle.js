@@ -408,12 +408,72 @@
     for (const d of G.drops) loot.push(d.kind === 'book' && ids.length ? { kind: 'book', id: pickNew() } : { kind: 'item', id: pick(ITEMS()).id });
     if (!loot.length && Math.random() < .3) loot.push({ kind: 'use', id: 'meat' });
     const last = G.wi === STN().waves.length - 1 || !!(STN().waves[G.wi + 1] || {}).boss;
-    UI.waveEnd({ st: G.st, wi: G.wi, kills: G.wk, coins: cw, clear: cl, timeout: G.timeout, xp: Math.round(G.wx), lv: G.lv, dmg: Object.assign({}, RUN.dmgW), loot, last, boss: !!(STN().waves[G.wi + 1] || {}).boss });
+    fieldEnd(loot, cw);   // 11/22 站末留在战场：捡掉落、找公主修炼、找地精商人、走进门
+  }
+  // ---------- 11/22 站末在战场上结算（哈迪斯式）：掉落在地上走过去捡；公主在中间，靠近她跳 3 个修炼光球 + 1 颗刷新水晶；地精商人；三扇门 ----------
+  const IMG = {}; const img = n => IMG[n] || (IMG[n] = Object.assign(new Image(), { src: 'art/ui2/' + n + '.png' }));
+  function fieldEnd(loot) {
+    G.paused = false; G.waveOn = false; const hx = hero.x, hy = hero.y, g = MAP.ground, cy = Math.min(g.y1 - 60 * K, Math.max(g.y0 + 80 * K, hy));
+    G.fe = { t: 0, items: loot.map((o, i) => { const a = i / Math.max(1, loot.length) * PI * 2 + .5; return Object.assign({ x: hx + Math.cos(a) * 34 * K, y: hy + Math.sin(a) * 22 * K }, o); }),
+      pr: { x: hx, y: cy - 70 * K, near: 0, orbs: null, cr: null, said: 0 }, mer: { x: hx - 120 * K, y: cy + 10 * K, st: 0 }, doors: [], warn: 0 };
+    if (G.st === 1) G.fe.sign = { x: hx + 110 * K, y: cy + 50 * K };
+    stationEnd();
+  }
+  function setDoors(cards, pick) { const f = G.fe, n = cards.length, cx = f.pr.x, y = f.pr.y - 70 * K; f.doors = cards.map((c, i) => ({ c, x: cx + (i - (n - 1) / 2) * 70 * K, y, st: 0 })); f.pick = pick; }
+  const SKUL = (o, r) => Math.hypot(o.x - hero.x, (o.y - hero.y) * YS) < r * K;
+  function xiuOrbs() { const P = G.fe.pr, L = CAMP.rollXiu(3 + (hero.fx.xiuOpt || 0)); P.orbs = L.map((o, i) => Object.assign({ x: P.x + (i - (L.length - 1) / 2) * 40 * K, y: P.y + 40 * K, st: 0 }, o)); P.cr = P.cr || { x: P.x + (L.length / 2 + .6) * 40 * K, y: P.y + 40 * K, st: 0, n: 0 }; }
+  function fieldTick(dt) {
+    const f = G.fe; if (!f || G.paused) return; f.t += dt;
+    for (let i = f.items.length - 1; i >= 0; i--) { const o = f.items[i]; if (f.t > .6 && SKUL(o, 16)) { if (CAMP.learn(o)) { f.items.splice(i, 1); for (let k = 0; k < 10; k++) { const a = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(a) * 50 * K, vy: Math.sin(a) * 50 * K, t: 0, T: .4, col: '#ffe08a', g: 0 }); } } else { o.x += (o.x - hero.x) * .5; o.y += (o.y - hero.y) * .5; } } }
+    const P = f.pr;
+    if (!P.orbs && SKUL(P, 40)) { if (RUN.xiu > 0) { xiuOrbs(); P.said = 1; } else if (!P.said) { P.said = 2; toastMsg('露米娜：「再坚持一下，勇者。」'); } }
+    if (P.orbs && f.t > .5) {
+      for (const o of P.orbs) { if (SKUL(o, 15)) o.st += dt; else o.st = 0;
+        if (o.st > .25) { for (const [a, v] of o.adds) RUN.train[a] = (RUN.train[a] || 0) + v; RUN.xiu--; recompute(); toastMsg(`修炼：${o.adds.map(([a, v]) => DATA.attrs.find(x => x.id === a).name + ' +' + v).join('、')}`);
+          for (let k = 0; k < 16; k++) { const an = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(an) * 60 * K, vy: Math.sin(an) * 60 * K, t: 0, T: .5, col: DATA.rarity[o.q].col, g: 0 }); }
+          if (RUN.xiu > 0) { P.cr.n = 0; xiuOrbs(); } else { P.orbs = null; P.cr = null; P.said = 3; } return; } }
+      const c = P.cr; if (c) { if (SKUL(c, 14)) c.st += dt; else c.st = 0;
+        if (c.st > .5) { c.st = 0; const free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1); if (cost && RUN.coins < cost) { toastMsg('铜钱不够'); c.st = -1; } else { RUN.coins -= cost; c.n++; const keep = c; xiuOrbs(); P.cr = keep; } } }
+    }
+    const M = f.mer; if (SKUL(M, 24)) M.st += dt; else M.st = 0;
+    if (M.st > .4) { M.st = -99; G.paused = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '地精商人', tab: 'shang', only: 'shang', goText: '离开 ▶', after: () => { G.paused = false; M.st = -1.5; } }); return; }
+    if (M.st < 0 && !SKUL(M, 24)) M.st = 0;
+    for (const d of f.doors) { if (Math.abs(d.x - hero.x) < 22 * K && Math.abs(d.y - hero.y) < 18 * K) d.st += dt; else d.st = 0;
+      if (d.st > .35) { if ((RUN.xiu > 0 || f.items.length) && !f.warn) { f.warn = 1; d.st = -1; toastMsg(RUN.xiu > 0 ? '还有修炼没拿（去找露米娜），再走进门就出发' : '地上还有东西没捡，再走进门就出发'); return; }
+        if (d.st > .35) { f.doors = []; f.pick(d.c); return; } } }
+  }
+  function fieldDraw() {
+    const f = G.fe; if (!f) return; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const label = (t, x, y, col, sz) => { ctx.font = `${Math.round((sz || 6) * u)}px WenKai, Pix, serif`; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#1a1008'; ctx.strokeText(t, x, y); ctx.fillStyle = col || '#fff3d0'; ctx.fillText(t, x, y); };
+    const ring = (o, r, p, col) => { if (p <= 0) return; ctx.strokeStyle = col; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.arc(X(o.x), Y(o.y), r * u, -PI / 2, -PI / 2 + PI * 2 * Math.min(1, p)); ctx.stroke(); };
+    for (const d of f.doors) { const x = X(d.x), y = Y(d.y), w = 46 * u, h = 58 * u, c = d.c, el = c.k === 'elite', rs = c.rest;
+      const gl = ctx.createRadialGradient(x, y - h / 2, 0, x, y - h / 2, w); gl.addColorStop(0, rs ? 'rgba(120,220,160,.45)' : el ? 'rgba(255,140,60,.45)' : c.k === 'boss' ? 'rgba(255,60,60,.5)' : 'rgba(140,180,255,.4)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gl; ctx.fillRect(x - w, y - h * 1.3, w * 2, h * 1.5);
+      ctx.fillStyle = '#1a1210'; ctx.beginPath(); ctx.moveTo(x - w / 2, y); ctx.lineTo(x - w / 2, y - h + w / 2); ctx.arc(x, y - h + w / 2, w / 2, PI, 0); ctx.lineTo(x + w / 2, y); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#c9a24a'; ctx.lineWidth = 2 * u; ctx.stroke();
+      if (c.av) { const fr = SPR.frame(c.av, 'idle0') || SPR.frame(c.av, 'walk0'); if (fr) SPR.draw(ctx, c.av, SPR.frame(c.av, 'idle0') ? 'idle0' : 'walk0', 0, x, y - 8 * u, false, u * .8, {}); }
+      else { const im = img(c.icon); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 15 * u, y - 40 * u, 30 * u, 30 * u); }
+      label(c.name, x, y - h - 10 * u, el ? '#ffb070' : rs ? '#9ef0b0' : '#fff3d0'); if (c.sub) label(c.sub, x, y + 2 * u, '#c8b890', 5); ring({ x: d.x, y: d.y }, 10, d.st / .35, '#ffe08a'); }
+    for (const o of f.items) { const im = img(o.kind === 'book' ? ({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[DATA.skills[o.id].sys] : o.kind === 'item' ? o.id : o.id), x = X(o.x), y = Y(o.y) - rd((4 + Math.sin(G.t * 3 + o.x) * 2) * u);
+      ctx.fillStyle = 'rgba(255,220,120,.25)'; ctx.beginPath(); ctx.arc(x, y, 11 * u, 0, 7); ctx.fill(); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); }
+    const P = f.pr, px = X(P.x), py = Y(P.y);
+    const gl = ctx.createRadialGradient(px, py - 20 * u, 0, px, py - 20 * u, 40 * u); gl.addColorStop(0, 'rgba(220,190,255,.5)'); gl.addColorStop(1, 'rgba(220,190,255,0)'); ctx.fillStyle = gl; ctx.fillRect(px - 40 * u, py - 60 * u, 80 * u, 80 * u);
+    SPR.drawHero(ctx, P.orbs ? 'big' : 'idle', Math.floor(G.t * 3) % 2, px, py - rd(Math.sin(G.t * 2) * 2 * u), P.x > hero.x, u, { w: 'staff', c: 'p' });
+    if (!P.orbs) label(RUN.xiu > 0 ? `露米娜 · 修炼 ×${RUN.xiu}` : '露米娜', px, py + 4 * u, '#e6d4ff');
+    if (P.orbs) { for (const o of P.orbs) { const Q = DATA.rarity[o.q], x = X(o.x), y = Y(o.y) - rd((5 + Math.sin(G.t * 3 + o.x) * 2) * u), r = 12 * u;
+        const g2 = ctx.createRadialGradient(x, y, 0, x, y, r * 1.8); g2.addColorStop(0, Q.col + 'aa'); g2.addColorStop(1, Q.col + '00'); ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(x, y, r * 1.8, 0, 7); ctx.fill();
+        ctx.fillStyle = 'rgba(20,14,30,.8)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.strokeStyle = Q.col; ctx.lineWidth = u; ctx.stroke();
+        const im = img(o.adds[0][0] === 'end' ? 'guard' : o.adds[0][0]); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 8 * u, y - 8 * u, 16 * u, 16 * u);
+        o.adds.forEach(([a, v], k) => label(`+${v} ${DATA.attrs.find(t => t.id === a).name}`, x, y + r + 2 * u + k * 7 * u, Q.col)); ring(o, 14, o.st / .25, '#fff'); }
+      const c = P.cr; if (c) { const x = X(c.x), y = Y(c.y), free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1);
+        ctx.fillStyle = '#b07bff'; ctx.beginPath(); ctx.moveTo(x, y - 12 * u); ctx.lineTo(x + 7 * u, y - 2 * u); ctx.lineTo(x, y + 6 * u); ctx.lineTo(x - 7 * u, y - 2 * u); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#efe0ff'; ctx.lineWidth = u; ctx.stroke();
+        label(cost ? `刷新 ${cost} 铜钱` : `刷新（${free - c.n}）`, x, y + 8 * u, '#e6d4ff', 5); ring(c, 12, c.st / .5, '#e6d4ff'); if (G.st === 1 && !c.n) label('站上来刷新修炼', x, y - 24 * u, '#c8b890', 5); } }
+    const M = f.mer; SPR.draw(ctx, 'goblin', 'idle0', 0, X(M.x), Y(M.y), M.x < hero.x ? false : true, u, {}); label('地精商人', X(M.x), Y(M.y) + 3 * u, '#ffd860'); ring(M, 14, M.st / .4, '#ffd860');
+    if (f.sign) { const x = X(f.sign.x), y = Y(f.sign.y); ctx.fillStyle = '#6a4420'; ctx.fillRect(x - 2 * u, y - 18 * u, 4 * u, 18 * u); ctx.fillStyle = '#c8a06a'; ctx.fillRect(x - 30 * u, y - 30 * u, 60 * u, 14 * u); ctx.strokeStyle = '#4a2e12'; ctx.lineWidth = u; ctx.strokeRect(x - 30 * u, y - 30 * u, 60 * u, 14 * u); ctx.font = `${Math.round(5.5 * u)}px WenKai, Pix, serif`; ctx.fillStyle = '#3a2410'; ctx.fillText('按 P 整理技能栏', x, y - 28 * u); }
+    ctx.restore();
   }
   // 一站打完：免费开格（第 4 站后开第 4 格，第 8 站后开第 5 格），再出 3 张路线卡三选一
   function stationEnd() {
     // 11/22 技能格不再免费开，全部在背包页 / 商店花铜钱买
-    G.paused = true; showRoute();
+    if (!G.fe) G.paused = true; showRoute();
   }
   // 11/22 站点卡：战斗 / 精英 / 宝箱 · 篝火 · 行商 · 奇遇（不打仗的卡每章最多 restMax 次，选了不推进站数，做完回来再选）
   const EN = id => DATA.enemies[id].name.replace('哥布林', '') || '哥布林';
@@ -425,7 +485,7 @@
   // 11/22 路线（月圆之夜式牌库）：每站打完抽 3 张；选了不打仗的卡（宝箱 / 篝火 / 特价商店 / 奇遇）当场结算，不占站数，然后再抽 3 张只有战斗的卡
   function showRoute(combatOnly) {
     const n = G.st + 1, go = route => { G.st++; G.wi = -1; G.route = route; nextWave(); };
-    if (n >= DATA.stations.length) return UI.route({ st: n, cards: [{ k: 'boss', av: 'gob_king', name: '哥布林王', sub: '首领', desc: '森林的尽头是哥布林王座。打完 2 段杂兵，哥布林王亲自出来。', btn: '挑战' }] }, () => go('boss'));
+    if (n >= DATA.stations.length) { const bc = [{ k: 'boss', av: 'gob_king', name: '哥布林王', sub: '首领', desc: '森林的尽头是哥布林王座。', btn: '挑战' }]; if (G.fe) return setDoors(bc, () => { G.fe = null; go('boss'); }); return UI.route({ st: n, cards: bc }, () => go('boss')); }
     const S = DATA.stations[n - 1], info = stationInfo(n), main = info.fresh[0] || info.all[info.all.length - 1];
     const fight = { k: 'fight', av: main, name: S.name, sub: `第 ${n} 站 · Lv${n}`, desc: info.fresh.length ? '会出现：' + info.fresh.map(EN).join('、') : '这一段的老对手。', btn: '前往' };
     const pool = shuffle(info.all.filter(t => !DATA.enemies[t].ranged)), mk = et => ({ k: 'elite', av: et, et, name: '精英 · ' + DATA.enemies[et].name, sub: `第 ${n} 站 · Lv${n}`, desc: '后两段各多一只精英。铜钱 +50%，精英必掉技能书。', btn: '挑战' });
@@ -433,15 +493,14 @@
     let cards;
     if (combatOnly) cards = [fight, e1, e2];
     else { const rs = shuffle(DATA.rests.slice()).map(R0 => Object.assign({ rest: true, sub: '不占站数' }, R0)); cards = shuffle([fight, Math.random() < .5 ? e1 : rs[1], rs[0]]); }
-    UI.route({ st: n, cards }, c => {
-      if (!c.rest) { G.eliteType = c.et; return go(c.k); }
-      doRest(c.k);
-    });
+    const pick = c => { if (!c.rest) { G.fe = null; G.eliteType = c.et; return go(c.k); } G.paused = true; doRest(c.k); };
+    if (G.fe) return setDoors(cards, pick);
+    UI.route({ st: n, cards }, pick);
   }
   function ownBooks() { return new Set([...RUN.slots, ...RUN.bag].filter(x => x && (x.kind === 'book' || !x.kind)).map(x => x.id)); }
   function randBook(minTier) { const all = DATA.bookPool(ownBooks(), Math.max(G.st, minTier >= 3 ? 4 : 1), minTier >= 3); const f = all.filter(id => DATA.skills[id].tier >= (minTier || 1)); const L = f.length ? f : all; return L[Math.random() * L.length | 0]; }
   function doRest(k) {
-    const back = () => showRoute(true), base = { st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], after: back, goText: '回到路线 ▶' };
+    const back = () => { G.paused = false; showRoute(true); }, base = { st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], after: back, goText: '回到路线 ▶' };
     if (k === 'chest') { const L = []; for (let i = 0; i < 3; i++) { const id = randBook(); if (id && !L.some(o => o.id === id)) L.push({ kind: 'book', id }); } return CAMP.open(Object.assign(base, { title: '宝箱 · 三本书选一本', tab: 'shi', loot: L, pickOne: true })); }
     if (k === 'fire') { hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .5); RUN.xiu++; RUN.xopt = null; RUN.xrr = 0; return CAMP.open(Object.assign(base, { title: '篝火 · 回复 50% 生命，修炼一次', tab: 'xiu' })); }
     if (k === 'shop') { RUN.shop = null; RUN.rr = 0; return CAMP.open(Object.assign(base, { title: '地精特价商店 · 全部八折', tab: 'shang', disc: .8 })); }
@@ -489,7 +548,7 @@
     }
     if (!hero.dead) { SK.tick(dt);
     }
-    spawner(dt); warnTick(dt); auraTick(dt);
+    spawner(dt); warnTick(dt); auraTick(dt); fieldTick(dt);
     for (const z of foes) {
       if (z.dead) { z.deadT += dt; continue; }
       z.flash -= dt; z.kbT -= dt; z.brk = (z.brk || 0) - dt; statusTick(z, dt); if (z.dead) continue;
@@ -598,7 +657,7 @@
       else if (o.k === 'harrow') { const a = Math.atan2(o.vy, o.vx); for (let j = 0; j < 9; j++) { ctx.fillStyle = j < 2 ? '#e8ecf4' : j > 6 ? '#e8e0c8' : '#8a5a2a'; ctx.fillRect(X(o.x) - rd(Math.cos(a) * j * 1.6 * u), Y(o.y) - rd(Math.sin(a) * j * 1.6 * u), u + 1, u + 1); } }
       else if (o.k === 'fire') { const p = o.t / o.T, hy = (1 - p) * 120; for (let j = 0; j < 5; j++) { ctx.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; ctx.fillRect(X(o.x) - q / 2 - rd(j * 3 * u * (1 - p)), Y(o.y) - rd((hy + j * 7) * u) - q / 2, q, q); } }
     }
-    SK.drawOver(ctx, X, Y, u); princessDraw();
+    SK.drawOver(ctx, X, Y, u); princessDraw(); fieldDraw();
     if (G.lvUpT > 0 && !hero.dead) {   // 11/22：升级字跳在勇者头上（跟着人走，弹两下再慢慢淡出）
       const t = 2.2 - G.lvUpT, hop = t < .6 ? Math.abs(Math.sin(t / .6 * PI * 2)) * 10 : 0, a = Math.min(1, G.lvUpT / .5), x = X(hero.x), y = Y(hero.y) - (44 + hop + Math.min(t, .3) * 8) * u;
       ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = `bold ${Math.round(8 * u)}px Pix, monospace`;
