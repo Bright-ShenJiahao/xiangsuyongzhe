@@ -96,12 +96,13 @@
     for (const h of DATA.heroes) { const b = document.createElement('button'); b.className = h.id === P.hero ? 'on' : ''; const cr = SPR.crop(SPR.heroSet(h.id, P.weapon), P.weapon + '.idle', 0); if (cr) b.appendChild(cr.c);
       b.insertAdjacentHTML('beforeend', `<span>${h.name}</span><small>${h.perk}</small>`); b.onclick = () => { P.hero = h.id; store.set('hero', h.id); renderPrep(); }; cs.appendChild(b); }
     { const h = DATA.heroes.find(x => x.id === P.hero), c0 = DATA.calc(build()), W0 = DATA.weapons[P.weapon];   // 11/22 角色卡（铃兰式：人物 + 属性 + 兵器槽）
+      $('pPort').src = `art/portrait/${P.hero === 'f' ? 'f' : 'm'}.webp`;
       $('hInfo').innerHTML = `<h5>${h.name}</h5><p>${h.desc}</p><div class="hperk">特长 · ${h.perk}</div><div class="hst"><span>生命</span><b>${c0.hp}</b><span>移速</span><b>${pct(c0.move - 1)}</b><span>翻滚CD</span><b>${h.id === 'f' ? '−20%' : '—'}</b><span>经验</span><b>${pct(c0.xp - 1)}</b></div><div class="hslot"></div>`;
       const sl = $('hInfo').querySelector('.hslot'); sl.appendChild(iconCanvas(W0.icon)); sl.insertAdjacentHTML('beforeend', `<span>${W0.name}<small>起手招 · ${W0.skill}</small></span>`); }
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(w.icon)); b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
-    const W = DATA.weapons[P.weapon]; $('wDesc').innerHTML = `<b style="color:#ffd860;font-weight:400">起手招：${W.skill}</b>　${W.desc}<br><small style="color:#c8b890">吃「${DATA.attrs.find(a => a.id === W.type).name}」加成。之后的技能书什么系都会出，可以混着带。</small>`;
+    const W = DATA.weapons[P.weapon]; $('wDesc').innerHTML = `<b class="wsk">起手招：${W.skill}</b>　${W.desc}<br><small style="color:#c8b890">吃「${DATA.attrs.find(a => a.id === W.type).name}」加成。之后的技能书什么系都会出，可以混着带。</small>`;
     // 属性
     const c = DATA.calc(build()), left = DATA.attrFree - used(); $("aLeft").textContent = left ? `剩余 ${left} 点（可带进游戏）` : "剩余 0 点";
     const ar = $('aRows'); ar.innerHTML = '';
