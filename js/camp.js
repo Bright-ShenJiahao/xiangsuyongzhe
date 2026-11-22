@@ -110,7 +110,7 @@
     // 11/22 铃兰式人物页：左边大立绘（出框），右边 头牌（像素小人 + Lv + 经验条 + 名字）/ 两列药丸属性 / 技能栏图标
     const P2 = (ic, n, v) => `<div><span>${UI.piH(ic, 1)}${n}</span><b>${v}</b></div>`;
     Rt.innerHTML = `<div class="hport"><img src="art/portrait/${hid}.webp" alt="" onerror="this.remove()"><i>立绘</i></div><div class="lorr">
-      <div class="hhead"><span class="hmini"></span><b class="hbadge">Lv${B().lv()}</b><div class="hlv"><div class="hxp"><i style="width:${Math.round((B().xpFrac ? B().xpFrac() : 0) * 100)}%"></i></div><small>经验 ${B().xpTxt ? B().xpTxt() : ''}</small></div><h4>${hname}</h4></div>
+      <div class="hhead2"><span class="hmini"></span><div class="hh2r"><div class="hh2t"><span class="hlvic">◆</span><b>Lv ${B().lv()}</b><small>${B().xpTxt ? B().xpTxt() : ''}</small><h4>${hname}</h4></div><div class="hxp2"><i style="width:${Math.max(2, Math.round((B().xpFrac ? B().xpFrac() : 0) * 100))}%"></i></div></div></div>
       <div class="pills">${P2('hp', '生命', Math.ceil(h.hp) + '/' + h.maxHp)}${P2('move', '移速', pct(c.move - 1) + (hid === 'f' ? ' · 翻滚−20%' : ''))}
         ${P2('str', '剑·枪·斧', pct(.06 * c.A.str + (c.fx.dmg || 0)))}${P2('agi', '弓', pct(.06 * c.A.agi + (c.fx.dmg || 0)))}
         ${P2('int', '法杖', pct(.06 * c.A.int + (c.fx.dmg || 0)))}${P2('spd', '出手速度', pct(c.spd - 1))}
@@ -118,7 +118,7 @@
         ${P2('guard', '物/魔防', c.pdef + '/' + c.mdef)}${P2('xp', '经验', pct(c.xp - 1))}</div>
       <div class="hsk"></div>${r.habit ? `<p class="dim">现实习惯：${DATA.habits.find(x => x.id === r.habit).name}</p>` : ''}</div>`;
     // 11/22 合并成一个框（铃兰式）：左边加点那一栏挪进人物栏，排在头牌下面
-    { const ad = document.createElement('div'); ad.className = 'hadd'; while (L.firstChild) ad.appendChild(L.firstChild); Rt.querySelector('.hhead').after(ad); L.remove(); wrap.classList.add('lom');
+    { const ad = document.createElement('div'); ad.className = 'hadd'; while (L.firstChild) ad.appendChild(L.firstChild); Rt.querySelector('.hhead2').after(ad); L.remove(); wrap.classList.add('lom');
       { const lb = ad.querySelector('.lob'), bt = lb && lb.querySelector('button'), h4 = ad.querySelector('h4'); if (bt && h4) { bt.textContent = '重置'; h4.insertBefore(bt, h4.querySelector('.pts')); lb.remove(); } }
       ad.querySelectorAll('.arow small').forEach(x => { x.parentElement.title = x.textContent; }); }
     { const cr = SPR.crop(SPR.heroSet(hid, run.weapon), run.weapon + '.idle', 0); if (cr) Rt.querySelector('.hmini').appendChild(cr.c);

@@ -631,3 +631,17 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #pause .lom .hsi small { margin-top: 4px; padding: 1px 10px; background: rgba(60, 40, 22, .9); border: 1px solid #8a6a3a; border-radius: 9px; font-size: 13px !important; color: #e8dcc2; }
 .hsi.em > :first-child { border-color: #c8a060 !important; border-width: 2px !important; background: rgba(200, 160, 90, .06) !important; } .hsi.lk > :first-child { border-color: #8a6a3a !important; opacity: .8 !important; }
 @media (orientation: portrait) { #pause .lom .hport { margin-right: 0; } #pause .lom .lorr { padding-left: 0; background: none; } #pause .lom .hsi { width: 58px; } #pause .lom .hsi > :first-child { width: 48px; height: 48px; } #pause .lom .pills > div { font-size: 13px; padding: 3px 10px 3px 6px; } #pause .lom .hsk { gap: 8px; } }
+
+/* 11/22 人物页 v5：铃兰式头牌、字和图标放大、去光环 */
+#pause .lom .hport::before { display: none; }
+.hhead2 { display: flex; align-items: center; gap: 14px; padding: 8px 16px; background: rgba(60, 40, 22, .7); border: 1px solid rgba(200, 160, 90, .5); }
+.hhead2 .hmini canvas { height: 72px !important; width: auto; image-rendering: pixelated; }
+.hh2r { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.hh2t { display: flex; align-items: baseline; gap: 10px; } .hlvic { color: #e05a3a; font-size: 22px; } .hh2t b { font-size: 34px; font-weight: 500; color: #f0e0c0; line-height: 1; } .hh2t small { font-size: 18px; color: #a89878; }
+.hh2t h4 { margin: 0 0 0 auto !important; font-size: 30px !important; color: #f0d890; }
+.hxp2 { height: 12px; background: #1a2030; border-radius: 6px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); } .hxp2 i { display: block; height: 100%; background: linear-gradient(#b8e070, #7ab838); border-radius: 6px; }
+#pause .lom .pills > div { font-size: 19px; padding: 8px 18px 8px 12px; } #pause .lom .pills span { gap: 8px; } #pause .lom .pills span > * { width: 28px !important; height: 28px !important; }
+.hadd .arow > b { font-size: 18px !important; } .hadd .arow > b .pi, .hadd .arow > b img, .hadd .arow > b canvas { width: 26px !important; height: 26px !important; } .hadd .arow em { font-size: 34px !important; } .hadd h4 { font-size: 19px !important; } .hadd .pts { font-size: 17px; }
+#pause .lom .hsi small { font-size: 15px !important; }
+@media (orientation: portrait) { .hhead2 .hmini canvas { height: 48px !important; } .hh2t b { font-size: 24px; } .hh2t small { font-size: 13px; } .hh2t h4 { font-size: 22px !important; } #pause .lom .pills > div { font-size: 14px; padding: 4px 10px 4px 6px; } #pause .lom .pills span > * { width: 20px !important; height: 20px !important; } .hadd .arow > b { font-size: 13px !important; } .hadd .arow em { font-size: 24px !important; } }
+#pause .lom .pills > div { font-size: 17px; padding: 4px 16px 4px 10px; } #pause .lom .pills span > * { width: 24px !important; height: 24px !important; } .hadd .arow { padding: 5px 6px !important; } .hadd .arow em { font-size: 28px !important; } #pause .lom .hsk { padding-top: 8px; } #pause .lom .lorr { gap: 8px; }
