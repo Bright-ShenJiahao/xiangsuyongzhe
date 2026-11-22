@@ -673,3 +673,10 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #pause .lom .lorr { padding-bottom: 10px; } #pause .lom .hsk { padding-bottom: 4px; }
 .fst, .fig.big .fst { height: 118px !important; }
 .fst canvas, .fig.big .fst canvas { height: auto !important; max-width: none !important; max-height: none !important; }
+/* 11/22 主视觉 ⑧：男女主 + 哥布林，月夜油画风；人物在左，右边暗处放标题 */
+#title.t2.v8 .tart { background-image: url(../art/title/art8.webp); background-position: 30% 50%; }
+#title.t2.v8 .tart::after { background: linear-gradient(270deg, rgba(8, 14, 40, .7) 0%, rgba(8, 14, 40, .25) 30%, rgba(8, 14, 40, 0) 45%); }
+#title.t2.v8 .tart::before { left: 44%; top: 4%; } #title.t2.v8 .tbox { left: auto; right: 3%; width: 40%; }
+@media (orientation: portrait), (max-width: 600px) { #title.t2.v8 .tart { background-size: auto 56%; background-position: 36% 6%; }
+  #title.t2.v8 .tart::after { background: linear-gradient(180deg, rgba(8, 14, 40, 0) 50%, #0b1230 66%); } #title.t2.v8 .tbox { right: 0; width: 100%; } }
+@media (orientation: landscape) and (min-width: 601px) { #title.t2.v8 .tbox { width: 34%; right: 2%; } }
