@@ -20,6 +20,7 @@
 
   // 画质：默认像素（11/22 用户看过高清后定：还是像素好）；localStorage xsyz-hd = 1 时用高清（调试面板切换，切完刷新）
   // 11/22 新画风试用（HD 像素 2.5 头身）：localStorage xsyz-style = new 时男主拿剑、普通哥布林换新图
+  const HF = (() => { try { return localStorage.getItem('xsyz-hf') === 'new'; } catch (e) { return false; } })();   // 11/22 按立绘重出的人物剑帧
   const NEW = false;   // 11/22 用户定：保持像素画风，新画风停用（素材留在 art/heroN、art/goblin_n）
   const HD = false;   // 11/22 用户定像素；高清图只做了几种，开着会让其余怪物消失，停用
   // 一张「原图集」：base 画布 + 帧表 { 名字: [{x,y,w,h,ax,ay}, …] }
@@ -63,6 +64,8 @@
       ims.forEach((im, i) => { g.drawImage(im, x, 0); const [ax, ay] = gj[k][names[i]]; f[names[i]] = [{ x, y: 0, w: im.width, h: im.height, ax, ay }]; x += im.width + 2; });
       brown(c); SETS[k] = { base: c, f, sk: 1 / r, hd: r > 1 };
     }));
+    if (HF) try { for (const k of ['hero31m', 'hero31f']) { const [im, js] = await Promise.all([loadImg(`art/${k}/atlas.png`), loadJSON(`art/${k}/atlas.json`)]); const c = mkc(im.width, im.height); c.getContext('2d').drawImage(im, 0, 0);
+      const f = {}; for (const n in js.f) f[n.slice(5)] = js.f[n].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay })); SETS[k] = { base: c, f }; } } catch (e) { console.warn('hero31', e); }
     if (NEW) try {   // 新画风：哥布林、男主剑
       const nj = await loadJSON('art/goblin_n/frames.json');
       for (const k in nj) { const names = Object.keys(nj[k]), ims = await Promise.all(names.map(n => loadImg(`art/goblin_n/${k}/${n}.png`)));
@@ -110,7 +113,7 @@
   function crop(set, name, i) { const f = frame(set, name, i), S = SETS[set]; if (!f) return null; const k = S.sk || 1, w = Math.max(1, Math.round(f.w * k)), h = Math.max(1, Math.round(f.h * k)), c = mkc(w, h), g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(S.base, f.x, f.y, f.w, f.h, 0, 0, w, h); return { c, f: k === 1 ? f : { ...f, w, h, ax: f.ax * k, ay: f.ay * k } }; }
 
   // 现在用哪套勇者：默认旧的（11/21 用户定）；localStorage xsyz-hero = new 时用新的（对比用）。k = 换算到旧勇者的身高（旧的 40 像素格）
-  const heroSet = (c, w) => c !== 'f' && SETS.heroN && (!w || w === 'sword') ? 'heroN' : c === 'f' && SETS.heroF ? 'heroF' : SETS.herohd ? 'herohd' : 'hero';   // c = 'm' 男主 / 'f' 女主（女主暂时没有高清版）
+  const heroSet = (c, w) => HF && (!w || w === 'sword') && SETS.hero31m ? (c === 'f' ? 'hero31f' : 'hero31m') : c !== 'f' && SETS.heroN && (!w || w === 'sword') ? 'heroN' : c === 'f' && SETS.heroF ? 'heroF' : SETS.herohd ? 'herohd' : 'hero';   // c = 'm' 男主 / 'f' 女主（女主暂时没有高清版）
   const heroK = () => 1;
   // 勇者拿哪种武器：o.w = sword / spear / bow / staff（11/21 四套武器图，key 是 hero:<武器>.<动作>）；没有这套就用剑
   function drawHero(ctx, n, i, X, Y, flip, u, o = {}) { const s = heroSet(o.c, o.w); if (o.w && SETS[s].f[o.w + '.' + n]) n = o.w + '.' + n; draw(ctx, s, n, i, X, Y, flip, u, o); }
