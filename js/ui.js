@@ -243,7 +243,11 @@
   $('rAgain').onclick = () => startBattle(lastBuild);
   $('rWep').onclick = () => { BATTLE.stop(); overlay('result', false); openPrep(false); };
   $('rHome').onclick = () => { BATTLE.stop(); overlay('result', false); show('title'); };
-  document.addEventListener('visibilitychange', () => { if (document.hidden) togglePause(true); });
+  // 11/22 切走自动暂停：只在正中间显示一个暂停图标（点一下 / 按任意键继续）；按 P 或点右上角才进备战页
+  function softPause() { if (screen !== 'battle' || !BATTLE.active() || BATTLE.paused) return; BATTLE.pause(true); $('autoP').classList.add('on'); }
+  function softResume() { if (!$('autoP').classList.contains('on')) return; $('autoP').classList.remove('on'); BATTLE.pause(false); }
+  $('autoP').addEventListener('pointerdown', e => { e.stopPropagation(); softResume(); }); addEventListener('keydown', e => { if ($('autoP').classList.contains('on') && e.key !== 'p' && e.key !== 'P') softResume(); }, true);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) softPause(); });
 
   // ================= 主循环 =================
   let T = 0;
@@ -254,7 +258,7 @@
     else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#07101b'; ctx.fillRect(0, 0, cv.width, cv.height); }
     requestAnimationFrame(loop);
   }
-  window.UI = { bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来

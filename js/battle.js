@@ -68,7 +68,7 @@
     cv.addEventListener('pointerdown', e => { if (!running()) return; joy.on = true; joy.id = e.pointerId; joy.sx = joy.x = e.clientX; joy.sy = joy.y = e.clientY; });
     addEventListener('pointermove', e => { if (joy.on && e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } });
     const up = e => { if (e.pointerId === joy.id) joy.on = false; }; addEventListener('pointerup', up); addEventListener('pointercancel', up);
-    addEventListener('blur', () => { if (running()) UI.togglePause(true); for (const k in keys) keys[k] = 0; joy.on = false; });
+    addEventListener('blur', () => { if (running()) UI.softPause(); for (const k in keys) keys[k] = 0; joy.on = false; });
   }
   const running = () => G && !G.over && !G.paused;
   function moveDir() {
@@ -334,8 +334,8 @@
   const PRI = [['pbook', '技能书', '#8ad0ff', 'bk_wand'], ['xiu', '修炼', '#b98aff', 'xp'], ['pcoin', '40 铜钱', '#ffd860', 'coin']].map(([k, n, c, ic]) => { const im = new Image(); im.src = 'art/ui2/' + ic + '.png'; return { k, n, c, im }; });
   function princess() {
     RUN.metP = true; const a = hero.f || 1, px = hero.x + 70 * K * a, py = hero.y - 10 * K;
-    for (const z of foes) if (!z.dead && !z.T.boss) { const d = Math.hypot(z.x - px, z.y - py) || 1; if (d < 200 * K) { const k = (200 * K - d) / d; z.x += (z.x - px) * k * .9; z.y += (z.y - py) * k * .9; } z.cc = { k: 'stun', t: 5.5, T: 5.5 }; }   // 圣光：推开周围的怪并定住
-    G.shake = .25;     G.pr = { t: 0, T: 5.5, x: px, y: py, orbs: PRI.map((o, i) => Object.assign({ x: px + (i - 1) * 46 * K, y: py + 38 * K }, o)), done: null };
+    for (const z of foes) if (!z.dead && !z.T.boss && Math.hypot(z.x - px, z.y - py) < 150 * K) { z.flee = true; z.fleeT = 0; }   // 公主施法一道光：附近的怪被吓跑淡出
+        G.pr = { t: 0, T: 5.5, x: px, y: py, orbs: PRI.map((o, i) => Object.assign({ x: px + (i - 1) * 46 * K, y: py + 38 * K }, o)), done: null };
     for (let k = 0; k < 30; k++) { const an = R(0, PI * 2); parts.push({ x: px, y: py - 20 * K, vx: Math.cos(an) * R(20, 70) * K, vy: Math.sin(an) * R(20, 70) * K - 30 * K, t: 0, T: R(.5, 1), col: ['#e6d4ff', '#b98aff', '#fff'][k % 3], g: 0 }); }
   }
   function princessTick(dt) {
@@ -349,7 +349,8 @@
     const p = G.pr; if (!p) return; const fade = p.done ? Math.max(0, 1 - p.t2 / 1.2) : Math.min(1, p.t / .6);
     ctx.save(); ctx.globalAlpha = fade;
     const gl = ctx.createRadialGradient(X(p.x), Y(p.y) - 20 * u, 0, X(p.x), Y(p.y) - 20 * u, 40 * u); gl.addColorStop(0, 'rgba(220,190,255,.55)'); gl.addColorStop(1, 'rgba(220,190,255,0)'); ctx.fillStyle = gl; ctx.fillRect(X(p.x) - 40 * u, Y(p.y) - 60 * u, 80 * u, 80 * u);
-    SPR.drawHero(ctx, 'idle', Math.floor(G.t * 3) % 2, X(p.x), Y(p.y) - rd(Math.sin(G.t * 2) * 2 * u), p.x > hero.x, u, { w: 'staff', c: 'p' });
+    SPR.drawHero(ctx, p.t < 1.1 ? 'big' : 'idle', Math.floor(G.t * 3) % 2, X(p.x), Y(p.y) - rd(Math.sin(G.t * 2) * 2 * u), p.x > hero.x, u, { w: 'staff', c: 'p' });
+    if (p.t < 1.1) { const k = p.t / 1.1, r = (10 + 70 * k) * u; ctx.strokeStyle = `rgba(230,210,255,${.8 * (1 - k)})`; ctx.lineWidth = 3 * u * (1 - k) + u; ctx.beginPath(); ctx.ellipse(X(p.x), Y(p.y), r, r / YS, 0, 0, 7); ctx.stroke(); }
     if (!p.done && p.t < 3.2) {   // 对话气泡
       const tx = '勇者，收下这个！', fs = Math.round(7 * u); ctx.font = `${fs}px WenKai, Pix, serif`; const w = ctx.measureText(tx).width + 8 * u, bx = X(p.x) - w / 2, by = Y(p.y) - 64 * u;
       ctx.fillStyle = 'rgba(250,244,230,.95)'; ctx.fillRect(bx, by, w, fs + 6 * u); ctx.fillStyle = '#3a2814'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(tx, X(p.x), by + 3 * u);
@@ -424,10 +425,10 @@
   function xiuOrbs() { const P = G.fe.pr, L = CAMP.rollXiu(3 + (hero.fx.xiuOpt || 0)); P.orbs = L.map((o, i) => Object.assign({ x: P.x + (i - (L.length - 1) / 2) * 40 * K, y: P.y + 40 * K, st: 0 }, o)); P.cr = P.cr || { x: P.x + (L.length / 2 + .6) * 40 * K, y: P.y + 40 * K, st: 0, n: 0 }; }
   // 11/22 不打仗的门：宝箱 / 篝火 / 特价商人在原地演出（奇遇还是弹卡片）
   function fieldRest(k) {
-    const f = G.fe, x = f.pr.x + 110 * K, y = f.pr.y + 10 * K; f.doors = [];
-    if (k === 'shop') { RUN.shop = null; RUN.rr = 0; f.mer2 = { x, y, st: 0 }; toastMsg('特价商人：「今天全部八折！」'); return showRoute(true); }
+    const f = G.fe, x = f.pr.x + 130 * K, y = f.pr.y + 30 * K; f.doors = [];
+    if (k === 'shop') { RUN.shop = null; RUN.rr = 0; f.mer2 = { x, y, st: 0 }; return showRoute(true); }
     f.rest = { k, x, y, st: 0, t: 0 };
-    toastMsg(k === 'chest' ? '路边有个宝箱，走过去打开' : '篝火旁坐着一个老兵：「坐下歇歇吧。」');
+    if (k === 'chest') toastMsg('路边有个宝箱，走过去打开');
   }
   function restTick(dt) {
     const f = G.fe, o = f.rest; o.t += dt;
@@ -439,7 +440,7 @@
   }
   function restDraw(label, ring) {
     const f = G.fe;
-    const M2 = f.mer2; if (M2) { SPR.draw(ctx, 'goblin', 'idle0', 0, X(M2.x), Y(M2.y), M2.x > hero.x, u, {}); label('特价商人 · 八折', X(M2.x), Y(M2.y) + 3 * u, '#ffb070'); ring(M2, 14, M2.st / .4, '#ffb070'); }
+    const M2 = f.mer2; if (M2) { SPR.draw(ctx, 'goblin', 'idle0', 0, X(M2.x), Y(M2.y), M2.x > hero.x, u, {}); label('特价商人 · 八折', X(M2.x), Y(M2.y) + 3 * u, '#ffb070'); say(X(M2.x), Y(M2.y) - 44 * u, ['今天全部八折！', '错过就没了哦～'], 1.2); ring(M2, 14, M2.st / .4, '#ffb070'); }
     const o = f.rest; if (!o) return; const x = X(o.x), y = Y(o.y);
     if (o.k === 'chest') { const im = img('chest'); if (!o.open && im.complete) ctx.drawImage(im, x - 14 * u, y - 24 * u, 28 * u, 28 * u); if (!o.open) { label('宝箱', x, y + 5 * u); ring(o, 14, o.st / .3, '#ffe08a'); }
       if (o.books) for (const b of o.books) { const S = DATA.skills[b.id], bi = img(({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[S.sys]), bx = X(b.x), by = Y(b.y) - rd((5 + Math.sin(G.t * 3 + b.x) * 2) * u);
@@ -447,15 +448,15 @@
     if (o.k === 'fire') { for (let k = 0; k < 3; k++) { const fl = 1 + .25 * Math.sin(G.t * 12 + k * 2); ctx.fillStyle = ['#ff6a20', '#ffb040', '#fff0a0'][k]; ctx.beginPath(); ctx.ellipse(x, y - (8 + k * 3) * u, (9 - k * 3) * u * fl, (12 - k * 3) * u * fl, 0, 0, 7); ctx.fill(); }
       ctx.fillStyle = '#5a3418'; ctx.fillRect(x - 12 * u, y - 2 * u, 24 * u, 4 * u); if (Math.random() < .3) parts.push({ x: o.x + R(-6, 6) * K, y: o.y - 14 * K, vx: R(-8, 8) * K, vy: -40 * K, t: 0, T: .7, col: '#ffb040', g: 0 });
       const gl = ctx.createRadialGradient(x, y - 10 * u, 0, x, y - 10 * u, 50 * u); gl.addColorStop(0, 'rgba(255,150,60,.35)'); gl.addColorStop(1, 'rgba(255,150,60,0)'); ctx.fillStyle = gl; ctx.fillRect(x - 50 * u, y - 60 * u, 100 * u, 100 * u);
-      label('篝火 · 站一会儿', x, y + 5 * u, '#ffd0a0'); ring(o, 18, o.st, '#7cff8a'); }
+      label('篝火 · 站一会儿', x, y + 5 * u, '#ffd0a0'); say(x, y - 34 * u, ['坐下歇歇吧……', '想当年，我膝盖中了一箭……'], 3.3); ring(o, 18, o.st, '#7cff8a'); }
   }
   function fieldTick(dt) {
     const f = G.fe; if (!f || G.paused) return; f.t += dt;
     if (f.rest) restTick(dt);
-    const M2 = f.mer2; if (M2) { if (SKUL(M2, 24)) M2.st += dt; else if (M2.st > 0) M2.st = 0; if (M2.st > .4) { M2.st = -99; G.paused = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '特价商人 · 全部八折', tab: 'shang', only: 'shang', disc: .8, goText: '离开 ▶', after: () => { G.paused = false; M2.st = -1.5; } }); return; } if (M2.st < 0 && !SKUL(M2, 24)) M2.st = 0; }
+    const M2 = f.mer2; if (M2) { if (M2.st < 0) { if (!SKUL(M2, 30)) M2.st = 0; } else if (SKUL(M2, 24)) M2.st += dt; else M2.st = 0; if (M2.st > .4) { M2.st = -99; G.paused = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '特价商人 · 全部八折', tab: 'shang', only: 'shang', field: 1, disc: .8, goText: '离开 ▶', after: () => { G.paused = false; M2.st = -1; } }); return; } if (M2.st < 0 && !SKUL(M2, 24)) M2.st = 0; }
     for (let i = f.items.length - 1; i >= 0; i--) { const o = f.items[i]; if (f.t > .6 && SKUL(o, 16)) { if (CAMP.learn(o)) { f.items.splice(i, 1); for (let k = 0; k < 10; k++) { const a = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(a) * 50 * K, vy: Math.sin(a) * 50 * K, t: 0, T: .4, col: '#ffe08a', g: 0 }); } } else { o.x += (o.x - hero.x) * .5; o.y += (o.y - hero.y) * .5; } } }
     const P = f.pr;
-    if (!P.orbs && SKUL(P, 40)) { if (RUN.xiu > 0) { xiuOrbs(); P.said = 1; } else if (!P.said) { P.said = 2; toastMsg('露米娜：「再坚持一下，勇者。」'); } }
+    if (!P.orbs && SKUL(P, 40)) { if (RUN.xiu > 0) { xiuOrbs(); P.said = 1; } else P.said = 2; }
     if (P.orbs && f.t > .5) {
       for (const o of P.orbs) { if (SKUL(o, 15)) o.st += dt; else o.st = 0;
         if (o.st > .25) { for (const [a, v] of o.adds) RUN.train[a] = (RUN.train[a] || 0) + v; RUN.xiu--; recompute(); toastMsg(`修炼：${o.adds.map(([a, v]) => DATA.attrs.find(x => x.id === a).name + ' +' + v).join('、')}`);
@@ -464,13 +465,18 @@
       const c = P.cr; if (c) { if (SKUL(c, 14)) c.st += dt; else c.st = 0;
         if (c.st > .5) { c.st = 0; const free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1); if (cost && RUN.coins < cost) { toastMsg('铜钱不够'); c.st = -1; } else { RUN.coins -= cost; c.n++; const keep = c; xiuOrbs(); P.cr = keep; } } }
     }
-    const M = f.mer; if (SKUL(M, 24)) M.st += dt; else M.st = 0;
-    if (M.st > .4) { M.st = -99; G.paused = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '地精商人', tab: 'shang', only: 'shang', goText: '离开 ▶', after: () => { G.paused = false; M.st = -1.5; } }); return; }
+    const M = f.mer; if (M.st < 0) { if (!SKUL(M, 30)) M.st = 0; } else if (SKUL(M, 24)) M.st += dt; else M.st = 0;   // 离开商店后要先走开才能再进
+    if (M.st > .4) { M.st = -99; G.paused = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '地精商人', tab: 'shang', only: 'shang', field: 1, goText: '离开 ▶', after: () => { G.paused = false; M.st = -1; } }); return; }
     if (M.st < 0 && !SKUL(M, 24)) M.st = 0;
     for (const d of f.doors) { if (Math.abs(d.x - hero.x) < 22 * K && Math.abs(d.y - hero.y) < 18 * K) d.st += dt; else d.st = 0;
       if (d.st > .35) { if ((RUN.xiu > 0 || f.items.length) && !f.warn) { f.warn = 1; d.st = -1; toastMsg(RUN.xiu > 0 ? '还有修炼没拿（去找露米娜），再走进门就出发' : '地上还有东西没捡，再走进门就出发'); return; }
         if (d.st > .35) { f.doors = []; f.pick(d.c); return; } } }
   }
+  // 头顶对话气泡：每 5 秒说一句（打字机效果，停 3 秒），几句轮流
+  function say(x, y, lines, seed) { const t = G.t + (seed || 0), cyc = 5, k = t % cyc; if (k > 3.2) return; const L = lines[Math.floor(t / cyc) % lines.length], n = Math.min(L.length, Math.floor(k * 14) + 1), tx = L.slice(0, n);
+    const fs = Math.round(6.5 * u); ctx.font = `${fs}px WenKai, Pix, serif`; const w = ctx.measureText(L).width + 10 * u, bx = x - w / 2, by = y - fs - 8 * u;
+    ctx.fillStyle = 'rgba(250,244,230,.96)'; ctx.fillRect(bx, by, w, fs + 6 * u); ctx.fillRect(x - 2 * u, by + fs + 6 * u, 4 * u, 3 * u); ctx.strokeStyle = '#3a2814'; ctx.lineWidth = u; ctx.strokeRect(bx, by, w, fs + 6 * u);
+    ctx.fillStyle = '#3a2814'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(tx, bx + 5 * u, by + 3 * u); ctx.textAlign = 'center'; }
   function fieldDraw() {
     const f = G.fe; if (!f) return; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     const label = (t, x, y, col, sz) => { ctx.font = `${Math.round((sz || 6) * u)}px WenKai, Pix, serif`; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#1a1008'; ctx.strokeText(t, x, y); ctx.fillStyle = col || '#fff3d0'; ctx.fillText(t, x, y); };
@@ -486,7 +492,7 @@
     const P = f.pr, px = X(P.x), py = Y(P.y);
     const gl = ctx.createRadialGradient(px, py - 20 * u, 0, px, py - 20 * u, 40 * u); gl.addColorStop(0, 'rgba(220,190,255,.5)'); gl.addColorStop(1, 'rgba(220,190,255,0)'); ctx.fillStyle = gl; ctx.fillRect(px - 40 * u, py - 60 * u, 80 * u, 80 * u);
     SPR.drawHero(ctx, P.orbs ? 'big' : 'idle', Math.floor(G.t * 3) % 2, px, py - rd(Math.sin(G.t * 2) * 2 * u), P.x > hero.x, u, { w: 'staff', c: 'p' });
-    if (!P.orbs) label(RUN.xiu > 0 ? `露米娜 · 修炼 ×${RUN.xiu}` : '露米娜', px, py + 4 * u, '#e6d4ff');
+    if (!P.orbs) { label(RUN.xiu > 0 ? `露米娜 · 修炼 ×${RUN.xiu}` : '露米娜', px, py + 4 * u, '#e6d4ff'); say(px, py - 44 * u, RUN.xiu > 0 ? ['辛苦了，勇者。', '过来，我帮你修炼。'] : ['再坚持一下，勇者。', '前面会更危险……'], 0); }
     if (P.orbs) { for (const o of P.orbs) { const Q = DATA.rarity[o.q], x = X(o.x), y = Y(o.y) - rd((5 + Math.sin(G.t * 3 + o.x) * 2) * u), r = 12 * u;
         const g2 = ctx.createRadialGradient(x, y, 0, x, y, r * 1.8); g2.addColorStop(0, Q.col + 'aa'); g2.addColorStop(1, Q.col + '00'); ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(x, y, r * 1.8, 0, 7); ctx.fill();
         ctx.fillStyle = 'rgba(20,14,30,.8)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.strokeStyle = Q.col; ctx.lineWidth = u; ctx.stroke();
@@ -495,7 +501,7 @@
       const c = P.cr; if (c) { const x = X(c.x), y = Y(c.y), free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1);
         ctx.fillStyle = '#b07bff'; ctx.beginPath(); ctx.moveTo(x, y - 12 * u); ctx.lineTo(x + 7 * u, y - 2 * u); ctx.lineTo(x, y + 6 * u); ctx.lineTo(x - 7 * u, y - 2 * u); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#efe0ff'; ctx.lineWidth = u; ctx.stroke();
         label(cost ? `刷新 ${cost} 铜钱` : `刷新（${free - c.n}）`, x, y + 8 * u, '#e6d4ff', 5); ring(c, 12, c.st / .5, '#e6d4ff'); if (G.st === 1 && !c.n) label('站上来刷新修炼', x, y - 24 * u, '#c8b890', 5); } }
-    const M = f.mer; SPR.draw(ctx, 'goblin', 'idle0', 0, X(M.x), Y(M.y), M.x < hero.x ? false : true, u, {}); label('地精商人', X(M.x), Y(M.y) + 3 * u, '#ffd860'); ring(M, 14, M.st / .4, '#ffd860');
+    const M = f.mer; SPR.draw(ctx, 'goblin', 'idle0', 0, X(M.x), Y(M.y), M.x < hero.x ? false : true, u, {}); label('地精商人', X(M.x), Y(M.y) + 3 * u, '#ffd860'); say(X(M.x), Y(M.y) - 44 * u, ['嘿嘿，要买点什么？', '好货不等人！', '铜钱带够了吗？'], 2.1); ring(M, 14, M.st / .4, '#ffd860');
     restDraw(label, ring);
     if (f.sign) { const x = X(f.sign.x), y = Y(f.sign.y); ctx.fillStyle = '#6a4420'; ctx.fillRect(x - 2 * u, y - 18 * u, 4 * u, 18 * u); ctx.fillStyle = '#c8a06a'; ctx.fillRect(x - 30 * u, y - 30 * u, 60 * u, 14 * u); ctx.strokeStyle = '#4a2e12'; ctx.lineWidth = u; ctx.strokeRect(x - 30 * u, y - 30 * u, 60 * u, 14 * u); ctx.font = `${Math.round(5.5 * u)}px WenKai, Pix, serif`; ctx.fillStyle = '#3a2410'; ctx.fillText('按 P 整理技能栏', x, y - 28 * u); }
     ctx.restore();

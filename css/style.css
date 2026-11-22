@@ -843,3 +843,15 @@ img.skic { box-sizing: border-box; padding: 6%; border-radius: 6px; background: 
 .skIc > img.skic { width: 76px !important; height: 76px !important; border-radius: 8px !important; box-shadow: inset 0 0 0 2px #e0b24a, inset 0 0 0 3px #3a2a10, 0 2px 6px rgba(0,0,0,.35) !important; }
 /* 11/22 起手兵器按钮：圆形 → 圆角方形，书完整显示 */
 .pnWep button > :first-child { border-radius: 10px !important; padding: 6px !important; object-fit: contain; }
+
+/* 11/22 自动暂停图标 */
+#autoP { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: rgba(0, 0, 0, .25); cursor: pointer; } #autoP.on { display: flex; }
+#autoP > div { display: flex; flex-direction: column; align-items: center; gap: 10px; color: #fff3d0; font-family: WenKai, serif; text-shadow: 0 2px 4px #000; }
+#autoP b { width: 84px; height: 84px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px; letter-spacing: -2px; background: rgba(30, 20, 12, .75); box-shadow: 0 0 0 3px #c9a24a, 0 4px 12px rgba(0,0,0,.5); }
+#autoP span { font-size: 18px; }
+/* 11/22 战场商店：半透明遮罩，面板从下面升起，像素边框，后面还能看到战场 */
+#camp.fshop { background: rgba(10, 6, 4, .35) !important; align-items: flex-end !important; }
+#camp.fshop::before, #camp.fshop::after { display: none !important; }
+#camp.fshop .cbox { width: min(980px, 96vw) !important; height: auto !important; max-height: 64vh; margin-bottom: 2vh; border: 18px solid transparent !important; border-image: url(../art/ui/card.png) 6 fill / 18px stretch !important; image-rendering: pixelated; background: none !important; box-shadow: 0 -6px 24px rgba(0,0,0,.6) !important; animation: fshopIn .25s ease-out; }
+#camp.fshop .ctabs { display: none !important; } #camp.fshop .chead h2 { font-size: 22px; }
+@keyframes fshopIn { from { transform: translateY(40px); opacity: 0; } }

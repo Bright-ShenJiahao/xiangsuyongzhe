@@ -158,7 +158,7 @@
     $('cTitle').textContent = rep.title || `第 ${rep.st} 站 结束`;
     $('cGo').textContent = rep.goText ? rep.goText : rep.boss ? '挑战首领 ▶' : '选下一站 ▶';
     $('cHint').textContent = rep.goText ? '' : `击倒 ${rep.kills} · 铜钱 +${rep.coins} · 经验 +${rep.xp}`;
-    render(); $('camp').classList.add('on');
+    render(); $('camp').classList.toggle('fshop', !!rep.field); $('camp').classList.add('on');
   }
   function refreshCoin() { const r = R(); for (const id of ['cCoin', 'pCoin']) $(id).innerHTML = coinTxt(r.coins); }
   function render() {
