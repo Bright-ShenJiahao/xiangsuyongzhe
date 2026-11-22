@@ -903,3 +903,21 @@ img.skic { padding: 0 !important; background: none !important; box-shadow: none 
 @media (orientation: portrait), (max-width: 760px) { .lo.gearlo { grid-template-columns: minmax(0, 1fr); } .lo .bag.gear { grid-template-columns: repeat(6, minmax(0, 1fr)); } .lor .bag { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
 .lor .bag { grid-template-columns: repeat(6, minmax(0, 1fr)); } .lo .bag.oathrow { max-width: 330px; } .lo .gearlo .slots, .lo.gearlo .slots { max-width: 330px; } .lo .bag.gear { max-width: 400px; }
 @media (orientation: portrait), (max-width: 760px) { .lor .bag { grid-template-columns: repeat(8, minmax(0, 1fr)); } .lo .bag.gear, .lo .bag.oathrow, .lo.gearlo .slots { max-width: none; } }
+
+/* 11/23 格子：全幅技能图 + 右下等级角标 + 底边熟练度细条；品阶看描边 */
+.slot.full, .lo .bag > div.full { position: relative; padding: 0; overflow: hidden; }
+.slot.full .skic, .lo .bag > div.full .skic { width: 100% !important; height: 100% !important; object-fit: cover; display: block; image-rendering: auto; }
+.slot.full.t1, .bag > div.full.t1 { outline: 2px solid #9a9080; outline-offset: -2px; } .slot.full.t2, .bag > div.full.t2 { outline: 2px solid #5aa8ff; outline-offset: -2px; } .slot.full.t3, .bag > div.full.t3 { outline: 2px solid #c07aff; outline-offset: -2px; } .slot.full.t4, .bag > div.full.t4 { outline: 2px solid #ffb347; outline-offset: -2px; }
+.full .lvb { position: absolute; right: 2px; bottom: 4px; font: 400 15px/1 WenKai, serif; color: #fff4d0; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
+.full .pb { position: absolute; left: 3px; right: 3px; bottom: 2px; height: 3px; background: rgba(0,0,0,.6); text-decoration: none; } .full .pb::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: var(--p); background: #7ad0ff; } .full .pb.max::after { background: #ffd860; }
+.full .bk { position: absolute; left: 2px; top: 1px; font: normal 11px WenKai, serif; color: #ffe8a0; text-shadow: 1px 1px 0 #000; }
+.slot.full u { z-index: 2; color: #fff; text-shadow: 1px 1px 0 #000; }
+.loinfo.pop { position: fixed; z-index: 9000; width: min(320px, 92vw); padding: 10px 12px; background: #1e140c; border: 2px solid #c8a060; box-shadow: 0 6px 18px rgba(0,0,0,.6); display: grid; grid-template-columns: 44px 1fr; gap: 8px 10px; font-size: 13px; color: #e8dcc0; }
+.loinfo.pop .ic { width: 44px; height: 44px; } .loinfo.pop p { margin: 0; line-height: 1.5; } .loinfo.pop .lob { grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; } .loinfo.pop.hov { pointer-events: none; }
+.loinfo.pop small.off { color: #8a7a60; } .loinfo.pop small.on { color: #ffd860; }
+.attrlo h5 { margin: 6px 0 2px; font: 400 14px WenKai, serif; color: #e8c070; border-bottom: 1px dashed rgba(232,192,112,.3); }
+.attrlo .lor .dim { margin: 6px 0 0; font-size: 12px; }
+
+.attrlo .lor .stats.big { row-gap: 2px; font-size: 14px; } .attrlo .lor .stats.big .pi { width: 18px; } .attrlo .lor h5 { margin-top: 4px; } .attrlo .lol .dim { margin: 4px 0 0; font-size: 13px; color: #c8b890; }
+.loinfo.pop .ic .skic { width: 44px; height: 44px; object-fit: cover; }
+.attrlo .lor .stats.big { margin: 2px 0 0 !important; padding: 0 !important; } .attrlo .lor h4 { margin-bottom: 0; } .attrlo .lor { gap: 2px; } .attrlo .lor h5 { margin: 6px 0 0; }

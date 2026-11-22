@@ -46,14 +46,14 @@
   // ---------- 技能搭配（结算页「技能」页签和暂停页共用） ----------
   function loadout(box) {
     const r = R(), h = B().hero(); box.innerHTML = '';
-    const wrap = document.createElement('div'); wrap.className = 'lo gearlo'; box.appendChild(wrap);
+    document.querySelectorAll('.loinfo.pop').forEach(e => e.remove()); const wrap = document.createElement('div'); wrap.className = 'lo gearlo'; box.appendChild(wrap);
     const L = document.createElement('div'), Rt = document.createElement('div'); L.className = 'lol'; Rt.className = 'lor'; wrap.append(L, Rt);
     let cyc = 0; r.slots.slice(0, r.open).forEach(s => { if (s) cyc += B().skillInfo(s).cd; });
     L.insertAdjacentHTML('beforeend', `<h4>技能栏 <small>按 1→2→3 顺序轮流自动出手 · 一轮约 ${cyc.toFixed(1)} 秒</small></h4>`);
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
     r.slots.forEach((s, i) => { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
-      if (i >= r.open) { d.className = 'slot lock' + (i === r.open ? ' buy' : ''); if (sel && sel.t === 'L' && sel.i === i) d.classList.add('sel'); d.onclick = () => { sel = { t: 'L', i }; loadout(box); }; }
-      else if (s) { d.className = 'slot has tr t' + SK[s.id].tier; d.appendChild(UI.skIcon(s.id)); d.title = SK[s.id].name + '：' + SK[s.id].desc + ['l3', 'l5', 'l7'].filter(k => SK[s.id][k]).map(k => '\nLv' + k.slice(1) + '：' + SK[s.id][k]).join(''); d.insertAdjacentHTML('beforeend', `<span class="tn${SK[s.id].tier}">${SK[s.id].name}</span><i class="dots">${dots(B().profL(s))}</i>`); }
+      if (i >= r.open) { d.dataset.t = 'L'; d.dataset.i = i; d.className = 'slot lock' + (i === r.open ? ' buy' : ''); if (sel && sel.t === 'L' && sel.i === i) d.classList.add('sel'); d.onclick = () => { sel = { t: 'L', i }; loadout(box); }; }
+      else if (s) { d.className = 'slot has full tr t' + SK[s.id].tier; d.appendChild(UI.skIcon(s.id)); d.insertAdjacentHTML('beforeend', lvTag(s)); }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
@@ -63,60 +63,72 @@
     r.oath.forEach((o, i) => { const d = document.createElement('div'); d.className = 'oath' + (o ? ' has' : ''); d.textContent = o ? o.id : ''; om.appendChild(d); });
     om.insertAdjacentHTML('beforeend', '<div class="gap"></div>'); const mv = document.createElement('div'); mv.className = 'has mv'; mv.innerHTML = '<span>翻滚</span>'; mv.title = '身法：翻滚（默认）。以后可换成其他身法'; om.appendChild(mv);
     const cell = (grid, arr, t) => arr.forEach((o, i) => { const d = document.createElement('div'); const th = thing(o);
-      if (th) { d.className = 'has ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); d.appendChild(iconEl(th)); if (o.kind === 'book') d.insertAdjacentHTML('beforeend', `<i>${B().profL(o) ? B().profL(o) + '/7' : '书'}</i>`); }
+      if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); if (o.kind === 'book') { d.appendChild(UI.skIcon(o.id)); d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else d.appendChild(iconEl(th)); }
       if (sel && sel.t === t && sel.i === i) d.classList.add('sel');
       d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); grid.appendChild(d); });
     L.insertAdjacentHTML('beforeend', `<h4>宝物 ${r.gear.filter(Boolean).length}/${r.gear.length} <small>放在这里就生效</small></h4>`);
     const gg = document.createElement('div'); gg.className = 'bag gear'; L.appendChild(gg); cell(gg, r.gear, 'g');
     Rt.insertAdjacentHTML('beforeend', '<h4>物品栏 <small>收纳，不生效；拖到左边格子才生效</small></h4>');
     const bg = document.createElement('div'); bg.className = 'bag'; Rt.appendChild(bg); cell(bg, r.bag, 'b');
-    // 选中东西的说明和按钮
-    const info = document.createElement('div'); info.className = 'loinfo'; Rt.appendChild(info);
-    if (sel && sel.t === 'L') { lockInfo(info, sel.i, box); return; }
-    const cur = sel && (sel.t === 's' ? r.slots[sel.i] && { kind: 'book', id: r.slots[sel.i].id, lv: 1, xp: r.slots[sel.i].xp || 0, slot: true } : (sel.t === 'g' ? r.gear : r.bag)[sel.i]);
-    if (cur) {
-      const t = thing(cur); info.appendChild(iconEl(t));
-      let txt = `<b class="${t.tier ? 'tn' + t.tier : ''}">${t.name}</b> <small>${t.sub}</small><br>${t.desc}`;
-      if (cur.kind === 'book') { const S = SK[cur.id], k = B().skillInfo(cur); txt += `<br><small>伤害 ${Math.round(k.dmg)} · 前摇 ${k.wu.toFixed(2)} 秒 · 后摇 ${k.rc.toFixed(2)} 秒${S.hold ? ` · 持续 ${S.hold} 秒` : ''} · 吃「${DATA.attrs.find(a => a.id === S.type).name}」 · ${S.dt === 'magic' ? '法术' : '物理'}</small><br><small>熟练度 <b class="dots">${dots(k.L)}</b> ${k.next ? `${k.xp}/${k.next}` : '已练满'} · 3 格：${S.l3} · 5 格：${S.l5} · 7 格：${S.l7}</small>`; }
-      const p = document.createElement('p'); p.innerHTML = txt; info.appendChild(p);
-      const btns = document.createElement('div'); btns.className = 'lob'; info.appendChild(btns);
-      const btn = (label, fn, gold) => { const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.textContent = label; b.onclick = e => { e.stopPropagation(); fn(); }; btns.appendChild(b); };
-      if (sel.t === 's') { if (r.slots.filter(Boolean).length > 1) btn('卸下', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = { kind: 'book', id: cur.id, lv: cur.lv }; r.slots[sel.i] = null; sel = null; loadout(box); }); }
-      else {
-        if (cur.kind === 'book') btn('装上', () => { const j = r.slots.slice(0, r.open).indexOf(null); if (j < 0) return toast('技能格满了：点一个技能格来替换'); pick({ t: 's', i: j }, box); }, true);
-        const A = sel.t === 'g' ? r.gear : r.bag;
-        if (cur.kind === 'item' && sel.t === 'b') btn('放上', () => { const j = r.gear.indexOf(null); if (j < 0) return toast('宝物格满了：拖到一件宝物上替换'); r.gear[j] = cur; r.bag[sel.i] = null; sel = null; B().recompute(); loadout(box); }, true);
-        if (sel.t === 'g') btn('收进物品栏', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = cur; r.gear[sel.i] = null; sel = null; B().recompute(); loadout(box); });
-        if (cur.kind === 'use') btn('吃掉', () => { learn(cur); A[sel.i] = null; sel = null; loadout(box); }, true);
-        btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; A[sel.i] = null; sel = null; B().recompute(); loadout(box); refreshCoin(); });
-      }
-    } else info.innerHTML = '<p class="dim">点一下查看说明；拖到另一个格子上，或先后点两个格子，都能交换位置。</p>';
+    // 11/23 详情改成跟着格子弹出：电脑悬停就看，点一下带按钮；手机点一下弹在格子上方
+    if (sel) { const el = box.querySelector(`[data-t="${sel.t}"][data-i="${sel.i}"]`) || box.querySelector('.slot.sel'); if (el) popAt(el, sel.t === 'L' ? info => lockInfo(info, sel.i, box) : info => fillInfo(info, box, true), box); }
+    box.querySelectorAll('[data-t]').forEach(el => { el.onmouseenter = () => { if (sel || matchMedia('(hover: none)').matches) return; const q = { t: el.dataset.t, i: +el.dataset.i }; if (!curOf(q)) return; popAt(el, info => fillInfo(info, box, false, q), box, 1); }; el.onmouseleave = () => { if (!sel) document.querySelectorAll('.loinfo.pop').forEach(e => e.remove()); }; });
+  }
+  function curOf(q) { const r = R(); if (!q) return null; if (q.t === 's') { const s = r.slots[q.i]; return s && { kind: 'book', id: s.id, lv: s.lv, xp: s.xp || 0, slot: true }; } return (q.t === 'g' ? r.gear : r.bag)[q.i]; }
+  function lvTag(s) { const k = B().skillInfo(s); return `<b class="lvb">${k.L}</b><s class="pb${k.next ? '' : ' max'}" style="--p:${k.next ? Math.min(100, k.xp / k.next * 100) : 100}%"></s>`; }
+  function popAt(el, fill, box, hover) {
+    document.querySelectorAll('.loinfo.pop').forEach(e => e.remove());
+    const info = document.createElement('div'); info.className = 'loinfo pop' + (hover ? ' hov' : ''); document.body.appendChild(info); fill(info);
+    const rc = el.getBoundingClientRect(), w = info.offsetWidth, h = info.offsetHeight, W = innerWidth, H = innerHeight, narrow = W < 760;
+    let x, y; if (narrow) { x = Math.max(8, Math.min(W - w - 8, rc.left + rc.width / 2 - w / 2)); y = rc.top - h - 8; if (y < 8) y = rc.bottom + 8; }
+    else { x = rc.right + 10; if (x + w > W - 8) x = rc.left - w - 10; y = Math.max(8, Math.min(H - h - 8, rc.top)); }
+    info.style.left = x + 'px'; info.style.top = y + 'px';
+    if (hover) return;
+    const kill = e => { if (!info.isConnected) return removeEventListener('pointerdown', kill, true); if (info.contains(e.target) || (e.target.closest && e.target.closest('[data-t]'))) return; info.remove(); sel = null; removeEventListener('pointerdown', kill, true); if (box.isConnected) loadout(box); };
+    addEventListener('pointerdown', kill, true);
+    const watch = () => { if (!info.isConnected) return; if (!box.isConnected || !box.offsetParent) { info.remove(); sel = null; return; } requestAnimationFrame(watch); }; requestAnimationFrame(watch);
+  }
+  function fillInfo(info, box, withBtn, q) {
+    const r = R(), cur = curOf(q || sel); if (!cur) return; const t = thing(cur); if (cur.kind === 'book') { const w = document.createElement('span'); w.className = 'ic'; w.appendChild(UI.skIcon(cur.id)); info.appendChild(w); } else info.appendChild(iconEl(t));
+    let txt = `<b class="${t.tier ? 'tn' + t.tier : ''}">${t.name}</b> <small>${t.sub}</small><br>${t.desc}`;
+    if (cur.kind === 'book') { const S = SK[cur.id], k = B().skillInfo(cur); txt += `<br><small>伤害 ${Math.round(k.dmg)} · 前摇 ${k.wu.toFixed(2)} 秒 · 后摇 ${k.rc.toFixed(2)} 秒${S.hold ? ` · 持续 ${S.hold} 秒` : ''} · ${S.dt === 'magic' ? '魔法' : '物理'}</small><br><small>熟练 Lv${k.L}${k.next ? `（${k.xp}/${k.next}）` : '（已练满）'}</small>` + ['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<br><small class="${k.L >= +x.slice(1) ? 'on' : 'off'}">Lv${x.slice(1)}：${S[x]}</small>`).join(''); }
+    const p = document.createElement('p'); p.innerHTML = txt; info.appendChild(p);
+    if (!withBtn) return; const cs = sel;
+    const btns = document.createElement('div'); btns.className = 'lob'; info.appendChild(btns);
+    const btn = (label, fn, gold) => { const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.textContent = label; b.onclick = e => { e.stopPropagation(); info.remove(); fn(); }; btns.appendChild(b); };
+    if (cs.t === 's') { if (r.slots.filter(Boolean).length > 1) btn('卸下', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = { kind: 'book', id: cur.id, lv: cur.lv, xp: cur.xp }; r.slots[cs.i] = null; sel = null; loadout(box); }); }
+    else {
+      if (cur.kind === 'book') btn('装上', () => { const j = r.slots.slice(0, r.open).indexOf(null); if (j < 0) return toast('技能格满了：拖到一个技能格上替换'); pick({ t: 's', i: j }, box); }, true);
+      const A = cs.t === 'g' ? r.gear : r.bag;
+      if (cur.kind === 'item' && cs.t === 'b') btn('放上', () => { const j = r.gear.indexOf(null); if (j < 0) return toast('宝物格满了：拖到一件宝物上替换'); r.gear[j] = cur; r.bag[cs.i] = null; sel = null; B().recompute(); loadout(box); }, true);
+      if (cs.t === 'g') btn('收进物品栏', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = cur; r.gear[cs.i] = null; sel = null; B().recompute(); loadout(box); });
+      if (cur.kind === 'use') btn('吃掉', () => { learn(cur); A[cs.i] = null; sel = null; loadout(box); }, true);
+      btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; A[cs.i] = null; sel = null; B().recompute(); loadout(box); refreshCoin(); });
+    }
   }
   // ---------- 属性页：升级攒的属性点手动加；这次结算 / 暂停里加的点，离开前都能退 ----------
   function commit() { const r = R(); for (const k in r.tmp) r.alloc[k] = (r.alloc[k] || 0) + r.tmp[k]; r.tmp = {}; }
   const redraw = () => $('pause').classList.contains('on') ? pauseRender() : render();
   function attrPanel(box) {
     const r = R(), h = B().hero(); box.innerHTML = '';
-    const c = DATA.calc({ weapon: r.weapon, attrs: r.attrs, train: B().trainAll(), items: r.gear.filter(x => x && x.kind === 'item').map(x => x.id), habit: r.habit });
-    const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%', used = Object.values(r.tmp).reduce((s, v) => s + v, 0);
-    const wrap = document.createElement('div'); wrap.className = 'lo'; box.appendChild(wrap);
+    const items = r.gear.filter(x => x && x.kind === 'item').map(x => x.id), c = DATA.calc({ weapon: r.weapon, attrs: r.attrs, train: B().trainAll(), items, habit: r.habit });
+    const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
+    const wrap = document.createElement('div'); wrap.className = 'lo attrlo'; box.appendChild(wrap);
     const L = document.createElement('div'), Rt = document.createElement('div'); L.className = 'lol'; Rt.className = 'lor'; wrap.append(L, Rt);
-    L.innerHTML = `<h4>属性 <small>Lv${B().lv()} · 每升一级得 1 次修炼（结算页「修炼」）</small></h4>`;
+    L.innerHTML = `<h4>属性 <small>Lv${B().lv()} · 修炼来自公主的光球</small></h4>`;
     for (const a of DATA.attrs) {
-      const tr = r.train[a.id] || 0, al = r.alloc[a.id] || 0, tp = r.tmp[a.id] || 0, row = document.createElement('div'); row.className = 'arow';
-      const src = [tr && `修炼+${tr}`, al && `加点+${al}`, tp && `<i>本次+${tp}</i>`].filter(Boolean).join(' · ');
-      row.innerHTML = `<b>${UI.piH(a.id, 1)}${a.name}</b><small>${a.desc}${src ? `<br><span class="src">${src}</span>` : ''}</small><em class="${tp ? 'gain' : ''}">${c.A[a.id]}</em>`;
+      const tr = r.train[a.id] || 0, al = (r.alloc[a.id] || 0) + (r.tmp[a.id] || 0), base = c.A[a.id] - tr - al, row = document.createElement('div'); row.className = 'arow'; row.title = a.desc;
+      const src = [`基础 ${base}`, tr && `修炼 +${tr}`, al && `加点 +${al}`].filter(Boolean).join(' · ');
+      row.innerHTML = `<b>${UI.piH(a.id, 1)}${a.name}</b><small>${src}<br><span class="src">${a.desc}</span></small><em>${c.A[a.id]}</em>`;
       L.appendChild(row);
     }
-    Rt.innerHTML = `<h4>勇者</h4><div class="stats big">
-      <span>${UI.piH('hp', 1)}生命</span><b>${Math.ceil(h.hp)} / ${h.maxHp}</b>
-      <span>${UI.piH('str', 1)}剑 · 枪 · 斧伤害</span><b>${pct(.06 * c.A.str + (c.fx.dmg || 0))}</b>
-      <span>${UI.piH('agi', 1)}弓伤害</span><b>${pct(.06 * c.A.agi + (c.fx.dmg || 0))}</b>
-      <span>${UI.piH('int', 1)}法杖伤害</span><b>${pct(.06 * c.A.int + (c.fx.dmg || 0))}</b>
-      <span>${UI.piH('spd', 1)}出手速度</span><b>${pct(c.spd - 1)}</b><span>${UI.piH('area', 1)}范围</span><b>${pct(c.area - 1)}</b>
-      <span>${UI.piH('crit', 1)}暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>${UI.piH('guard', 1)}物防</span><b>${c.pdef} <small>(受物理 ×${c.pIn.toFixed(2)})</small></b><span>${UI.piH('guard', 1)}魔防</span><b>${c.mdef} <small>(受法术 ×${c.mIn.toFixed(2)})</small></b>
-      <span>${UI.piH('move', 1)}移速</span><b>${pct(c.move - 1)}</b><span>${UI.piH('xp', 1)}经验</span><b>${pct(c.xp - 1)}</b></div>
-      ${r.habit ? `<p class="dim">现实习惯：${DATA.habits.find(x => x.id === r.habit).name}</p>` : ''}`;
+    const hp = DATA.heroes.find(x => x.id === r.hero) || {};
+    const g = (t, rows) => `<h5>${t}</h5><div class="stats big">${rows.map(([ic, n, v]) => `<span>${UI.piH(ic, 1)}${n}</span><b>${v}</b>`).join('')}</div>`;
+    Rt.innerHTML = `<h4>勇者</h4>` +
+      g('进攻', [['str', '剑 · 枪伤害', pct(.06 * c.A.str + (c.fx.dmg || 0))], ['agi', '弓伤害', pct(.06 * c.A.agi + (c.fx.dmg || 0))], ['int', '法杖伤害', pct(.06 * c.A.int + (c.fx.dmg || 0))], ['spd', '出手速度', pct(c.spd - 1)], ['area', '范围', pct(c.area - 1)], ['crit', '暴击率', Math.round(c.crit * 100) + '%']]) +
+      g('防御', [['hp', '生命', `${Math.ceil(h.hp)} / ${h.maxHp}`], ['guard', '物防', `${c.pdef} <small>受物理 ×${c.pIn.toFixed(2)}</small>`], ['star', '魔防', `${c.mdef} <small>受魔法 ×${c.mIn.toFixed(2)}</small>`]]) +
+      g('其他', [['move', '移速', pct(c.move - 1)], ['xp', '经验', pct(c.xp * (r.hero === 'm' ? 1.1 : 1) - 1)]]);
+    L.insertAdjacentHTML('beforeend', `<p class="dim">人物被动：${hp.name || ''} · ${hp.perk || '无'}</p><p class="dim">生效宝物：${items.length ? items.map(id => (DATA.startItems.find(i => i.id === id) || {}).name).join('、') : '无'}</p>`);
   }
   // 拖动：按住技能格或背包里的东西拖到另一个格子上 = 交换 / 装上（PC 鼠标、手机手指都行）；没拖动就还是点选
   let dragged = false;

@@ -31,7 +31,7 @@
   const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_wand', nova: 'bk_wand', wand: 'bk_wand', staff: 'bk_wand', axe: 'bk_axe' };
   const SYSBK = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' };
   const bookOf = id => pi(SYSBK[(DATA.skills[id] || {}).sys] || 'bk_sword'), skIcon = id => { const im = pi('sk/' + id); im.classList.add('skic'); return im; };
-  function pi(name, k = 2) { if (name === 'end') name = 'guard';   // 耐力没有单独的图标，先用盾
+  function pi(name, k = 2) { if (name === 'end') name = 'amulet';   // 11/23 耐力用护身符图标，和物防的盾分开
     const im = new Image(); im.className = 'pi'; im.alt = ''; im.draggable = false; im.src = 'art/ui2/' + name + '.png'; const s = (window.UIART || {})[name]; if (s) { im.width = s[0] * k; im.height = s[1] * k; } return im; }
   const piH = (name, k) => pi(name, k).outerHTML;
   function iconCanvas(name) { return pi(BOOK[name] || name); }
