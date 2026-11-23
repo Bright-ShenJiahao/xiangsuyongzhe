@@ -1127,3 +1127,8 @@ body.tvbg { background: #000; }
 #tpanel *::-webkit-scrollbar-track, #pause *::-webkit-scrollbar-track, #camp *::-webkit-scrollbar-track { background: #1a0e06; border-left: 2px solid #3a2618; }
 #tpanel *::-webkit-scrollbar-thumb, #pause *::-webkit-scrollbar-thumb, #camp *::-webkit-scrollbar-thumb { background: #a07840; border: 2px solid #1a0e06; box-shadow: inset 0 2px 0 #d8b070, inset 0 -2px 0 #6a4a20; }
 #tpanel *, #pause *, #camp * { scrollbar-color: #a07840 #1a0e06; scrollbar-width: thin; }
+
+#tpX { right: 18px !important; top: 16px !important; width: 30px !important; height: 30px !important; font-size: 15px !important; background: none !important; border: 2px solid #8a6a3a !important; color: #c8a060 !important; box-shadow: none !important; }
+#tpX:hover { border-color: #ffd890 !important; color: #ffe08a !important; background: rgba(255,220,140,.08) !important; }
+#tpanel .box { padding-right: 14px !important; } #tpBody { padding-right: 6px; scrollbar-gutter: stable; }
+#tpanel *::-webkit-scrollbar-track { margin: 12px 0; border-left: none !important; background: rgba(0,0,0,.25) !important; } #tpanel *::-webkit-scrollbar { width: 8px !important; }
