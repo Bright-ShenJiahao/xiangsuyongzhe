@@ -45,8 +45,14 @@
     recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0);
     foes = []; shots = []; fx = []; parts = []; nums = []; tele = []; burns = []; pend = []; warns.length = 0;
     if (!SK) SK = SKILLS(API); SK.reset(); hero.cs = null;
+    if (o.resume) { const S = o.resume; Object.assign(RUN, JSON.parse(JSON.stringify(S.RUN))); Object.assign(G, S.G); recompute(); hero.hp = Math.max(1, Math.round(hero.maxHp * (S.hp || 1))); }
     nextWave();
   }
+  // 11/23 存档：每站开打时自动存（勇者状态 + 本局全部构筑）；通关或败北时删掉
+  const SAVE = 'pxyz.save1';
+  function saveRun() { try { localStorage.setItem(SAVE, JSON.stringify({ v: 1, opt: { map: opt.map, build: opt.build, weapon: opt.weapon }, RUN, G: { st: G.st, route: G.route, xp: G.xp, lv: G.lv, kills: G.kills, t: G.t }, hp: hero.hp / hero.maxHp, at: Date.now() })); } catch (e) {} }
+  function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE)); return s && s.v === 1 ? s : null; } catch (e) { return null; } }
+  function clearSave() { try { localStorage.removeItem(SAVE); } catch (e) {} }
   let pend = [];   // 延迟出手
   // 属性、修炼、背包里的宝物、现实习惯 → 勇者的各项数值（中途换宝物、修炼后都重算一次）
   // 修炼加的 + 升级加点（已确认的 alloc + 这次结算里还能退的 tmp）
@@ -332,7 +338,7 @@
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();
     G.wi = -1; Object.assign(G, { wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], stT: 0, thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
-    nextPhase(); banner(G.W.boss ? '首领战！' : `第 ${G.st} 站`, 1.6); G.paused = false;
+    saveRun(); nextPhase(); banner(G.W.boss ? '首领战！' : `第 ${G.st} 站`, 1.6); G.paused = false;
   }
   // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
   function nextPhase() {
@@ -699,7 +705,7 @@
     for (const a of [fx, parts, nums, burns]) for (let i = a.length - 1; i >= 0; i--) { const o = a[i]; o.t += dt; if (o.vx != null) { o.x += o.vx * dt; o.y += o.vy * dt; o.vy += (o.g || 0) * dt; } if (o.t >= (o.T || (o.txt ? 1.4 : .75))) a.splice(i, 1); }
   }
   function end() {
-    UI.result({ win: G.over === 'win', kills: G.kills, time: G.t, lv: G.lv, weapon: RUN.weapon, st: G.st, wi: G.wi, boss: !!(G.W && G.W.boss), dmg: RUN.dmgAll });
+    clearSave(); UI.result({ win: G.over === 'win', kills: G.kills, time: G.t, lv: G.lv, weapon: RUN.weapon, st: G.st, wi: G.wi, boss: !!(G.W && G.W.boss), dmg: RUN.dmgAll });
   }
 
   // ---------- 绘制 ----------
@@ -856,7 +862,7 @@
   window.BATTLE = {
     init, start, frame, fit, roll,
     pause(v) { if (G && !G.over) G.paused = v; }, get paused() { return !!(G && G.paused); }, active: () => !!G && !G.over,
-    stop() { G = null; }, g: () => G,
+    stop() { G = null; }, g: () => G, loadSave, clearSave,
     run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1, xpFrac: () => G ? Math.min(1, G.xp / need()) : 0, xpTxt: () => G ? `${Math.floor(G.xp)} / ${need()}` : '', st: () => G ? G.st : 1,
     skillInfo: sk => { const S = DATA.skills[sk.id], L = profL(sk), T = G ? skillT(S, sk) : { wu: S.wu, rc: S.rc }; return { dmg: G ? skillDmg(S, sk) : S.dmg, wu: T.wu, rc: T.rc, cd: T.wu + T.rc + (S.hold || 0), L, xp: sk.xp || 0, next: DATA.prof[L] || null }; }, profL,
     debug: { oath(id) { const ks = Object.keys(DATA.oaths); CAMP.learn({ kind: 'oath', id: id || ks[Math.random() * ks.length | 0] }); }, tp(fx, fy) { hero.x = MAPW * fx; hero.y = MAPH * fy; cam.snap = true; }, book() { G.gi.push({ kind: 'book', x: hero.x + 30 * K, y: hero.y, t: 0 }, { kind: 'item', x: hero.x + 9 * K, y: hero.y, t: 0 }); }, coin() { for (let i = 0; i < 6; i++) G.gc.push({ x: hero.x + R(60, 120) * K, y: hero.y + R(-20, 20) * K, v: 2, t: 11, h: 0, vh: 0, vx: 0 }); },   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）

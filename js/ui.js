@@ -11,7 +11,7 @@
   const touch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window; if (touch) document.body.classList.add('touch');
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-  function show(id) { screen = id; for (const e of document.querySelectorAll('.scr')) if (!e.classList.contains('over')) e.classList.toggle('on', e.id === id || (id === 'battle' && e.id === 'hud')); }
+  function show(id) { screen = id; if (id === 'title') setTimeout(() => { try { contShow(); } catch (e) {} }); for (const e of document.querySelectorAll('.scr')) if (!e.classList.contains('over')) e.classList.toggle('on', e.id === id || (id === 'battle' && e.id === 'hud')); }
   const overlay = (id, on) => $(id).classList.toggle('on', on);
 
   // ================= 像素小图标（16×16） =================
@@ -39,6 +39,9 @@
 
   // ================= 主界面 =================
   $('bStart').onclick = () => openPrep(true);
+  // 11/23 继续游戏：有存档就显示，从存档那一站的开头接着打
+  $('bCont').onclick = () => { const s = BATTLE.loadSave(); if (!s) return; lastBuild = s.opt.build || lastBuild; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); };
+  const contShow = () => { const s = BATTLE.loadSave(); $('bCont').hidden = !s; $('bStart').querySelector('span').textContent = s ? '新的冒险' : '进入游戏'; if (s) $('bCont').querySelector('small').textContent = `第 ${s.G.st} 站 · Lv${s.G.lv}`; };
   // 11/22 图鉴展示用小人（art/figure/<key>/0..3.png，比战斗小人大、更精细），有就替换图鉴里的那一个
   const FIG = {}; fetch('art/figure/meta.json').then(r => r.json()).then(M => { for (const k in M) FIG[k] = M[k].map(([ax], i) => { const im = new Image(); im.src = `art/figure/${k}/${i}.png`; return { c: im, f: { ax } }; }); }).catch(() => {});
 
@@ -280,6 +283,6 @@
   const UIPRE = ['map.webp', 'panel.png', 'card.png', 'q0.png', 'q1.png', 'q2.png', 'q3.png', 'slot.png', 'slot_sel.png', 'slot_lock.png', 'cell.png', 'btn.png', 'btn_gold.png', 'tab.png', 'tab_on.png', 'bar.png', 'pause.png', 'divider.png']
     .concat(Object.keys(window.UIART || {}).filter(k => (window.UIART[k][0] || 0) < 60).map(k => k + '.png'));
   const preUI = () => Promise.all([...new Set(UIPRE)].map(f => new Promise(ok => { const im = new Image(); im.onload = im.onerror = ok; im.src = 'art/ui2/' + f; (window.__ui = window.__ui || []).push(im); })));
-  Promise.all([SPR.load(), preUI(), document.fonts ? document.fonts.load('20px WenKai').catch(() => {}) : 0, ...['m', 'f', 'p'].map(k => new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = 'art/portrait/' + k + '.webp'; }))]).then(() => { prog(1); document.getElementById('tload').classList.add('done'); $('bStart').disabled = false; show('title'); requestAnimationFrame(loop); })
+  Promise.all([SPR.load(), preUI(), document.fonts ? document.fonts.load('20px WenKai').catch(() => {}) : 0, ...['m', 'f', 'p'].map(k => new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = 'art/portrait/' + k + '.webp'; }))]).then(() => { prog(1); document.getElementById('tload').classList.add('done'); $('bStart').disabled = false; contShow(); show('title'); requestAnimationFrame(loop); })
     .catch(e => { console.error(e); document.getElementById('ttx').textContent = '载入失败，请刷新'; });
 })();

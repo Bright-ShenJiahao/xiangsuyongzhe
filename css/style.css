@@ -996,3 +996,5 @@ body.shopOn #feed { opacity: 0; }
 .oimg { width: 100% !important; height: auto !important; image-rendering: auto; } .oathrow > div.full .oimg { width: 86% !important; } .card .oimg { width: 48px !important; } .loinfo.pop .ic .oimg { width: 44px !important; }
 
 .bad { color: #ff8a7a; }
+#bCont[hidden] { display: none !important; } #bCont small { font-size: .62em; opacity: .8; margin-left: 6px; } #bCont + #bStart { margin-top: 6px; }
+#bCont span { display: flex; flex-direction: column; align-items: center; line-height: 1.2; } #bCont small { display: block; font-size: 13px; letter-spacing: .1em; margin: 2px 0 0; white-space: nowrap; }
