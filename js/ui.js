@@ -56,7 +56,7 @@
         <polygon points="36,41 50,48 50,55 36,48" fill="${r}" stroke="${hi}" stroke-width=".8"/></svg>`; };
       const anims = [];
       const add = (set, names, name, note, tier, lab, figK) => { const e = document.createElement('div'); e.className = 'fig ' + tier; const st = document.createElement('div'); st.className = 'fst';
-        const fr = FIG[figK] && FIG[figK].every(x => x.c.complete) ? FIG[figK] : names.map(n => Array.isArray(n) ? SPR.crop(set, n[0], n[1]) : SPR.crop(set, n)).filter(Boolean); if (fr === FIG[figK]) e.classList.add('big');
+        const fr = FIG[figK] && FIG[figK].every(x => x.c.complete) ? FIG[figK] : (set ? names.map(n => Array.isArray(n) ? SPR.crop(set, n[0], n[1]) : SPR.crop(set, n)).filter(Boolean) : []); if (fr === FIG[figK]) e.classList.add('big');
 
         // 11/22 按实际像素找脚：每帧最低的不透明行 = 脚底；第 1 帧脚底几行的中点 = 站位中心，其余帧按原锚点差值跟随（保留呼吸位移）
         const meas = f => { const w = f.c.naturalWidth || f.c.width, h = f.c.naturalHeight || f.c.height, cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d'); g.drawImage(f.c, 0, 0); let D; try { D = g.getImageData(0, 0, w, h).data; } catch (e) { return { c: cv, w, h, bot: h, fx: f.f.ax, ax: f.f.ax }; }
@@ -71,6 +71,8 @@
       const draw = a => { const g = a.c.getContext('2d'), f = a.fr[a.i % a.fr.length]; g.clearRect(0, 0, a.c.width, a.c.height); g.drawImage(f.c, Math.round(a.c.width / 2 - f.f.ax), a.c.height - f.bot); };   // 按脚底锚点对齐底座中心
       for (const h of DATA.heroes) { const n = SPR.count(SPR.heroSet(h.id, 'sword'), 'sword.idle') || 1; add(SPR.heroSet(h.id, 'sword'), Array.from({ length: Math.max(2, n) }, (_, i) => ['sword.idle', i % n]), h.name, h.perk, 'gold', '勇者', h.id); }
       for (const [k, T] of Object.entries(DATA.enemies)) { const tier = T.boss ? 'red' : T.ranged ? 'blue' : 'grey'; add(k, ['idle0', 'idle1', 'walk0', 'walk1', 'walk2', 'walk3'].filter(n => SPR.crop(k, n)), T.name, T.boss ? '首领' : T.ranged ? '远程' : '近战', tier, T.boss ? '首领' : T.ranged ? '远程' : '近战', k); }
+      for (const [k, n, note] of [['gob_thief', '小咕噜', '小偷'], ['gob_merchant', '矮人商人', '商人'], ['guard', '王国卫兵', '守卫'], ['wizard', '大法师', '王国']]) add(null, [], n, note, 'gold', note, k);   // 11/23 NPC 也进图鉴
+      { const pend = Object.values(FIG).flat().filter(x => !x.c.complete); if (pend.length) Promise.all(pend.map(x => new Promise(r => { x.c.addEventListener('load', r); x.c.addEventListener('error', r); }))).then(() => { if (d.isConnected) document.querySelector('[data-panel="codex"]').click(); }); }
       anims.forEach((a, i) => { a.i = i; draw(a); }); const tm = setInterval(() => { if (!d.isConnected) return clearInterval(tm); anims.forEach(a => { a.i++; draw(a); }); }, 400);   // 11/23 原地小幅待机（铃兰式）
       return d; }],
     set: ['设置', () => { const d = document.createElement('div'); d.innerHTML = '<p style="color:#a89878">音量等设置以后加。</p>'; return d; }],
