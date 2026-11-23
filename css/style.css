@@ -1072,3 +1072,8 @@ body.tvbg { background: #000; }
 #result .stamp.on { transition: transform .18s cubic-bezier(.5, 0, .8, .5), opacity .1s; transform: rotate(-14deg) scale(1); opacity: 1; }
 #result.on .box { animation: fdIn2 .5s; } @keyframes fdIn2 { from { opacity: 0; } } #result.shake .box { animation: shk2 .25s steps(4); } @keyframes shk2 { 25% { transform: translate(-4px, 2px); } 50% { transform: translate(4px, -2px); } 75% { transform: translate(-2px, 0); } }
 #cv.dead { transition: filter 1.4s; filter: grayscale(1) brightness(.6); }
+
+/* 11/23 确认框（备战页木框风格） */
+#confirm { z-index: 60; } #confirm .cfm { width: min(440px, 92vw) !important; height: auto !important; max-height: none !important; padding: 18px 22px !important; animation: dropIn .3s cubic-bezier(.2, 1.4, .4, 1); }
+#confirm p { margin: 6px 4px 14px; line-height: 1.8; font-size: 16px; color: #f4ecd8; } #confirm .cfoot { display: flex; gap: 10px; } #confirm .cfoot .sp { flex: 1; }
+#confirm #cfYes.red { filter: hue-rotate(-35deg) saturate(1.6); }

@@ -231,7 +231,10 @@
     else if (P.classList.contains('on')) { document.querySelectorAll('.loinfo.pop').forEach(e => e.remove()); P.classList.add('closing'); setTimeout(() => { P.classList.remove('closing'); overlay('pause', false); }, 200); }
   }
   $('bPause').onclick = () => togglePause(); $('pRes').onclick = () => { CAMP.commit(); togglePause(false); };
-  $('pRe').onclick = () => startBattle(lastBuild); $('pHome').onclick = () => { BATTLE.stop(); overlay('pause', false); show('title'); };
+  function confirmBox(t, m, yes, red, go) { $('cfT').textContent = t; $('cfM').textContent = m; const y = $('cfYes'); y.textContent = yes; y.classList.toggle('red', !!red); const close = () => { overlay('confirm', false); removeEventListener('keydown', esc, true); }, esc = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+    $('cfNo').onclick = close; y.onclick = () => { close(); go(); }; $('confirm').onclick = e => { if (e.target.id === 'confirm') close(); }; addEventListener('keydown', esc, true); overlay('confirm', true); $('cfNo').focus(); }
+  $('pRe').onclick = () => confirmBox('重新开始？', '当前这局冒险会被放弃，无法恢复。', '重新开始', 1, () => startBattle(lastBuild));
+  $('pHome').onclick = () => confirmBox('回到主界面？', '进度保存在「本站开始时」，这一站获得的经验、铜钱和物品会丢失。', '回主界面', 0, () => { BATTLE.stop(); overlay('pause', false); show('title'); });
   const waveEnd = r => CAMP.open(r);
   // 一站打完：三张站点卡选一张（月圆之夜式，11/22）。卡：名字 · 等级/类型 · 圆形头像 · 说明 · 按钮
   function avatar(c) { const w = document.createElement('div'); w.className = 'rav';
