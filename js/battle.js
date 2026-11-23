@@ -472,7 +472,7 @@
     if (k === 'chest') toastMsg('路边有个宝箱，走过去打开');
   }
   function evOk(need) { const bagB = RUN.bag.filter(x => x && x.kind === 'book'), eqO = [...RUN.oath, ...RUN.mv].filter(Boolean);
-    switch (need) { case 'hasItem': return [...RUN.gear, ...RUN.bag].some(x => x && x.kind === 'item'); case 'bagBook': return bagB.length > 0; case 'c20': return RUN.coins >= 20;
+    switch (need) { case 'hasItem': return [...RUN.gear, ...RUN.bag].some(x => x && x.kind === 'item'); case 'bagBook': return bagB.length > 0; case 'c20': return RUN.coins >= 20; case 'cSpin': { const r = G.fe && G.fe.rest; return !!r && !r.broke && (r.n || 0) < 3 && RUN.coins >= ARC_P[r.n || 0]; }
       case 'anyOath': return [...eqO, ...RUN.bag.filter(x => x && x.kind === 'oath')].length > 0; case 'c40oath': return RUN.coins >= 40 && eqO.some(o => o.lv < 5);
       case 'tierBook': return bagB.some(b => RUN.slots.some(s => s && DATA.skills[s.id].tier === DATA.skills[b.id].tier && profL(s) < 7)); }
     return true; }
@@ -499,11 +499,34 @@
     }
     return '';
   }
+  // 11/24 坏掉的街机：三列转盘。概率按幸运微调；三个骷髅 = 扣血 + 街机坏掉
+  const ARC_P = [15, 25, 40];
+  const ARC = { coin: { src: 'art/ui2/coin.png', name: '铜钱', em: '💰' }, book: { src: 'art/ui2/bk_sword.png', name: '技能书', em: '📘' }, chest: { src: 'art/ui2/chest.png', name: '宝箱', em: '🎁' }, oath: { src: 'art/ui2/oath/fengren.png', name: '印记', em: '🔰' }, seven: { src: 'art/ev/s7.png', name: '大奖', em: '7️⃣', rare: true }, skull: { src: 'art/ev/skull.png', name: '骷髅', em: '💀' } };
+  function arcadeSpin(o, p) {
+    const n = o.n || 0, price = ARC_P[n], lk = .01 * (RUN.luck || 0); RUN.coins -= price; G.paused = true; SFX.play('pick');
+    const T = [['coin', .10], ['book', .08], ['chest', .07], ['oath', .06], ['seven', .02 + lk / 4], ['skull', .07 - lk / 2], ['pair', .40 + lk / 2]];
+    let r = Math.random(), res = 'none'; for (const [k, pr] of T) { if (r < pr) { res = k; break; } r -= pr; }
+    const keys = ['coin', 'book', 'chest', 'oath', 'seven', 'skull'], oth = k => { let x; do x = keys[Math.random() * 6 | 0]; while (x === k); return x; };
+    let face; if (res === 'pair') { const k = keys[Math.random() * 4 | 0], j = Math.random() * 3 | 0; face = [k, k, k]; face[j] = oth(k); } else if (res === 'none') { const a = keys.slice().sort(() => Math.random() - .5); face = a.slice(0, 3); } else face = [res, res, res];
+    UI.slot(Object.values(ARC), face.map(k => ARC[k]), () => { G.paused = false; o.n = n + 1; const give = x => { CAMP.learn(x, true); gotFeed(x); }; let msg;
+      switch (res) {
+        case 'coin': RUN.coins += price * 3; msg = `三个铜钱！吐出 ${price * 3} 铜钱。`; break;
+        case 'book': { const id = randBook(2) || randBook(); if (id) give({ kind: 'book', id }); else RUN.coins += 40; msg = '三本书！掉出一本技能书。'; break; }
+        case 'chest': give({ kind: 'item', id: ITEMS()[Math.random() * ITEMS().length | 0].id }); msg = '三个宝箱！掉出一件宝物。'; break;
+        case 'oath': { const L = Object.keys(DATA.oaths); CAMP.learn({ kind: 'oath', id: L[Math.random() * L.length | 0] }, true); msg = '三个印记！得到一个誓约印记。'; break; }
+        case 'seven': { const id = randBook(3) || randBook(); if (id) give({ kind: 'book', id }); give({ kind: 'item', id: ITEMS()[Math.random() * ITEMS().length | 0].id }); msg = '大奖！高阶书 + 宝物！'; break; }
+        case 'skull': hero.hp = Math.max(1, hero.hp - hero.maxHp * .15); o.broke = 1; G.shake = .3; msg = '三个骷髅……街机炸了，掉了 15% 生命。'; break;
+        case 'pair': RUN.coins += Math.round(price / 2); msg = `两个一样，退回 ${Math.round(price / 2)} 铜钱。`; break;
+        default: msg = '什么都没中。';
+      }
+      toastMsg(msg); o.msg = msg; if (o.broke || o.n >= 3) { p.t = o.broke ? '街机坏了' : '已经拉了 3 次'; } else p.t = `再拉一次：${ARC_P[o.n]} 铜钱`; });
+  }
   function evTick(dt) { const f = G.fe, o = f.rest;
     if (o.E.merchant) { if (o.mst < 0) { if (!SKUL(o, 30)) o.mst = 0; } else if (SKUL(o, 24)) o.mst = (o.mst || 0) + dt; else o.mst = 0;
       if (o.mst > .4) { o.mst = -99; G.lock = true; RUN.shop = null; RUN.rr = 0; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '裂缝旅商', tab: 'shang', only: 'shang', field: 1, rift: 1, goText: '离开 ▶', after: () => { G.lock = false; o.mst = -1; RUN.shop = null; } }); return; } }
     if (o.done) { if ((o.done -= dt) <= 0) { f.rest = null; showRoute(true); } return; }
     for (const p of o.pl) { const on = SKUL(p, 14), ok = evOk(p.need); if (!on) p.lock = 0; if (on && !p.lock && ok && o.t > 1) p.st += dt; else p.st = 0;
+      if (p.st > 1.2 && p.fx === 'spin') { p.st = 0; p.lock = 1; arcadeSpin(o, p); return; }
       if (p.st > 1.2) { G.shake = Math.max(G.shake, .15); p.fl = performance.now(); const msg = p.fx === 'leave' ? '' : evRun(p.fx); if (msg) { o.msg = msg; toastMsg(msg); } o.done = msg ? 1.6 : .2; return; } } }
   function restTick(dt) {
     const f = G.fe, o = f.rest; o.t += dt; if (o.k === 'ev') return evTick(dt);
@@ -522,8 +545,8 @@
   function evIcon(p) { const m = { fItem: 'art/ui2/clover.png', fBook: 'art/ui2/bk_sword.png', fCoin: 'art/drop/pile1.png', kHeal: 'art/ev/ic_potion.png', kTake: 'art/ui2/sword_edge.png', cup: 'art/drop/pile1.png', rHand: 'art/ev/ic_blood.png', rBook: 'art/ui2/bk_wand.png', rOath: 'art/ui2/oath/xianfeng.png', kidSave: 'art/ev/ic_scissor.png', kidRob: 'art/ev/ic_pouch.png', aBlood: 'art/ev/ic_blood.png', aCoin: 'art/drop/pile2.png', aBook: 'art/ui2/bk_spear.png', fKeep: 'art/ev/feather0.png', fSell: 'art/drop/pile1.png', leave: 'art/ev/ic_leave.png' }[p.fx]; return m ? uim(m) : null; }
   function evProp(id, x, y) { const f2 = Math.floor(G.t * 2.5) % 2, f3 = Math.floor(G.t * 5) % 3, o = G.fe && G.fe.rest;
     ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, y + u, 24 * u, 5 * u, 0, 0, 7); ctx.fill();
-    const map = { rift_mer: () => evSpr('mer' + f2, x, y), fairy: () => evSpr('fairy' + f3, x, y), knight: () => evSpr('knight' + (o && o.pl.some(p => SKUL(p, 30)) ? 2 : f2), x, y), gamble: () => { evSpr('gamble', x, y); SPR.draw(ctx, 'gob_thief', 'walk0', 0, x + 34 * u, y, true, u, {}); }, rift: () => evSpr('rift' + (Math.floor(G.t * 8) % 2), x, y), kid: () => evSpr('gkid' + f2, x, y), altar: () => evSpr('altar' + (o && o.done ? 3 : f3), x, y + 5 * u), feather: () => evSpr('feather' + f2, x, y) };
-    if (map[id] && evi((({ rift_mer: 'mer0', fairy: 'fairy0', knight: 'knight0', gamble: 'gamble', rift: 'rift0', kid: 'gkid0', altar: 'altar0', feather: 'feather0' })[id])).complete) return map[id]();
+    const map = { rift_mer: () => evSpr('mer' + f2, x, y), fairy: () => evSpr('fairy' + f3, x, y), knight: () => evSpr('knight' + (o && o.pl.some(p => SKUL(p, 30)) ? 2 : f2), x, y), gamble: () => { evSpr('gamble', x, y); SPR.draw(ctx, 'gob_thief', 'walk0', 0, x + 34 * u, y, true, u, {}); }, rift: () => evSpr('rift' + (Math.floor(G.t * 8) % 2), x, y), arcade: () => evSpr('arcade' + (o && o.broke ? 2 + f2 : f2), x, y), kid: () => evSpr('gkid' + f2, x, y), altar: () => evSpr('altar' + (o && o.done ? 3 : f3), x, y + 5 * u), feather: () => evSpr('feather' + f2, x, y) };
+    if (map[id] && evi((({ rift_mer: 'mer0', fairy: 'fairy0', knight: 'knight0', gamble: 'gamble', rift: 'rift0', kid: 'gkid0', altar: 'altar0', feather: 'feather0', arcade: 'arcade0' })[id])).complete) return map[id]();
     evProp0(id, x, y); }
   function evProp0(id, x, y) { const P = (c, a, b, w, h) => { ctx.fillStyle = c; ctx.fillRect(x + a * u, y + b * u, w * u, h * u); };
     ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, y + u, 20 * u, 5 * u, 0, 0, 7); ctx.fill();
