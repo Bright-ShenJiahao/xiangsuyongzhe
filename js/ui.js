@@ -80,6 +80,14 @@
         document.body.appendChild(p); const r = e.getBoundingClientRect(), w = p.offsetWidth, h = p.offsetHeight; let x = r.right + 8; if (x + w > innerWidth - 8) x = r.left - w - 8; p.style.left = Math.max(8, x) + 'px'; p.style.top = Math.max(8, Math.min(innerHeight - h - 8, r.top)) + 'px';
         const kill = q => { if (!p.contains(q.target) && !(q.target.closest && q.target.closest('.fig'))) { p.remove(); removeEventListener('pointerdown', kill, true); } }; addEventListener('pointerdown', kill, true); });
       for (const [k, n, note] of [['gob_thief', '小咕噜', '小偷'], ['gob_merchant', '矮人商人', '商人'], ['guard', '王国卫兵', '守卫'], ['wizard', '大法师', '王国']]) add(null, [], n, note, 'gold', note, k);   // 11/23 NPC 也进图鉴
+      { // 11/23 阵营分类：页签 + 「全部」里分组小标题
+        const G = [['hum', '人类阵营'], ['gob', '哥布林'], ['wild', '野兽·亡灵'], ['neu', '中立']], gOf = k => ['m', 'f', 'p', 'guard', 'wizard'].includes(k) ? 'hum' : k === 'gob_merchant' ? 'neu' : ['wolf_free', 'skeleton'].includes(k) ? 'wild' : 'gob';
+        const figs = [...d.querySelectorAll('.fig')]; figs.forEach(e => e.dataset.g = gOf(e.dataset.k)); d.innerHTML = '';
+        for (const [g, n] of G) { const L = figs.filter(e => e.dataset.g === g); if (!L.length) continue; const h = document.createElement('div'); h.className = 'cxh'; h.dataset.g = g; h.textContent = `— ${n} —`; d.appendChild(h); L.forEach(e => d.appendChild(e)); }
+        const bar = document.createElement('div'); bar.className = 'cxtabs'; let cur = 'all';
+        for (const [g, n] of [['all', '全部'], ...G]) { const b = document.createElement('button'); b.textContent = n; b.className = g === cur ? 'on' : ''; b.onclick = () => { if (g === cur) return; const ks = ['all', ...G.map(x => x[0])], dir = ks.indexOf(g) > ks.indexOf(cur) ? 'slideR' : 'slideL'; cur = g; bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+          d.querySelectorAll('.fig, .cxh').forEach(e => e.style.display = g === 'all' || e.dataset.g === g ? '' : 'none'); d.querySelectorAll('.cxh').forEach(e => { if (g !== 'all') e.style.display = 'none'; }); d.classList.remove('slideL', 'slideR'); void d.offsetWidth; d.classList.add(dir); $('tpBody').scrollTop = 0; }; bar.appendChild(b); }
+        setTimeout(() => { const tb = $('tpBody'); tb.parentNode.querySelectorAll('.cxtabs').forEach(x => x.remove()); tb.parentNode.insertBefore(bar, tb); }); }
       { const pend = Object.values(FIG).flat().filter(x => !x.c.complete); if (pend.length) Promise.all(pend.map(x => new Promise(r => { x.c.addEventListener('load', r); x.c.addEventListener('error', r); }))).then(() => { if (d.isConnected) document.querySelector('[data-panel="codex"]').click(); }); }
       anims.forEach((a, i) => { a.i = i; draw(a); }); const tm = setInterval(() => { if (!d.isConnected) return clearInterval(tm); anims.forEach(a => { a.i++; draw(a); }); }, 400);   // 11/23 原地小幅待机（铃兰式）
       return d; }],
@@ -90,8 +98,8 @@
       <p>· 备战页：选起手兵器、加属性点、选一个现实习惯和一件开局宝物。</p>
       <p>· 暂停：${touch ? '右上角 II' : 'P 或 Esc'}。</p>`; return d; }],
   };
-  for (const b of document.querySelectorAll('[data-panel]')) b.onclick = () => { const [t, fn] = PANELS[b.dataset.panel]; $('tpTitle').textContent = t; const body = $('tpBody'); body.innerHTML = ''; body.appendChild(fn()); overlay('tpanel', true); };
-  $('tpX').onclick = () => $('tpClose').click(); $('tpClose').onclick = () => overlay('tpanel', false);
+  for (const b of document.querySelectorAll('[data-panel]')) b.onclick = () => { const [t, fn] = PANELS[b.dataset.panel]; $('tpTitle').textContent = t; const body = $('tpBody'); document.querySelectorAll('.cxtabs, .cxpop').forEach(x => x.remove()); body.innerHTML = ''; body.appendChild(fn()); overlay('tpanel', true); };
+  $('tpX').onclick = () => $('tpClose').click(); $('tpClose').onclick = () => { overlay('tpanel', false); document.querySelectorAll('.cxtabs, .cxpop').forEach(x => x.remove()); };
 
   // ================= 备战页 =================
   const P = { hero: 'm', weapon: 'sword', free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };

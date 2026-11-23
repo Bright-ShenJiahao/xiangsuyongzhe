@@ -1150,3 +1150,6 @@ body.tvbg { background: #000; }
 .cxpop { position: fixed; z-index: 9500; width: 230px; padding: 10px 12px; background: #1e140c; border: 2px solid #c8a060; box-shadow: 0 6px 18px rgba(0,0,0,.6); color: #e8dcc0; font-size: 13px; line-height: 1.6; }
 .cxpop b { color: #ffd890; font-size: 16px; font-weight: 400; } .cxpop p { margin: 4px 0; } .cxpop .g { color: #8ef07a; }
 .cxpop .st { display: flex; flex-wrap: wrap; gap: 4px; } .cxpop .st span { white-space: nowrap; padding: 1px 6px; background: #2e2214; border: 1px solid #5a4028; font-size: 12px; } .cxpop .st i { font-style: normal; color: #ffe08a; }
+
+.cxtabs { flex: none; display: flex; gap: 6px; margin: 0 0 10px; flex-wrap: wrap; } .cxtabs button { font: 15px WenKai, serif; padding: 4px 14px; color: #d8c8a8; background: #2e2214; border: 2px solid #5a4028; cursor: pointer; } .cxtabs button.on { color: #2a1a0c; background: #e0b04a; border-color: #ffd890; }
+.cxh { grid-column: 1 / -1; text-align: center; color: #c8a060; font-size: 14px; letter-spacing: .2em; margin: 4px 0 -2px; }
