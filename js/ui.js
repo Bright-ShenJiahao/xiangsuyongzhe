@@ -55,6 +55,9 @@
         <polyline points="6,22 50,44 94,22" fill="none" stroke="${hi}" stroke-width="1.6"/><polygon points="50,6 82,22 50,38 18,22" fill="none" stroke="${l}" stroke-width="1" opacity=".6"/>
         <polygon points="36,41 50,48 50,55 36,48" fill="${r}" stroke="${hi}" stroke-width=".8"/></svg>`; };
       const anims = [];
+      // 11/23 手办按游戏里战斗小人的身高缩放（普通哥布林 = 1），保留大小关系
+      const fh = (st, n) => { const f = st && SPR.sets[st] && SPR.frame(st, n); return f ? f.h * (SPR.sets[st].sk || 1) : 0; }, GREF = fh('goblin', 'idle0') || 40;
+      const gameH = (set, k) => { const h = k === 'm' || k === 'f' || k === 'p' ? fh(SPR.heroSet(k, k === 'p' ? 'staff' : 'sword'), (k === 'p' ? 'staff' : 'sword') + '.idle') : fh(set || k, 'idle0'); return h ? h / GREF : 1; };
       const add = (set, names, name, note, tier, lab, figK) => { const e = document.createElement('div'); e.className = 'fig ' + tier; const st = document.createElement('div'); st.className = 'fst';
         const fr = FIG[figK] && FIG[figK].every(x => x.c.complete) ? FIG[figK] : (set ? names.map(n => Array.isArray(n) ? SPR.crop(set, n[0], n[1]) : SPR.crop(set, n)).filter(Boolean) : []); if (fr === FIG[figK]) e.classList.add('big');
 
@@ -65,7 +68,7 @@
           if (!bot) return { c: f.c, w, h, bot: h, fx: f.f.ax, ax: f.f.ax, lazy: 1 };
           return { c: cv, w, h, bot, fx: xs.length ? (xs[0] + xs[xs.length - 1] + 1) / 2 : w / 2, ax: f.f.ax }; };
         const raw = fr; let fm = fr.length ? fr.map(meas) : []; if (fm.length) { const b0 = fm[0]; fm.forEach(m => { m.ax = b0.fx + (m.ax - b0.ax); }); }
-        if (fm.length) { const fr = fm.map(m => ({ c: m.c, f: { ax: m.ax }, bot: m.bot })); const W = 2 * Math.ceil(Math.max(...fr.map(f => Math.max(f.f.ax, f.c.width - f.f.ax)))) + 2, H = Math.max(...fr.map(f => f.bot)), c = document.createElement('canvas'); c.width = W; c.height = H; { const k = raw === FIG[figK] ? 1.1 : 1.6, sc = Math.min(k, 80 / H, 124 / W); c.style.height = Math.round(H * sc) + 'px'; c.style.width = Math.round(W * sc) + 'px'; }   // 统一倍率，保留怪物本身大小差别
+        if (fm.length) { const fr = fm.map(m => ({ c: m.c, f: { ax: m.ax }, bot: m.bot })); const W = 2 * Math.ceil(Math.max(...fr.map(f => Math.max(f.f.ax, f.c.width - f.f.ax)))) + 2, H = Math.max(...fr.map(f => f.bot)), c = document.createElement('canvas'); c.width = W; c.height = H; { const gh = gameH(set, figK), want = Math.min(108, 74 * gh), sc = Math.min(want / H, 130 / W); c.style.height = Math.round(H * sc) + 'px'; c.style.width = Math.round(W * sc) + 'px'; }   // 统一倍率，保留怪物本身大小差别
           st.appendChild(c); anims.push({ c, fr, i: 0 }); }
         st.insertAdjacentHTML('beforeend', ped(tier, lab)); e.appendChild(st); e.insertAdjacentHTML('beforeend', `<b>${name}</b><small>${note}</small>`); d.appendChild(e); };
       const draw = a => { const g = a.c.getContext('2d'), f = a.fr[a.i % a.fr.length]; g.clearRect(0, 0, a.c.width, a.c.height); g.drawImage(f.c, Math.round(a.c.width / 2 - f.f.ax), a.c.height - f.bot); };   // 按脚底锚点对齐底座中心
