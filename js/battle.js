@@ -449,6 +449,7 @@
     if (G.st === 1) G.fe.sign = { x: cx + ((n - 1) / 2 + 1.6) * 30 * K, y: ly + 6 * K };
     stationEnd();
   }
+  const PCV = new Map(); function portalCv(d) { let c = PCV.get(d); if (!c) { c = document.createElement('canvas'); c.width = 26; c.height = 38; PCV.set(d, c); } return c; }
   function setDoors(cards, pick) { const f = G.fe, n = cards.length, cx = f.pr.x, y = MAP.ground.y0 + 62 * K; f.doors = cards.map((c, i) => ({ c, x: cx + (i - (n - 1) / 2) * 90 * K, y, st: 0 })); f.pick = pick; }
   const SKUL = (o, r) => Math.hypot(o.x - hero.x, (o.y - hero.y) * YS) < r * K;
   function xiuOrbs() { const P = G.fe.pr, L = CAMP.rollXiu(3 + (hero.fx.xiuOpt || 0)); P.orbs = L.map((o, i) => Object.assign({ x: P.x + (i - (L.length - 1) / 2) * 40 * K, y: P.y + 40 * K, st: 0 }, o)); P.cr = P.cr || { x: P.x + (L.length / 2 + .6) * 40 * K, y: P.y + 40 * K, st: 0, n: 0 }; }
@@ -572,18 +573,21 @@
     for (const d of f.doors) { const c = d.c, k = c.k, rs = c.rest, ev = k === 'event', bo = k === 'boss', el = k === 'elite';   // 11/23 传送门：纯代码画的旋涡，只写类型
       const col = bo ? [255, 210, 90] : el ? [230, 70, 150] : ev ? [170, 90, 255] : rs ? [70, 210, 190] : [235, 70, 60], [r0, g0, b0] = col, C = a => `rgba(${r0},${g0},${b0},${a})`;
       const near = Math.max(0, 1 - Math.hypot(d.x - hero.x, d.y - hero.y) / (70 * K)), sz = (bo ? 1.25 : 1) * (1 + near * .08), rw = 22 * u * sz, rh = 32 * u * sz, x = X(d.x), cy = Y(d.y) - rh + 2 * u, sp = (el ? 2.2 : 1.4) * (1 + near * 1.5);
-      ctx.save(); ctx.translate(x, cy); ctx.scale(rw / rh, 1); { const bg = ctx.createRadialGradient(0, 0, 0, 0, 0, rh); bg.addColorStop(0, `rgb(${r0 * .35 | 0},${g0 * .25 | 0},${b0 * .45 | 0})`); bg.addColorStop(1, `rgb(${r0 * .15 | 0},${g0 * .1 | 0},${b0 * .25 | 0})`); ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(0, 0, rh, 0, 7); ctx.fill(); } ctx.restore();
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      const gl = ctx.createRadialGradient(x, cy, 0, x, cy, rh * 1.6); gl.addColorStop(.55, C(.18 + near * .15)); gl.addColorStop(1, C(0)); ctx.fillStyle = gl; ctx.fillRect(x - rh * 1.6, cy - rh * 1.6, rh * 3.2, rh * 3.2);
-      ctx.translate(x, cy); ctx.scale(rw / rh, 1);
-      for (let i = 0; i < 7; i++) { const a0 = G.t * sp + i * PI * 2 / 7, rr = rh * (.35 + .6 * ((i * .37) % 1)); ctx.strokeStyle = i % 2 ? C(.7) : 'rgba(255,255,255,.55)'; ctx.lineWidth = (2 + (i % 3)) * u; ctx.beginPath(); ctx.arc(0, 0, rr, a0, a0 + 1.6 + (i % 3) * .5); ctx.stroke(); }
-      ctx.strokeStyle = C(.9); ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.arc(0, 0, rh, 0, 7); ctx.stroke(); ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = u; ctx.beginPath(); ctx.arc(0, 0, rh - 2 * u, 0, 7); ctx.stroke();
-      const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, rh * .45); cg.addColorStop(0, 'rgba(255,255,255,.95)'); cg.addColorStop(.3, C(.6)); cg.addColorStop(1, C(0)); ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(0, 0, rh * .45, 0, 7); ctx.fill();
-      ctx.restore();
+      { // 11/23 像素黑洞：先画在小画布上（每格 = 1 像素），再按像素放大
+        const PW = 26, PH = 38, pc = portalCv(d), g = pc.getContext('2d'), im = g.createImageData(PW, PH), D = im.data, t = G.t * sp;
+        for (let py = 0; py < PH; py++) for (let px = 0; px < PW; px++) { const nx = (px + .5 - PW / 2) / (PW / 2), ny = (py + .5 - PH / 2) / (PH / 2), rr = Math.hypot(nx, ny); if (rr > 1) continue;
+          const a = Math.atan2(ny, nx), arm = Math.sin(3 * (a + t) + 7 * Math.log(rr + .05));   // 3 条往里卷的旋臂
+          let br = (rr < .28 ? 0 : (arm * .5 + .5) ** 3 * (1 - rr) * 2.2 + (rr > .86 ? .7 : 0) + (rr > .28 && rr < .36 ? .6 : 0));
+          br = Math.min(1, br); const q = br > .85 ? 4 : br > .55 ? 3 : br > .3 ? 2 : br > .12 ? 1 : 0;   // 只用 5 个色阶，保持像素感
+          const P = rr > .86 && q >= 2 ? [[0,0,0],[0,0,0],[r0 * .8, g0 * .8, b0 * .8],[r0, g0, b0],[255, 250, 240]][q] : [[10, 6, 24], [48, 30, 110], [96, 70, 210], [150, 170, 255], [240, 236, 255]][q], k = (py * PW + px) * 4;   // 参考图：深蓝紫黑洞 + 白蓝旋臂；外圈细边才用类型色
+          D[k] = P[0]; D[k + 1] = P[1]; D[k + 2] = P[2]; D[k + 3] = 255; }
+        g.putImageData(im, 0, 0);
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; const gl = ctx.createRadialGradient(x, cy, rh * .6, x, cy, rh * 1.5); gl.addColorStop(0, `rgba(140,120,255,${.25 + near * .2})`); gl.addColorStop(1, 'rgba(140,120,255,0)'); ctx.fillStyle = gl; ctx.fillRect(x - rh * 1.6, cy - rh * 1.6, rh * 3.2, rh * 3.2); ctx.restore();
+        const sc = Math.round(2 * rh / PH) || 1; ctx.imageSmoothingEnabled = false; ctx.drawImage(pc, Math.round(x - PW * sc / 2), Math.round(cy - PH * sc / 2), PW * sc, PH * sc); }
       if (Math.random() < .25) parts.push({ x: d.x + R(-18, 18) * K, y: d.y - R(10, 60) * K, vx: 0, vy: -14 * K, t: 0, T: .8, col: C(1), g: 0 });
       ctx.fillStyle = 'rgba(30,15,5,.35)'; ctx.beginPath(); ctx.ellipse(x, Y(d.y) + u, rw * .9, 4 * u, 0, 0, 7); ctx.fill();
       const big = bo ? '首领' : el ? '精英' : ev ? '奇遇' : rs ? '休整' : '战斗', sub = rs && !ev ? ({ chest: '宝箱', fire: '篝火', shop: '商人' })[k] : '';
-      label(big, x, cy - 4 * u, '#fff', 9); if (sub) label(sub, x, cy + 8 * u, '#e8fff8', 6); ring({ x: d.x, y: d.y }, 10, d.st / .35, '#ffe08a'); }
+      label(big, x, cy - rh - 8 * u, `rgb(${Math.min(255, r0 + 40)},${Math.min(255, g0 + 40)},${Math.min(255, b0 + 40)})`, 9); if (sub) label(sub, x, cy - rh + 2 * u, '#f4ecd8', 6); ring({ x: d.x, y: d.y }, 10, d.st / .35, '#ffe08a'); }
     for (const o of f.items) { const im = img(o.kind === 'book' ? ({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[DATA.skills[o.id].sys] : o.kind === 'item' ? o.id : o.id), x = X(o.x), y = Y(o.y) - 9 * u - rd((0 * Math.sin(G.t * 3 + o.x) * 2) * u);
       ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + u, 9 * u, 3 * u, 0, 0, 7); ctx.fill(); if (o.kind === 'book') dspr('book_' + ({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff' })[DATA.skills[o.id].sys], x, Y(o.y) + 2 * u); else if (o.kind === 'use') dspr('meat', x, Y(o.y) + 2 * u); else if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); ring(o, 12, o.st / .6, '#ffe08a', 9); }
     const P = f.pr, px = X(P.x), py = Y(P.y);
