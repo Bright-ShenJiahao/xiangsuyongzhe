@@ -1153,3 +1153,11 @@ body.tvbg { background: #000; }
 
 .cxtabs { flex: none; display: flex; gap: 6px; margin: 0 0 10px; flex-wrap: wrap; } .cxtabs button { font: 15px WenKai, serif; padding: 4px 14px; color: #d8c8a8; background: #2e2214; border: 2px solid #5a4028; cursor: pointer; } .cxtabs button.on { color: #2a1a0c; background: #e0b04a; border-color: #ffd890; }
 .cxh { grid-column: 1 / -1; text-align: center; color: #c8a060; font-size: 14px; letter-spacing: .2em; margin: 4px 0 -2px; }
+
+.cxrow { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; } .cxrow #tpBody { flex: 1 1 auto; }
+.cxside { flex: none; width: 240px; padding: 12px; background: #1e140c; border: 2px solid #8a6a3a; color: #e8dcc0; font-size: 14px; line-height: 1.6; overflow-y: auto; }
+.cxside .cxbig { height: 160px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 8px; background: radial-gradient(ellipse at 50% 85%, rgba(255,220,140,.18), transparent 60%); } .cxside canvas { image-rendering: pixelated; }
+.cxside b { display: block; color: #ffd890; font-size: 18px; font-weight: 400; } .cxside p { margin: 4px 0; } .cxside .g { color: #8ef07a; }
+.cxside .st { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; } .cxside .st span { white-space: nowrap; padding: 1px 6px; background: #2e2214; border: 1px solid #5a4028; font-size: 12px; } .cxside .st i { font-style: normal; color: #ffe08a; }
+#tpBody .fig.sel { box-shadow: 0 0 0 3px #ffd890, 0 0 12px rgba(255,216,144,.6) !important; }
+@media (orientation: portrait), (max-width: 700px) { .cxrow { flex-direction: column-reverse; } .cxside { width: auto; display: grid; grid-template-columns: 90px 1fr; gap: 0 10px; } .cxside .cxbig { height: 100px; grid-row: span 4; margin: 0; } }
