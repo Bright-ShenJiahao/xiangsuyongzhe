@@ -449,7 +449,7 @@
     if (G.st === 1) G.fe.sign = { x: cx + ((n - 1) / 2 + 1.6) * 30 * K, y: ly + 6 * K };
     stationEnd();
   }
-  function setDoors(cards, pick) { const f = G.fe, n = cards.length, cx = f.pr.x, y = MAP.ground.y0 + 6 * K; f.doors = cards.map((c, i) => ({ c, x: cx + (i - (n - 1) / 2) * 70 * K, y, st: 0 })); f.pick = pick; }
+  function setDoors(cards, pick) { const f = G.fe, n = cards.length, cx = f.pr.x, y = MAP.ground.y0 + 62 * K; f.doors = cards.map((c, i) => ({ c, x: cx + (i - (n - 1) / 2) * 90 * K, y, st: 0 })); f.pick = pick; }
   const SKUL = (o, r) => Math.hypot(o.x - hero.x, (o.y - hero.y) * YS) < r * K;
   function xiuOrbs() { const P = G.fe.pr, L = CAMP.rollXiu(3 + (hero.fx.xiuOpt || 0)); P.orbs = L.map((o, i) => Object.assign({ x: P.x + (i - (L.length - 1) / 2) * 40 * K, y: P.y + 40 * K, st: 0 }, o)); P.cr = P.cr || { x: P.x + (L.length / 2 + .6) * 40 * K, y: P.y + 40 * K, st: 0, n: 0 }; }
   // 11/22 不打仗的门：宝箱 / 篝火 / 特价商人在原地演出（奇遇还是弹卡片）
@@ -569,12 +569,21 @@
     const f = G.fe; if (!f) return; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     const label = (t, x, y, col, sz) => { ctx.font = `${Math.round((sz || 6) * u)}px WenKai, Pix, serif`; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#1a1008'; ctx.strokeText(t, x, y); ctx.fillStyle = col || '#fff3d0'; ctx.fillText(t, x, y); };
     const ring = (o, r, p, col, dy) => { if (p <= 0) return; ctx.strokeStyle = col; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.arc(X(o.x), Y(o.y) - (dy || 0) * u, r * u, -PI / 2, -PI / 2 + PI * 2 * Math.min(1, p)); ctx.stroke(); };
-    for (const d of f.doors) { const x = X(d.x), y = Y(d.y), w = 46 * u, h = 58 * u, c = d.c, el = c.k === 'elite', rs = c.rest;
-      const gl = ctx.createRadialGradient(x, y - h / 2, 0, x, y - h / 2, w); gl.addColorStop(0, rs ? 'rgba(120,220,160,.45)' : el ? 'rgba(255,140,60,.45)' : c.k === 'boss' ? 'rgba(255,60,60,.5)' : 'rgba(140,180,255,.4)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gl; ctx.fillRect(x - w, y - h * 1.3, w * 2, h * 1.5);
-      ctx.fillStyle = '#1a1210'; ctx.beginPath(); ctx.moveTo(x - w / 2, y); ctx.lineTo(x - w / 2, y - h + w / 2); ctx.arc(x, y - h + w / 2, w / 2, PI, 0); ctx.lineTo(x + w / 2, y); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#c9a24a'; ctx.lineWidth = 2 * u; ctx.stroke();
-      if (c.av) { const fr = SPR.frame(c.av, 'idle0') || SPR.frame(c.av, 'walk0'); if (fr) SPR.draw(ctx, c.av, SPR.frame(c.av, 'idle0') ? 'idle0' : 'walk0', 0, x, y - 8 * u, false, u * .8, {}); }
-      else { const im = img(c.icon); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 15 * u, y - 40 * u, 30 * u, 30 * u); }
-      label(c.name, x, y - h - 10 * u, el ? '#ffb070' : rs ? '#9ef0b0' : '#fff3d0'); if (c.sub) label(c.sub, x, y + 2 * u, '#c8b890', 5); ring({ x: d.x, y: d.y }, 10, d.st / .35, '#ffe08a'); }
+    for (const d of f.doors) { const c = d.c, k = c.k, rs = c.rest, ev = k === 'event', bo = k === 'boss', el = k === 'elite';   // 11/23 传送门：纯代码画的旋涡，只写类型
+      const col = bo ? [255, 210, 90] : el ? [230, 70, 150] : ev ? [170, 90, 255] : rs ? [70, 210, 190] : [235, 70, 60], [r0, g0, b0] = col, C = a => `rgba(${r0},${g0},${b0},${a})`;
+      const near = Math.max(0, 1 - Math.hypot(d.x - hero.x, d.y - hero.y) / (70 * K)), sz = (bo ? 1.25 : 1) * (1 + near * .08), rw = 22 * u * sz, rh = 32 * u * sz, x = X(d.x), cy = Y(d.y) - rh + 2 * u, sp = (el ? 2.2 : 1.4) * (1 + near * 1.5);
+      ctx.save(); ctx.translate(x, cy); ctx.scale(rw / rh, 1); { const bg = ctx.createRadialGradient(0, 0, 0, 0, 0, rh); bg.addColorStop(0, `rgb(${r0 * .35 | 0},${g0 * .25 | 0},${b0 * .45 | 0})`); bg.addColorStop(1, `rgb(${r0 * .15 | 0},${g0 * .1 | 0},${b0 * .25 | 0})`); ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(0, 0, rh, 0, 7); ctx.fill(); } ctx.restore();
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const gl = ctx.createRadialGradient(x, cy, 0, x, cy, rh * 1.6); gl.addColorStop(.55, C(.18 + near * .15)); gl.addColorStop(1, C(0)); ctx.fillStyle = gl; ctx.fillRect(x - rh * 1.6, cy - rh * 1.6, rh * 3.2, rh * 3.2);
+      ctx.translate(x, cy); ctx.scale(rw / rh, 1);
+      for (let i = 0; i < 7; i++) { const a0 = G.t * sp + i * PI * 2 / 7, rr = rh * (.35 + .6 * ((i * .37) % 1)); ctx.strokeStyle = i % 2 ? C(.7) : 'rgba(255,255,255,.55)'; ctx.lineWidth = (2 + (i % 3)) * u; ctx.beginPath(); ctx.arc(0, 0, rr, a0, a0 + 1.6 + (i % 3) * .5); ctx.stroke(); }
+      ctx.strokeStyle = C(.9); ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.arc(0, 0, rh, 0, 7); ctx.stroke(); ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = u; ctx.beginPath(); ctx.arc(0, 0, rh - 2 * u, 0, 7); ctx.stroke();
+      const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, rh * .45); cg.addColorStop(0, 'rgba(255,255,255,.95)'); cg.addColorStop(.3, C(.6)); cg.addColorStop(1, C(0)); ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(0, 0, rh * .45, 0, 7); ctx.fill();
+      ctx.restore();
+      if (Math.random() < .25) parts.push({ x: d.x + R(-18, 18) * K, y: d.y - R(10, 60) * K, vx: 0, vy: -14 * K, t: 0, T: .8, col: C(1), g: 0 });
+      ctx.fillStyle = 'rgba(30,15,5,.35)'; ctx.beginPath(); ctx.ellipse(x, Y(d.y) + u, rw * .9, 4 * u, 0, 0, 7); ctx.fill();
+      const big = bo ? '首领' : el ? '精英' : ev ? '奇遇' : rs ? '休整' : '战斗', sub = rs && !ev ? ({ chest: '宝箱', fire: '篝火', shop: '商人' })[k] : '';
+      label(big, x, cy - 4 * u, '#fff', 9); if (sub) label(sub, x, cy + 8 * u, '#e8fff8', 6); ring({ x: d.x, y: d.y }, 10, d.st / .35, '#ffe08a'); }
     for (const o of f.items) { const im = img(o.kind === 'book' ? ({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[DATA.skills[o.id].sys] : o.kind === 'item' ? o.id : o.id), x = X(o.x), y = Y(o.y) - 9 * u - rd((0 * Math.sin(G.t * 3 + o.x) * 2) * u);
       ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + u, 9 * u, 3 * u, 0, 0, 7); ctx.fill(); if (o.kind === 'book') dspr('book_' + ({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff' })[DATA.skills[o.id].sys], x, Y(o.y) + 2 * u); else if (o.kind === 'use') dspr('meat', x, Y(o.y) + 2 * u); else if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); ring(o, 12, o.st / .6, '#ffe08a', 9); }
     const P = f.pr, px = X(P.x), py = Y(P.y);
