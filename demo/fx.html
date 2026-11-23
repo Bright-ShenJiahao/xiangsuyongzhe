@@ -125,6 +125,10 @@ h1 { text-align: center; font-weight: 400; color: #e8c070; margin: 18px 0 4px; }
 <div class="card"><h3><b>M6b</b>结算·失败</h3><p>勇者倒下的那一刻：时间放慢，整个画面慢慢褪成灰色变暗，然后结算面板淡入「勇者倒下了」。</p>
 <div class="stage" id="m6b"><div class="scr" style="position:absolute;inset:0;background:url(../art/map/forest3.webp) 40% 60%/900px"><div class="hero" style="left:50%;bottom:30px"></div></div><div class="wood" style="left:50%;top:50px;width:220px;margin-left:-110px;padding:10px;text-align:center;opacity:0;transition:opacity .6s">勇者倒下了<br><small>第 4 站 · Lv 7</small></div></div><button class="play" onclick="fm6b()">播放</button></div>
 
+<div class="card" style="grid-column:1/-1"><h3><b>D</b>勇者倒下（完整过程）</h3><p>① 最后一击：时间骤停、闪白、重震 → ② 慢动作：受伤后退 → 倒地小弹 + 尘土，画面褪灰（勇者留色）→ ③ 怪物围上，四角压黑成光圈缩到一点 → 结算面板。三个按钮对比：基础 / +灵魂上飘 / +GAME OVER 雪花。</p>
+<div class="stage" id="sd" style="height:300px;background:#000"><canvas class="cv" width="320" height="150"></canvas><div class="wood" style="left:50%;top:100px;width:240px;margin-left:-120px;padding:10px;text-align:center;opacity:0;transition:opacity .6s">勇者倒下了<br><small>第 4 站 · Lv 7</small></div></div>
+<button class="play" onclick="fd(0)">基础</button> <button class="play" onclick="fd(1)">+灵魂</button> <button class="play" onclick="fd(2)">+GAME OVER 雪花</button></div>
+
 </div>
 <script>
 const $ = (s, r = document) => r.querySelector(s), wait = ms => new Promise(r => setTimeout(r, ms));
@@ -190,4 +194,37 @@ async function fm6a() { const s = $('#m6a'), st = $('.stamp', s), rs = [...s.que
   await wait(200); st.classList.add('on'); await wait(180); s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake'); }
 async function fm6b() { const s = $('#m6b'), sc = $('.scr', s), w = $('.wood', s), h = $('.hero', s); sc.classList.remove('gray'); w.style.opacity = 0; h.style.transition = 'none'; h.style.transform = ''; await wait(100);
   h.style.transition = 'transform 1.2s'; h.style.transform = 'rotate(90deg) translateX(10px)'; sc.classList.add('gray'); await wait(1300); w.style.opacity = 1; }
+
+const AT = Object.assign(new Image(), { src: '../art/hero/atlas.png' }), GB = ['idle0', 'idle1', 'hurt'].map(n => Object.assign(new Image(), { src: `../art/goblin/gob_blade/${n}.png` })), SW = Object.assign(new Image(), { src: '../art/drop/book_sword.png' });
+const FR = { idle: [0, 0, 36, 40, 13.6, 39], hurt: [442, 0, 45, 39, 18.5, 39], dead: [489, 0, 54, 23, 19.7, 23] };
+let fdRun = 0;
+async function fd(mode) { const id = ++fdRun, S = $('#sd'), cv = $('canvas', S), g = cv.getContext('2d'), W = 320, H = 150, pan = $('.wood', S); g.imageSmoothingEnabled = false; pan.style.opacity = 0;
+  const off = document.createElement('canvas'); off.width = W; off.height = H; const o = off.getContext('2d'); o.imageSmoothingEnabled = false;
+  const hx = 160, hy = 100; let gob = [[90, 95], [230, 92], [120, 125], [205, 128], [160, 70]].map(([x, y]) => ({ x, y, x0: x, y0: y })), wp = null, dust = [], soul = null, t = 0, last = performance.now();
+  while (id === fdRun && t < 5.2) { await new Promise(r => requestAnimationFrame(r)); const now = performance.now(), rdt = (now - last) / 1000; last = now;
+    const slow = t < .25 ? .1 : t < 1.4 ? .35 : 1; t += rdt * (t < .25 ? .6 : 1); const gt = t;
+    // 场景
+    o.setTransform(1, 0, 0, 1, 0, 0); o.drawImage(bg6, -200, -350, 1000, 560);
+    for (const z of gob) { if (gt > 1.6) { const k = Math.min(1, (gt - 1.6) / 1.2); z.x = z.x0 + (hx - z.x0) * .35 * k; z.y = z.y0 + (hy - z.y0) * .35 * k; } const im = GB[gt < 1.6 ? 0 : (Math.floor(gt * 4) % 2)]; if (im.complete) o.drawImage(im, z.x - 14, z.y - 28, 28, 28); }
+    // 勇者
+    let fr = gt < .25 ? FR.idle : gt < .8 ? FR.hurt : FR.dead, bx = hx - (gt > .25 ? Math.min(1, (gt - .25) / .5) * 8 : 0), by = hy; if (gt > .8 && gt < 1) by -= Math.sin((gt - .8) / .2 * Math.PI) * 4;
+    const hero = document.createElement('canvas'); hero.width = 60; hero.height = 45; const hg = hero.getContext('2d'); if (AT.complete) hg.drawImage(AT, fr[0], fr[1], fr[2], fr[3], 30 - fr[4], 44 - fr[5], fr[2], fr[3]);
+    if (gt < .12) { hg.globalCompositeOperation = 'source-atop'; hg.fillStyle = '#fff'; hg.fillRect(0, 0, 60, 45); }
+    // 武器
+    if (gt > .8 && !wp) wp = { x: bx, y: by - 14, vx: 70, vy: -90, h: 14, r: 0, b: 0 }; if (wp) { const d = rdt * slow * 2.2; wp.x += wp.vx * d; wp.h -= wp.vy * d; wp.vy += 400 * d; wp.r += wp.vx * d * .15; if (wp.h <= 0) { wp.h = 0; if (wp.b < 2 && wp.vy > 40) { wp.vy = -wp.vy * .4; wp.vx *= .5; wp.b++; } else { wp.vy = 0; wp.vx = 0; wp.r = 1.4; } } }
+    if (gt > .8 && gt < .85 && !dust.length) for (let k = 0; k < 14; k++) dust.push({ x: bx + (Math.random() - .5) * 30, y: by - 2, vx: (Math.random() - .5) * 40, vy: -Math.random() * 25, l: 1 });
+    // 褪灰
+    const gray = Math.min(1, Math.max(0, (gt - .3) / 1.2)); g.filter = `grayscale(${gray}) brightness(${1 - gray * .35})`; g.setTransform(1, 0, 0, 1, 0, 0);
+    const sh = gt < .3 ? (Math.random() - .5) * 8 : 0; g.drawImage(off, sh, sh * .5); g.filter = 'none';
+    g.drawImage(hero, bx - 30 + sh, by - 44);
+    
+    g.fillStyle = '#c8b090'; for (const d of dust) { d.x += d.vx * rdt * slow; d.y += d.vy * rdt * slow; d.l -= rdt * .8; if (d.l > 0) g.fillRect(d.x | 0, d.y | 0, 2, 2); }
+    if (gt < .3) { g.fillStyle = '#ff5a3a'; g.font = '14px monospace'; g.fillText('-38', bx + 6, by - 50 - gt * 30); }
+    if (mode === 1 && gt > 1.3) { const k = gt - 1.3; g.globalAlpha = Math.max(0, 1 - k / 2); g.fillStyle = '#dff4ff'; const sx = bx + Math.sin(k * 4) * 4, sy = by - 20 - k * 22; g.fillRect(sx - 3, sy - 4, 6, 6); g.fillRect(sx - 2, sy + 2, 4, 3); g.fillRect(sx - 1 + Math.sin(k * 8), sy + 5, 2, 3); g.globalAlpha = 1; }
+    // 光圈收拢
+    if (gt > 2.2) { const k = Math.min(1, (gt - 2.2) / 1.6), R = 220 * (1 - k) ** 1.5; g.fillStyle = '#000'; for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) if (Math.hypot(x - bx, (y - by + 10) * 1.3) > R) g.fillRect(x, y, 2, 2); }
+    if (mode === 2 && gt > 3.6 && gt < 4.8) { const k = (gt - 3.6) / 1.2; for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) { const v = Math.random() * 120 * (1 - k * .6) | 0; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(x, y, 2, 2); }
+      g.fillStyle = '#ff3a3a'; g.font = 'bold 26px monospace'; const j = Math.random() < .3 ? (Math.random() - .5) * 8 : 0; g.fillText('GAME OVER', 88 + j, 82); }
+  }
+  if (id === fdRun) pan.style.opacity = 1; }
 </script></body></html>
