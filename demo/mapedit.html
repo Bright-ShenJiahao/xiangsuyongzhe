@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>开场地图 · 摆位置</title>
+<style>
+@font-face { font-family: WenKai; src: url(../art/font/kai.woff2?v=3); }
+body { margin: 0; background: #1a120c; color: #f4ecd8; font: 15px WenKai, sans-serif; }
+#w { position: relative; max-width: 1400px; margin: 10px auto; user-select: none; touch-action: none; }
+#w img { width: 100%; display: block; filter: sepia(.75) brightness(.9); }
+.m { position: absolute; transform: translate(-50%, -50%); width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(rgba(30,14,6,.65), rgba(30,14,6,0) 70%); cursor: grab; display: grid; place-items: center; }
+.m b { background: #2a1e14; border: 2px solid #ffd890; padding: 2px 8px; white-space: nowrap; }
+#out { max-width: 1400px; margin: 0 auto; padding: 0 10px; } #out code { display: block; background: #2a1e14; padding: 8px; margin-top: 6px; font-size: 16px; color: #ffe08a; user-select: all; }
+</style></head><body>
+<div id="out">拖动三个圆圈到你想要的位置，然后把下面这行复制发给我：<code id="c"></code></div>
+<div id="w"><img src="../art/ui2/map.webp"></div>
+<script>
+const W = document.getElementById('w'), IW = 1672, IH = 941, P = [['哥布林', 334, 395], ['吸血鬼', 1360, 300], ['兽人', 1010, 600]];
+function out() { document.getElementById('c').textContent = P.map(p => `${p[0]}(${p[1]},${p[2]})`).join(' '); }
+P.forEach(p => { const m = document.createElement('div'); m.className = 'm'; m.innerHTML = `<b>${p[0]}</b>`; W.appendChild(m);
+  const put = () => { m.style.left = p[1] / IW * 100 + '%'; m.style.top = p[2] / IH * 100 + '%'; }; put();
+  m.onpointerdown = e => { m.setPointerCapture(e.pointerId); m.onpointermove = ev => { const r = W.getBoundingClientRect(); p[1] = Math.round(Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * IW); p[2] = Math.round(Math.max(0, Math.min(1, (ev.clientY - r.top) / r.height)) * IH); put(); out(); }; };
+  m.onpointerup = () => m.onpointermove = null; });
+out();
+</script></body></html>
