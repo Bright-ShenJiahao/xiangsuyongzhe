@@ -22,7 +22,7 @@ select,button{font:inherit;background:#4a3322;color:#f3e6c8;border:1px solid #8a
 <div class="info" id="info"></div>
 <div id="sl"></div>
 <div class="info" id="stat"></div>
-<div class="row"><button id="cp">复制当前数值</button></div>
+<div class="row"><button id="cp">复制全部改动</button></div>
 <div id="log"></div>
 </div>
 <script src="js/data.js"></script><script src="js/sprites.js"></script>
@@ -75,7 +75,7 @@ let last = 0; function loop(ts) { const dt = Math.min(.05, (ts - last) / 1000 ||
 sel.onchange = () => { type = sel.value; sliders(); spawn(); }; num.oninput = () => { numV.textContent = num.value; spawn(); }; re.onclick = spawn;
 st.onclick = () => { still = !still; st.textContent = still ? '勇者可以移动' : '勇者站着不动'; };
 rs.onclick = () => { E[type] = JSON.parse(JSON.stringify(ORIG[type])); sliders(); spawn(); };
-cp.onclick = () => { const T = E[type], s = `${type}: ` + JSON.stringify(Object.fromEntries(KEYS.filter(([k]) => T[k] != null && T[k] !== ORIG[type][k]).map(([k]) => [k, T[k]]))); navigator.clipboard && navigator.clipboard.writeText(s); log.unshift('已复制：' + s); };
+cp.onclick = () => { const out = []; for (const k in E) { const T = E[k], ch = KEYS.filter(([q]) => T[q] != null && T[q] !== ORIG[k][q]).map(([q]) => `${q}: ${T[q]}`); if (ch.length) out.push(`${T.name}（${k}）  ${ch.join(', ')}`); } const s = out.length ? out.join('\n') : '（还没有改动）'; navigator.clipboard && navigator.clipboard.writeText(s); log.unshift('已复制全部改动：<br>' + s.replace(/\n/g, '<br>')); };
 addEventListener('keydown', e => { keys[e.key] = 1; if (e.key.startsWith('Arrow')) e.preventDefault(); }); addEventListener('keyup', e => keys[e.key] = 0);
 const mv = e => { const r = cv.getBoundingClientRect(); hero.x = (e.clientX - r.left) * cv.width / r.width; hero.y = (e.clientY - r.top) * cv.height / r.height; };
 cv.onpointerdown = e => { mv(e); cv.onpointermove = mv; }; addEventListener('pointerup', () => cv.onpointermove = null);
