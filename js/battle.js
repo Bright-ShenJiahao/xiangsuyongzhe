@@ -45,6 +45,10 @@
     recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0);
     foes = []; shots = []; fx = []; parts = []; nums = []; tele = []; burns = []; pend = []; warns.length = 0;
     if (!SK) SK = SKILLS(API); SK.reset(); hero.cs = null;
+    if (!ESK) ESK = ESKILL({ K, YS, hero: () => hero, spawn: (t, at) => spawn(t, at), clamp: o => clampG(o), hurt: (d, src) => { damageHero.src = src || null; damageHero(d, 'phys'); },
+      say: txt => nums.push({ x: hero.x, y: hero.y - 60 * K, txt, t: 0, col: '#ffb84a' }), num: (o, txt, col) => nums.push({ x: o.x, y: o.y - 40 * K, txt, t: 0, col }),
+      boom: (x, y, r) => fx.push({ k: 'boom', x, y, t: 0, T: .45, r }), slash: z => { for (let i = 0; i < 5; i++) parts.push({ x: z.x, y: z.y - 14 * K, vx: R(-60, 60) * K, vy: R(-60, 0) * K, t: 0, T: .3, col: '#fff', g: 0 }); } });
+    ESK.reset();
     if (o.resume) { const S = o.resume; Object.assign(RUN, JSON.parse(JSON.stringify(S.RUN))); Object.assign(G, S.G); recompute(); hero.hp = Math.max(1, Math.round(hero.maxHp * (S.hp || 1))); }
     nextWave();
   }
@@ -84,6 +88,7 @@
     if (G && G.lock) return [0, 0];
     let dx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0), dy = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0);
     if (joy.on) { const jx = joy.x - joy.sx, jy = joy.y - joy.sy, d = Math.hypot(jx, jy); if (d > 6) { const k = Math.min(1, d / 40); dx = jx / d * k; dy = jy / d * k; } }
+    if (ESK && ESK.rev()) { dx = -dx; dy = -dy; }   // 11/24 混乱诅咒：方向颠倒
     return [dx, dy];
   }
   function roll() {
@@ -302,7 +307,7 @@
   function aimNow(a0) { const t = nearest(); return t ? ang(hero, t) : (a0 != null ? a0 : (hero.f < 0 ? PI : 0)); }
   function faceTo(a) { hero.f = Math.cos(a) < 0 ? -1 : 1; }
   // 给 skills.js 用的接口
-  let SK = null;
+  let SK = null, ESK = null;   // 11/24 ESK = 精英招式（js/eskill.js）
   const API = { K, YS, PI, hero: () => hero, foes: () => foes, ang, aimNow, face: faceTo, spinFace: () => { hero.f = Math.floor(G.t * 12) % 2 ? 1 : -1; },
     hurt: (z, d, from, kb, sid, o) => hurt(z, d, from, kb, sid, o), fx: o => fx.push(o), tele: o => tele.push(Object.assign({ mine: true }, o)), shake: v => { G.shake = Math.max(G.shake, v); },
     heal: n => healHero(n), healHero,
@@ -819,7 +824,7 @@
         for (const z of foes) if (!z.dead && !z.flee && dist(z, hero) < 46 && !(z.zdT > G.t)) { z.zdT = G.t + 2; hurt(z, 1, hero, 30, null, { cc: ['stun', z.T.boss || z.tier === 'mini' ? sec / 2 : sec], quiet: true }); } } } if (hero.rollBuf > 0) { hero.rollBuf -= dt; if (hero.roll <= 0 && hero.rollCd <= 0) roll(); }
       if (hero.roll > 0) { hero.roll -= dt; hero.x += hero.rvx * 240 * K * dt * (hero.rollMul || 1); hero.y += hero.rvy * 182 * K * dt * (hero.rollMul || 1); if (Math.random() < .7) parts.push({ x: hero.x, y: hero.y, vx: R(-10, 10) * K, vy: R(-10, 0) * K, t: 0, T: .3, col: '#e6dcb4', g: 0 }); }
       else { const c = hero.cs, root = false, mm = !c ? 1 : c.ph === 'wu' ? (c.S.charge ? .5 : 1) : c.ph === 'hold' ? c.move : (!c.move && c.t < SKF.get(c.sk.id).hitT) ? 1 : .4;   // 11/22：出手那一下不减速，之后的后摇 40% 慢走（翻滚取消）
-        const [dx, dy] = root ? [0, 0] : moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { hero.mvx = (hero.mvx || 0) * .9 + dx / (d || 1) * .1; hero.mvy = (hero.mvy || 0) * .9 + dy / (d || 1) * .1; hero.mvT = (hero.mvT || 0) + dt; } else hero.mvT = 0; if (hero.moving) { const k = Math.min(1, d), v = 80 * hero.m.move * mm * K * (OB('jixing') && hero.mvT > 2 ? 1 + .06 * OB('jixing') : 1); hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (!c || c.ph !== 'hold') hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
+        const [dx, dy] = root ? [0, 0] : moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { hero.mvx = (hero.mvx || 0) * .9 + dx / (d || 1) * .1; hero.mvy = (hero.mvy || 0) * .9 + dy / (d || 1) * .1; hero.mvT = (hero.mvT || 0) + dt; } else hero.mvT = 0; if (hero.moving) { const k = Math.min(1, d), v = 80 * hero.m.move * mm * K * (ESK ? ESK.slow() : 1) * (OB('jixing') && hero.mvT > 2 ? 1 + .06 * OB('jixing') : 1); hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (!c || c.ph !== 'hold') hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
       clampG(hero, 8 * K); weapon(dt);
     }
     if (!hero.dead) { SK.tick(dt);
@@ -828,9 +833,10 @@
     for (const z of foes) {
       if (z.dead) { z.deadT += dt; continue; }
       z.flash -= dt; z.jit = (z.jit || 0) - dt; z.kbT -= dt; z.brk = (z.brk || 0) - dt; statusTick(z, dt); if (z.dead) continue;
-      if (z.cc) z.moving = false; else if (z.T.boss || z.T.ai === 'boss') bossAI(z, dt); else soldierAI(z, dt);
+      if (z.cc) z.moving = false; else if (z.eLock) z.moving = false; else if (z.T.boss || z.T.ai === 'boss') bossAI(z, dt); else soldierAI(z, dt);
       z.x += z.kbx * dt * 8; z.y += z.kby * dt * 8; z.kbx *= .8; z.kby *= .8; clampG(z, 4 * K);
     }
+    if (ESK) ESK.tick(dt, foes);
     const L = foes.filter(z => !z.dead && !z.T.ghost), m0 = 9 * K;   // 互相推开，别叠成一坨
     for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j], dx = b.x - a.x, dy = (b.y - a.y) * YS, d = Math.hypot(dx, dy), m = a.T.boss || b.T.boss ? m0 * 2.2 : m0; if (d > 0 && d < m) { const p = (m - d) / 2 / d; if (!a.T.boss) { a.x -= dx * p; a.y -= dy * p / YS; } if (!b.T.boss) { b.x += dx * p; b.y += dy * p / YS; } } }
     for (let i = foes.length - 1; i >= 0; i--) { const z = foes[i]; if ((z.dead && z.deadT > (z.T.boss ? 3 : 1.3)) || (z.flee && (z.fleeT = (z.fleeT || 0) + dt) > 1.6)) foes.splice(i, 1); }
@@ -901,7 +907,7 @@
       const p = w.t / .55, r = (14 + 10 * (1 - p)) * u; ctx.fillStyle = `rgba(30,10,5,${.25 + .25 * p})`; ctx.beginPath(); ctx.ellipse(X(w.x), Y(w.y), r, r / YS, 0, 0, 7); ctx.fill();
       ctx.fillStyle = w.tier ? '#ffcf3a' : '#d8402a'; for (let a = 0; a < PI * 2; a += .2) ctx.fillRect(X(w.x) + rd(Math.cos(a) * r), Y(w.y) + rd(Math.sin(a) * r / YS), u, u);
     }
-    SK.drawUnder(ctx, X, Y, u); chargePreview(); coinDraw(); princessDraw(); fieldDraw();   // 11/23 地上的光球、掉落、门画在人物下面
+    SK.drawUnder(ctx, X, Y, u); ESK && ESK.drawUnder(ctx, X, Y, u, G.t); chargePreview(); coinDraw(); princessDraw(); fieldDraw();   // 11/23 地上的光球、掉落、门画在人物下面
     for (const o of shots) if (o.k === 'fire') {   // 火球落点：地上的影子越来越大
       const p = o.t / o.T, r = o.r * u * (.3 + .7 * p); ctx.fillStyle = `rgba(255,90,30,${.15 + .2 * p})`; ctx.beginPath(); ctx.ellipse(X(o.x), Y(o.y), r, r / YS * .8, 0, 0, 7); ctx.fill();
     }
@@ -919,6 +925,7 @@
         const [n, i, st, lg] = heroFrame(), bob = 0, lunge = st === 'strike' ? hero.f * (lg || 0) * u : st === 'hurt' ? -hero.f * 2 * u : 0;
         SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { white: hero.dead && (G.deadR || 0) < .14 ? 1 : 0, w: hero.cs ? hero.cs.S.w : (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword', c: RUN.hero });
       } else {
+        if (o.z.hideT > 0) continue;
         const z = o.z, B = z.T.boss || z.T.ai === 'boss', [n0, st] = foeFrame(z), n = z.noShield && SPR.frame(z.type, 'n_' + n0) ? 'n_' + n0 : n0;
         const a = z.dead ? Math.max(0, 1 - Math.max(0, z.deadT - (B ? 2.4 : .9)) / .4) : z.flee ? Math.max(0, 1 - z.fleeT / 1.6) : 1;
         if (!z.dead) shadow(z.x, z.y, B ? 50 * (z.T.boss ? 1 : z.k) : 26 * z.k);
@@ -941,7 +948,7 @@
       else if (o.k === 'harrow') { const a = Math.atan2(o.vy, o.vx); for (let j = 0; j < 9; j++) { ctx.fillStyle = j < 2 ? '#e8ecf4' : j > 6 ? '#e8e0c8' : '#8a5a2a'; ctx.fillRect(X(o.x) - rd(Math.cos(a) * j * 1.6 * u), Y(o.y) - rd(Math.sin(a) * j * 1.6 * u), u + 1, u + 1); } }
       else if (o.k === 'fire') { const p = o.t / o.T, hy = (1 - p) * 120; for (let j = 0; j < 5; j++) { ctx.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; ctx.fillRect(X(o.x) - q / 2 - rd(j * 3 * u * (1 - p)), Y(o.y) - rd((hy + j * 7) * u) - q / 2, q, q); } }
     }
-    SK.drawOver(ctx, X, Y, u); { const n = performance.now(), adt = Math.min(.1, (n - (AMB.tm || n)) / 1000); AMB.tm = n; ambDraw(G.paused ? 0 : adt); }
+    SK.drawOver(ctx, X, Y, u); ESK && ESK.drawOver(ctx, X, Y, u, G.t); { const n = performance.now(), adt = Math.min(.1, (n - (AMB.tm || n)) / 1000); AMB.tm = n; ambDraw(G.paused ? 0 : adt); }
     if (G.lvUpT > 1.3 && !hero.dead) { const t = 2.2 - G.lvUpT, hgt = Math.min(1, t / .27) * 150 * u, a = t < .27 ? 1 : 1 - (t - .27) / .63, bw = 16 * u, bx = X(hero.x), by = Y(hero.y); ctx.save(); ctx.globalAlpha = Math.max(0, a) * .85; const gr = ctx.createLinearGradient(0, by - hgt, 0, by); gr.addColorStop(0, 'rgba(255,230,140,0)'); gr.addColorStop(1, 'rgba(255,230,140,.9)'); ctx.fillStyle = gr; ctx.fillRect(rd(bx - bw / 2), by - hgt, rd(bw), hgt); ctx.restore(); }
     if (G.lvUpT > 0 && !hero.dead) {   // 11/22：升级字跳在勇者头上（跟着人走，弹两下再慢慢淡出）
       const t = 2.2 - G.lvUpT, hop = t < .6 ? Math.abs(Math.sin(t / .6 * PI * 2)) * 10 : 0, a = Math.min(1, G.lvUpT / .5), x = X(hero.x), y = Y(hero.y) - (44 + hop + Math.min(t, .3) * 8) * u;
@@ -1005,6 +1012,7 @@
   function init(canvas) { cv = canvas; ctx = cv.getContext('2d'); fit(); addEventListener('resize', fit); bindInput(); }
   window.BATTLE = { healHero: n => healHero(n),
     init, start, frame, fit, roll,
+    spawnDbg(t, tier) { const z = spawn(t, { x: hero.x + R(-160, 160) * K, y: hero.y + R(-60, 60) * K }, tier); clampG(z); return !!z; },   // 调试：在勇者旁边放一只
     pause(v) { if (G && !G.over) G.paused = v; }, get paused() { return !!(G && G.paused); }, active: () => !!G && !G.over,
     stop() { G = null; }, g: () => G, loadSave, clearSave,
     run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1, xpFrac: () => G ? Math.min(1, G.xp / need()) : 0, xpTxt: () => G ? `${Math.floor(G.xp)} / ${need()}` : '', st: () => G ? G.st : 1,
