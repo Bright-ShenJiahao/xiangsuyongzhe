@@ -546,14 +546,11 @@
     if (o.k === 'chest') { const im = img('chest'); if (!o.open && im.complete) ctx.drawImage(im, x - 14 * u, y - 24 * u, 28 * u, 28 * u); if (!o.open) { label('宝箱', x, y + 5 * u); ring(o, 14, o.st / .3, '#ffe08a'); }
       if (o.books) for (const b of o.books) { const S = DATA.skills[b.id], bi = img(({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[S.sys]), bx = X(b.x), by = Y(b.y) - 9 * u;
         ctx.fillStyle = 'rgba(255,220,120,.3)'; ctx.beginPath(); ctx.arc(bx, by, 13 * u, 0, 7); ctx.fill(); if (bi.complete) ctx.drawImage(bi, bx - 10 * u, by - 10 * u, 20 * u, 20 * u); label(S.name, bx, by + 12 * u, ['#e6e2d6', '#e6e2d6', '#6ab8ff', '#c890ff', '#ffd84a'][S.tier]); ring(b, 15, b.st / .3, '#fff'); } }
-    if (o.k === 'fire') {   // 11/23 篝火：石圈 + 交叉木柴 + 地图同款 8 帧火焰，不再有老兵台词
-      const gl = ctx.createRadialGradient(x, y - 10 * u, 0, x, y - 10 * u, 56 * u), fl = .3 + .06 * Math.sin(G.t * 9); gl.addColorStop(0, `rgba(255,150,60,${fl})`); gl.addColorStop(1, 'rgba(255,150,60,0)'); ctx.fillStyle = gl; ctx.fillRect(x - 56 * u, y - 66 * u, 112 * u, 112 * u);
-      ctx.fillStyle = 'rgba(30,15,5,.45)'; ctx.beginPath(); ctx.ellipse(x, y + u, 17 * u, 5 * u, 0, 0, 7); ctx.fill();
-      for (let k = 0; k < 10; k++) { const a = k / 10 * PI * 2, sx = rd(x + Math.cos(a) * 14 * u), sy = rd(y + Math.sin(a) * 4.5 * u); if (Math.sin(a) < 0) { ctx.fillStyle = '#4a4440'; ctx.fillRect(sx - 3 * u, sy - 2 * u, 6 * u, 4 * u); ctx.fillStyle = '#8a8278'; ctx.fillRect(sx - 3 * u, sy - 2 * u, 6 * u, u); } }
-      ctx.fillStyle = '#4a2a12'; ctx.save(); ctx.translate(x, y - u); ctx.rotate(.35); ctx.fillRect(-11 * u, -1.5 * u, 22 * u, 3 * u); ctx.rotate(-.7); ctx.fillRect(-11 * u, -1.5 * u, 22 * u, 3 * u); ctx.fillStyle = '#7a4a22'; ctx.fillRect(-11 * u, -1.5 * u, 22 * u, u); ctx.restore();
-      const fi = fxi('fire'); if (okI(fi)) { const fw = fi.naturalWidth / 8, f = Math.floor(G.t * 12) % 8, h = 30 * u, w = h * fw / fi.naturalHeight; ctx.drawImage(fi, f * fw, 0, fw, fi.naturalHeight, x - w / 2, y - h + u, w, h); }
-      for (let k = 0; k < 10; k++) { const a = k / 10 * PI * 2, sx = rd(x + Math.cos(a) * 14 * u), sy = rd(y + Math.sin(a) * 4.5 * u); if (Math.sin(a) >= 0) { ctx.fillStyle = '#4a4440'; ctx.fillRect(sx - 3 * u, sy - 2 * u, 6 * u, 4 * u); ctx.fillStyle = '#8a8278'; ctx.fillRect(sx - 3 * u, sy - 2 * u, 6 * u, u); } }
-      if (Math.random() < .25) parts.push({ x: o.x + R(-5, 5) * K, y: o.y - 18 * K, vx: R(-8, 8) * K, vy: -40 * K, t: 0, T: .7, col: '#ffb040', g: 0 });
+    if (o.k === 'fire') {   // 11/23 篝火：官方美术（石圈木柴底座 + 8 帧火苗叠在木柴上）
+      const gl = ctx.createRadialGradient(x, y - 10 * u, 0, x, y - 10 * u, 60 * u), fl = .3 + .06 * Math.sin(G.t * 9); gl.addColorStop(0, `rgba(255,150,60,${fl})`); gl.addColorStop(1, 'rgba(255,150,60,0)'); ctx.fillStyle = gl; ctx.fillRect(x - 60 * u, y - 70 * u, 120 * u, 120 * u);
+      const bi = CAMPI('fire_base'), fi = CAMPI('fire_flame'), bw = 64 * u; if (bi.complete && bi.naturalWidth) { const bh = bw * bi.naturalHeight / bi.naturalWidth; ctx.drawImage(bi, x - bw * .55, y - bh * .7, bw, bh);
+        if (fi.complete && fi.naturalWidth) { const fw = fi.naturalWidth / 8, f = Math.floor(G.t * 12) % 8, h = 24 * u, w = h * fw / fi.naturalHeight; ctx.drawImage(fi, f * fw, 0, fw, fi.naturalHeight, x - bw * .55 + bw * .5 - w / 2, y - bh * .7 + bh * .55 - h, w, h); } }
+      if (Math.random() < .25) parts.push({ x: o.x + R(-5, 5) * K, y: o.y - 22 * K, vx: R(-8, 8) * K, vy: -40 * K, t: 0, T: .7, col: '#ffb040', g: 0 });
       label('篝火 · 站一会儿', x, y + 8 * u, '#ffd0a0'); ring(o, 18, o.st, '#7cff8a'); }
   }
   function fieldTick(dt) {
@@ -573,7 +570,7 @@
         if (c.st > .5) { c.st = 0; const free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1); c.lock = true; if (cost && RUN.coins < cost) toastMsg('铜钱不够'); else { RUN.coins -= cost; c.n++; const keep = c; xiuOrbs(); P.cr = keep; } } }
     }
     const M = f.mer; if (M.st < 0) { if (!SKUL(M, 30)) M.st = 0; } else if (SKUL(M, 24)) M.st += dt; else M.st = 0;   // 离开商店后要先走开才能再进
-    if (M.st > .4) { M.st = -99; G.lock = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '地精商人', tab: 'shang', only: 'shang', field: 1, goText: '离开 ▶', after: () => { G.lock = false; M.st = -1; M.dealT = G.t + 1.6; } }); return; }
+    if (M.st > .4) { M.st = -99; G.lock = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '矮人商人', tab: 'shang', only: 'shang', field: 1, goText: '离开 ▶', after: () => { G.lock = false; M.st = -1; M.dealT = G.t + 1.6; } }); return; }
     if (M.st < 0 && !SKUL(M, 24)) M.st = 0;
     for (const d of f.doors) { if (Math.abs(d.x - hero.x) < 22 * K && Math.abs(d.y - hero.y) < 18 * K) d.st += dt; else d.st = 0;
       if (d.st > .35) { if ((RUN.xiu > 0 || f.items.length) && !f.warn) { f.warn = 1; d.st = -1; toastMsg(RUN.xiu > 0 ? '还有修炼没拿（去找露米娜），再走进门就出发' : '地上还有东西没捡，再走进门就出发'); return; }
@@ -629,7 +626,7 @@
       const c = P.cr; if (c) { const x = X(c.x), y = Y(c.y), free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1);
         ctx.fillStyle = '#b07bff'; ctx.beginPath(); ctx.moveTo(x, y - 12 * u); ctx.lineTo(x + 7 * u, y - 2 * u); ctx.lineTo(x, y + 6 * u); ctx.lineTo(x - 7 * u, y - 2 * u); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#efe0ff'; ctx.lineWidth = u; ctx.stroke();
         label(cost ? `刷新 ${cost} 铜钱` : `刷新（${free - c.n}）`, x, y + 8 * u, '#e6d4ff', 5); ring(c, 12, c.st / .5, '#e6d4ff', 3); if (G.st === 1 && !c.n) label('站上来刷新修炼', x, y - 24 * u, '#c8b890', 5); } }
-    const M = f.mer; label('地精商人', X(M.x), Y(M.y) + 3 * u, '#ffd860'); say(X(M.x), Y(M.y) - 44 * u, ['嘿嘿，要买点什么？', '好货不等人！', '铜钱带够了吗？'], 2.1); ring(M, 14, M.st / .4, '#ffd860');
+    const M = f.mer; label('矮人商人', X(M.x), Y(M.y) + 3 * u, '#ffd860'); say(X(M.x), Y(M.y) - 44 * u, ['嘿嘿，要买点什么？', '好货不等人！', '铜钱带够了吗？'], 2.1); ring(M, 14, M.st / .4, '#ffd860');
     restDraw(label, ring);
     if (f.sign) { const S = f.sign, near = dist(S, hero) < 40, hop = near ? Math.abs(Math.sin(G.t * 8)) * 4 : 0, x = X(S.x), y = Y(S.y) - hop * u, on = Math.floor(G.t * 2.5) % 2;   // 11/23 地上的像素 P 键帽
       ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x - 11 * u, Y(S.y) + u, 22 * u, 3 * u); ctx.fillStyle = '#3a2a1a'; ctx.fillRect(x - 11 * u, y - 18 * u, 22 * u, 20 * u); ctx.fillStyle = on || near ? '#f4e8c8' : '#cfc0a0'; ctx.fillRect(x - 10 * u, y - 17 * u, 20 * u, 15 * u); ctx.fillStyle = '#9a8a6a'; ctx.fillRect(x - 10 * u, y - 2 * u, 20 * u, 3 * u);
@@ -738,6 +735,7 @@
   // ---------- 11/23 地图氛围：光柱 / 火光火星 / 落叶 / 萤火虫，位置全部取自地图本身（MAP.amb，原图像素） ----------
   const AMB = { leaves: [], flies: [], sparks: [] };
   // 11/23 照三国终章：火用 8 帧火焰序列图（盖在地图画的火上），落叶用桑叶图，光柱用 shaft 图
+  const CI = {}; const CAMPI = n => CI[n] || (CI[n] = Object.assign(new Image(), { src: 'art/camp/' + n + '.png' }));
   const FXI = {}; const fxi = n => FXI[n] || (FXI[n] = Object.assign(new Image(), { src: 'art/fx/map/' + n + '.webp' })); const okI = i => i.complete && i.naturalWidth;
   function ambDraw(dt) {
     const A = MAP.amb; if (!A) return; const q = MAPW / 1672, P = (x, y) => [X(x * q), Y(y * q)], t = G.t;

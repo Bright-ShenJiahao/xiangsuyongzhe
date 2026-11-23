@@ -29,7 +29,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
   <div class="pg" id="g3"><img class="ill" src="../art/intro/p3.webp"><canvas class="crack" id="cr"></canvas><div class="vig"></div><div class="frame"></div></div>
 </div>
 <div id="cap"></div><div id="white"></div>
-<div id="px"><canvas id="pc" width="640" height="360"></canvas></div>
+<div id="px"><canvas id="pc" width="856" height="482"></canvas></div>
 <div id="bub"></div><div id="dlg"><img id="dav"><div><b id="dn"></b><span id="dt"></span></div></div>
 <div id="skip"><svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="8" fill="none" stroke="#5a4028" stroke-width="3"/><circle id="skc" cx="10" cy="10" r="8" fill="none" stroke="#ffd890" stroke-width="3" stroke-dasharray="50.3" stroke-dashoffset="50.3" transform="rotate(-90 10 10)"/></svg><span id="skt">长按空格跳过</span></div><label id="first"><input type="checkbox" id="fst"> 模拟第一次玩（不能跳过）</label><button id="play">▶ 播放开场</button>
 <script>
@@ -48,10 +48,11 @@ fx('ck', 'crack'); fx('cr', 'glow');
 const QS = new URLSearchParams(location.search), HSEX = QS.get('h') === 'f' ? 'f' : 'm', HW = QS.get('w') || 'sword', HDIR = HSEX === 'f' ? 'heroF' : 'hero';
 const AT = Object.assign(new Image(), { src: '../art/' + HDIR + '/atlas.png' }), PR = Object.assign(new Image(), { src: '../art/heroP/atlas.png' }), BG = Object.assign(new Image(), { src: '../art/intro/tower.webp' });
 const FR = { idle: [0, 0, 36, 40, 13.6, 39], hurt: [442, 0, 45, 39, 18.5, 39], dead: [489, 0, 54, 23, 19.7, 23] }, PI = [[878, 140, 38, 40, 16.5, 40], [918, 140, 39, 40, 17.4, 40]];
+const CW = 856, CH = 482, Z = CW / 640;
 let HF = null; fetch('../art/' + HDIR + '/atlas.json').then(r => r.json()).then(j => { const g = k => j.f['hero:' + HW + '.' + k] || j.f['hero:sword.' + k]; HF = { idle: g('idle'), run: g('run') }; }).catch(() => {});
 let pxState = 'off', pxT0 = 0, portalT = 0; const NPC = {}; for (const k of ['guard_idle0', 'guard_idle1', 'guard_shock', 'mage_idle0', 'mage_idle1', 'mage_cast0', 'mage_cast1']) NPC[k] = Object.assign(new Image(), { src: '../art/npc/' + k + '.png' });
-function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled = false; const t = Math.max(0, (n - pxT0) / 1000), S = 640 / 1672;
-  if (BG.complete) g.drawImage(BG, 0, 0, 640, 360);
+function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled = false; const t = Math.max(0, (n - pxT0) / 1000), S = CW / 1672;
+  if (BG.complete) g.drawImage(BG, 0, 0, CW, CH);
   TFX(g, t, S);
   let ax = 835 * S, ay = 292 * S;   // 图里自带的祭坛正前方（平台前沿）
   if (walk) { stepWalk(); ax = walk.x; ay = walk.y; }
@@ -78,7 +79,7 @@ function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled
   // 公主：站在台阶下
   const px = 835 * S, py = 430 * S, pf = portalT && (n - portalT) < 1600 ? [749, 185, 48, 37, 19.6, 37] : PI[Math.floor(t * 2) % 2]; if (PR.complete) { g.drawImage(PR, pf[0], pf[1], pf[2], pf[3], px - pf[4], py - pf[5], pf[2], pf[3]); }
   if (pxState === 'on') requestAnimationFrame(pxDraw); }
-async function say(id, who, av, s) { const b = $('bub'), c = $('pc').getBoundingClientRect(), hx = 320, hy = who === '勇者' ? 66 : 120; b.style.left = c.left + hx / 640 * c.width + 'px'; b.style.top = c.top + hy / 360 * c.height + 'px'; b.style.display = 'block'; await type(b, s, id, 60); await wait(1400); b.style.display = 'none'; }
+async function say(id, who, av, s) { const b = $('bub'), c = $('pc').getBoundingClientRect(), hx = CW / 2, hy = who === '勇者' ? 66 * Z + 14 : 120 * Z + 10; b.style.left = c.left + hx / CW * c.width + 'px'; b.style.top = c.top + hy / CH * c.height + 'px'; b.style.display = 'block'; await type(b, s, id, 60); await wait(1400); b.style.display = 'none'; }
 async function play() { const id = ++RUN; $('play').style.display = 'none'; reset(); setSkip(true);
   const P = [['g1', 'scale(1.04)', 'scale(1.14) translate(-2%, 1%)', ['卡带世界里，有一块和平的大陆。', '每到祭典，城里的街道总是热闹非凡。']],
              ['g2', 'scale(1.16) translate(2%, 2%)', 'scale(1.05)', ['直到有一天，这盘卡带被拿去违规烧录——', '别的游戏里的怪物，被硬塞了进来。']],
@@ -91,7 +92,7 @@ async function play() { const id = ++RUN; $('play').style.display = 'none'; rese
   if (id !== RUN) return; await say(id, '勇者', '../art/portrait/m.webp', '这是……我刚买的游戏里？');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '您就是回应召唤的勇者吧！');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '裂缝还在扩大……请帮帮这片大陆！');
-  $('bub').style.display = 'none'; portalT = performance.now(); await wait(1250); $('pc').animate([{ transform: 'translate(0,3px)' }, { transform: 'none' }], 200); await wait(1200); walk = { x: 835 * 640 / 1672, y: 292 * 640 / 1672 }; $('cap').textContent = matchMedia('(pointer:coarse)').matches ? '按住屏幕拖动，走进传送门' : 'WASD / 方向键移动，走进传送门'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
+  $('bub').style.display = 'none'; portalT = performance.now(); await wait(1250); $('pc').animate([{ transform: 'translate(0,3px)' }, { transform: 'none' }], 200); await wait(1200); walk = { x: 835 * CW / 1672, y: 292 * CW / 1672 }; $('cap').textContent = matchMedia('(pointer:coarse)').matches ? '按住屏幕拖动，走进传送门' : 'WASD / 方向键移动，走进传送门'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
 function reset() { walk = null; portalT = 0; MK.reset(); pxState = 'off'; for (const e of document.querySelectorAll('.pg')) e.classList.remove('on'); $('px').style.opacity = 0; $('white').style.opacity = 0; $('bub').style.display = 'none'; $('cap').textContent = ''; }
 $('play').onclick = play;
 const GAME = /[?&]game/.test(location.search), FIRST = /[?&]first/.test(location.search);
@@ -136,8 +137,8 @@ function TFX(g, t, S) { const dt = Math.min(.05, Math.max(0, t - tLast)); tLast 
   for (const p of SMK) { p.x += p.vx * dt; p.y += p.vy * dt; p.r += 3 * dt; p.a -= .09 * dt; if (p.a > 0) { g.fillStyle = `rgba(45,36,44,${p.a})`; g.beginPath(); g.arc(P(p.x), P(p.y), Math.max(1, P(p.r)), 0, 7); g.fill(); } } SMK = SMK.filter(p => p.a > 0);
   for (const [x, y] of SMOKE) if (Math.random() < .4) { g.fillStyle = Math.random() < .5 ? '#ff8a30' : '#ffd060'; g.fillRect(P(x) - 1 + (Math.random() * 3 | 0), P(y) - 1, 2, 2); }
   // 裂缝：用原图裂缝像素做的遮罩，原地一明一暗、偶尔闪白；方块从裂缝像素上往下掉
-  if (CMASK.complete && CMASK.naturalWidth) { const f = .5 + .5 * Math.sin(t * 3), flash = t % 3.1 < .1; g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = flash ? 1 : .15 + .45 * f; g.drawImage(CMASK, 0, 0, 640, 360);
-    g.globalAlpha = (flash ? .6 : .2 * f); g.filter = 'blur(3px)'; g.drawImage(CMASK, 0, 0, 640, 360); g.restore(); }
+  if (CMASK.complete && CMASK.naturalWidth) { const f = .5 + .5 * Math.sin(t * 3), flash = t % 3.1 < .1; g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = flash ? 1 : .15 + .45 * f; g.drawImage(CMASK, 0, 0, CW, CH);
+    g.globalAlpha = (flash ? .6 : .2 * f); g.filter = 'blur(3px)'; g.drawImage(CMASK, 0, 0, CW, CH); g.restore(); }
   if (Math.random() < dt * 10) { const [x, y] = CPTS[Math.random() * CPTS.length | 0]; BITS.push({ x, y, vy: 20 + Math.random() * 30, a: 1 }); }
   for (const b of BITS) { b.y += b.vy * dt; b.a -= .5 * dt; if (b.a > 0) { g.fillStyle = `rgba(255,210,110,${b.a})`; g.fillRect(P(b.x), P(b.y), 2, 2); } } BITS = BITS.filter(b => b.a > 0);
   // 古城上空的红光
@@ -173,8 +174,8 @@ let walk = null; const KEY = {}; let touchP = null, wLast = 0;
 addEventListener('keydown', e => KEY[e.code] = 1); addEventListener('keyup', e => KEY[e.code] = 0);
 $('px').addEventListener('pointerdown', e => touchP = e); addEventListener('pointermove', e => { if (touchP) touchP = e; }); addEventListener('pointerup', () => touchP = null);
 function stepWalk() { const n = performance.now(), dt = Math.min(.05, (n - (wLast || n)) / 1000); wLast = n; let dx = (KEY.KeyD || KEY.ArrowRight ? 1 : 0) - (KEY.KeyA || KEY.ArrowLeft ? 1 : 0), dy = (KEY.KeyS || KEY.ArrowDown ? 1 : 0) - (KEY.KeyW || KEY.ArrowUp ? 1 : 0);
-  if (touchP) { const c = $('pc').getBoundingClientRect(), tx = (touchP.clientX - c.left) / c.width * 640, ty = (touchP.clientY - c.top) / c.height * 360; dx = tx - walk.x; dy = ty - walk.y; }
-  const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv) { walk.x += dx / l * 90 * dt; walk.y += dy / l * 90 * dt; }
-  walk.x = Math.max(40, Math.min(600, walk.x)); walk.y = Math.max(105, Math.min(300, walk.y));
-  if (Math.hypot(walk.x - 835 * 640 / 1672, (walk.y - 735 * 640 / 1672) * 1.4) < 16 && !walk.done) { walk.done = 1; $('cap').textContent = ''; $('white').style.transition = 'opacity .5s'; $('white').style.opacity = 1; setTimeout(done, 550); } }
+  if (touchP) { const c = $('pc').getBoundingClientRect(), tx = (touchP.clientX - c.left) / c.width * CW, ty = (touchP.clientY - c.top) / c.height * CH; dx = tx - walk.x; dy = ty - walk.y; }
+  const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv) { walk.x += dx / l * 110 * dt; walk.y += dy / l * 110 * dt; }
+  walk.x = Math.max(40 * Z, Math.min(600 * Z, walk.x)); walk.y = Math.max(105 * Z, Math.min(300 * Z, walk.y));
+  if (Math.hypot(walk.x - 835 * CW / 1672, (walk.y - 735 * CW / 1672) * 1.4) < 18 && !walk.done) { walk.done = 1; $('cap').textContent = ''; $('white').style.transition = 'opacity .5s'; $('white').style.opacity = 1; setTimeout(done, 550); } }
 </script></body></html>

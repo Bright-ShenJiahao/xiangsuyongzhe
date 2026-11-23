@@ -1095,3 +1095,10 @@ body.tvbg { background: #000; }
 
 #introChk { display: flex !important; justify-content: flex-end; align-items: center; gap: 6px; margin: 6px 4px 0 0; font: 15px WenKai, serif; color: #3a2410; text-shadow: none; cursor: pointer; } #introChk.hide { display: none !important; }
 #introChk input { width: 16px; height: 16px; accent-color: #c8862a; }
+
+/* 11/23 等级挪到血条下方，像素风 */
+#hud .top .lv b#lvTxt { display: none; }
+#lvBox { position: absolute; left: 0; top: calc(100% + 8px); display: flex; align-items: center; gap: 4px; padding: 2px 6px 2px 4px; background: #2a0e0a; box-shadow: 0 0 0 2px #1a0806, 0 0 0 4px #c8a060, 0 0 0 6px #1a0806; }
+#lvBox i { font: 12px FPixel, monospace; font-style: normal; color: #8ef07a; text-shadow: 1px 1px 0 #000; letter-spacing: 1px; } #lvBox .pxn { height: 14px; }
+#hud .top .hp #lvBox { font-size: 18px; line-height: 1; height: auto; width: auto; right: auto; bottom: auto; background: #2a0e0a !important; } #hud .top .hp #lvBox .pxn { height: 16px; width: auto; }
+#hud .top .hp #lvBox i { position: static; display: inline; width: auto; height: auto; background: none !important; box-shadow: none !important; font: bold 13px FPixel, monospace; color: #8ef07a; } #hud .top .hp #lvBox i::after { display: none; }
