@@ -18,7 +18,7 @@
   B('直接开打', () => { if (window.UI) UI.startBattle(); });
   // 11/23 演练场：一键进入要看的场景（自动开一局、无敌、给钱给书）
   const sel = document.createElement('select'); sel.style.cssText = 'font:inherit;background:#1c2a1c;color:#ffd860;border:1px solid #4a8a3a;padding:3px';
-  const SC = [['演练场 ▸', ''], ['站末结算场地', 'fe'], ['地精商店', 'shop'], ['休整：宝箱', 'chest'], ['休整：篝火', 'fire'], ['休整：特价商人', 'shop2'], ['公主中途光球', 'pr'], ['通关结算', 'win'], ['败北结算', 'lose'], ...['rift_mer', 'fairy', 'knight', 'gamble', 'rift', 'kid', 'altar', 'feather'].map(id => ['奇遇：' + id, 'ev:' + id])];
+  const SC = [['演练场 ▸', ''], ['站末结算场地', 'fe'], ['地精商店', 'shop'], ['休整：宝箱', 'chest'], ['休整：篝火', 'fire'], ['公主中途光球', 'pr'], ['通关结算', 'win'], ['败北结算', 'lose'], ...['rift_mer', 'fairy', 'knight', 'gamble', 'rift', 'kid', 'altar', 'feather'].map(id => ['奇遇：' + id, 'ev:' + id])];
   for (const [t, v] of SC) { const o = document.createElement('option'); o.textContent = t; o.value = v; sel.appendChild(o); }
   const wait = ms => new Promise(r => setTimeout(r, ms));
   sel.onchange = async () => { const v = sel.value; sel.value = ''; if (!v) return;

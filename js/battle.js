@@ -455,7 +455,7 @@
   function xiuOrbs() { const P = G.fe.pr, L = CAMP.rollXiu(3 + (hero.fx.xiuOpt || 0)); P.orbs = L.map((o, i) => Object.assign({ x: P.x + (i - (L.length - 1) / 2) * 40 * K, y: P.y + 40 * K, st: 0 }, o)); P.cr = P.cr || { x: P.x + (L.length / 2 + .6) * 40 * K, y: P.y + 40 * K, st: 0, n: 0 }; }
   // 11/22 不打仗的门：宝箱 / 篝火 / 特价商人在原地演出（奇遇还是弹卡片）
   function fieldRest(k) {
-    const f = G.fe, x = f.pr.x + 130 * K, y = f.pr.y + 30 * K; f.doors = [];
+    const f = G.fe, [, gr0] = ground(f.pr.y), x = gr0 - 70 * K, y = f.pr.y; f.doors = [];   // 11/23 休整和奇遇一样摆在右边
     if (k === 'shop') { RUN.shop = null; RUN.rr = 0; f.mer2 = { x, y, st: 0 }; return showRoute(true); }
     if (k === 'event') { const g = MAP.ground, [, gr] = ground(f.pr.y), used = RUN.evUsed || (RUN.evUsed = []), L = DATA.events.filter(e => !used.includes(e.id)), E = (L.length ? L : DATA.events)[Math.random() * (L.length || DATA.events.length) | 0]; used.push(E.id);
       const ex = gr - 70 * K, ey = f.pr.y; f.rest = { k: 'ev', E, x: ex, y: ey, st: 0, t: 0 };
@@ -499,7 +499,7 @@
       if (o.mst > .4) { o.mst = -99; G.lock = true; RUN.shop = null; RUN.rr = 0; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '裂缝旅商', tab: 'shang', only: 'shang', field: 1, rift: 1, goText: '离开 ▶', after: () => { G.lock = false; o.mst = -1; RUN.shop = null; } }); return; } }
     if (o.done) { if ((o.done -= dt) <= 0) { f.rest = null; showRoute(true); } return; }
     for (const p of o.pl) { const on = SKUL(p, 14), ok = evOk(p.need); if (!on) p.lock = 0; if (on && !p.lock && ok && o.t > 1) p.st += dt; else p.st = 0;
-      if (p.st > .6) { const msg = p.fx === 'leave' ? '' : evRun(p.fx); if (msg) { o.msg = msg; toastMsg(msg); } o.done = msg ? 1.6 : .2; return; } } }
+      if (p.st > 1.2) { const msg = p.fx === 'leave' ? '' : evRun(p.fx); if (msg) { o.msg = msg; toastMsg(msg); } o.done = msg ? 1.6 : .2; return; } } }
   function restTick(dt) {
     const f = G.fe, o = f.rest; o.t += dt; if (o.k === 'ev') return evTick(dt);
     if (o.k === 'chest' && !o.open) { if (SKUL(o, 18)) o.st += dt; else o.st = 0; if (o.st > .3) { o.open = 1; const L = []; for (let i = 0; i < 3; i++) { const id = randBook(); if (id && !L.includes(id)) L.push(id); }
@@ -513,7 +513,7 @@
   function evSpr(n, x, y, dx) { const im = evi(n); if (!im.complete || !im.naturalWidth) return false; ctx.imageSmoothingEnabled = false; ctx.drawImage(im, x + (dx || 0) * u - im.naturalWidth * u / 2, y - im.naturalHeight * u, im.naturalWidth * u, im.naturalHeight * u); return true; }
   function evProp(id, x, y) { const f2 = Math.floor(G.t * 2.5) % 2, f3 = Math.floor(G.t * 5) % 3, o = G.fe && G.fe.rest;
     ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, y + u, 24 * u, 5 * u, 0, 0, 7); ctx.fill();
-    const map = { rift_mer: () => { evSpr('mer' + f2, x, y); evSpr('kid' + (Math.floor(G.t / 2) % 3 === 0 ? 1 : 0), x, y, 46); }, fairy: () => evSpr('fairy' + f3, x, y), knight: () => evSpr('knight' + (o && o.pl.some(p => SKUL(p, 30)) ? 2 : f2), x, y), gamble: () => { evSpr('gamble', x, y); SPR.draw(ctx, 'gob_thief', 'walk0', 0, x + 34 * u, y, true, u, {}); }, rift: () => evSpr('rift' + (Math.floor(G.t * 8) % 2), x, y), kid: () => evSpr('gkid' + f2, x, y), altar: () => evSpr('altar' + (o && o.done ? 3 : f3), x, y), feather: () => evSpr('feather' + f2, x, y) };
+    const map = { rift_mer: () => evSpr('mer' + f2, x, y), fairy: () => evSpr('fairy' + f3, x, y), knight: () => evSpr('knight' + (o && o.pl.some(p => SKUL(p, 30)) ? 2 : f2), x, y), gamble: () => { evSpr('gamble', x, y); SPR.draw(ctx, 'gob_thief', 'walk0', 0, x + 34 * u, y, true, u, {}); }, rift: () => evSpr('rift' + (Math.floor(G.t * 8) % 2), x, y), kid: () => evSpr('gkid' + f2, x, y), altar: () => evSpr('altar' + (o && o.done ? 3 : f3), x, y + 5 * u), feather: () => evSpr('feather' + f2, x, y) };
     if (map[id] && evi((({ rift_mer: 'mer0', fairy: 'fairy0', knight: 'knight0', gamble: 'gamble', rift: 'rift0', kid: 'gkid0', altar: 'altar0', feather: 'feather0' })[id])).complete) return map[id]();
     evProp0(id, x, y); }
   function evProp0(id, x, y) { const P = (c, a, b, w, h) => { ctx.fillStyle = c; ctx.fillRect(x + a * u, y + b * u, w * u, h * u); };
@@ -535,7 +535,7 @@
       label(E.name, x, y + 6 * u, '#e6c8ff'); if (!o.done && !o.pl.some(p => SKUL(p, 14) && p.t.includes('：'))) say(x, y - 50 * u, o.msg ? [o.msg] : E.lines, 2.1);
       if (!o.done) for (const p of o.pl) { const px = X(p.x), py = Y(p.y), ok = evOk(p.need); ctx.fillStyle = 'rgba(30,15,5,.35)'; ctx.fillRect(px - 26 * u, py - 5 * u, 52 * u, 12 * u);
         ctx.fillStyle = ok ? (p.fx === 'leave' ? '#8a7a60' : '#c8a0ff') : '#555'; ctx.fillRect(px - 24 * u, py - 7 * u, 48 * u, 10 * u); ctx.fillStyle = ok ? (p.fx === 'leave' ? '#5a4a30' : '#7a50b8') : '#333'; ctx.fillRect(px - 24 * u, py + u, 48 * u, 2 * u);
-        ring(p, 9, p.st / .6, '#fff'); label(p.t.split('：')[0], px, py + 8 * u, ok ? '#fff3d8' : '#888', 6.5); if (SKUL(p, 14) && p.t.includes('：')) say(x, y - 50 * u, [p.t + (ok ? '' : '（条件不够）')], 99); }
+        ring(p, 9, p.st / 1.2, '#fff'); label(p.t.split('：')[0], px, py + 8 * u, ok ? '#fff3d8' : '#888', 6.5); if (SKUL(p, 14) && p.t.includes('：')) say(x, y - 50 * u, [p.t + (ok ? '' : '（条件不够）')], 99); }
       return; }
     if (o.k === 'chest') { const im = img('chest'); if (!o.open && im.complete) ctx.drawImage(im, x - 14 * u, y - 24 * u, 28 * u, 28 * u); if (!o.open) { label('宝箱', x, y + 5 * u); ring(o, 14, o.st / .3, '#ffe08a'); }
       if (o.books) for (const b of o.books) { const S = DATA.skills[b.id], bi = img(({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[S.sys]), bx = X(b.x), by = Y(b.y) - 9 * u;

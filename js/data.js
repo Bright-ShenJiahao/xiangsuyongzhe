@@ -155,7 +155,6 @@ window.DATA = {
   rests: [
     { k: 'chest', name: '宝箱', icon: 'chest', desc: '路边一个没上锁的宝箱。三本书选一本。', btn: '打开' },
     { k: 'fire', name: '篝火', icon: 'meat', desc: '膝盖中了一箭的老兵在烤火。回复 50% 生命，修炼一次。', btn: '休息' },
-    { k: 'shop', name: '行商', icon: 'coin', desc: '咕噜老板摆了个摊：「今天全部八折！」', btn: '进店' },
     { k: 'event', name: '奇遇', icon: 'clover', desc: '前面好像有什么……', btn: '查看' },
   ],
   // 事件：二选一。fx 由 battle.js doEvent 执行，返回结果文字
