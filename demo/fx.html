@@ -46,13 +46,27 @@ h1 { text-align: center; font-weight: 400; color: #e8c070; margin: 18px 0 4px; }
 .vig { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 0 rgba(220,30,20,0); transition: box-shadow .4s; } .vig.on { box-shadow: inset 0 0 40px 12px rgba(220,30,20,.6); transition: none; }
 .feed { position: absolute; left: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
 .feed div { font-size: 15px; background: rgba(20,12,6,.7); border-left: 3px solid #e8c070; padding: 2px 10px; animation: fdin .25s ease-out; } @keyframes fdin { from { transform: translateX(-20px); opacity: 0; } }
+
+.wood { position: absolute; background: #3a2618; border: 6px solid #6a4426; box-shadow: inset 0 0 0 2px #2a180c, 0 6px 0 #1a0e06; color: #f4ecd8; }
+.tbtn { position: absolute; left: 50%; top: 60px; margin-left: -80px; width: 160px; padding: 8px 0; text-align: center; font: 18px WenKai; color: #f4ecd8; background: #4a3020; border: 3px solid #a07840; box-shadow: 0 4px 0 #1a0e06; cursor: pointer; transition: filter .1s, transform .05s, box-shadow .05s; }
+.tbtn:hover, .tbtn.hv { filter: brightness(1.35); border-color: #ffd890; } .tbtn:active, .tbtn.dn { transform: translateY(4px); box-shadow: 0 0 0 #1a0e06; }
+.dim { position: absolute; inset: 0; background: rgba(0,0,0,0); transition: background .25s, backdrop-filter .25s; } .dim.on { background: rgba(0,0,0,.55); backdrop-filter: blur(2px); }
+.tabs { display: flex; gap: 4px; margin-bottom: 6px; } .tabs span { padding: 0 10px; background: #2a1a10; border: 2px solid #6a4426; cursor: pointer; } .tabs span.on { background: #a07840; color: #2a1a10; }
+.tview { position: relative; height: 60px; overflow: hidden; } .tview div { position: absolute; inset: 0; transition: transform .25s ease-out, opacity .25s; }
+.mapbg { background: #2c2418 radial-gradient(#3a3020 1px, transparent 1px) 0 0 / 8px 8px; }
+.node { position: absolute; width: 22px; height: 22px; margin: -11px; background: #6a5030; border: 3px solid #1a0e06; } .node.done { background: #8ef07a; } .node.nx { background: #ffd060; }
+.dot2 { position: absolute; width: 4px; height: 4px; margin: -2px; background: #4a3a28; } .dot2.on { background: #ffe08a; box-shadow: 0 0 4px #ffd060; }
+.stamp { position: absolute; right: 30px; top: 30px; padding: 4px 10px; border: 4px solid #d02a20; color: #d02a20; font: 28px WenKai; transform: rotate(-14deg) scale(3); opacity: 0; }
+.stamp.on { transition: transform .18s cubic-bezier(.5,0,.8,.5), opacity .1s; transform: rotate(-14deg) scale(1); opacity: 1; }
+.gray { transition: filter 1.2s; filter: grayscale(1) brightness(.6); }
+.press { position: absolute; left: 50%; top: 70px; transform: translateX(-50%); font: 22px WenKai; color: #ffe8b0; text-shadow: 2px 2px 0 #1a0e06; white-space: nowrap; cursor: pointer; }
+.b1 { animation: b1 2s steps(6) infinite alternate; } @keyframes b1 { from { opacity: .3; text-shadow: 2px 2px 0 #1a0e06; } to { opacity: 1; text-shadow: 2px 2px 0 #1a0e06, 0 0 10px #ffb040, 0 0 18px #ff8020; } }
+.b3 { animation: b3 1s steps(2) infinite; } @keyframes b3 { 50% { opacity: .2; } } .b3 i { font-style: normal; color: #ffd060; display: inline-block; animation: arr .5s steps(2) infinite alternate; } .b3 i.r { animation-direction: alternate-reverse; } @keyframes arr { to { transform: translateX(6px); } }
+.tvoff { animation: tv .5s forwards; } @keyframes tv { 40% { transform: scale(1, .01); filter: brightness(3); } 100% { transform: scale(0, .01); filter: brightness(3); } }
 </style></head><body>
 <h1>像素勇者 · 交互动效演示</h1>
 <div class="sub">每个格子点「播放」看效果。核对完告诉我哪些要、哪些改，再放进游戏。</div>
 <div class="grid">
-
-<div class="card"><h3><b>1</b>扣血残影</h3><p>受伤时血条闪白 → 红条立刻缩短 → 白色残影 0.4 秒后慢慢追上；屏幕轻震，冒伤害数字。</p>
-<div class="stage" id="s1"><div class="hp"><div class="ghost" style="width:100%"></div><div class="bar" style="width:100%"></div></div></div><button class="play" onclick="fx1()">播放</button></div>
 
 <div class="card"><h3><b>1B</b>震屏只给大伤害</h3><p>左键「小伤」：只闪白+残影，不震。右键「大伤」（掉 15% 以上 / BOSS / 精英重击）：闪红边 + 震屏。</p>
 <div class="stage" id="s1b"><div class="hp"><div class="ghost" style="width:100%"></div><div class="bar" style="width:100%"></div></div><div class="vig"></div></div><button class="play" onclick="fx1b(5)">小伤 -5</button> <button class="play" onclick="fx1b(25)">大伤 -25</button></div>
@@ -69,9 +83,6 @@ h1 { text-align: center; font-weight: 400; color: #e8c070; margin: 18px 0 4px; }
 <div class="card"><h3><b>5</b>踏板选定</h3><p>站上去符文顺时针点亮；亮满一瞬间石板闪白 + 轻微震屏，表示"选定了"。</p>
 <div class="stage" id="s5"><div class="plate"><i></i></div></div><button class="play" onclick="fx5()">播放</button></div>
 
-<div class="card"><h3><b>6</b>进门吸入黑洞</h3><p>走进传送门：周围画面向门中心旋转收缩，越来越暗，最后闪白 → 下一站。</p>
-<div class="stage" id="s6"><canvas class="cv" width="360" height="170"></canvas><div class="whiteout"></div></div><button class="play" onclick="fx6()">播放</button></div>
-
 <div class="card"><h3><b>6B</b>像素碎裂进门</h3><p>画面裂成 8×8 方块，从门附近开始一圈圈被吸进黑洞；全黑后下一站的方块反向一块块拼回来。</p>
 <div class="stage" id="s6b"><canvas class="cv" width="360" height="170"></canvas></div><button class="play" onclick="fx6b()">播放</button></div>
 
@@ -83,6 +94,36 @@ h1 { text-align: center; font-weight: 400; color: #e8c070; margin: 18px 0 4px; }
 
 <div class="card"><h3><b>9</b>升级</h3><p>勇者脚下冲起一道金色光柱，头顶弹出 LEVEL UP，放大再回弹后上飘消失。</p>
 <div class="stage" id="s9"><div class="beam"></div><div class="hero" style="left:50%;margin-left:-20px;bottom:24px"></div><div class="lvup">LEVEL UP!</div></div><button class="play" onclick="fx9()">播放</button></div>
+
+<div class="card"><h3><b>T1</b>点击进入·像素呼吸</h3><p>亮度一阶一阶变（不是平滑淡入淡出），带暖色光晕一起胀缩。</p>
+<div class="stage" style="background:#0b0f1a"><div class="press b1">— 点击进入 —</div></div></div>
+
+<div class="card"><h3><b>T2</b>点击进入·跟火光同步</h3><p>两边火把每跳一下，字就跟着亮一下（这里用随机火光模拟）。</p>
+<div class="stage" id="t2" style="background:#0b0f1a"><div class="press">— 点击进入 —</div></div></div>
+
+<div class="card"><h3><b>T3</b>点击进入·游戏机 PRESS START</h3><p>老游戏机风：字一格一格闪，两边小箭头来回动。</p>
+<div class="stage" style="background:#0b0f1a"><div class="press"><i>▶</i> <span class="b3">点击进入</span> <i class="r">◀</i></div></div></div>
+
+<div class="card"><h3><b>T4</b>点下去·老电视关机</h3><p>点一下：字压下变白 → 画面缩成一条横线 → 缩成一点 → 黑 → 下一页。</p>
+<div class="stage" id="t4" style="background:#000"><div class="scr" style="position:absolute;inset:0;background:url(../art/map/forest3.webp) 30% 40%/900px"><div class="press b1">— 点击进入 —</div></div></div><button class="play" onclick="ft4()">播放</button></div>
+
+<div class="card"><h3><b>M2</b>主界面按钮手感</h3><p>鼠标移上去：按钮变亮、边框变金（告诉你"能点"）。按下：按钮往下沉一点，松手弹回（像真的按键）。你可以直接用鼠标试，或点播放看。</p>
+<div class="stage" style="background:#0b0f1a"><div class="tbtn" id="m2">新的冒险</div></div><button class="play" onclick="fm2()">播放</button></div>
+
+<div class="card"><h3><b>M3</b>暂停页打开 / 关闭</h3><p>按 P：后面的战斗画面变暗、稍微模糊（突出前面的面板），木框面板从上面掉下来、轻弹一下；再按 P 反过来收回。现在游戏里是直接出现、直接消失。</p>
+<div class="stage" id="m3"><div class="hero" style="left:60px;bottom:30px"></div><div class="dim"></div><div class="wood" style="left:50%;top:20px;width:260px;height:120px;margin-left:-130px;padding:8px;transform:translateY(-200px)">暂停 · 备战<br><small>技能 / 誓约 / 宝物…</small></div></div><button class="play" onclick="fm3(1)">打开</button> <button class="play" onclick="fm3(0)">关闭</button></div>
+
+<div class="card"><h3><b>M4</b>页签切换</h3><p>P 页面里点「技能 / 属性 / 图鉴」：旧内容往一边滑走，新内容从另一边滑进来；往右的页签从右边进，往左的从左边进。现在是瞬间换。</p>
+<div class="stage" style="background:#0b0f1a"><div class="wood" style="left:30px;right:30px;top:20px;bottom:20px;padding:8px"><div class="tabs" id="m4t"><span class="on">技能</span><span>属性</span><span>图鉴</span></div><div class="tview" id="m4v"><div>⚔ 技能格：剑气 Lv3、火球 Lv1…</div><div style="transform:translateX(110%)">♥ 属性：攻击 12 / 防御 4 / 幸运 1…</div><div style="transform:translateX(110%)">📖 图鉴：哥布林、小咕噜、地精商人…</div></div></div></div></div>
+
+<div class="card"><h3><b>M5</b>世界地图前进</h3><p>打完一站回到地图：从当前节点到下一节点，路上的小点一个个亮起来（像在画路线），然后勇者小人沿着路走过去，到了节点变成黄色。</p>
+<div class="stage mapbg" id="m5"></div><button class="play" onclick="fm5()">播放</button></div>
+
+<div class="card"><h3><b>M6a</b>结算·胜利</h3><p>击杀数、铜钱、用时一行行出现，数字从 0 滚到最终值；最后「通关」红色印章从大到小"啪"地盖上去，带一下震动。</p>
+<div class="stage" id="m6a" style="background:#0b0f1a"><div class="wood" style="left:30px;right:30px;top:14px;bottom:14px;padding:8px 14px;font-size:16px"><div class="r" data-v="312">击杀 <b>0</b></div><div class="r" data-v="87">铜钱 <b>0</b></div><div class="r" data-v="9">站数 <b>0</b></div><div class="stamp">通 关</div></div></div><button class="play" onclick="fm6a()">播放</button></div>
+
+<div class="card"><h3><b>M6b</b>结算·失败</h3><p>勇者倒下的那一刻：时间放慢，整个画面慢慢褪成灰色变暗，然后结算面板淡入「勇者倒下了」。</p>
+<div class="stage" id="m6b"><div class="scr" style="position:absolute;inset:0;background:url(../art/map/forest3.webp) 40% 60%/900px"><div class="hero" style="left:50%;bottom:30px"></div></div><div class="wood" style="left:50%;top:50px;width:220px;margin-left:-110px;padding:10px;text-align:center;opacity:0;transition:opacity .6s">勇者倒下了<br><small>第 4 站 · Lv 7</small></div></div><button class="play" onclick="fm6b()">播放</button></div>
 
 </div>
 <script>
@@ -113,7 +154,7 @@ async function fx6() { const s = $('#s6'), cv = $('canvas', s), g = cv.getContex
     g.translate(cx, cy); g.rotate(e * 2.4); g.scale(1 - e * .96, 1 - e * .96); g.translate(-cx, -cy); if (bg6.complete) g.drawImage(bg6, -360, -520, 1600, 900); g.setTransform(1, 0, 0, 1, 0, 0);
     g.fillStyle = `rgba(0,0,0,${e * .8})`; g.fillRect(0, 0, 360, 170); portal6(g, cx, cy, performance.now() / 1000); k < 1 ? requestAnimationFrame(f) : res(); })());
   w.style.transition = 'opacity .12s'; w.style.opacity = 1; await wait(250); w.style.transition = 'opacity .5s'; w.style.opacity = 0; g.setTransform(1, 0, 0, 1, 0, 0); if (bg6.complete) g.drawImage(bg6, -360, -520, 1600, 900); }
-bg6.onload = () => { const g = $('#s6 canvas').getContext('2d'); g.drawImage(bg6, -360, -520, 1600, 900); portal6(g, 180, 70, 0); };
+bg6.onload = () => { const g = $('#s6b canvas').getContext('2d'); g.drawImage(bg6, -360, -520, 1600, 900); portal6(g, 180, 70, 0); };
 async function fx7() { const p = $('#s7 .panel'); p.classList.remove('on'); [...p.querySelectorAll('.slot')].forEach((e, i) => e.style.transitionDelay = (.12 + i * .06) + 's'); await wait(60); p.classList.add('on'); }
 async function fx8() { const t = $('#tgt'); t.classList.remove('full', 'put'); await wait(250); t.classList.add('full'); void t.offsetWidth; t.classList.add('put'); }
 async function fx9() { const s = $('#s9'); for (const e of s.querySelectorAll('.beam,.lvup')) { e.classList.remove('on'); void e.offsetWidth; e.classList.add('on'); } }
@@ -132,4 +173,21 @@ async function fx6b() { const cv = $('#s6b canvas'), g = cv.getContext('2d'), W 
       const e = q * q, px = o.x + (cx - o.x) * e, py = o.y + (cy - o.y) * e, sc = 1 - e; g.save(); g.translate(px + 4, py + 4); g.rotate(e * 3); g.scale(sc, sc); g.drawImage(img, o.x, o.y, B, B, -4, -4, B, B); g.restore(); }
     if (!rev) portal6(g, cx, cy, performance.now() / 1000); k < 1 ? requestAnimationFrame(f) : res(); })(); });
   await run(src, false, 1100); await wait(150); await run(nxt, true, 900); g.drawImage(nxt, 0, 0); }
+
+setInterval(() => { const e = $('#t2 .press'); const f = .45 + Math.random() * .55; e.style.opacity = f; e.style.textShadow = `2px 2px 0 #1a0e06, 0 0 ${f * 16}px #ff9030`; }, 120);
+async function ft4() { const sc = $('#t4 .scr'), p = $('.press', sc); sc.classList.remove('tvoff'); sc.style.opacity = 1; p.style.color = '#fff'; p.style.transform = 'translateX(-50%) translateY(3px)'; await wait(150); sc.classList.add('tvoff'); await wait(900); sc.classList.remove('tvoff'); p.style.color = ''; p.style.transform = ''; }
+async function fm2() { const b = $('#m2'); b.classList.add('hv'); await wait(600); b.classList.add('dn'); await wait(150); b.classList.remove('dn'); await wait(500); b.classList.remove('hv'); }
+function fm3(o) { const s = $('#m3'), w = $('.wood', s); $('.dim', s).classList.toggle('on', o); w.style.transition = o ? 'transform .35s cubic-bezier(.2,1.5,.4,1)' : 'transform .2s ease-in'; w.style.transform = o ? 'none' : 'translateY(-200px)'; }
+let m4i = 0; $('#m4t').onclick = e => { const t = [...$('#m4t').children], i = t.indexOf(e.target); if (i < 0 || i === m4i) return; const v = [...$('#m4v').children], d = i > m4i ? 1 : -1;
+  v[i].style.transition = 'none'; v[i].style.transform = `translateX(${d * 110}%)`; void v[i].offsetWidth; v[i].style.transition = ''; v[i].style.transform = 'none'; v[m4i].style.transform = `translateX(${-d * 110}%)`; t[m4i].classList.remove('on'); t[i].classList.add('on'); m4i = i; };
+async function fm5() { const s = $('#m5'); s.innerHTML = ''; const A = [60, 120], Bp = [300, 50]; const mk = (c, [x, y]) => { const n = document.createElement('div'); n.className = 'node ' + c; n.style.left = x + 'px'; n.style.top = y + 'px'; s.appendChild(n); return n; };
+  mk('done', A); const nb = mk('', Bp), ds = []; for (let k = 1; k < 14; k++) { const t = k / 14, d = document.createElement('div'); d.className = 'dot2'; d.style.left = A[0] + (Bp[0] - A[0]) * t + 'px'; d.style.top = A[1] + (Bp[1] - A[1]) * t - Math.sin(t * Math.PI) * 30 + 'px'; s.appendChild(d); ds.push(d); }
+  const h = document.createElement('div'); h.className = 'hero'; h.style.cssText = `width:24px;height:30px;left:${A[0] - 12}px;top:${A[1] - 34}px;transition:left .1s linear,top .1s linear`; s.appendChild(h);
+  await wait(300); for (const d of ds) { d.classList.add('on'); await wait(60); } await wait(200); for (const d of ds) { h.style.left = parseFloat(d.style.left) - 12 + 'px'; h.style.top = parseFloat(d.style.top) - 32 + 'px'; await wait(110); }
+  h.style.left = Bp[0] - 12 + 'px'; h.style.top = Bp[1] - 34 + 'px'; await wait(150); nb.classList.add('nx'); nb.animate([{ transform: 'scale(1.6)' }, { transform: 'scale(1)' }], 250); }
+async function fm6a() { const s = $('#m6a'), st = $('.stamp', s), rs = [...s.querySelectorAll('.r')]; st.classList.remove('on'); rs.forEach(r => { r.style.opacity = 0; $('b', r).textContent = 0; }); await wait(200);
+  for (const r of rs) { r.style.opacity = 1; const v = +r.dataset.v, b = $('b', r), t0 = performance.now(); await new Promise(res => (function f() { const k = Math.min(1, (performance.now() - t0) / 600); b.textContent = Math.round(v * (1 - (1 - k) ** 3)); k < 1 ? requestAnimationFrame(f) : res(); })()); await wait(150); }
+  await wait(200); st.classList.add('on'); await wait(180); s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake'); }
+async function fm6b() { const s = $('#m6b'), sc = $('.scr', s), w = $('.wood', s), h = $('.hero', s); sc.classList.remove('gray'); w.style.opacity = 0; h.style.transition = 'none'; h.style.transform = ''; await wait(100);
+  h.style.transition = 'transform 1.2s'; h.style.transform = 'rotate(90deg) translateX(10px)'; sc.classList.add('gray'); await wait(1300); w.style.opacity = 1; }
 </script></body></html>
