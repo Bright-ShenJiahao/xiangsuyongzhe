@@ -460,7 +460,7 @@
     if (k === 'event') { const g = MAP.ground, [, gr] = ground(f.pr.y), used = RUN.evUsed || (RUN.evUsed = []), L = DATA.events.filter(e => !used.includes(e.id)), E = (L.length ? L : DATA.events)[Math.random() * (L.length || DATA.events.length) | 0]; used.push(E.id);
       const ex = gr - 70 * K, ey = f.pr.y; f.rest = { k: 'ev', E, x: ex, y: ey, st: 0, t: 0 };
       const P = E.cups ? [['左边的杯子', 'cup'], ['中间的杯子', 'cup'], ['右边的杯子', 'cup']] : (E.pl || []);
-      f.rest.pl = [...P, ['离开', 'leave']].map((p, i, A) => ({ t: p[0], fx: p[1], need: p[2], x: ex - 40 * K + (i % 2) * 80 * K - (A.length % 2 && i === A.length - 1 ? 40 * K : 0) + (i % 2 ? 0 : 0), y: ey + 42 * K + Math.floor(i / 2) * 30 * K, st: 0, lock: 1 }));
+      f.rest.pl = [...P, ['离开', 'leave']].map((p, i, A) => ({ t: p[0], fx: p[1], need: p[2], x: ex - 50 * K + (i % 2) * 100 * K + (A.length % 2 && i === A.length - 1 ? 50 * K : 0), y: ey + 52 * K + Math.floor(i / 2) * 50 * K, st: 0, lock: 1 }));
       if (E.merchant) f.rest.pl = [{ t: '离开', fx: 'leave', x: ex, y: ey + 52 * K, st: 0, lock: 1 }];
       toastMsg(`奇遇：${E.name}`); return; }
     f.rest = { k, x, y, st: 0, t: 0 };
@@ -511,6 +511,9 @@
   // 奇遇场景物（临时：代码画的像素小景，等出图替换）
   const EVI = {}; const evi = n => EVI[n] || (EVI[n] = Object.assign(new Image(), { src: 'art/ev/' + n + '.png' }));
   function evSpr(n, x, y, dx) { const im = evi(n); if (!im.complete || !im.naturalWidth) return false; ctx.imageSmoothingEnabled = false; ctx.drawImage(im, x + (dx || 0) * u - im.naturalWidth * u / 2, y - im.naturalHeight * u, im.naturalWidth * u, im.naturalHeight * u); return true; }
+  const EV_RED = new Set(['kHeal', 'kTake', 'rHand', 'kidRob', 'aBlood', 'aCoin', 'cup', 'fCoin', 'rBook', 'rOath', 'aBook', 'fItem', 'fBook']);
+  const UIM = {}; const uim = n => UIM[n] || (UIM[n] = Object.assign(new Image(), { src: n }));
+  function evIcon(p) { const m = { fItem: 'art/ui2/clover.png', fBook: 'art/ui2/bk_sword.png', fCoin: 'art/drop/pile1.png', kHeal: 'art/ev/ic_potion.png', kTake: 'art/ui2/sword_edge.png', cup: 'art/drop/pile1.png', rHand: 'art/ev/ic_blood.png', rBook: 'art/ui2/bk_wand.png', rOath: 'art/ui2/oath/xianfeng.png', kidSave: 'art/ev/ic_scissor.png', kidRob: 'art/ev/ic_pouch.png', aBlood: 'art/ev/ic_blood.png', aCoin: 'art/drop/pile2.png', aBook: 'art/ui2/bk_spear.png', fKeep: 'art/ev/feather0.png', fSell: 'art/drop/pile1.png', leave: 'art/ev/ic_leave.png' }[p.fx]; return m ? uim(m) : null; }
   function evProp(id, x, y) { const f2 = Math.floor(G.t * 2.5) % 2, f3 = Math.floor(G.t * 5) % 3, o = G.fe && G.fe.rest;
     ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, y + u, 24 * u, 5 * u, 0, 0, 7); ctx.fill();
     const map = { rift_mer: () => evSpr('mer' + f2, x, y), fairy: () => evSpr('fairy' + f3, x, y), knight: () => evSpr('knight' + (o && o.pl.some(p => SKUL(p, 30)) ? 2 : f2), x, y), gamble: () => { evSpr('gamble', x, y); SPR.draw(ctx, 'gob_thief', 'walk0', 0, x + 34 * u, y, true, u, {}); }, rift: () => evSpr('rift' + (Math.floor(G.t * 8) % 2), x, y), kid: () => evSpr('gkid' + f2, x, y), altar: () => evSpr('altar' + (o && o.done ? 3 : f3), x, y + 5 * u), feather: () => evSpr('feather' + f2, x, y) };
@@ -533,9 +536,12 @@
     const o = f.rest; if (!o) return; const x = X(o.x), y = Y(o.y);
     if (o.k === 'ev') { const E = o.E, a = o.done ? Math.max(0, o.done / 1.6) : Math.min(1, o.t * 2); ctx.save(); ctx.globalAlpha = a; evProp(E.id, x, y); ctx.restore();
       label(E.name, x, y + 6 * u, '#e6c8ff'); if (!o.done && !o.pl.some(p => SKUL(p, 14) && p.t.includes('：'))) say(x, y - 50 * u, o.msg ? [o.msg] : E.lines, 2.1);
-      if (!o.done) for (const p of o.pl) { const px = X(p.x), py = Y(p.y), ok = evOk(p.need); ctx.fillStyle = 'rgba(30,15,5,.35)'; ctx.fillRect(px - 26 * u, py - 5 * u, 52 * u, 12 * u);
-        ctx.fillStyle = ok ? (p.fx === 'leave' ? '#8a7a60' : '#c8a0ff') : '#555'; ctx.fillRect(px - 24 * u, py - 7 * u, 48 * u, 10 * u); ctx.fillStyle = ok ? (p.fx === 'leave' ? '#5a4a30' : '#7a50b8') : '#333'; ctx.fillRect(px - 24 * u, py + u, 48 * u, 2 * u);
-        ring(p, 9, p.st / 1.2, '#fff'); label(p.t.split('：')[0], px, py + 8 * u, ok ? '#fff3d8' : '#888', 6.5); if (SKUL(p, 14) && p.t.includes('：')) say(x, y - 50 * u, [p.t + (ok ? '' : '（条件不够）')], 99); }
+      if (!o.done) for (const p of o.pl) { const px = X(p.x), py = Y(p.y), ok = evOk(p.need), ty = p.fx === 'leave' ? 'x' : !ok ? 'x' : EV_RED.has(p.fx) ? 'r' : 'g';   // 11/23 符文石板踏板 + 浮空小图标
+        const b0 = evi('pl_' + ty), b1 = evi('pl_' + ty + '1'), w = 64 * u * .8, h = 28 * u * .8, pr = Math.min(1, p.st / 1.2);
+        if (b0.complete && b0.naturalWidth) { ctx.save(); if (!ok) ctx.globalAlpha = .55; ctx.drawImage(b0, px - w / 2, py - h / 2, w, h); ctx.restore(); }
+        if (pr > 0 && b1.complete) { ctx.save(); ctx.beginPath(); ctx.moveTo(px, py); ctx.arc(px, py, w, -PI / 2, -PI / 2 + PI * 2 * pr); ctx.closePath(); ctx.clip(); ctx.drawImage(b1, px - w / 2, py - h / 2, w, h); ctx.restore(); }
+        const ic = evIcon(p), bob = Math.sin(G.t * 3 + p.x) * 2 * u; if (ic && ic.complete && ic.naturalWidth) { const k = 18 / Math.max(ic.naturalWidth, ic.naturalHeight) * u, iw = ic.naturalWidth * k, ih = ic.naturalHeight * k; ctx.save(); if (!ok) ctx.globalAlpha = .45; ctx.drawImage(ic, px - iw / 2, py - 8 * u - ih + bob, iw, ih); ctx.restore(); }
+        label(p.t.split('：')[0], px, py + 10 * u, ok ? '#fff3d8' : '#888', 6.5); if (SKUL(p, 14) && p.t.includes('：')) say(x, y - 50 * u, [p.t + (ok ? '' : '（条件不够）')], 99); }
       return; }
     if (o.k === 'chest') { const im = img('chest'); if (!o.open && im.complete) ctx.drawImage(im, x - 14 * u, y - 24 * u, 28 * u, 28 * u); if (!o.open) { label('宝箱', x, y + 5 * u); ring(o, 14, o.st / .3, '#ffe08a'); }
       if (o.books) for (const b of o.books) { const S = DATA.skills[b.id], bi = img(({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[S.sys]), bx = X(b.x), by = Y(b.y) - 9 * u;
