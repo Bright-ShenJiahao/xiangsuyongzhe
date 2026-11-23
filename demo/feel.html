@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>打击感 / 手感演示（局外）</title>
+<style>
+body{margin:0;background:#1b1410;color:#f3e6c8;font:14px/1.5 system-ui,sans-serif;display:flex;flex-wrap:wrap;min-height:100vh}
+#L{flex:1 1 560px;display:flex;flex-direction:column;align-items:center;padding:8px;position:relative}
+#wrap{position:relative;max-width:100%}
+canvas{background:#4a6b34;image-rendering:pixelated;max-width:100%;border:3px solid #6b4a2b;touch-action:none;display:block}
+#R{flex:0 1 340px;padding:10px;background:#2a1d14;overflow:auto;max-height:100vh;box-sizing:border-box}
+button{font:inherit;background:#4a3322;color:#f3e6c8;border:1px solid #8a6a44;padding:4px 10px;border-radius:3px;margin:2px;cursor:pointer}
+button.on{background:#8a6a2a;border-color:#ffd27a}
+h4{margin:10px 0 4px;color:#ffd890}
+label{display:flex;gap:6px;align-items:flex-start;margin:4px 0;cursor:pointer}
+small{opacity:.75}
+#chest{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}
+#chest .box{background:#2a1d14;border:3px solid #c9a15a;padding:18px 26px;text-align:center;min-width:240px}
+#reel{font-size:22px;height:34px;margin:10px 0;letter-spacing:2px}
+</style></head><body>
+<div id="L"><div id="wrap"><canvas id="c" width="720" height="440"></canvas>
+<div id="chest"><div class="box"><div style="color:#ffd890">宝 箱</div><div id="reel">？？？</div><div id="cres" style="min-height:22px"></div></div></div></div>
+<div style="font-size:12px;opacity:.8;margin-top:4px">拖动 / 方向键移动勇者。右边逐项开关，对比开和关的区别。第一次点画面才会有声音（浏览器规定）。</div></div>
+<div id="R">
+<h4>招式（决定定格长短）</h4>
+<div id="atk"></div>
+<h4>开关</h4>
+<div id="tg"></div>
+<h4>单独演示</h4>
+<button id="bChest">开宝箱（老虎机）</button><button id="bLv">升级吸取</button><button id="bMore">多放 10 只怪</button>
+<h4>说明</h4>
+<div id="note" style="font-size:13px"></div>
+</div>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+const cv = c, ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false; const W = cv.width, H = cv.height, YS = 1.4, U = 2;
+// ---------- 音效：全部用 WebAudio 现场合成（演示用；正式版可换素材） ----------
+let AC = null; const ac = () => AC || (AC = new (window.AudioContext || window.webkitAudioContext)());
+function tone(f0, f1, dur, type = 'square', vol = .15, delay = 0) { if (!T.snd) return; const a = ac(), t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur); }
+function noise(dur, vol = .2, hp = 800, delay = 0) { if (!T.snd) return; const a = ac(), t = a.currentTime + delay, n = a.createBufferSource(), b = a.createBuffer(1, a.sampleRate * dur, a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length); n.buffer = b; const f = a.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; const g = a.createGain(); g.gain.value = vol; n.connect(f).connect(g).connect(a.destination); n.start(t); }
+const SFX = {
+  swing: () => noise(.12, .12, 2500), hit: () => { noise(.08, .25, 600); tone(180, 60, .1, 'square', .12); }, crit: () => { noise(.12, .3, 400); tone(520, 120, .18, 'sawtooth', .14); },
+  arrow: () => tone(900, 300, .08, 'triangle', .1), zap: () => { noise(.2, .18, 3000); tone(1200, 200, .2, 'sawtooth', .08); }, die: () => { noise(.18, .2, 300); tone(140, 40, .2, 'square', .1); },
+  coin: i => tone(1300 + (i || 0) * 60, 1800 + (i || 0) * 60, .07, 'square', .07), lv: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, f, .14, 'square', .1, i * .07)),
+  tick: () => tone(700, 700, .03, 'square', .05), jackpot: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, f * 1.01, .22, 'triangle', .14, i * .09)) };
+// ---------- 开关 ----------
+const T = { snd: true, hs: true, jit: true, kick: true, gore: true, shatter: true, num: true, shake: true };
+const TG = [['snd', '音效', '挥砍、命中、暴击、死亡、捡钱、升级（演示用合成音）'], ['hs', '定格按招式区分', '近身重砍 0.07 秒、弓箭 0.01 秒、雷法 0.05 秒；关掉 = 全部 0.02 秒（现在游戏里的样子）'], ['jit', '受击横向抖动', '被打的怪原地左右抖几下（樱井：被打的一方抖得更厉害）'], ['kick', '镜头后坐', '出重招时镜头往出招方向推一下再回来（Vlambeer）'], ['shake', '震屏', '暴击和击杀时轻震'], ['gore', '残骸', '怪死后地上留一摊痕迹，8 秒淡出（Vlambeer：Permanence）'], ['shatter', '像素碎块死亡', '怪死时闪白、往后弹，再碎成几块像素'], ['num', '伤害数字', '暴击大字']];
+for (const [k, n, d] of TG) { const l = document.createElement('label'); l.innerHTML = `<input type=checkbox ${T[k] ? 'checked' : ''}><span><b>${n}</b><br><small>${d}</small></span>`; l.querySelector('input').onchange = e => T[k] = e.target.checked; tg.append(l); }
+const ATK = { sword: { n: '近身重砍（剑）', hs: .07, r: 70, arc: 120, cd: .9, dmg: 4, s: 'swing' }, bow: { n: '弓箭', hs: .01, cd: .45, dmg: 2, s: 'arrow' }, zap: { n: '雷法', hs: .05, cd: 1.1, dmg: 3, s: 'zap' } };
+let atk = 'sword'; for (const k in ATK) { const b = document.createElement('button'); b.textContent = ATK[k].n; b.onclick = () => { atk = k; [...document.querySelectorAll('#atk button')].forEach(x => x.classList.toggle('on', x === b)); }; if (k === atk) b.classList.add('on'); document.getElementById('atk').append(b); }
+note.innerHTML = '· 定格：樱井政博（Famitsu 专栏 / Creating Games 频道）<br>· 震屏、镜头后坐、残骸：Jan Willem Nijman《The Art of Screenshake》<br>· 粒子 + 声音层层叠加：Jonasson & Purho《Juice It or Lose It》<br>· 老虎机宝箱、宝石音效：对吸血鬼幸存者的分析文章<br>· 所有效果都只在这个页面里，不影响游戏。';
+// ---------- 场景 ----------
+const hero = { x: W / 2, y: H / 2 + 40, f: 1, cd: 0 }; let foes = [], fx = [], gore = [], bits = [], nums = [], coins = [], shots = [], stop = 0, shake = 0, cam = { x: 0, y: 0 }, keys = {}, t = 0;
+const R = (a, b) => a + Math.random() * (b - a), dist = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * YS);
+function spawn(n = 1) { for (let i = 0; i < n; i++) { const a = R(0, 7); foes.push({ x: W / 2 + Math.cos(a) * 340, y: H / 2 + Math.sin(a) * 220, hp: 10, jit: 0, fl: 0, kx: 0, ky: 0, f: 1 }); } }
+spawn(8);
+function hurt(z, d, crit, hsT) {
+  z.hp -= d; z.fl = .1; if (T.jit) z.jit = .18; const a = Math.atan2(z.y - hero.y, z.x - hero.x); z.kx += Math.cos(a) * 30; z.ky += Math.sin(a) * 30;
+  stop = Math.max(stop, T.hs ? hsT * (crit ? 1.6 : 1) : .02); crit ? SFX.crit() : SFX.hit();
+  if (T.num) nums.push({ x: z.x, y: z.y - 40, v: d * (crit ? 2 : 1), t: 0, big: crit });
+  for (let i = 0; i < (crit ? 10 : 5); i++) fx.push({ x: z.x, y: z.y - 18, vx: R(-120, 120), vy: R(-140, 20), t: 0, T: .3, c: crit ? '#ffd84a' : '#fff' });
+  if (crit && T.shake) shake = Math.max(shake, .15);
+  if (z.hp <= 0 && !z.dead) { z.dead = 1; z.dt = 0; z.da = a; SFX.die(); if (T.shake) shake = Math.max(shake, .12);
+    if (T.gore) gore.push({ x: z.x, y: z.y, t: 0, r: R(10, 16) });
+    for (let i = 0; i < 4; i++) coins.push({ x: z.x + R(-14, 14), y: z.y + R(-8, 8), vy: R(-80, -40), z: 0, t: 0 });
+    setTimeout(() => spawn(1), 900); }
+}
+function attack() {
+  const A = ATK[atk], live = foes.filter(z => !z.dead); if (!live.length) return; const tgt = live.reduce((a, b) => dist(a, hero) < dist(b, hero) ? a : b); hero.f = tgt.x < hero.x ? -1 : 1;
+  SFX[A.s](); const crit = Math.random() < .25, ang = Math.atan2(tgt.y - hero.y, tgt.x - hero.x);
+  if (atk === 'sword') { fx.push({ k: 'arc', x: hero.x, y: hero.y - 14, a: ang, t: 0, T: .16 }); if (T.kick) { cam.x += Math.cos(ang) * 8; cam.y += Math.sin(ang) * 6; }
+    for (const z of live) { const da = Math.abs(((Math.atan2(z.y - hero.y, z.x - hero.x) - ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (dist(z, hero) < A.r + 10 && da < A.arc * Math.PI / 360) hurt(z, A.dmg, crit, A.hs); } }
+  else if (atk === 'bow') shots.push({ x: hero.x, y: hero.y - 16, vx: Math.cos(ang) * 520, vy: Math.sin(ang) * 520, t: 0, crit });
+  else { fx.push({ k: 'bolt', x: tgt.x, y: tgt.y, t: 0, T: .2 }); if (T.kick) { cam.y += 6; } for (const z of live) if (dist(z, tgt) < 50) hurt(z, A.dmg, crit, A.hs); }
+}
+function step(dt) {
+  t += dt; const v = 140 * dt; hero.x = Math.max(20, Math.min(W - 20, hero.x + ((keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0)) * v)); hero.y = Math.max(40, Math.min(H - 10, hero.y + ((keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0)) * v / YS));
+  if ((hero.cd -= dt) <= 0) { hero.cd = ATK[atk].cd; attack(); }
+  for (const z of foes) { if (z.dead) { z.dt += dt; continue; } z.fl -= dt; z.jit -= dt; z.kx *= .85; z.ky *= .85; const a = Math.atan2(hero.y - z.y, hero.x - z.x), d = dist(z, hero); z.f = Math.cos(a) < 0 ? -1 : 1; if (d > 34) { z.x += Math.cos(a) * 40 * dt; z.y += Math.sin(a) * 40 * dt / YS; } z.x += z.kx * dt * 4; z.y += z.ky * dt * 4; }
+  foes = foes.filter(z => !z.dead || z.dt < .6);
+  for (let i = shots.length - 1; i >= 0; i--) { const s = shots[i]; s.t += dt; s.x += s.vx * dt; s.y += s.vy * dt; const z = foes.find(z => !z.dead && Math.hypot(z.x - s.x, z.y - 18 - s.y) < 16); if (z) { hurt(z, ATK.bow.dmg, s.crit, ATK.bow.hs); shots.splice(i, 1); } else if (s.t > 1) shots.splice(i, 1); }
+  for (const p of fx) { p.t += dt; if (p.vx != null) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 400 * dt; } } fx = fx.filter(p => p.t < p.T);
+  for (const b of bits) { b.t += dt; b.x += b.vx * dt; b.y += b.vy * dt; b.vy += 500 * dt; if (b.y > b.gy) { b.y = b.gy; b.vy *= -.3; b.vx *= .6; } } bits = bits.filter(b => b.t < 1.2);
+  for (const g of gore) g.t += dt; gore = gore.filter(g => g.t < 8);
+  for (const n of nums) n.t += dt; nums = nums.filter(n => n.t < .7);
+  for (const c of coins) { c.t += dt; if (c.vac) { const a = Math.atan2(hero.y - c.y, hero.x - c.x); c.sp = (c.sp || 100) + 1400 * dt; c.x += Math.cos(a) * c.sp * dt; c.y += Math.sin(a) * c.sp * dt; if (Math.hypot(hero.x - c.x, hero.y - c.y) < 10) { c.got = 1; SFX.coin(vacN++ % 12); } } else { c.z = Math.max(0, c.z + (c.vy += 300 * dt) * dt * -1); if (dist(c, hero) < 26) { c.got = 1; SFX.coin(0); } } }
+  coins = coins.filter(c => !c.got);
+  cam.x *= .8; cam.y *= .8; shake = Math.max(0, shake - dt);
+}
+let vacN = 0;
+function draw() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W, H); const sx = shake > 0 ? R(-1, 1) * shake * 40 : 0, sy = shake > 0 ? R(-1, 1) * shake * 40 : 0; ctx.setTransform(1, 0, 0, 1, Math.round(-cam.x + sx), Math.round(-cam.y + sy));
+  ctx.fillStyle = '#4a6b34'; ctx.fillRect(-40, -40, W + 80, H + 80);
+  for (const g of gore) { ctx.globalAlpha = Math.min(1, (8 - g.t) / 2) * .7; ctx.fillStyle = '#5a1e14'; ctx.beginPath(); ctx.ellipse(g.x, g.y, g.r, g.r / 2.2, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#7a2a1a'; ctx.fillRect(g.x - 3, g.y - 2, 4, 2); ctx.fillRect(g.x + 5, g.y + 1, 3, 2); ctx.globalAlpha = 1; }
+  for (const c of coins) { ctx.fillStyle = '#ffd24a'; ctx.fillRect(Math.round(c.x) - 3, Math.round(c.y - c.z) - 3, 6, 6); ctx.fillStyle = '#a8741a'; ctx.fillRect(Math.round(c.x) - 1, Math.round(c.y - c.z) - 1, 2, 2); }
+  const list = [...foes.map(z => ({ y: z.y, z })), { y: hero.y, h: 1 }].sort((a, b) => a.y - b.y);
+  for (const o of list) {
+    if (o.h) { const s = SPR.sets[SPR.heroSet('m')], n = s && (s.f.idle0 ? 'idle0' : Object.keys(s.f)[0]); if (n) SPR.drawHero(ctx, n, 0, hero.x, hero.y, hero.f < 0, U); continue; }
+    const z = o.z, set = SPR.sets.goblin && SPR.sets.goblin.f || {};
+    if (z.dead) { if (T.shatter) { if (!z.burst && z.dt > .12) { z.burst = 1; for (let i = 0; i < 14; i++) bits.push({ x: z.x + R(-10, 10), y: z.y - R(4, 34), vx: Math.cos(z.da) * R(40, 160) + R(-60, 60), vy: R(-220, -60), gy: z.y + R(-4, 6), t: 0, c: ['#9cc33a', '#6a8a22', '#5a1e14', '#2a160e'][i % 4] }); } if (z.dt < .12) SPR.draw(ctx, 'goblin', set.hurt ? 'hurt' : 'walk0', 0, z.x + Math.cos(z.da) * z.dt * 60, z.y, z.f < 0, U, { white: 1 }); }
+      else if (z.dt < .5) SPR.draw(ctx, 'goblin', set.down ? 'down' : 'walk0', 0, z.x, z.y, z.f < 0, U, { alpha: 1 - z.dt * 2 }); continue; }
+    const jx = z.jit > 0 ? (Math.floor(z.jit * 60) % 2 ? 2 : -2) : 0, nm = z.fl > 0 && set.hurt ? 'hurt' : 'walk' + (Math.floor(t * 10) % 6);
+    SPR.draw(ctx, 'goblin', set[nm] ? nm : 'walk0', 0, z.x + jx, z.y, z.f < 0, U, { white: z.fl > 0 ? .7 : 0 });
+  }
+  for (const b of bits) { ctx.globalAlpha = Math.min(1, (1.2 - b.t) * 3); ctx.fillStyle = b.c; ctx.fillRect(Math.round(b.x), Math.round(b.y), 3, 3); ctx.globalAlpha = 1; }
+  for (const s of shots) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * .03, s.y - s.vy * .03); ctx.stroke(); }
+  for (const p of fx) { const k = 1 - p.t / p.T;
+    if (p.k === 'arc') { ctx.strokeStyle = `rgba(255,255,255,${k})`; ctx.lineWidth = 6 * k + 1; ctx.beginPath(); ctx.ellipse(p.x, p.y, 70, 50, 0, p.a - 1, p.a + 1); ctx.stroke(); }
+    else if (p.k === 'bolt') { ctx.strokeStyle = `rgba(200,220,255,${k})`; ctx.lineWidth = 3; ctx.beginPath(); let x = p.x, y = p.y - 200; ctx.moveTo(x, y); while (y < p.y - 10) { x += R(-12, 12); y += 25; ctx.lineTo(x, y); } ctx.stroke(); ctx.fillStyle = `rgba(200,220,255,${k * .5})`; ctx.beginPath(); ctx.ellipse(p.x, p.y, 50, 22, 0, 0, 7); ctx.fill(); }
+    else { ctx.fillStyle = p.c; ctx.globalAlpha = k; ctx.fillRect(Math.round(p.x), Math.round(p.y), 3, 3); ctx.globalAlpha = 1; } }
+  for (const n of nums) { ctx.font = `bold ${n.big ? 22 : 14}px sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#000'; ctx.fillText(n.v, n.x + 1, n.y - n.t * 40 + 1); ctx.fillStyle = n.big ? '#ffd84a' : '#fff'; ctx.fillText(n.v, n.x, n.y - n.t * 40); }
+}
+let last = 0; function loop(ts) { let dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts; if (!chestOn) { if (stop > 0) { stop -= dt; dt *= .05; } step(dt); } draw(); requestAnimationFrame(loop); }
+// ---------- 宝箱：老虎机 ----------
+let chestOn = false; const LOOT = [['🗡️ 锋刃油', 0], ['🧥 斗篷', 0], ['📘 破空斩', 0], ['🔮 法力透镜', 0], ['💰 铜钱 ×30', 0], ['📕 圣剑审判（稀有）', 1]];
+bChest.onclick = () => { if (chestOn) return; ac(); chestOn = true; chest.style.display = 'flex'; cres.textContent = ''; const win = Math.random() < .35 ? 5 : Math.floor(R(0, 5)); let i = 0, n = 0, total = 22 + win;
+  const spin = () => { reel.textContent = LOOT[i % LOOT.length][0]; SFX.tick(); i++; n++; if (n < total) setTimeout(spin, 40 + n * n * .55); else { const L = LOOT[win]; reel.textContent = L[0]; reel.style.color = L[1] ? '#ffb84a' : '#fff'; reel.animate([{ transform: 'scale(1.6)' }, { transform: 'scale(1)' }], 300); if (L[1]) { SFX.jackpot(); cres.textContent = '★ 稀有！'; chest.querySelector('.box').animate([{ boxShadow: '0 0 40px #ffb84a' }, { boxShadow: '0 0 0 #000' }], 1200); } else SFX.lv(); setTimeout(() => { chest.style.display = 'none'; reel.style.color = ''; chestOn = false; }, 1400); } };
+  spin(); };
+// ---------- 升级：一口气吸过来 ----------
+bLv.onclick = () => { ac(); for (let i = 0; i < 30; i++) coins.push({ x: R(30, W - 30), y: R(50, H - 20), vy: 0, z: 0, t: 0 }); setTimeout(() => { SFX.lv(); vacN = 0; for (const c of coins) c.vac = 1; fx.push({ k: 'arc', x: hero.x, y: hero.y - 14, a: -Math.PI / 2, t: 0, T: .4 }); }, 500); };
+bMore.onclick = () => spawn(10);
+addEventListener('keydown', e => { keys[e.code] = keys[e.key] = 1; if (e.key.startsWith('Arrow')) e.preventDefault(); ac(); }); addEventListener('keyup', e => keys[e.code] = keys[e.key] = 0);
+const mv = e => { const r = cv.getBoundingClientRect(); hero.x = (e.clientX - r.left) * W / r.width; hero.y = (e.clientY - r.top) * H / r.height; };
+cv.onpointerdown = e => { ac(); mv(e); cv.onpointermove = mv; }; addEventListener('pointerup', () => cv.onpointermove = null);
+Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
+</script></body></html>
