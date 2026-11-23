@@ -87,7 +87,7 @@
   const attrsOf = () => { const o = {}; for (const a of DATA.attrs) o[a.id] = DATA.attrBase + (P.free[a.id] || 0); return o; };
   const used = () => Object.values(P.free).reduce((s, v) => s + v, 0);
   const build = () => ({ hero: P.hero, weapon: P.weapon, attrs: attrsOf(), item: P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
-  function openPrep(fresh) {
+  function openPrep(fresh) { try { $('introChk').classList.toggle('hide', store.get('introSeen') !== '1'); } catch (e) {}
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
       const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.hero = store.get('hero') === 'f' ? 'f' : 'm';
       P.free = {}; P.habitOpts = shuffle(DATA.habits).slice(0, 3).map(h => h.id); P.itemOpts = shuffle(DATA.startItems).slice(0, 3).map(i => i.id);
@@ -147,7 +147,11 @@
   }
   $('aReset').onclick = () => { P.free = {}; renderPrep(); };
   $('pBack').onclick = () => show('title');
-  $('pGo').onclick = () => startBattle(build());
+  const introSeen = () => store.get('introSeen') === '1';
+  { const c = $('introOn'), saved = store.get('introPref'); c.checked = saved != null ? saved === '1' : !introSeen(); c.onchange = () => store.set('introPref', c.checked ? '1' : '0'); }
+  function playIntro(go) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game' + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
+  $('pGo').onclick = () => { const b = build(); if (!introSeen() || $('introOn').checked) playIntro(() => startBattle(b)); else startBattle(b); };
   let heroSwing = 0;
   function drawHeroPreview(t, dt) {
     const c = $('heroCv'), r = c.getBoundingClientRect(); if (!r.width || !r.height) return;

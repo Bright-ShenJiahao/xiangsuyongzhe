@@ -1083,3 +1083,7 @@ body.tvbg { background: #000; }
 .sb.tr.t1 { outline: 2px solid #9a9080; outline-offset: -2px; } .sb.tr.t2 { outline: 2px solid #5aa8ff; outline-offset: -2px; } .sb.tr.t3 { outline: 2px solid #c07aff; outline-offset: -2px; } .sb.tr.t4 { outline: 2px solid #ffcf3a; outline-offset: -2px; }
 .sb.tr.nx { box-shadow: 0 0 0 2px #1a0e06, 0 0 0 4px #ffd060, 0 0 8px 3px rgba(255, 208, 96, .5); }
 .sb.tr i { z-index: 2; }
+
+/* 11/23 开场剧情 */
+#introF { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: 90; display: none; background: #000; }
+#introChk { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; font-size: 14px; color: #f4ecd8; cursor: pointer; } #introChk.hide { display: none; }

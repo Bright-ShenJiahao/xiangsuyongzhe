@@ -16,7 +16,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 #dlg { position: fixed; left: 50%; bottom: 5vh; transform: translateX(-50%); width: min(760px, 92vw); display: none; gap: 14px; align-items: flex-start; background: #2a1e14; border: 4px solid #c89a52; box-shadow: 0 0 0 4px #1a0e06; padding: 12px 16px; color: #f4ecd8; font-size: clamp(16px, 2vw, 20px); z-index: 7; }
 #dlg img { width: 72px; height: 72px; object-fit: cover; object-position: top; border: 2px solid #c89a52; background: #3a2a1a; } #dlg b { color: #ffd890; display: block; margin-bottom: 4px; }
 #skip, #play { position: fixed; z-index: 10; font: 15px WenKai, serif; color: #f4ecd8; background: rgba(20,12,6,.7); border: 2px solid #c89a52; padding: 4px 14px; cursor: pointer; }
-#skip { right: 16px; top: 14px; display: none; align-items: center; gap: 6px; user-select: none; touch-action: none; } #first { position: fixed; left: 12px; top: 12px; z-index: 10; color: #b8a888; font-size: 13px; } #play { left: 50%; top: 18px; transform: translateX(-50%); font-size: 22px; padding: 10px 26px; }
+#skip { right: 16px; top: 14px; display: none; align-items: center; gap: 6px; user-select: none; touch-action: none; } #play.g { display: none !important; } #first { position: fixed; left: 12px; top: 12px; z-index: 10; color: #b8a888; font-size: 13px; } #play { left: 50%; top: 18px; transform: translateX(-50%); font-size: 22px; padding: 10px 26px; }
 .crack { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: screen; pointer-events: none; }
 #bub { position: fixed; z-index: 7; display: none; transform: translate(-50%, -100%); background: rgba(250,244,230,.96); border: 3px solid #3a2814; color: #3a2814; font-size: clamp(15px, 2vw, 22px); padding: 4px 12px; white-space: nowrap; }
 #bub::after { content: ''; position: absolute; left: 50%; top: 100%; width: 10px; height: 8px; margin-left: -5px; background: #3a2814; }
@@ -50,7 +50,8 @@ let pxState = 'off', pxT0 = 0, portalT = 0; const NPC = {}; for (const k of ['gu
 function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled = false; const t = Math.max(0, (n - pxT0) / 1000), S = 640 / 1672;
   if (BG.complete) g.drawImage(BG, 0, 0, 640, 360);
   TFX(g, t, S);
-  const ax = 835 * S, ay = 292 * S;   // 图里自带的祭坛正前方（平台前沿）
+  let ax = 835 * S, ay = 292 * S;   // 图里自带的祭坛正前方（平台前沿）
+  if (walk) { stepWalk(); ax = walk.x; ay = walk.y; }
   // 召唤：光柱落下 → 勇者由像素方块拼出来 → 光散去
   const pil = t < 1.6 ? Math.min(1, t / .4) : Math.max(0, 1 - (t - 1.6) / .8); if (pil > 0) { const gr = g.createLinearGradient(0, 0, 0, ay); gr.addColorStop(0, 'rgba(220,200,255,0)'); gr.addColorStop(1, `rgba(230,215,255,${.85 * pil})`); g.fillStyle = gr; g.fillRect(ax - 14, 0, 28, ay + 2); g.fillStyle = `rgba(240,230,255,${.5 * pil})`; g.beginPath(); g.ellipse(ax, ay, 26, 7, 0, 0, 7); g.fill(); }
   const fr = FR.idle; if (AT.complete && t > .6) { const k = Math.min(1, (t - .6) / 1.2); const off = document.createElement('canvas'); off.width = fr[2]; off.height = fr[3]; const og = off.getContext('2d'); og.drawImage(AT, fr[0], fr[1], fr[2], fr[3], 0, 0, fr[2], fr[3]);
@@ -85,9 +86,12 @@ async function play() { const id = ++RUN; $('play').style.display = 'none'; rese
   if (id !== RUN) return; await say(id, '勇者', '../art/portrait/m.webp', '这是……我刚买的游戏里？');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '您就是回应召唤的勇者吧！');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '裂缝还在扩大……请帮帮这片大陆！');
-  $('bub').style.display = 'none'; portalT = performance.now(); await wait(1250); $('pc').animate([{ transform: 'translate(0,3px)' }, { transform: 'none' }], 200); await wait(1200); $('cap').textContent = '（这里出现新手提示，玩家自己走下台阶、走进门 → 哥布林森林）'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
-function reset() { portalT = 0; MK.reset(); pxState = 'off'; for (const e of document.querySelectorAll('.pg')) e.classList.remove('on'); $('px').style.opacity = 0; $('white').style.opacity = 0; $('bub').style.display = 'none'; $('cap').textContent = ''; }
-$('play').onclick = play; // 长按跳过：只在故事书插图部分有效；第一次玩不显示；塔顶像素部分不能跳
+  $('bub').style.display = 'none'; portalT = performance.now(); await wait(1250); $('pc').animate([{ transform: 'translate(0,3px)' }, { transform: 'none' }], 200); await wait(1200); walk = { x: 835 * 640 / 1672, y: 292 * 640 / 1672 }; $('cap').textContent = matchMedia('(pointer:coarse)').matches ? '按住屏幕拖动，走进传送门' : 'WASD / 方向键移动，走进传送门'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
+function reset() { walk = null; portalT = 0; MK.reset(); pxState = 'off'; for (const e of document.querySelectorAll('.pg')) e.classList.remove('on'); $('px').style.opacity = 0; $('white').style.opacity = 0; $('bub').style.display = 'none'; $('cap').textContent = ''; }
+$('play').onclick = play;
+const GAME = /[?&]game/.test(location.search), FIRST = /[?&]first/.test(location.search);
+const done = () => { if (GAME) parent.postMessage('introDone', '*'); };
+if (GAME) { $('play').classList.add('g'); $('first').style.display = 'none'; $('play').style.display = 'none'; $('fst').checked = FIRST; addEventListener('load', () => setTimeout(play, 300)); } // 长按跳过：只在故事书插图部分有效；第一次玩不显示；塔顶像素部分不能跳
 let canSkip = false, hold = 0, holdT0 = 0; const HOLD = 1000;
 function setSkip(on) { canSkip = on && !$('fst').checked; $('skip').style.display = canSkip ? 'flex' : 'none'; hold = 0; $('skc').style.strokeDashoffset = 50.3; }
 function holdTick() { if (!hold) return; const k = Math.min(1, (performance.now() - holdT0) / HOLD); $('skc').style.strokeDashoffset = 50.3 * (1 - k); if (k >= 1) { hold = 0; doSkip(); } else requestAnimationFrame(holdTick); }
@@ -96,7 +100,7 @@ function holdOff() { hold = 0; $('skc').style.strokeDashoffset = 50.3; }
 addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) holdOn(); } }); addEventListener('keyup', e => { if (e.code === 'Space') holdOff(); });
 $('skip').addEventListener('pointerdown', holdOn); addEventListener('pointerup', holdOff); addEventListener('pointercancel', holdOff);
 if (matchMedia('(pointer:coarse)').matches) $('skt').textContent = '长按跳过';
-function doSkip() { RUN++; setSkip(false); reset(); $('cap').textContent = '（已跳过：直接进入哥布林森林第一站）'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
+function doSkip() { RUN++; setSkip(false); reset(); $('cap').textContent = '（已跳过：直接进入哥布林森林第一站）'; done(); $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
 
 // 2b 地图：念到哪里，哪块被墨色吞掉，冒出黑影标记；最后裂缝一闪整张变暗
 const MK = (() => { const c = () => $('mk'); let on = [], t0 = 0, dark = 0; const IW = 1672, IH = 941;
@@ -158,4 +162,14 @@ function gamePortal(ctx, x, footY, T, open) { const [r0, g0, b0] = [255, 90, 50]
   const gl = ctx.createRadialGradient(x, cy, 30, x, cy, 80); gl.addColorStop(0, C(.3)); gl.addColorStop(1, C(0)); ctx.fillStyle = gl; ctx.fillRect(x - 85, cy - 85, 170, 170); ctx.restore();
   ctx.imageSmoothingEnabled = false; ctx.drawImage(PCV, Math.round(x - w / 2), Math.round(cy - h / 2), Math.round(w), Math.round(h));
   if (open >= 1) { ctx.font = 'bold 15px WenKai, serif'; ctx.textAlign = 'center'; const ty = cy - h / 2 - 6; ctx.fillStyle = '#1a0e06'; for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.fillText('哥布林森林', x + ox, ty + oy); ctx.fillStyle = '#ffd890'; ctx.fillText('哥布林森林', x, ty); ctx.textAlign = 'left'; } }
+
+// 走进门：键盘 / 拖动屏幕移动勇者，碰到门就结束
+let walk = null; const KEY = {}; let touchP = null, wLast = 0;
+addEventListener('keydown', e => KEY[e.code] = 1); addEventListener('keyup', e => KEY[e.code] = 0);
+$('px').addEventListener('pointerdown', e => touchP = e); addEventListener('pointermove', e => { if (touchP) touchP = e; }); addEventListener('pointerup', () => touchP = null);
+function stepWalk() { const n = performance.now(), dt = Math.min(.05, (n - (wLast || n)) / 1000); wLast = n; let dx = (KEY.KeyD || KEY.ArrowRight ? 1 : 0) - (KEY.KeyA || KEY.ArrowLeft ? 1 : 0), dy = (KEY.KeyS || KEY.ArrowDown ? 1 : 0) - (KEY.KeyW || KEY.ArrowUp ? 1 : 0);
+  if (touchP) { const c = $('pc').getBoundingClientRect(), tx = (touchP.clientX - c.left) / c.width * 640, ty = (touchP.clientY - c.top) / c.height * 360; dx = tx - walk.x; dy = ty - walk.y; }
+  const l = Math.hypot(dx, dy); if (l > (touchP ? 2 : 0)) { walk.x += dx / l * 90 * dt; walk.y += dy / l * 90 * dt; }
+  walk.x = Math.max(40, Math.min(600, walk.x)); walk.y = Math.max(105, Math.min(300, walk.y));
+  if (Math.hypot(walk.x - 835 * 640 / 1672, (walk.y - 735 * 640 / 1672) * 1.4) < 16 && !walk.done) { walk.done = 1; $('cap').textContent = ''; $('white').style.transition = 'opacity .5s'; $('white').style.opacity = 1; setTimeout(done, 550); } }
 </script></body></html>
