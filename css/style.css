@@ -1161,3 +1161,5 @@ body.tvbg { background: #000; }
 .cxside .st { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; } .cxside .st span { white-space: nowrap; padding: 1px 6px; background: #2e2214; border: 1px solid #5a4028; font-size: 12px; } .cxside .st i { font-style: normal; color: #ffe08a; }
 #tpBody .fig.sel { box-shadow: 0 0 0 3px #ffd890, 0 0 12px rgba(255,216,144,.6) !important; }
 @media (orientation: portrait), (max-width: 700px) { .cxrow { flex-direction: column-reverse; } .cxside { width: auto; display: grid; grid-template-columns: 90px 1fr; gap: 0 10px; } .cxside .cxbig { height: 100px; grid-row: span 4; margin: 0; } }
+
+.card { position: relative; } .card .upb { position: absolute; left: 4px; top: 4px; z-index: 2; font-style: normal; font-size: 12px; padding: 1px 6px; color: #2a1a0c; background: #8ef07a; box-shadow: 0 0 0 2px #1a3a10; }

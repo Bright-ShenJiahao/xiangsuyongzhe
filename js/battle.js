@@ -264,7 +264,7 @@
   function skillT(S, sk) { const L = profL(sk), sp = (hero.m.spd || 1) * (1 + ((hero.fx || {})['sspd_' + DATA.SYSK[S.sys]] || 0)); let wu = S.wu; if (S.charge && L >= 3) wu = S.kind === 'pierce' || sk.id === 'pierce' ? .45 : .5; const cut = L >= 7 ? .05 : 0; return { wu: Math.max(.08, (wu - cut) / sp), rc: Math.max(.08, (S.rc - cut) / sp) }; }
   const nextSlot = () => { for (let k = 0; k < RUN.open; k++) { const i = (RUN.si + k) % RUN.open; if (RUN.slots[i]) return i; } return -1; };
   // 射程（像素格）：近战招跟着范围加成一起变大
-  const reach = S => (S.rg || 9999) * (S.rg && S.rg < 100 ? hero.m.area : 1);
+  const reach = S => (S.rg || 9999) * (S.rg && S.rg < 100 ? hero.m.area : 1) * (1 + ((hero.fx || {})['srng_' + DATA.SYSK[S.sys]] || 0));
   // 轮到的这本够不着就跳过，看下一本；都够不着就不放
   // 11/22 做法 1：够不着照样跳过，但刚放过的那本不能紧接着再放（要么先轮到别的，要么等 0.5 秒），远程招不会被连刷
   const readySlot = () => { const t = nearest(); if (!t) return -1; const d = dist(t, hero), n = RUN.slots.slice(0, RUN.open).filter(Boolean).length;
@@ -285,7 +285,7 @@
       if (hero.instant) { hero.instant = 0; c.dur = .08; } }
     c.t += dt;
     if (c.ph === 'wu') { c.a = aimNow(c.a); if (!hero.moving) faceTo(c.a); if (c.t < c.dur) return; faceTo(c.a);
-      const L = profL(c.sk), a0 = hero.m.area; hero.m.area *= 1 + (c.ar || 0); hero.castCrit = c.cr || 0; const r = SK.cast({ S: c.S, sk: c.sk, L, d: skillDmg(c.S, c.sk) * (c.mul || 1), a: c.a, sid: c.sk.id }); hero.m.area = a0;
+      const L = profL(c.sk), a0 = hero.m.area; hero.m.area *= (1 + (c.ar || 0)) * (1 + ((hero.fx || {})['sarea_' + DATA.SYSK[c.S.sys]] || 0)); hero.castCrit = c.cr || 0; const r = SK.cast({ S: c.S, sk: c.sk, L, d: skillDmg(c.S, c.sk) * (c.mul || 1), a: c.a, sid: c.sk.id }); hero.m.area = a0;
       if (!r) { hero.cs = null; return; }   // 场上没敌人了：不放，等下一个敌人
       c.sk.xp = (c.sk.xp || 0) + 1; if (profL(c.sk) > L) { nums.push({ x: hero.x, y: hero.y - 52 * K, txt: `${c.S.name} 熟练度 ${profL(c.sk)}/7`, t: 0, col: '#ffd86a' }); }
       if (r !== true && r.hold) { c.ph = 'hold'; c.t = 0; c.dur = r.hold; c.move = r.move || 1; return; }
