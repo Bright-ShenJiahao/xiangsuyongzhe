@@ -201,7 +201,7 @@ window.DATA = {
     // 怪物属性（11/21）：hp 生命、dmg 攻击、dtype 攻击类型（phys 物理 / magic 法术）、pdef 物防、mdef 魔防（和勇者同一公式：受伤 × 100/(100+防御)，最多减 60%）。
     // 精英 / 小头目 / 首领另有控制抗性（硬控时间减半 / 免疫）。
     // reach = 走到多近开始抬手；arc / r = 劈砍扇面角度和半径；cool = 招后间隔；dtype = 伤害类型（物理 / 魔法）
-    goblin: { name: '哥布林', pdef: 5, mdef: 0, hp: 6, spd: 45, reach: 48, arc: 60, r: 46, dmg: 6, wind: .43, cool: 1.35, dtype: 'phys' },
+    goblin: { name: '哥布林', pdef: 5, mdef: 0, hp: 6, spd: 45, reach: 48, arc: 60, r: 48, dmg: 6, wind: .43, cool: 1.35, dtype: 'phys' },
     gob_blade: { name: '哥布林刀手', pdef: 15, mdef: 5, hp: 9, spd: 55, reach: 64, arc: 110, r: 61, dmg: 8, wind: .52, cool: 1.65, dtype: 'phys' },
     gob_archer: { name: '哥布林弓手', pdef: 0, mdef: 10, hp: 5, spd: 38, reach: 220, keep: [115, 155], dmg: 5, wind: .7, cool: 1.9, arrow: 130, ranged: true, dtype: 'phys' },
     // 11/22 哥布林全家（异世界幸存者的图）。nw = 走路帧数；k = 体型系数（别比王大）；res = 体质：iron 铁甲（物理减半）/ spirit 灵体（物理减半、法术 +25%）/ magic 魔抗（法术减半）
