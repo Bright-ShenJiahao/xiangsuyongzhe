@@ -1141,4 +1141,12 @@ body.tvbg { background: #000; }
 
 /* 11/23 图鉴手办：静止 + 轻轻浮动，悬停放大发亮 */
 #tpBody canvas { transition: transform .15s, filter .15s; }
-#tpBody > div > div:hover canvas { transform: scale(1.08); filter: brightness(1.12) drop-shadow(0 0 6px rgba(255,220,140,.6)); }
+
+
+/* 11/23 图鉴：面板加宽、卡片加大；点卡片在旁边弹简介 */
+#tpanel .box.wide { width: min(1000px, 95vw) !important; }
+#tpBody .codex { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important; }
+#tpBody .fig { cursor: pointer; overflow: hidden; } #tpBody .fig:hover { box-shadow: 0 0 0 2px #e0b04a, inset 0 0 0 4px rgba(255,255,255,.5) !important; }
+.cxpop { position: fixed; z-index: 9500; width: 230px; padding: 10px 12px; background: #1e140c; border: 2px solid #c8a060; box-shadow: 0 6px 18px rgba(0,0,0,.6); color: #e8dcc0; font-size: 13px; line-height: 1.6; }
+.cxpop b { color: #ffd890; font-size: 16px; font-weight: 400; } .cxpop p { margin: 4px 0; } .cxpop .g { color: #8ef07a; }
+.cxpop .st { display: flex; flex-wrap: wrap; gap: 4px; } .cxpop .st span { white-space: nowrap; padding: 1px 6px; background: #2e2214; border: 1px solid #5a4028; font-size: 12px; } .cxpop .st i { font-style: normal; color: #ffe08a; }
