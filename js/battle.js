@@ -571,7 +571,7 @@
     const label = (t, x, y, col, sz) => { ctx.font = `${Math.round((sz || 6) * u)}px WenKai, Pix, serif`; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#1a1008'; ctx.strokeText(t, x, y); ctx.fillStyle = col || '#fff3d0'; ctx.fillText(t, x, y); };
     const ring = (o, r, p, col, dy) => { if (p <= 0) return; ctx.strokeStyle = col; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.arc(X(o.x), Y(o.y) - (dy || 0) * u, r * u, -PI / 2, -PI / 2 + PI * 2 * Math.min(1, p)); ctx.stroke(); };
     for (const d of f.doors) { const c = d.c, k = c.k, rs = c.rest, ev = k === 'event', bo = k === 'boss', el = k === 'elite';   // 11/23 传送门：纯代码画的旋涡，只写类型
-      const col = bo ? [255, 200, 70] : el ? [225, 60, 200] : ev ? [150, 90, 255] : rs ? [70, 225, 160] : [255, 90, 50], [r0, g0, b0] = col, C = a => `rgba(${r0},${g0},${b0},${a})`;
+      const col = bo ? [255, 200, 70] : el ? [225, 60, 200] : ev ? [150, 90, 255] : rs ? [60, 200, 255] : [255, 90, 50], [r0, g0, b0] = col, C = a => `rgba(${r0},${g0},${b0},${a})`;
       const near = Math.max(0, 1 - Math.hypot(d.x - hero.x, d.y - hero.y) / (70 * K)), sz = (bo ? 1.25 : 1) * (1 + near * .08) * 1.15, rw = 22 * u * sz, rh = 32 * u * sz, x = X(d.x), cy = Y(d.y) - rh + 2 * u, sp = (el ? 2.2 : 1.4) * (1 + near * 1.5);
       { // 11/23 像素黑洞：先画在小画布上（每格 = 1 像素），再按像素放大
         const PW = 40, PH = 52, pc = portalCv(d), g = pc.getContext('2d'), im = g.createImageData(PW, PH), D = im.data, t = G.t * sp;   // 参考 cgwell：黑洞心 + 一圈翻腾的火焰边，边的颜色区分类型
