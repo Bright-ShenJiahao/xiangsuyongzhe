@@ -584,6 +584,13 @@
           const P = [null, [r0 * .45, g0 * .45, b0 * .5, 170], [r0 * .75, g0 * .75, b0 * .8, 235], [r0, g0, b0, 255], [...hi, 255]][q];
           D[k] = P[0]; D[k + 1] = P[1]; D[k + 2] = P[2]; D[k + 3] = P[3]; }
         g.putImageData(im, 0, 0);
+        // 11/23 洞里往外钻的电弧：从中心附近向边缘折线，0.08 秒换一次形状，时有时无
+        if (!d.arcT || G.t > d.arcT) { d.arcT = G.t + .07 + Math.random() * .06; d.arcs = []; const n = Math.random() < .25 ? 0 : 1 + (Math.random() * (el || bo ? 3 : 2) | 0);
+          for (let k = 0; k < n; k++) { const an = Math.random() * PI * 2, L = [], st = 7; let px0 = PW / 2 + R(-3, 3), py0 = PH / 2 + R(-4, 4);
+            for (let j = 0; j <= st; j++) { const f = j / st, tx = PW / 2 + Math.cos(an) * PW * .34 * f, ty = PH / 2 + Math.sin(an) * PH * .36 * f; L.push([Math.round(tx + R(-2, 2) * (1 - f * .3)), Math.round(ty + R(-2, 2))]); }
+            d.arcs.push(L); } }
+        for (const L of d.arcs) for (let j = 1; j < L.length; j++) { let [x0, y0] = L[j - 1]; const [x1, y1] = L[j], dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx - dy;
+          for (let guard = 0; guard < 40; guard++) { g.fillStyle = j < 2 ? '#ffffff' : `rgb(${hi[0] | 0},${hi[1] | 0},${hi[2] | 0})`; g.fillRect(x0, y0, 1, 1); g.globalAlpha = .55; g.fillRect(x0 + 1, y0, 1, 1); g.fillRect(x0, y0 + 1, 1, 1); g.globalAlpha = 1; if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 > -dy) { e -= dy; x0 += sx; } if (e2 < dx) { e += dx; y0 += sy; } } }
         ctx.save(); ctx.globalCompositeOperation = 'lighter'; const gl = ctx.createRadialGradient(x, cy, rh * .6, x, cy, rh * 1.5); gl.addColorStop(0, C(.3 + near * .2)); gl.addColorStop(1, C(0)); ctx.fillStyle = gl; ctx.fillRect(x - rh * 1.6, cy - rh * 1.6, rh * 3.2, rh * 3.2); ctx.restore();
         const sc = Math.max(1, Math.round(2.2 * rh / PH)); ctx.imageSmoothingEnabled = false; ctx.drawImage(pc, Math.round(x - PW * sc / 2), Math.round(cy - PH * sc / 2), PW * sc, PH * sc); }
       for (let k = 0; k < 2; k++) if (Math.random() < .5) { const an = R(0, PI * 2); parts.push({ x: d.x + Math.cos(an) * rw / u * K * .55, y: d.y - (rh / u) * K + Math.sin(an) * (rh / u) * K * .75, vx: R(-6, 6) * K, vy: -R(18, 36) * K, t: 0, T: R(.4, .8), col: Math.random() < .3 ? '#fff' : C(1), g: 0 }); }
