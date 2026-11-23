@@ -13,7 +13,7 @@ body { margin: 0; background: #1a120c; color: #f4ecd8; font: 15px WenKai, sans-s
 <div id="out">拖动三个圆圈到你想要的位置，然后把下面这行复制发给我：<code id="c"></code></div>
 <div id="w"><img src="../art/ui2/map.webp"></div>
 <script>
-const W = document.getElementById('w'), IW = 1672, IH = 941, P = [['哥布林', 334, 395], ['吸血鬼', 1360, 300], ['兽人', 1010, 600]];
+const W = document.getElementById('w'), IW = 1672, IH = 941, P = [['哥布林', 428, 283], ['吸血鬼', 1360, 300], ['兽人', 827, 440]];
 function out() { document.getElementById('c').textContent = P.map(p => `${p[0]}(${p[1]},${p[2]})`).join(' '); }
 P.forEach(p => { const m = document.createElement('div'); m.className = 'm'; m.innerHTML = `<b>${p[0]}</b>`; W.appendChild(m);
   const put = () => { m.style.left = p[1] / IW * 100 + '%'; m.style.top = p[2] / IH * 100 + '%'; }; put();
