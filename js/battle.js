@@ -509,7 +509,14 @@
     if (o.k === 'fire') { if (SKUL(o, 22)) o.st += dt; else o.st = 0; if (o.st > 1) { const h0 = hero.hp; hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .5 * (1 + (hero.fx.healMul || 0))); nums.push({ x: hero.x, y: hero.y - 44 * K, v: Math.round(hero.hp - h0), t: 0, col: '#7cff8a' }); RUN.xiu++; f.pr.said = 0; toastMsg('回复 50% 生命，修炼 +1（去找露米娜）'); f.rest = null; showRoute(true); } }
   }
   // 奇遇场景物（临时：代码画的像素小景，等出图替换）
-  function evProp(id, x, y) { const P = (c, a, b, w, h) => { ctx.fillStyle = c; ctx.fillRect(x + a * u, y + b * u, w * u, h * u); };
+  const EVI = {}; const evi = n => EVI[n] || (EVI[n] = Object.assign(new Image(), { src: 'art/ev/' + n + '.png' }));
+  function evSpr(n, x, y, dx) { const im = evi(n); if (!im.complete || !im.naturalWidth) return false; ctx.imageSmoothingEnabled = false; ctx.drawImage(im, x + (dx || 0) * u - im.naturalWidth * u / 2, y - im.naturalHeight * u, im.naturalWidth * u, im.naturalHeight * u); return true; }
+  function evProp(id, x, y) { const f2 = Math.floor(G.t * 2.5) % 2, f3 = Math.floor(G.t * 5) % 3, o = G.fe && G.fe.rest;
+    ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, y + u, 24 * u, 5 * u, 0, 0, 7); ctx.fill();
+    const map = { rift_mer: () => { evSpr('mer' + f2, x, y); evSpr('kid' + (Math.floor(G.t / 2) % 3 === 0 ? 1 : 0), x, y, 46); }, fairy: () => evSpr('fairy' + f3, x, y), knight: () => evSpr('knight' + (o && o.pl.some(p => SKUL(p, 30)) ? 2 : f2), x, y), gamble: () => { evSpr('gamble', x, y); SPR.draw(ctx, 'gob_thief', 'walk0', 0, x + 34 * u, y, true, u, {}); }, rift: () => evSpr('rift' + (Math.floor(G.t * 8) % 2), x, y), kid: () => evSpr('gkid' + f2, x, y), altar: () => evSpr('altar' + (o && o.done ? 3 : f3), x, y), feather: () => evSpr('feather' + f2, x, y) };
+    if (map[id] && evi((({ rift_mer: 'mer0', fairy: 'fairy0', knight: 'knight0', gamble: 'gamble', rift: 'rift0', kid: 'gkid0', altar: 'altar0', feather: 'feather0' })[id])).complete) return map[id]();
+    evProp0(id, x, y); }
+  function evProp0(id, x, y) { const P = (c, a, b, w, h) => { ctx.fillStyle = c; ctx.fillRect(x + a * u, y + b * u, w * u, h * u); };
     ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, y + u, 20 * u, 5 * u, 0, 0, 7); ctx.fill();
     if (id === 'rift_mer') { P('#2a1a3a', -8, -38, 16, 38); P('#5a3a7a', -7, -37, 14, 22); P('#e8c8a0', -4, -32, 8, 6); P('#6a4a2a', 6, -34, 14, 26); P('#3a3a3a', 9, -30, 8, 6); P('#c0c0c0', 18, -38, 2, 22); for (let i = 0; i < 6; i++) if (Math.sin(G.t * 9 + i * 3) > .3) P(['#ff4aff', '#4affff', '#ffff4a'][i % 3], R(-20, 20), R(-44, -4), 2, 2); }
     else if (id === 'fairy') { P('#5a6a7a', -20, -6, 40, 7); P('#4ab8ff', -17, -5, 34, 4); P('#bfefff', -12, -5, 10, 1); const fy = -26 + Math.sin(G.t * 3) * 3; P('#fff0f8', -2, fy, 4, 6); P('#bff', -6, fy - 2, 3, 5); P('#bff', 3, fy - 2, 3, 5); }
@@ -524,7 +531,7 @@
     const f = G.fe;
     const M2 = f.mer2; if (M2) { SPR.draw(ctx, 'gob_merchant', merFrame(M2), 0, X(M2.x), Y(M2.y), false, u, {}); label('特价商人 · 八折', X(M2.x), Y(M2.y) + 3 * u, '#ffb070'); say(X(M2.x), Y(M2.y) - 44 * u, ['今天全部八折！', '错过就没了哦～'], 1.2); ring(M2, 14, M2.st / .4, '#ffb070'); }
     const o = f.rest; if (!o) return; const x = X(o.x), y = Y(o.y);
-    if (o.k === 'ev') { const E = o.E, a = o.done ? Math.max(0, o.done / 1.6) : Math.min(1, o.t * 2); ctx.save(); ctx.globalAlpha = a; { const u0 = u; u = u0 * 1.6; evProp(E.id, x, y); u = u0; } ctx.restore();
+    if (o.k === 'ev') { const E = o.E, a = o.done ? Math.max(0, o.done / 1.6) : Math.min(1, o.t * 2); ctx.save(); ctx.globalAlpha = a; evProp(E.id, x, y); ctx.restore();
       label(E.name, x, y + 6 * u, '#e6c8ff'); if (!o.done && !o.pl.some(p => SKUL(p, 14) && p.t.includes('：'))) say(x, y - 50 * u, o.msg ? [o.msg] : E.lines, 2.1);
       if (!o.done) for (const p of o.pl) { const px = X(p.x), py = Y(p.y), ok = evOk(p.need); ctx.fillStyle = 'rgba(30,15,5,.35)'; ctx.fillRect(px - 26 * u, py - 5 * u, 52 * u, 12 * u);
         ctx.fillStyle = ok ? (p.fx === 'leave' ? '#8a7a60' : '#c8a0ff') : '#555'; ctx.fillRect(px - 24 * u, py - 7 * u, 48 * u, 10 * u); ctx.fillStyle = ok ? (p.fx === 'leave' ? '#5a4a30' : '#7a50b8') : '#333'; ctx.fillRect(px - 24 * u, py + u, 48 * u, 2 * u);
