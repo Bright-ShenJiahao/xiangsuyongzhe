@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>首领 / 精英弹幕演示（局外）</title>
+<style>
+body{margin:0;background:#1b1410;color:#f3e6c8;font:14px/1.5 system-ui,sans-serif;display:flex;flex-wrap:wrap;min-height:100vh}
+#L{flex:1 1 560px;display:flex;flex-direction:column;align-items:center;padding:8px}
+canvas{background:#5b4a32;image-rendering:pixelated;max-width:100%;border:3px solid #6b4a2b;touch-action:none}
+#R{flex:0 1 340px;padding:10px;background:#2a1d14;overflow:auto;max-height:100vh;box-sizing:border-box}
+button{font:inherit;background:#4a3322;color:#f3e6c8;border:1px solid #8a6a44;padding:4px 10px;border-radius:3px;margin:2px;cursor:pointer}
+button.on{background:#8a6a2a;border-color:#ffd27a}
+h4{margin:10px 0 4px;color:#ffd890} small{opacity:.75}
+.row{display:flex;align-items:center;gap:6px;margin:3px 0}.row label{width:96px}.row input{flex:1}.row b{width:34px;text-align:right}
+</style></head><body>
+<div id="L"><canvas id="c" width="760" height="460"></canvas>
+<div style="font-size:12px;opacity:.85;margin-top:4px">WASD / 方向键移动（手机：按住拖动）· <b>空格 / 双击 = 翻滚</b>（0.3 秒无敌，冷却 1.8 秒）· 勇者自动攻击</div></div>
+<div id="R">
+<h4>对手</h4><div id="who"></div>
+<h4>招式</h4><div id="pat"></div>
+<div class="row"><label>子弹速度</label><input type="range" id="bs" min="40" max="220" value="110"><b id="bsV">110</b></div>
+<div class="row"><label>预警时间 s</label><input type="range" id="wt" min="0.2" max="1.5" step="0.1" value="0.8"><b id="wtV">0.8</b></div>
+<div class="row"><label>旁边小怪</label><input type="range" id="mn" min="0" max="20" value="4"><b id="mnV">4</b></div>
+<div class="row"><button id="re">重来</button><button id="god">无敌：关</button></div>
+<h4>记录</h4><div id="st" style="font-size:13px"></div>
+<h4>规则</h4><div style="font-size:13px">· 先预警（红圈 / 红线）再出手<br>· 子弹慢、颜色亮（亮蓝 / 紫）<br>· 环形弹幕一定留缺口<br>· 首领残血 50% 进入第二阶段，招式更密<br>· 数值只在这个页面里，不影响游戏</div>
+</div>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+const cv = c, ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false; const W = cv.width, H = cv.height, YS = 1.4, U = 2, PI = Math.PI;
+const R = (a, b) => a + Math.random() * (b - a), dist = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * YS), ang = (a, b) => Math.atan2((b.y - a.y) * YS, b.x - a.x);
+// 招式：每个 = 预警阶段 + 出手阶段
+const PAT = {
+  fan: { n: '扇形飞斧', d: '对着你扔 5 把斧头，扇形 60°（中间留缝可以钻）' },
+  rain: { n: '红圈砸石', d: '你脚下和周围出现 4–6 个红圈，预警结束后石头砸下' },
+  ring: { n: '环形弹幕', d: '一圈 16 颗慢速子弹，留一个缺口；二阶段连放两圈错开' },
+  charge: { n: '冲锋', d: '先画一条红线，然后沿红线冲过去' },
+  spiral: { n: '旋转弹幕（二阶段）', d: '原地转圈不停吐子弹，持续 3 秒' },
+  homing: { n: '追踪火球（萨满精英）', d: '3 颗慢速追踪火球，追 3 秒后消失' },
+  rock5: { n: '五连投石（投石精英）', d: '连续 5 颗石头砸在你走位的前方' } };
+const WHO = { king: { n: '哥布林王（首领）', set: 'gob_king', k: 1, hp: 600, pats: ['fan', 'rain', 'ring', 'charge'], p2: ['ring', 'spiral', 'rain', 'charge', 'fan'] }, shaman: { n: '萨满（精英）', set: 'gob_shaman', k: 1.15, hp: 120, pats: ['homing'] }, thrower: { n: '投石兵（精英）', set: 'gob_thrower', k: 1.15, hp: 100, pats: ['rock5'] } };
+let who = 'king', only = null, god = false, boss, hero, bullets, marks, mobs, fx, nums, t, rec;
+function reset() { const B = WHO[who]; boss = { x: W / 2, y: 150, hp: B.hp, max: B.hp, st: 'idle', t: 0, p: null, f: 1, ph: 1, flash: 0 }; hero = { x: W / 2, y: 380, hp: 85, max: 85, roll: 0, rcd: 0, inv: 0, f: 1, acd: 0, vx: 0, vy: 0 }; bullets = []; marks = []; mobs = []; fx = []; nums = []; t = 0; rec = { hits: 0, dodged: 0, rolls: 0, time: 0 }; for (let i = 0; i < +mn.value; i++) spawnMob(); }
+function spawnMob() { const a = R(0, 7); mobs.push({ x: W / 2 + Math.cos(a) * 360, y: H / 2 + Math.sin(a) * 220, hp: 6, f: 1, cd: R(0, 1) }); }
+const bspd = () => +bs.value, warn = () => +wt.value;
+function startPat() { const B = WHO[who], L = only ? [only] : boss.ph === 2 && B.p2 ? B.p2 : B.pats; boss.p = L[Math.random() * L.length | 0]; boss.st = 'warn'; boss.t = 0; boss.aim = ang(boss, hero);
+  const p = boss.p, w = warn();
+  if (p === 'rain') { const n = boss.ph === 2 ? 6 : 4; for (let i = 0; i < n; i++) marks.push({ k: 'circle', x: i ? hero.x + R(-110, 110) : hero.x, y: i ? hero.y + R(-70, 70) : hero.y, r: 30, t: 0, T: w + .1 * i, hit: 'rock' }); }
+  if (p === 'charge') marks.push({ k: 'line', x: boss.x, y: boss.y, a: boss.aim, len: 380, t: 0, T: w });
+  if (p === 'fan') marks.push({ k: 'fan', x: boss.x, y: boss.y, a: boss.aim, t: 0, T: w * .7 });
+  if (p === 'ring' || p === 'spiral') marks.push({ k: 'glow', x: boss.x, y: boss.y, t: 0, T: w * .7 });
+  if (p === 'rock5') { boss.q = 5; }
+  if (p === 'homing') marks.push({ k: 'glow', x: boss.x, y: boss.y, t: 0, T: w * .6 }); }
+function shoot(x, y, a, v, o = {}) { bullets.push(Object.assign({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v / YS, t: 0, life: 6, r: 7, dmg: 8, col: '#5ad0ff' }, o)); }
+function fire() { const p = boss.p, v = bspd();
+  if (p === 'fan') { for (let i = -2; i <= 2; i++) shoot(boss.x, boss.y - 20, boss.aim + i * PI / 15, v * 1.2, { col: '#d8d8e8', axe: 1, dmg: 10 }); }
+  if (p === 'ring') { const k = boss.ph === 2 ? 2 : 1; for (let w = 0; w < k; w++) setTimeout(() => { const gap = R(0, 16) | 0, off = w * PI / 16; for (let i = 0; i < 16; i++) if (Math.abs(i - gap) > 1) shoot(boss.x, boss.y - 20, i * PI / 8 + off, v * .9); }, w * 450); }
+  if (p === 'charge') { boss.st = 'charge'; boss.t = 0; boss.cx = Math.cos(boss.aim); boss.cy = Math.sin(boss.aim); return; }
+  if (p === 'spiral') { boss.st = 'spin'; boss.t = 0; return; }
+  if (p === 'homing') for (let i = -1; i <= 1; i++) shoot(boss.x, boss.y - 20, boss.aim + i * .6, v * .7, { home: 1, life: 3.2, col: '#c87aff', dmg: 9 });
+  if (p === 'rock5') { boss.st = 'rock'; boss.t = 0; boss.q = 5; return; }
+  boss.st = 'rec'; boss.t = 0; }
+function hurtHero(d) { if (god || hero.inv > 0 || hero.roll > 0) { rec.dodged++; nums.push({ x: hero.x, y: hero.y - 46, txt: 'MISS', t: 0, c: '#fff' }); return; } hero.hp = Math.max(0, hero.hp - d); hero.inv = .6; rec.hits++; nums.push({ x: hero.x, y: hero.y - 46, txt: '-' + d, t: 0, c: '#ff6a5a' }); if (hero.hp <= 0) { nums.push({ x: hero.x, y: hero.y - 70, txt: '倒下了！（点重来）', t: -9, c: '#ffd890' }); } }
+function step(dt) {
+  if (hero.hp <= 0 || boss.hp <= 0) return; t += dt; rec.time = t;
+  // 勇者移动 + 翻滚
+  let mx = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0), my = (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+  if (drag) { const dx = drag.x - hero.x, dy = drag.y - hero.y, d = Math.hypot(dx, dy); if (d > 6) { mx = dx / d; my = dy / d; } }
+  const l = Math.hypot(mx, my); if (l) { mx /= l; my /= l; hero.vx = mx; hero.vy = my; hero.f = mx < 0 ? -1 : mx > 0 ? 1 : hero.f; }
+  hero.rcd -= dt; hero.inv -= dt;
+  if (hero.roll > 0) { hero.roll -= dt; hero.x += hero.vx * 240 * dt; hero.y += hero.vy * 180 * dt; } else if (l) { hero.x += mx * 80 * dt; hero.y += my * 80 * dt / YS; }
+  hero.x = Math.max(20, Math.min(W - 20, hero.x)); hero.y = Math.max(60, Math.min(H - 10, hero.y));
+  // 勇者自动打最近的
+  if ((hero.acd -= dt) <= 0) { hero.acd = .7; const tg = [boss, ...mobs].filter(o => o.hp > 0).sort((a, b) => dist(a, hero) - dist(b, hero))[0]; if (tg && dist(tg, hero) < 220) { fx.push({ k: 'slash', x: tg.x, y: tg.y - 20, t: 0 }); const d = tg === boss ? 12 : 6; tg.hp -= d; tg.flash = .1; nums.push({ x: tg.x, y: tg.y - 50, txt: d, t: 0, c: '#fff' }); if (tg !== boss && tg.hp <= 0) setTimeout(spawnMob, 1500); } }
+  mobs = mobs.filter(m => m.hp > 0);
+  for (const m of mobs) { const a = ang(m, hero), d = dist(m, hero); m.f = Math.cos(a) < 0 ? -1 : 1; if (d > 26) { m.x += Math.cos(a) * 40 * dt; m.y += Math.sin(a) * 40 * dt / YS; } else if ((m.cd -= dt) <= 0) { m.cd = 1.4; hurtHero(5); } m.flash = (m.flash || 0) - dt; }
+  // 首领
+  boss.flash -= dt; boss.t += dt; boss.f = hero.x < boss.x ? -1 : 1;
+  if (who === 'king' && boss.ph === 1 && boss.hp < boss.max / 2) { boss.ph = 2; nums.push({ x: boss.x, y: boss.y - 90, txt: '第二阶段！', t: -1, c: '#ffb84a' }); boss.st = 'rec'; boss.t = 0; }
+  if (boss.st === 'idle' && boss.t > .8) startPat();
+  else if (boss.st === 'walk') { const a = ang(boss, hero); if (dist(boss, hero) > 140) { boss.x += Math.cos(a) * 30 * dt; boss.y += Math.sin(a) * 30 * dt / YS; } if (boss.t > 1.2) startPat(); }
+  else if (boss.st === 'warn' && boss.t > warn()) fire();
+  else if (boss.st === 'charge') { boss.x += boss.cx * 420 * dt; boss.y += boss.cy * 420 * dt / YS; if (!boss.hd && dist(boss, hero) < 40) { boss.hd = 1; hurtHero(16); } if (boss.t > .9 || boss.x < 40 || boss.x > W - 40 || boss.y < 70 || boss.y > H - 20) { boss.x = Math.max(40, Math.min(W - 40, boss.x)); boss.y = Math.max(70, Math.min(H - 20, boss.y)); boss.st = 'rec'; boss.t = 0; boss.hd = 0; } }
+  else if (boss.st === 'spin') { boss.sa = (boss.sa || 0) + dt * 2.6; boss.sc = (boss.sc || 0) - dt; if (boss.sc <= 0) { boss.sc = .12; for (let k = 0; k < 3; k++) shoot(boss.x, boss.y - 20, boss.sa + k * PI * 2 / 3, bspd() * .8, { col: '#c87aff' }); } if (boss.t > 3) { boss.st = 'rec'; boss.t = 0; } }
+  else if (boss.st === 'rock') { boss.sc = (boss.sc || 0) - dt; if (boss.sc <= 0 && boss.q > 0) { boss.sc = .35; boss.q--; const lead = .6; marks.push({ k: 'circle', x: hero.x + hero.vx * 80 * lead, y: hero.y + hero.vy * 60 * lead, r: 24, t: 0, T: warn(), hit: 'rock' }); } if (boss.q <= 0 && boss.t > 2) { boss.st = 'rec'; boss.t = 0; } }
+  else if (boss.st === 'rec' && boss.t > (boss.ph === 2 ? .5 : .9)) { boss.st = 'walk'; boss.t = 0; }
+  // 地面预警
+  for (const m of marks) { m.t += dt; if (m.k === 'circle' && m.t >= m.T && !m.done) { m.done = 1; fx.push({ k: 'boom', x: m.x, y: m.y, r: m.r, t: 0 }); if (Math.hypot(hero.x - m.x, (hero.y - m.y) * YS) < m.r + 6) hurtHero(12); } }
+  marks = marks.filter(m => m.k === 'circle' ? !m.done : m.t < m.T);
+  for (const b of bullets) { b.t += dt; if (b.home && b.t < 3) { const a = Math.atan2((hero.y - b.y) * YS, hero.x - b.x), cur = Math.atan2(b.vy * YS, b.vx), da = ((a - cur + PI * 3) % (PI * 2)) - PI, na = cur + Math.max(-1.4 * dt, Math.min(1.4 * dt, da)), sp = Math.hypot(b.vx, b.vy * YS); b.vx = Math.cos(na) * sp; b.vy = Math.sin(na) * sp / YS; } b.x += b.vx * dt; b.y += b.vy * dt; if (!b.hit && Math.hypot(hero.x - b.x, (hero.y - 16 - b.y) * YS) < b.r + 6) { b.hit = 1; hurtHero(b.dmg); } }
+  bullets = bullets.filter(b => !b.hit && b.t < b.life && b.x > -20 && b.x < W + 20 && b.y > -20 && b.y < H + 20);
+  for (const f of fx) f.t += dt; fx = fx.filter(f => f.t < .35); for (const n of nums) n.t += dt; nums = nums.filter(n => n.t < .9);
+}
+function draw() { ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#5b4a32'; ctx.fillRect(0, 0, W, H);
+  for (const m of marks) { const k = Math.min(1, m.t / m.T);
+    if (m.k === 'circle') { ctx.fillStyle = `rgba(255,60,40,${.15 + .3 * k})`; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r, m.r / YS, 0, 0, 7); ctx.fill(); ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * k, m.r * k / YS, 0, 0, 7); ctx.stroke(); }
+    if (m.k === 'line') { ctx.strokeStyle = `rgba(255,60,40,${.3 + .5 * k})`; ctx.lineWidth = 34; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x + Math.cos(m.a) * m.len, m.y + Math.sin(m.a) * m.len / YS); ctx.stroke(); }
+    if (m.k === 'fan') { ctx.fillStyle = `rgba(255,60,40,${.15 + .25 * k})`; ctx.beginPath(); ctx.moveTo(m.x, m.y); for (let q = -PI / 6; q <= PI / 6 + .01; q += .05) ctx.lineTo(m.x + Math.cos(m.a + q) * 260, m.y + Math.sin(m.a + q) * 260 / YS); ctx.fill(); }
+    if (m.k === 'glow') { ctx.fillStyle = `rgba(200,120,255,${.4 * k})`; ctx.beginPath(); ctx.ellipse(m.x, m.y - 20, 50 * k, 50 * k, 0, 0, 7); ctx.fill(); } }
+  for (const f of fx) if (f.k === 'boom') { ctx.fillStyle = `rgba(180,150,110,${1 - f.t * 3})`; ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r * 1.2, f.r / YS * 1.2, 0, 0, 7); ctx.fill(); }
+  const B = WHO[who], list = [{ y: boss.y, b: 1 }, { y: hero.y, h: 1 }, ...mobs.map(m => ({ y: m.y, m }))].sort((a, b) => a.y - b.y);
+  for (const o of list) {
+    if (o.h) { if (hero.inv > 0 && hero.roll <= 0 && Math.floor(t * 20) % 2) continue; const s = SPR.sets[SPR.heroSet('m')]; if (s) { const n = hero.roll > 0 && s.f.roll0 ? 'roll0' : s.f.idle0 ? 'idle0' : Object.keys(s.f)[0]; SPR.drawHero(ctx, n, 0, hero.x, hero.y, hero.f < 0, U); } else { ctx.fillStyle = '#fff'; ctx.fillRect(hero.x - 6, hero.y - 30, 12, 30); } continue; }
+    if (o.m) { const m = o.m; SPR.draw(ctx, 'goblin', 'walk' + (Math.floor(t * 10) % 6), 0, m.x, m.y, m.f < 0, U, { white: m.flash > 0 ? .7 : 0 }); continue; }
+    const f = SPR.sets[B.set] && SPR.sets[B.set].f || {}, n = boss.st === 'warn' ? 'windup' : boss.st === 'rec' && boss.t < .25 ? 'strike' : boss.st === 'walk' || boss.st === 'charge' ? 'walk' + (Math.floor(t * 10) % 6) : 'idle' + (Math.floor(t * 2) % 2);
+    if (boss.hp > 0) SPR.draw(ctx, B.set, f[n] ? n : 'idle0', 0, boss.x, boss.y, boss.f < 0, U, { k: B.k, white: boss.flash > 0 ? .6 : boss.st === 'warn' && Math.floor(t * 12) % 2 ? .25 : 0 }); }
+  for (const b of bullets) { ctx.save(); ctx.translate(b.x, b.y); if (b.axe) { ctx.rotate(b.t * 14); ctx.fillStyle = '#d8d8e8'; ctx.fillRect(-7, -2, 14, 4); ctx.fillStyle = '#8a5a2a'; ctx.fillRect(-2, -7, 4, 14); } else { ctx.fillStyle = b.col; ctx.beginPath(); ctx.arc(0, 0, b.r, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-2, -2, b.r * .4, 0, 7); ctx.fill(); } ctx.restore(); }
+  for (const f of fx) if (f.k === 'slash') { ctx.strokeStyle = `rgba(255,255,255,${1 - f.t * 3})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(f.x, f.y, 18, -1, 1); ctx.stroke(); }
+  for (const n of nums) { if (n.t < 0) continue; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#000'; ctx.fillText(n.txt, n.x + 1, n.y - n.t * 30 + 1); ctx.fillStyle = n.c; ctx.fillText(n.txt, n.x, n.y - n.t * 30); }
+  // 血条
+  const bar = (x, y, w, v, m, c, lb) => { ctx.fillStyle = '#1a0e06'; ctx.fillRect(x - 2, y - 2, w + 4, 12); ctx.fillStyle = c; ctx.fillRect(x, y, w * Math.max(0, v / m), 8); ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(lb, x, y - 4); };
+  bar(W / 2 - 200, 24, 400, boss.hp, boss.max, '#d0402a', B.n + (boss.ph === 2 ? '  · 第二阶段' : ''));
+  bar(16, H - 22, 160, hero.hp, hero.max, '#4ad04a', `勇者 ${Math.ceil(hero.hp)}/${hero.max}`);
+  ctx.fillStyle = hero.rcd > 0 ? '#666' : '#ffd890'; ctx.font = '12px sans-serif'; ctx.fillText(hero.rcd > 0 ? `翻滚 ${hero.rcd.toFixed(1)}s` : '翻滚 OK', 190, H - 12);
+  if (boss.hp <= 0) { ctx.fillStyle = '#ffd890'; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('击败！', W / 2, H / 2); }
+  if (hero.hp <= 0) { ctx.fillStyle = '#ff8a6a'; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('倒下了', W / 2, H / 2); }
+  st.innerHTML = `用时 ${rec.time.toFixed(1)} 秒 · 被打中 <b>${rec.hits}</b> 次 · 躲开（翻滚/无敌）${rec.dodged} 次 · 翻滚 ${rec.rolls} 次`; }
+const keys = {}; let drag = null, lastTap = 0;
+function roll() { if (hero.rcd > 0 || hero.roll > 0) return; hero.roll = .3; hero.rcd = 1.8; rec.rolls++; }
+addEventListener('keydown', e => { keys[e.code] = 1; if (e.code === 'Space') { e.preventDefault(); roll(); } if (e.key.startsWith('Arrow')) e.preventDefault(); }); addEventListener('keyup', e => keys[e.code] = 0);
+const pos = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; };
+cv.onpointerdown = e => { const n = performance.now(); if (n - lastTap < 280) roll(); lastTap = n; drag = pos(e); cv.onpointermove = e => drag = pos(e); }; addEventListener('pointerup', () => { drag = null; cv.onpointermove = null; });
+for (const k in WHO) { const b = document.createElement('button'); b.textContent = WHO[k].n; b.onclick = () => { who = k; only = null; [...document.querySelectorAll('#who button')].forEach(x => x.classList.toggle('on', x === b)); mkPat(); reset(); }; if (k === who) b.classList.add('on'); document.getElementById('who').append(b); }
+function mkPat() { const box = document.getElementById('pat'); box.innerHTML = ''; const B = WHO[who], L = [...new Set([...(B.pats), ...(B.p2 || [])])];
+  const all = document.createElement('button'); all.textContent = '全部轮流'; all.className = 'on'; all.onclick = () => { only = null; sel(all); }; box.append(all);
+  const sel = b => [...box.querySelectorAll('button')].forEach(x => x.classList.toggle('on', x === b));
+  for (const k of L) { const b = document.createElement('button'); b.textContent = PAT[k].n; b.title = PAT[k].d; b.onclick = () => { only = k; sel(b); }; box.append(b); }
+  const d = document.createElement('div'); d.style.cssText = 'font-size:12px;opacity:.8;margin-top:4px'; d.innerHTML = L.map(k => `<b>${PAT[k].n}</b>：${PAT[k].d}`).join('<br>'); box.append(d); }
+for (const [el, v] of [[bs, bsV], [wt, wtV], [mn, mnV]]) el.oninput = () => { v.textContent = el.value; if (el === mn) reset(); };
+re.onclick = reset; document.getElementById('god').onclick = e => { god = !god; e.target.textContent = '无敌：' + (god ? '开' : '关'); };
+let last = 0; function loop(ts) { const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts; step(dt); draw(); requestAnimationFrame(loop); }
+mkPat(); reset(); Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
+</script></body></html>
