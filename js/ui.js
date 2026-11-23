@@ -203,7 +203,7 @@
   })();
   function hud(h) {
     { const pc = h.hp / h.maxHp * 100; set('hpBar', 'w', pc.toFixed(1) + '%'); FX.ghost(pc); } { const k = Math.ceil(h.hp) + '/' + h.maxHp; if (HC.hp !== k) { HC.hp = k; set('hpTxt', 'html', UI.pxNum(Math.ceil(h.hp), '#fff4e0') + '<i class="sl"></i>' + UI.pxNum(h.maxHp, '#e8c8b0')); } } $('hpBar').parentNode.classList.toggle('low', h.hp / h.maxHp < .3);
-    set('lvTxt', 'text', ''); if (HC.lvb !== h.lv) { HC.lvb = h.lv; $('lvBox').innerHTML = '<i>LV</i>' + pxNum(h.lv, '#ffe08a'); } set('xpBar', 'w', h.need ? (h.xp / h.need * 100).toFixed(1) + '%' : '100%');
+    set('lvTxt', 'text', ''); if (HC.lvb !== h.lv) { if (HC.lvb != null && h.lv > HC.lvb) { const r = $('xpRow'), b = $('lvBox'); for (const e of [r, b]) { e.classList.remove('up'); void e.offsetWidth; e.classList.add('up'); } } HC.lvb = h.lv; $('lvBox').innerHTML = '<i>LV</i>' + pxNum(h.lv, '#ffe08a'); } { const w = h.need ? (h.xp / h.need * 100).toFixed(1) + '%' : '100%'; set('xpBar', 'w', w); set('xpBar2', 'w', w); }
     document.body.classList.toggle('fe', !!h.fe);
     set('clock', 'html', h.bossWave ? '<em>⌛</em><b>首领战</b>' : `<em>⌛</em><b>${pxNum(h.left == null ? '00:00' : mmss(h.left), h.left != null && h.left < 5.5 ? '#ff8a6a' : '#f4ecd8')}</b>`);
     // 11/22 右侧击倒 / 连击（群侠式）：连击到 10 / 25 / 50 / 100 放大闪一下，3 秒没杀到就断
