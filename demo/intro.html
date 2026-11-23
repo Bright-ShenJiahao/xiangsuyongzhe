@@ -49,6 +49,7 @@ const FR = { idle: [0, 0, 36, 40, 13.6, 39], hurt: [442, 0, 45, 39, 18.5, 39], d
 let pxState = 'off', pxT0 = 0;
 function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled = false; const t = Math.max(0, (n - pxT0) / 1000), S = 640 / 1672;
   if (BG.complete) g.drawImage(BG, 0, 0, 640, 360);
+  TFX(g, t, S);
   const ax = 835 * S, ay = 292 * S;   // 图里自带的祭坛正前方（平台前沿）
   // 召唤：光柱落下 → 勇者由像素方块拼出来 → 光散去
   const pil = t < 1.6 ? Math.min(1, t / .4) : Math.max(0, 1 - (t - 1.6) / .8); if (pil > 0) { const gr = g.createLinearGradient(0, 0, 0, ay); gr.addColorStop(0, 'rgba(220,200,255,0)'); gr.addColorStop(1, `rgba(230,215,255,${.85 * pil})`); g.fillStyle = gr; g.fillRect(ax - 14, 0, 28, ay + 2); g.fillStyle = `rgba(240,230,255,${.5 * pil})`; g.beginPath(); g.ellipse(ax, ay, 26, 7, 0, 0, 7); g.fill(); }
@@ -94,4 +95,24 @@ const MK = (() => { const c = () => $('mk'); let on = [], t0 = 0, dark = 0; cons
     if (dark) { const k = Math.max(0, Math.min(1, (n - dark) / 900)); if (k < .25) { g.fillStyle = `rgba(255,190,90,${.5 * (1 - k * 4)})`; g.fillRect(0, 0, W, H * .35); } g.fillStyle = `rgba(20,10,4,${k * .55})`; g.fillRect(0, 0, W, H); }
     requestAnimationFrame(f); }
   requestAnimationFrame(f); return { go, reset }; })();
+
+// 塔顶动态：远处黑烟、两道数据裂缝（闪烁+掉方块）、古城红光、两个火盆的 8 帧火
+const FIRE = Object.assign(new Image(), { src: '../art/fx/map/fire.webp' }); let SMK = [], BITS = [], tLast = 0;
+const SMOKE = [[80, 168], [212, 178], [292, 172], [437, 188]], CRK = [[[420, 48], [470, 40], [478, 58], [520, 36], [548, 22], [590, 4]], [[1125, 62], [1165, 56], [1185, 74], [1215, 40], [1262, 30], [1300, 2]]];
+function TFX(g, t, S) { const dt = Math.min(.05, Math.max(0, t - tLast)); tLast = t; const P = v => Math.round(v * S);
+  // 黑烟：每个火点往上冒，向右飘、变大、变淡
+  for (const [x, y] of SMOKE) if (Math.random() < dt * 5) SMK.push({ x: x + Math.random() * 4, y, r: 3, a: .5, vx: 8 + Math.random() * 6, vy: -(14 + Math.random() * 6) });
+  for (const p of SMK) { p.x += p.vx * dt; p.y += p.vy * dt; p.r += 3 * dt; p.a -= .09 * dt; if (p.a > 0) { g.fillStyle = `rgba(45,36,44,${p.a})`; g.beginPath(); g.arc(P(p.x), P(p.y), Math.max(1, P(p.r)), 0, 7); g.fill(); } } SMK = SMK.filter(p => p.a > 0);
+  for (const [x, y] of SMOKE) if (Math.random() < .4) { g.fillStyle = Math.random() < .5 ? '#ff8a30' : '#ffd060'; g.fillRect(P(x) - 1 + (Math.random() * 3 | 0), P(y) - 1, 2, 2); }
+  // 裂缝：沿裂缝一明一暗的光，偶尔整条闪白，往下掉小方块
+  CRK.forEach((L, k) => { const f = .5 + .5 * Math.sin(t * 3 + k * 2), flash = (t * .7 + k * .37) % 3 < .08; g.save(); g.lineCap = 'square';
+    g.strokeStyle = flash ? 'rgba(255,255,240,.95)' : `rgba(255,220,120,${.35 + .45 * f})`; g.lineWidth = flash ? 4 : 2 + f * 2; g.shadowColor = '#ffb040'; g.shadowBlur = 6 + f * 8; g.beginPath(); L.forEach(([x, y], i) => i ? g.lineTo(P(x), P(y)) : g.moveTo(P(x), P(y))); g.stroke(); g.restore();
+    if (Math.random() < dt * 6) { const [x, y] = L[Math.random() * L.length | 0]; BITS.push({ x, y, vy: 20 + Math.random() * 30, a: 1 }); } });
+  for (const b of BITS) { b.y += b.vy * dt; b.a -= .5 * dt; if (b.a > 0) { g.fillStyle = `rgba(255,210,110,${b.a})`; g.fillRect(P(b.x), P(b.y), 2, 2); } } BITS = BITS.filter(b => b.a > 0);
+  // 古城上空的红光
+  { const a = .25 + .2 * Math.sin(t * 2.2), gr = g.createRadialGradient(P(1545), P(40), 0, P(1545), P(40), P(120)); gr.addColorStop(0, `rgba(255,60,80,${a})`); gr.addColorStop(1, 'rgba(255,60,80,0)'); g.fillStyle = gr; g.fillRect(P(1420), 0, P(250), P(170)); }
+  // 火盆：盖上 8 帧火焰
+  if (FIRE.complete && FIRE.naturalWidth) { const fw = FIRE.naturalWidth / 8; [[245, 368], [1426, 366]].forEach(([x, y], i) => { const fr = Math.floor(t * 12 + i * 3) % 8, h = P(58), w = h * fw / FIRE.naturalHeight; g.drawImage(FIRE, fr * fw, 0, fw, FIRE.naturalHeight, P(x) - w / 2, P(y) - h, w, h);
+    const gr = g.createRadialGradient(P(x), P(y) - h / 2, 0, P(x), P(y) - h / 2, P(80)); gr.addColorStop(0, `rgba(255,150,60,${.25 + .08 * Math.sin(t * 9 + i)})`); gr.addColorStop(1, 'rgba(255,150,60,0)'); g.fillStyle = gr; g.fillRect(P(x - 80), P(y - 130), P(160), P(160)); }); }
+}
 </script></body></html>
