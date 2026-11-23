@@ -40,7 +40,7 @@ const dist = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * YS), ang = (a, b) => 
 function hit(d, z) { dmgSum += d; log.unshift(`${t.toFixed(1)}s ${E[type].name} 打中 ${d}`); log.length = Math.min(log.length, 40); hero.fl = .15; }
 function step(dt) {
   t += dt; const T = E[type];
-  if (!still) { const v = 90 * dt; hero.x += ((keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0)) * v; hero.y += ((keys.ArrowDown ? 1 : 0) - (keys.ArrowUp ? 1 : 0)) * v / YS; }
+  if (!still) { const v = 80 * dt; hero.x += ((keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0)) * v; hero.y += ((keys.ArrowDown ? 1 : 0) - (keys.ArrowUp ? 1 : 0)) * v / YS; }
   hero.fl = Math.max(0, (hero.fl || 0) - dt);
   for (const z of foes) { if (z.dead) continue; z.t += dt; const d = dist(z, hero), a = ang(z, hero); z.f = Math.cos(a) < 0 ? -1 : 1;
     if (z.st === 'walk') { let mv = 1; if (T.keep) { if (d < T.keep[0]) mv = -1; else if (d < T.keep[1]) mv = 0; }
@@ -59,7 +59,7 @@ function step(dt) {
 function ell(x, y, r, col, dash) { ctx.save(); ctx.strokeStyle = col; ctx.setLineDash(dash || []); ctx.beginPath(); ctx.ellipse(x, y, r, r / YS, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
 function fan(x, y, r, a, arc, col, fill) { ctx.beginPath(); ctx.moveTo(x, y); const h = arc * Math.PI / 360; for (let q = -h; q <= h + 1e-6; q += h / 12) ctx.lineTo(x + Math.cos(a + q) * r, y + Math.sin(a + q) * r / YS); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } ctx.strokeStyle = col; ctx.stroke(); }
 function frameName(z) { const f = SPR.sets[type] && SPR.sets[type].f || {}; const pick = (...ns) => ns.find(n => f[n]); const w = Object.keys(f).filter(n => /^walk\d/.test(n)).length || 1;
-  if (z.st === 'wind') return pick('wind', 'strike', 'walk0'); if (z.st === 'cool' && z.t < .2) return pick('strike', 'walk0'); if (z.st === 'walk' || z.st === 'charge') return pick('walk' + (Math.floor(t * 10) % w), 'walk0'); return pick('idle', 'walk0'); }
+  if (z.st === 'wind') return pick("windup", "strike", "walk0"); if (z.st === 'cool' && z.t < .2) return pick('strike', 'walk0'); if (z.st === 'walk' || z.st === 'charge') return pick('walk' + (Math.floor(t * 10) % w), 'walk0'); return pick('idle', 'walk0'); }
 function draw() { const T = E[type]; ctx.clearRect(0, 0, cv.width, cv.height); ctx.lineWidth = 1;
   if (T.keep) { ell(hero.x, hero.y, T.keep[0], '#5ad0ff', [4, 4]); ell(hero.x, hero.y, T.keep[1], '#5ad0ff', [4, 4]); }
   for (const z of foes) { if (z.dead) continue; ell(z.x, z.y, T.reach, '#ffe14a', [3, 3]); if (T.arc) fan(z.x, z.y, T.r, z.st === 'wind' ? z.aim : ang(z, hero), T.arc, '#ff5a4a', z.st === 'wind' ? `rgba(255,90,74,${.15 + .4 * z.t / T.wind})` : null); if (T.bomb) ell(z.x, z.y, T.bomb, '#ff9a2a', z.st === 'wind' ? [] : [2, 4]); if (T.charge) ell(z.x, z.y, T.charge, '#ff9a2a', [6, 6]); if (T.aura) ell(z.x, z.y, 90, '#c87aff', [2, 6]); }
