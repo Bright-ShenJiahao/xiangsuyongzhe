@@ -1179,3 +1179,5 @@ body.tvbg { background: #000; }
 #vict .vstamp { position: absolute; right: 28px; top: 54px; z-index: 3; padding: 2px 12px; border: 5px solid #d02a20; color: #d02a20; font: 34px WenKai, serif; letter-spacing: .2em; transform: rotate(-14deg) scale(3); opacity: 0; pointer-events: none; }
 #vict .vstamp.on { transition: transform .18s cubic-bezier(.5,0,.8,.5), opacity .1s; transform: rotate(-14deg) scale(1); opacity: .9; } #vict.shake .vbox { animation: shk2 .25s steps(4); }
 #vict .vstamp { top: auto !important; bottom: 18px; right: 200px !important; }
+.ttop { gap: 8px; } .ttop .btn.mini { font-size: 24px; padding: 2px 12px; }   /* 11/24 主界面右上角按钮放大一倍 */
+@media (max-width: 600px), (max-height: 450px) { .ttop .btn.mini { font-size: 18px; padding: 1px 8px; } }
