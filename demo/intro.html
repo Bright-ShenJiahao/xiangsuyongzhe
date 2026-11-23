@@ -101,7 +101,7 @@ function doSkip() { RUN++; setSkip(false); reset(); $('cap').textContent = '（�
 // 2b 地图：念到哪里，哪块被墨色吞掉，冒出黑影标记；最后裂缝一闪整张变暗
 const MK = (() => { const c = () => $('mk'); let on = [], t0 = 0, dark = 0; const IW = 1672, IH = 941;
   const SIL = n => Object.assign(new Image(), { src: n }), G1 = SIL('../art/goblin/gob_blade/idle0.png'), OR = SIL('../art/goblin/gob_troll/idle0.png');
-  const R = [{ x: 300, y: 470, r: 230, ic: G1, n: 6 }, { x: 1360, y: 300, r: 200, bats: 1 }, { x: 880, y: 640, r: 260, ic: OR, n: 4 }];
+  const R = [{ x: 334, y: 395, r: 230, ic: G1, n: 6 }, { x: 1360, y: 300, r: 200, bats: 1 }, { x: 1010, y: 600, r: 220, ic: OR, n: 4 }];
   function go(i) { if (i < 3) on[i] = performance.now(); else dark = performance.now(); }
   function reset() { on = []; dark = 0; }
   function f(n) { const cv = c(); if (!cv) return requestAnimationFrame(f); const img = cv.parentNode.querySelector('.ill'), W = cv.width = cv.clientWidth, H = cv.height = cv.clientHeight, g = cv.getContext('2d');
