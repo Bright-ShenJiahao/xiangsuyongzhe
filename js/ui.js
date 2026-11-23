@@ -291,7 +291,7 @@
     return `<svg class="pxn" viewBox="0 0 ${W} 10" style="width:${W / 10}em" shape-rendering="crispEdges">${ol === 0 ? '' : `<g fill="${ol || '#1e1008'}">${d}${o}</g>`}<g fill="${fg}">${f}</g></svg>`; }  let toastT = 0; function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1800); }
   $('bRoll').addEventListener('pointerdown', e => { e.stopPropagation(); BATTLE.roll(); });
   // 11/22 卡带世界地图：打完一章出来，已通关的亮、下一章可选、其余被乱码盖着
-  function worldMap(done) {   // 11/22 势力地图：领地染色 + 旗帜 + 关系；已平定的亮、下一章可选、其余锁着
+  function worldMap(done, soon) {   // 11/22 势力地图：领地染色 + 旗帜 + 关系；已平定的亮、下一章可选、其余锁着
     const box = $('wmNodes'); box.innerHTML = ''; let pick = null; const cleared = 1;
     $('wmTitle').textContent = '世界势力 · 选择下一章'; $('wmGo').disabled = true; $('wmHint').textContent = '点地图上的旗帜';
     const flag = (o, st, rel) => `<div class="wf" style="--fc:${o.c}"><em>${o.sym}</em></div><b>${o.name}</b><small class="rel r-${rel}">${rel}</small>`;
@@ -299,12 +299,34 @@
     const cap = document.createElement('div'); cap.className = 'wmn cap'; cap.style.left = DATA.capital.x * 100 + '%'; cap.style.top = DATA.capital.y * 100 + '%'; cap.innerHTML = flag(DATA.capital, '', DATA.capital.rel); cap.onclick = () => toast('王都 · 公主在这里等你'); box.appendChild(cap);
     DATA.chapters.forEach(c => { const d = document.createElement('div'), st = c.id <= cleared ? 'done' : c.id === cleared + 1 ? 'next' : 'lock', rel = st === 'done' ? '已平定' : c.rel;
       d.className = 'wmn ' + st; d.style.left = c.x * 100 + '%'; d.style.top = c.y * 100 + '%'; d.innerHTML = flag(c, st, rel);
-      d.onclick = () => { if (st === 'lock') return toast(`第 ${c.id} 章 · ${c.land}：先打通前面的章节`); if (st === 'done') return toast('这里已经恢复平静了');
+      d.onclick = () => { if (soon && st !== 'done') return toast(`第 ${c.id} 章「${c.name}」· 敬请期待`); if (st === 'lock') return toast(`第 ${c.id} 章 · ${c.land}：先打通前面的章节`); if (st === 'done') return toast('这里已经恢复平静了');
         for (const x of box.children) x.classList.remove('sel'); d.classList.add('sel'); pick = c; $('wmHint').textContent = `第 ${c.id} 章「${c.name}」· ${c.land} · 首领 ${c.boss}（制作中）`; $('wmGo').disabled = false; };
       box.appendChild(d); });
-    $('wmGo').onclick = () => { overlay('wmap', false); done(pick); }; overlay('wmap', true);
+    $('wmGo').onclick = () => { overlay('wmap', false); done(pick); }; if (soon) { $('wmGo').disabled = false; $('wmGo').textContent = '回到主界面'; $('wmHint').textContent = '其他章节敬请期待'; } else $('wmGo').textContent = '继续 ▶'; overlay('wmap', true);
     const sc = $('wmScroll'); sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) * .45;
   }
+
+  // 11/23 通关结算（战斗内像素风）：数字滚动、条长出来、最后盖印章；点一下跳到全部显示
+  function victory(v, done) {
+    const SKN = id => (DATA.skills[id] || {}).name || id, tot = Object.values(v.dmg).reduce((a, b) => a + b, 0) || 1;
+    $('vTitle').textContent = '第一章 · 哥布林森林　通关';
+    const rec = [['用时', mmss(v.time), 0], ['击倒', v.kills, 1], ['最高连击', v.combo, 1], ['铜钱', v.coins, 1, '+'], ['受到伤害', v.taken, 1]];
+    $('vRec').innerHTML = rec.map(([n, x, num, pre]) => `<div class="vr"><span>${n}</span><b data-v="${num ? x : ''}" data-p="${pre || ''}">${num ? (pre || '') + '0' : x}</b></div>`).join('');
+    $('vDmg').innerHTML = Object.entries(v.dmg).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, d]) => `<div class="vbar"><span>${SKN(id)}</span><i><s data-w="${(d / tot * 100).toFixed(0)}"></s></i><em>${Math.round(d / tot * 100)}%</em></div>`).join('') || '<p class="vdim">—</p>';
+    $('vGrow').innerHTML = `<div class="vbar lv"><span>勇者 Lv${v.lv}</span><i><s data-w="${(v.xp * 100).toFixed(0)}"></s></i><em>${Math.round(v.xp * 100)}%</em></div>` + v.sk.map(k => `<div class="vbar sk"><span>${k.name} Lv${k.L}</span><i><s data-w="${(k.p * 100).toFixed(0)}"></s></i></div>`).join('');
+    const G2 = v.got.slice(-12); $('vGot').innerHTML = G2.length ? '' : '<p class="vdim">这一局没有拿到新东西</p>'; G2.forEach(o => { const c = document.createElement('span'); c.className = 'vic'; c.appendChild(o.kind === 'book' ? skIcon(o.id) : pi(o.kind === 'oath' ? 'oath/' + o.id : o.id)); $('vGot').appendChild(c); });
+    $('vNew').innerHTML = '★ 新解锁：图鉴「哥布林王」';
+    const V = $('vict'), st = V.querySelector('.vstamp'); st.classList.remove('on'); V.classList.remove('done'); overlay('vict', true);
+    let skip = false; const fin = () => { skip = true; V.querySelectorAll('[data-v]').forEach(b => { if (b.dataset.v !== '') b.textContent = b.dataset.p + b.dataset.v; }); V.querySelectorAll('s[data-w]').forEach(e => e.style.width = e.dataset.w + '%'); st.classList.add('on'); V.classList.add('done'); };
+    V.onclick = e => { if (e.target.id !== 'vGo') fin(); };
+    (async () => { const w = ms => new Promise(r => setTimeout(r, ms));
+      for (const b of V.querySelectorAll('#vRec b')) { if (skip) return; if (b.dataset.v === '') { await w(120); continue; } const n = +b.dataset.v, t0 = performance.now(); await new Promise(r => (function f() { if (skip) return r(); const k = Math.min(1, (performance.now() - t0) / 450); b.textContent = b.dataset.p + Math.round(n * (1 - (1 - k) ** 3)); k < 1 ? requestAnimationFrame(f) : r(); })()); await w(80); }
+      for (const e of V.querySelectorAll('s[data-w]')) { if (skip) return; e.style.width = e.dataset.w + '%'; await w(140); }
+      await w(300); if (skip) return; st.classList.add('on'); await w(180); V.classList.remove('shake'); void V.offsetWidth; V.classList.add('shake'); V.classList.add('done'); })();
+    $('vGo').onclick = () => { overlay('vict', false); done(); };
+  }
+  function nextChapter() { const w = document.createElement('div'); w.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:95;opacity:0;transition:opacity .4s'; document.body.appendChild(w); requestAnimationFrame(() => w.style.opacity = 1);
+    setTimeout(() => { worldMap(() => { BATTLE.stop(); overlay('wmap', false); show('title'); }, true); w.style.opacity = 0; setTimeout(() => w.remove(), 450); }, 450); }
   function result(r) {
     if (r.win && !r.mapShown) return worldMap(() => result(Object.assign({}, r, { mapShown: true })));
     $('rTitle').textContent = r.win ? '胜利！' : '败北……';
@@ -338,7 +360,7 @@
   const isTouch = () => matchMedia('(hover: none)').matches;
   const pTip = () => isTouch() ? '点右上角 ⏸ 看看' : '按 P 看看', pKey = () => isTouch() ? '点右上角 ⏸ 整理' : '按下 P 整理';
   const newDot = v => { const b = $('bPause'); if (b) b.classList.toggle('dot', v !== false); };
-  window.UI = { FX, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来
