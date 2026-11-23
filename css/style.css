@@ -1,5 +1,5 @@
 /* 像素勇者 · 界面样式：深色木框 + 金边，像素字体（缝合像素字体 Fusion Pixel 12px，OFL，子集见 art/font/） */
-@font-face { font-family: Pix; src: url(../art/font/kai.woff2?v=2) format('woff2'); font-display: block; }   /* 11/22 像素字停用：Pix 这个名字改指向霞鹜文楷 */
+@font-face { font-family: Pix; src: url(../art/font/kai.woff2?v=3) format('woff2'); font-display: block; }   /* 11/22 像素字停用：Pix 这个名字改指向霞鹜文楷 */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; background: #07101b; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; font-family: Pix, monospace; color: #fff3d0; }
 #cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
@@ -793,7 +793,7 @@ svg.ped { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%
 #prep .pnItem > div { display: grid !important; grid-template-columns: 36px 1fr; grid-template-rows: auto auto; column-gap: 8px; } #prep .pnItem > div > :first-child { grid-row: 1 / 3; } #prep .pnItem b { font-size: 14px; } #prep .pnItem small { text-align: left; font-size: 12px; }
 .pnR { gap: 8px; } .pnHead #heroCv { flex-basis: 110px; width: 110px; height: 110px; } .pnWep button > :first-child { width: 68px !important; height: 68px !important; } .skI { padding: 8px 14px; } .skLv { margin-top: 8px; } .pnSec h4 { margin-bottom: 6px; }
 /* 11/22 字体：标题霞鹜文楷（OFL，三国终章同款子集），像素体试用版（xsyz-font=pixel） */
-@font-face { font-family: WenKai; src: url(../art/font/kai.woff2?v=2) format('woff2'); font-display: block; }
+@font-face { font-family: WenKai; src: url(../art/font/kai.woff2?v=3) format('woff2'); font-display: block; }
 @font-face { font-family: FPixel; src: url(../art/font/fpixel.woff2) format('woff2'); font-display: swap; }
 .pnName h5, .pnSec h4, .skIt b, .pnPick > span{ font-family: WenKai, "Songti SC", "STSong", serif !important; font-weight: 400 !important; }
 .pnName h5 { font-size: 42px !important; }
