@@ -37,7 +37,7 @@
       st: 1, wi: -1, route: 'fight', waveOn: false, wave: 0 };
     const g = MAP.ground;
     cam.snap = true; hero = { gap: 0, rollBuf: 0, x: MAPW / 2, y: (g.y0 + g.y1) / 2, hp: 0, maxHp: 0, f: 1, t: 0, roll: 0, rollCd: 0, inv: 0, hurtT: 0, atkT: 0, moving: false, cd: .6, dead: false,
-      m: { dmg: 1, spd: 1, area: 1, move: 1 }, crit: .01, critMul: 1.5, pIn: 1, mIn: 1, xpMul: 1, fx: {}, A: {} };
+      m: { dmg: 1, spd: 1, area: 1, move: 1 }, critP: .01, critM: .01, critMulP: 1.5, critMulM: 1.5, eva: 0, pIn: 1, mIn: 1, xpMul: 1, fx: {}, A: {} };
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
     RUN = { hero: b.hero || 'm', weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0,   /* 11/22 属性加点删除，只靠修炼 */ alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
       bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: [null], coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
@@ -62,7 +62,7 @@
     const items = RUN.gear.filter(x => x && x.kind === 'item').map(x => ({ id: x.id, lv: x.lv || 1 }));   // 11/23 只有左边宝物格里的宝物生效
     const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit }), m = hero.m;
     m.dmg = (1 + (c.fx.dmg || 0)) * (1 + .03 * (G.lv - 1)); m.spd = c.spd; m.area = c.area; m.move = c.move;
-    hero.crit = c.crit; hero.critMul = c.critMul; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.44 : 1.8; hero.A = c.A; hero.fx = c.fx;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20%（11/23 修：hero.A / hero.fx 之前被注释吞掉了）
+    hero.critP = c.critP; hero.critM = c.critM; hero.critMulP = c.critMulP; hero.critMulM = c.critMulM; hero.eva = c.eva; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.44 : 1.8; hero.A = c.A; hero.fx = c.fx;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20%（11/23 修：hero.A / hero.fx 之前被注释吞掉了）
     hero.ob = {}; for (const o of [...(RUN.oath || []), ...(RUN.mv || [])]) if (o && DATA.oaths[o.id]) hero.ob[o.id] = DATA.oathLv[Math.min(5, o.lv || 1) - 1];
     m.spd *= 1 + .08 * OB('jifeng'); hero.rollMax *= 1 - .08 * OB('qingyu'); hero.rollMul = 1 + .15 * OB('youlong');
     const max = Math.round((c.hp + 3 * (G.lv - 1)) * (1 - (RUN.hpCut || 0))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
@@ -151,10 +151,10 @@
     if (z.shieldHp > 0 && from && (from.x - z.x) * z.f > 0 && !(z.cc)) { d *= .3; if (--z.shieldHp <= 0) { z.noShield = true; z.st = 'hurt'; z.t = -.25; z.brk = .45; nums.push({ x: z.x, y: z.y - 40 * K, txt: '盾碎了！', t: 0, col: '#ffcf6a' }); } else for (let i = 0; i < 3; i++) parts.push({ x: z.x + z.f * 10 * K, y: z.y - 16 * K, vx: z.f * R(10, 50) * K, vy: R(-50, -10) * K, t: 0, T: .3, col: '#fff2a0', g: 120 * K }); }   // 盾兵正面挡 70%，挡够次数盾碎
     if (z.curseT > 0) d *= 1.15; if (z.vulnN && z.vulnT > 0) d *= 1 + .05 * z.vulnN; if (z.cc && z.cc.k === 'air' && z.airVuln) d *= 1.3;
     if ((z.tier || T.boss) && OB('tulong')) d *= 1 + .12 * OB('tulong');
-    const crit = Math.random() < hero.crit + (hero.castCrit || 0) + (o.crit || 0); if (crit) d *= hero.critMul; d = Math.max(1, rd(d));
+    const mg = dt === 'magic', crit = Math.random() < (mg ? hero.critM : hero.critP) + (hero.castCrit || 0) + (o.crit || 0); if (crit) d *= mg ? hero.critMulM : hero.critMulP; d = Math.max(1, rd(d));
     status(z, o, d);
     if (sid) { const r = Math.min(d, Math.max(0, z.hp)); RUN.dmgW[sid] = (RUN.dmgW[sid] || 0) + r; RUN.dmgAll[sid] = (RUN.dmgAll[sid] || 0) + r; }
-    z.hp -= d; z.flash = .12; nums.push({ x: z.x, y: z.y - (z.T.boss ? 64 : 34) * K, v: d, t: 0, col: crit ? '#ffd84a' : '#ffffff', big: crit });
+    z.hp -= d; z.flash = .12; nums.push({ x: z.x, y: z.y - (z.T.boss ? 64 : 34) * K, v: d, t: 0, col: crit ? (mg ? '#d08aff' : '#ffd84a') : '#ffffff', big: crit });
     const a = from ? ang(from, z) : R(0, 7);
     // 推退：普通 6 格左右（原来 14 太远），同一只 0.2 秒内只推一次；精英减半，小头目和王不推；推不打断抬手
     const kbm = z.T.boss || z.tier === 'mini' ? 0 : z.tier === 'elite' ? .22 : .43;
@@ -181,6 +181,7 @@
   }
   function damageHero(d, dtype = 'phys') {
     if (hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
+    if (Math.random() < (hero.eva || 0)) { nums.push({ x: hero.x, y: hero.y - 44 * K, txt: 'MISS', t: 0, col: '#ffffff' }); return; }   // 11/24 闪避
     d *= dtype === 'magic' ? hero.mIn : hero.pIn; { const now = G.t; hero.hitBy = (hero.hitBy || []).filter(h => now - h.t < 1); const src = damageHero.src; if (src && !hero.hitBy.some(h => h.z === src)) hero.hitBy.push({ z: src, t: now }); d *= 1 + .25 * Math.max(0, hero.hitBy.length - 1); }   // 11/23 被围：1 秒内每多一只不同的怪打到 +25% if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); hero.hp -= d; G.taken = (G.taken || 0) + d; hero.inv = .45; hero.hurtT = .25; { const big = d >= hero.maxHp * .15; if (big) G.shake = Math.max(G.shake, .25); UI.FX.hit(big); } nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
     if (hero.hp <= 0 && RUN.save) { RUN.save = false; hero.hp = hero.maxHp * .5; hero.inv = 2; banner('复活羽毛燃尽了！', 1.6); return; }
     if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; G.loseT = 3.6; G.deadR = 0; G.shake = Math.max(G.shake, .45); addEventListener('pointerdown', () => { if (G && hero.dead && G.deadR > .4) G.loseT = 0; }, { once: true }); }

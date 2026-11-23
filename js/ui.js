@@ -131,7 +131,7 @@
       $('pPort').src = `art/portrait/${P.hero}.webp`;
       const PL = (ic, n, v) => `<div><span>${piH(ic, 1)}${n}</span><b>${v}</b></div>`, dmgA = W0.type === 'agi' ? 'agi' : W0.type === 'int' ? 'int' : 'str';
       $('hInfo').innerHTML = `<div class="pnName"><h5>${h.name}</h5><span>${h.desc}</span></div><div class="hperk">◆ 特长 · ${h.perk}</div>
-        <div class="pills">${PL('hp', '生命', c0.hp)}${PL(dmgA, W0.name + '伤害', pct(c0.dmg - 1))}${PL('guard', '物防 / 魔防', c0.pdef + ' / ' + c0.mdef)}${PL('move', '移速', pct(c0.move - 1))}${PL('crit', '暴击率', Math.round(c0.crit * 100) + '%')}${PL('xp', '经验', pct(c0.xp - 1))}</div>`; }
+        <div class="pills">${PL('hp', '生命', c0.hp)}${PL(dmgA, W0.name + '伤害', pct(c0.dmg - 1))}${PL('guard', '物防 / 魔防', c0.pdef + ' / ' + c0.mdef)}${PL('move', '移速', pct(c0.move - 1))}${PL('crit', '暴击率', Math.round(c0.critP * 100) + '% / ' + Math.round(c0.critM * 100) + '%')}${PL('move', '闪避', Math.round(c0.eva * 100) + '%')}${PL('xp', '经验', pct(c0.xp - 1))}</div>`; }
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
@@ -147,7 +147,7 @@
       const [m, p] = r.querySelectorAll('button'); m.onclick = () => { P.free[a.id]--; renderPrep(); }; p.onclick = () => { P.free[a.id] = (P.free[a.id] || 0) + 1; renderPrep(); };
       ar.appendChild(r);
     }
-    $('aStats').innerHTML = `<span>生命</span><b>${c.hp}</b><span>${W.name}伤害</span><b>${pct(c.dmg - 1)}</b><span>出手速度</span><b>${pct(c.spd - 1)}</b><span>范围</span><b>${pct(c.area - 1)}</b><span>暴击率</span><b>${Math.round(c.crit * 100)}%</b><span>物防 / 魔防</span><b>${c.pdef} / ${c.mdef}</b><span>移速</span><b>${pct(c.move - 1)}</b><span>经验</span><b>${pct(c.xp - 1)}</b>`;
+    $('aStats').innerHTML = `<span>生命</span><b>${c.hp}</b><span>${W.name}伤害</span><b>${pct(c.dmg - 1)}</b><span>出手速度</span><b>${pct(c.spd - 1)}</b><span>范围</span><b>${pct(c.area - 1)}</b><span>暴击率 物/魔</span><b>${Math.round(c.critP * 100)}% / ${Math.round(c.critM * 100)}%</b><span>暴伤 物/魔</span><b>${Math.round(c.critMulP * 100)}% / ${Math.round(c.critMulM * 100)}%</b><span>闪避</span><b>${Math.round(c.eva * 100)}%</b><span>物防 / 魔防</span><b>${c.pdef} / ${c.mdef}</b><span>移速</span><b>${pct(c.move - 1)}</b><span>经验</span><b>${pct(c.xp - 1)}</b>`;
     // 现实习惯：三选一，也可以不选
     const hs = $('hSel'); hs.innerHTML = '';
     for (const id of P.habitOpts) { const h = DATA.habits.find(x => x.id === id), d = document.createElement('div'); d.className = id === P.habit ? 'on' : ''; d.innerHTML = `<b>${h.name}</b><i>${h.good}</i><u>${h.bad}</u><small>${h.line}</small>`; d.onclick = () => { P.habit = P.habit === id ? null : id; renderPrep(); }; hs.appendChild(d); }

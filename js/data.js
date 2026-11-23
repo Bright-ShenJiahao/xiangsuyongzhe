@@ -10,9 +10,9 @@ window.DATA = {
   },
   // 属性：开局各 3 点，另有 5 点自由分配（备战页）
   attrs: [
-    { id: 'str', name: '力量', desc: '剑、枪招式伤害 +6%、物防 +1 / 点' },
-    { id: 'agi', name: '敏捷', desc: '弓招式伤害 +6% / 点，出手速度 +2% / 点' },
-    { id: 'int', name: '智力', desc: '法杖招式伤害 +6%、技能范围 +2%、魔防 +1 / 点' },
+    { id: 'str', name: '力量', desc: '剑、枪招式伤害 +6%、物防 +1、物理暴击伤害 +2% / 点' },
+    { id: 'agi', name: '敏捷', desc: '弓招式伤害 +6% / 点，出手速度 +2%、物理暴击率 +1%、闪避 +0.5% / 点' },
+    { id: 'int', name: '智力', desc: '法杖招式伤害 +6%、技能范围 +2%、魔防 +1、魔法暴击率 +1%、魔法暴击伤害 +2% / 点' },
     { id: 'con', name: '体魄', desc: '生命 +10 / 点' },
     { id: 'end', name: '耐力', desc: '物防 +4、魔防 +4 / 点' },   // 11/21 用户加：耐力管两种防御
   ],
@@ -44,7 +44,10 @@ window.DATA = {
     { id: 'magnet', name: '磁石', icon: '🧲', desc: '吸铜钱的范围变大，每站铜钱 +3', fx: { waveCoin: 3 }, price: 24 },
     { id: 'bento', name: '便当', icon: '🍱', desc: '每波开始回复 6% 生命', fx: { waveHeal: .06 }, price: 43 },
     { id: 'hourglass', name: '沙漏', icon: '⏳', desc: '出手速度 +8%', fx: { spd: .08 }, price: 46 },
-    { id: 'clover', name: '四叶草', icon: '🍀', desc: '暴击率 +8%', fx: { crit: .08 }, price: 40 },
+    { id: 'clover', name: '四叶草', icon: '🍀', desc: '物理、魔法暴击率 +8%', fx: { crit: .08 }, price: 40 },
+    { id: 'cloak', name: '斗篷', icon: '🧥', fx: { eva: .04 }, d: m => `闪避 +${Math.round(4 * m)}%（物理、魔法攻击都能躲）`, price: 34 },
+    { id: 'blade_oil', name: '锋刃油', icon: '🗡️', fx: { critMulP: .2 }, d: m => `物理暴击伤害 +${Math.round(20 * m)}%`, price: 36 },
+    { id: 'mana_lens', name: '法力透镜', icon: '🔮', fx: { critM: .05 }, d: m => `魔法暴击率 +${Math.round(5 * m)}%`, price: 36 },
     // 11/23 新宝物（同名合并升级，倍率同誓约印记；fx 随等级涨，cost 固定）
     { id: 'curse_crown', name: '诅咒王冠', fx: { dmg: .15 }, cost: { take: .15 }, d: m => `所有伤害 +${Math.round(15 * m)}%<br><span class="bad">受到伤害 +15%</span>`, price: 42 },
     { id: 'berserk', name: '狂战士项链', fx: { low: .20 }, cost: { healMul: -.3 }, d: m => `生命低于 30% 时，伤害 +${Math.round(20 * m)}%<br><span class="bad">受到治疗 −30%</span>`, price: 38 },
@@ -276,7 +279,10 @@ window.DATA.calc = function (b) {
     spd: 1 + .02 * A.agi + (fx.spd || 0),                    // 出手速度倍率（冷却 ÷ 它）
     area: Math.min(1.6, Math.max(.8, 1 + .02 * A.int + (fx.area || 0))),
     move: 1 + (fx.move || 0),
-    crit: Math.max(0, .01 + (fx.crit || 0)), critMul: 1.5 + (fx.critMul || 0),   // 暴击率 1% 起，暴击伤害 150% 起
+    // 11/24 暴击分物理 / 魔法：暴击率 1% 起（物理 + 敏捷 1%/点，魔法 + 智力 1%/点，上限 60%）；暴击伤害 150% 起（物理 + 力量 2%/点，魔法 + 智力 2%/点）
+    critP: Math.min(.6, Math.max(0, .01 + .01 * A.agi + (fx.crit || 0) + (fx.critP || 0))), critM: Math.min(.6, Math.max(0, .01 + .01 * A.int + (fx.crit || 0) + (fx.critM || 0))),
+    critMulP: 1.5 + .02 * A.str + (fx.critMul || 0) + (fx.critMulP || 0), critMulM: 1.5 + .02 * A.int + (fx.critMul || 0) + (fx.critMulM || 0),
+    eva: Math.min(.25, Math.max(0, .005 * A.agi + (fx.eva || 0))),   // 闪避：物理、魔法都能躲；敏捷 0.5%/点，上限 25%
     // 防御：受到的伤害 × 100 / (100 + 防御)，最多减 50%。物防 = 耐力 × 4 + 力量 × 1，魔防 = 耐力 × 4 + 智力 × 1，再加宝物
     pdef: Math.max(0, 4 * A.end + A.str + (fx.pdef || 0)), mdef: Math.max(0, 4 * A.end + A.int + (fx.mdef || 0)),
     hp: Math.round((55 + 10 * A.con + (fx.hp || 0)) * (1 + (fx.hpMul || 0))),

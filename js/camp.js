@@ -140,8 +140,8 @@
     const hp = DATA.heroes.find(x => x.id === r.hero) || {};
     const g = (t, rows) => `<h5>${t}</h5><div class="stats big">${rows.map(([ic, n, v]) => `<span>${UI.piH(ic, 1)}${n}</span><b>${v}</b>`).join('')}</div>`;
     Rt.innerHTML = `<h4>勇者</h4>` +
-      g('进攻', [['str', '剑 · 枪伤害', pct(.06 * c.A.str + (c.fx.dmg || 0))], ['agi', '弓伤害', pct(.06 * c.A.agi + (c.fx.dmg || 0))], ['int', '法杖伤害', pct(.06 * c.A.int + (c.fx.dmg || 0))], ['spd', '出手速度', pct(c.spd - 1)], ['area', '范围', pct(c.area - 1)], ['crit', '暴击率', Math.round(c.crit * 100) + '%']]) +
-      g('防御', [['hp', '生命', `${Math.ceil(h.hp)} / ${h.maxHp}`], ['guard', '物防', `${c.pdef} <small>受物理 ×${c.pIn.toFixed(2)}</small>`], ['star', '魔防', `${c.mdef} <small>受魔法 ×${c.mIn.toFixed(2)}</small>`]]) +
+      g('进攻', [['str', '剑 · 枪伤害', pct(.06 * c.A.str + (c.fx.dmg || 0))], ['agi', '弓伤害', pct(.06 * c.A.agi + (c.fx.dmg || 0))], ['int', '法杖伤害', pct(.06 * c.A.int + (c.fx.dmg || 0))], ['spd', '出手速度', pct(c.spd - 1)], ['area', '范围', pct(c.area - 1)], ['crit', '物理暴击', `${Math.round(c.critP * 100)}% <small>伤害 ${Math.round(c.critMulP * 100)}%</small>`], ['star', '魔法暴击', `${Math.round(c.critM * 100)}% <small>伤害 ${Math.round(c.critMulM * 100)}%</small>`]]) +
+      g('防御', [['hp', '生命', `${Math.ceil(h.hp)} / ${h.maxHp}`], ['guard', '物防', `${c.pdef} <small>受物理 ×${c.pIn.toFixed(2)}</small>`], ['star', '魔防', `${c.mdef} <small>受魔法 ×${c.mIn.toFixed(2)}</small>`], ['move', '闪避', `${Math.round(c.eva * 100)}% <small>物理、魔法都能躲</small>`]]) +
       g('其他', [['clover', '幸运', `${r.luck || 0} <small>掉落 ${pct(.05 * (r.luck || 0))} · 价格 ${pct(-.03 * (r.luck || 0))}</small>`], ['move', '移速', pct(c.move - 1)], ['xp', '经验', pct(c.xp * (r.hero === 'm' ? 1.1 : 1) - 1)]]);
     L.insertAdjacentHTML('beforeend', `<p class="dim">人物被动：${hp.name || ''} · ${hp.perk || '无'}</p><p class="dim">生效宝物：${items.length ? items.map(e => (DATA.startItems.find(i => i.id === e.id) || {}).name + (e.lv > 1 ? ' Lv' + e.lv : '')).join('、') : '无'}</p>`);
   }
