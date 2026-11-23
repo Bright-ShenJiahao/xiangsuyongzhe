@@ -87,26 +87,33 @@ async function play() { const id = ++RUN; $('play').style.display = 'none'; rese
              ['g3', 'scale(1.06) translate(0, 3%)', 'scale(1.14) translate(0, -3%)', ['公主露米娜在最后的神殿里发出呼唤——', '呼唤顺着卡带，传到了屏幕的另一边。']]];
   for (const [pg, a, b, lines] of P) { if (id !== RUN) return; const el = $(pg); el.classList.add('on'); kb(el.querySelector('.ill'), a, b, lines.length * 3200 + 1500); await wait(900);
     for (let li = 0; li < lines.length; li++) { const l = lines[li]; if (id !== RUN) return; if (pg === 'g2b') MK.go(li); await type($('cap'), l, id); await wait(1500); } if (pg === 'g2b') { MK.go(3); await wait(900); } $('cap').textContent = ''; if (pg !== 'g3') { el.classList.remove('on'); await wait(700); } }
-  if (id !== RUN) return; setSkip(false); const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); $('g3').classList.remove('on');
-  $('px').style.opacity = 1; pxState = 'on'; pxT0 = performance.now(); requestAnimationFrame(pxDraw); w.style.transition = 'opacity 1.4s'; w.style.opacity = 0; await wait(3600);
+  if (id !== RUN) return; tower(id); }
+// 塔顶：白光淡入 → 对话 → 开门 → 走进门（11/24 长按跳过：故事书跳到这里；这里再长按 = 跳过对话直接开门）
+async function tower(id, fromSkip) { setSkip(true, 'tower'); const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); if (id !== RUN) return; $('g3').classList.remove('on');
+  $('px').style.opacity = 1; pxT0 = performance.now(); if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); } w.style.transition = 'opacity 1.4s'; w.style.opacity = 0; await wait(3600); if (id !== RUN) return;
   if (id !== RUN) return; await say(id, '勇者', '../art/portrait/m.webp', '这是……我刚买的游戏里？');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '您就是回应召唤的勇者吧！');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '裂缝还在扩大……请帮帮这片大陆！');
-  $('bub').style.display = 'none'; portalT = performance.now(); await wait(1250); $('pc').animate([{ transform: 'translate(-50%, -50%) translate(0, 3px)' }, { transform: 'translate(-50%, -50%)' }], 200); await wait(1200); walk = { x: 835 * CW / 1672, y: 292 * CW / 1672 }; $('cap').textContent = matchMedia('(pointer:coarse)').matches ? '按住屏幕拖动，走进传送门' : 'WASD / 方向键移动，走进传送门'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
+  if (id !== RUN) return; $('bub').style.display = 'none'; setSkip(false); portalT = performance.now(); await wait(1250); if (id !== RUN) return; $('pc').animate([{ transform: 'translate(-50%, -50%) translate(0, 3px)' }, { transform: 'translate(-50%, -50%)' }], 200); await wait(1200); if (id !== RUN) return; startWalk(); }
+function startWalk() { walk = { x: 835 * CW / 1672, y: 292 * CW / 1672 }; $('cap').textContent = matchMedia('(pointer:coarse)').matches ? '按住屏幕拖动，走进传送门' : 'WASD / 方向键移动，走进传送门'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
 function reset() { walk = null; portalT = 0; MK.reset(); pxState = 'off'; for (const e of document.querySelectorAll('.pg')) e.classList.remove('on'); $('px').style.opacity = 0; $('white').style.opacity = 0; $('bub').style.display = 'none'; $('cap').textContent = ''; }
 $('play').onclick = play;
 const GAME = /[?&]game/.test(location.search), FIRST = /[?&]first/.test(location.search);
 const done = () => { if (GAME) parent.postMessage('introDone', '*'); };
 if (GAME) { $('play').classList.add('g'); $('first').style.display = 'none'; $('play').style.display = 'none'; $('fst').checked = FIRST; addEventListener('load', () => setTimeout(play, 300)); } // 长按跳过：只在故事书插图部分有效；第一次玩不显示；塔顶像素部分不能跳
 let canSkip = false, hold = 0, holdT0 = 0; const HOLD = 1000;
-function setSkip(on) { canSkip = on && !$('fst').checked; $('skip').style.display = canSkip ? 'flex' : 'none'; hold = 0; $('skc').style.strokeDashoffset = 50.3; }
+let skipStage = ''; function setSkip(on, st = 'story') { skipStage = on ? st : ''; canSkip = on && !$('fst').checked; $('skip').style.display = canSkip ? 'flex' : 'none'; hold = 0; $('skc').style.strokeDashoffset = 50.3; }
 function holdTick() { if (!hold) return; const k = Math.min(1, (performance.now() - holdT0) / HOLD); $('skc').style.strokeDashoffset = 50.3 * (1 - k); if (k >= 1) { hold = 0; doSkip(); } else requestAnimationFrame(holdTick); }
 function holdOn() { if (!canSkip || hold) return; hold = 1; holdT0 = performance.now(); requestAnimationFrame(holdTick); }
 function holdOff() { hold = 0; $('skc').style.strokeDashoffset = 50.3; }
 addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) holdOn(); } }); addEventListener('keyup', e => { if (e.code === 'Space') holdOff(); });
 $('skip').addEventListener('pointerdown', holdOn); addEventListener('pointerup', holdOff); addEventListener('pointercancel', holdOff);
 if (matchMedia('(pointer:coarse)').matches) $('skt').textContent = '长按跳过';
-function doSkip() { RUN++; setSkip(false); reset(); $('cap').textContent = '（已跳过：直接进入哥布林森林第一站）'; done(); $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
+function doSkip() { const st = skipStage, id = ++RUN; setSkip(false);
+  if (st === 'story') { reset(); $('white').style.transition = 'none'; $('white').style.opacity = 1; tower(id, true); return; }
+  // 塔顶：跳过对话和开门动画，门直接开好，勇者已经站好，马上能走
+  $('bub').style.display = 'none'; $('white').style.opacity = 0; $('px').style.opacity = 1; if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); }
+  const n = performance.now(); pxT0 = Math.min(pxT0 || n, n - 4000); portalT = n - 2000; startWalk(); }
 
 // 2b 地图：念到哪里，哪块被墨色吞掉，冒出黑影标记；最后裂缝一闪整张变暗
 const MK = (() => { const c = () => $('mk'); let on = [], t0 = 0, dark = 0; const IW = 1672, IH = 941;
