@@ -998,3 +998,17 @@ body.shopOn #feed { opacity: 0; }
 .bad { color: #ff8a7a; }
 #bCont[hidden] { display: none !important; } #bCont small { font-size: .62em; opacity: .8; margin-left: 6px; } #bCont + #bStart { margin-top: 6px; }
 #bCont span { display: flex; flex-direction: column; align-items: center; line-height: 1.2; } #bCont small { display: block; font-size: 13px; letter-spacing: .1em; margin: 2px 0 0; white-space: nowrap; }
+/* ===== 11/23 像素对话框风（试样，挂 body.pxui 才生效） ===== */
+body.pxui #pause .cbox, body.pxui #camp:not(.fshop) .cbox { background: #f2e2bc !important; border: 6px solid #3a2410 !important; border-image: none !important; box-shadow: inset 0 0 0 3px #c89a52, inset 0 0 0 6px #3a2410 !important; color: #3a2410;
+  clip-path: polygon(0 9px, 3px 9px, 3px 6px, 6px 6px, 6px 3px, 9px 3px, 9px 0, calc(100% - 9px) 0, calc(100% - 9px) 3px, calc(100% - 6px) 3px, calc(100% - 6px) 6px, calc(100% - 3px) 6px, calc(100% - 3px) 9px, 100% 9px, 100% calc(100% - 9px), calc(100% - 3px) calc(100% - 9px), calc(100% - 3px) calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) calc(100% - 3px), calc(100% - 9px) calc(100% - 3px), calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 3px), 6px calc(100% - 3px), 6px calc(100% - 6px), 3px calc(100% - 6px), 3px calc(100% - 9px), 0 calc(100% - 9px)); }
+body.pxui #pause .chead { border-bottom: 4px solid #c89a52 !important; background: none !important; } body.pxui #pause .chead::before, body.pxui #pause .chead::after { display: none !important; }
+body.pxui #pause .chead h2 { color: #3a2410 !important; text-shadow: none !important; } body.pxui #pCoin { background: #3a2410; color: #ffe08a; padding: 2px 8px; }
+body.pxui #pause .ctabs button { background: #d8c8a0 !important; color: #3a2410 !important; border: none !important; border-image: none !important; border-radius: 0 !important; box-shadow: 0 0 0 3px #3a2410 !important; margin: 0 4px; }
+body.pxui #pause .ctabs button.on { background: #e8b84a !important; box-shadow: 0 0 0 3px #3a2410, 0 4px 0 3px #3a2410 !important; }
+body.pxui #pause .lol, body.pxui #pause .lor { background: #7a4a22 repeating-conic-gradient(#7a4a22 0 25%, #724420 0 50%) 0 0 / 4px 4px !important; border: none !important; box-shadow: 0 0 0 4px #3a2410 !important; color: #fff3d8; }
+body.pxui #pause .lo h4 { color: #ffe0a0 !important; text-shadow: 2px 2px 0 #3a2410; } body.pxui #pause .lo h4 small { color: #f2e2bc !important; }
+body.pxui #pause .slot, body.pxui #pause .bag > div { background: #a8703a !important; border: none !important; border-image: none !important; border-radius: 0 !important; box-shadow: 0 0 0 2px #3a2410, inset 0 3px 0 #c88a4a, inset 0 -3px 0 #6a4220 !important; }
+body.pxui #pause .oathrow > div { border-radius: 50% !important; }
+body.pxui #pause .btn, body.pxui #pause #pGoOn { background: #e8b84a !important; color: #3a2410 !important; border: none !important; border-image: none !important; border-radius: 0 !important; box-shadow: 0 0 0 3px #3a2410, 0 4px 0 3px #3a2410 !important; text-shadow: none !important; }
+body.pxui #pause .cbox { padding: 16px 20px !important; } body.pxui #pause .cbody { padding: 6px 4px !important; } body.pxui #pause .lol, body.pxui #pause .lor { margin: 4px; padding: 10px 12px !important; }
+body.pxui #pause .cfoot { padding-top: 10px; } body.pxui #pause .cfoot .btn { padding: 6px 14px !important; }
