@@ -18,6 +18,8 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 #skip, #play { position: fixed; z-index: 10; font: 15px WenKai, serif; color: #f4ecd8; background: rgba(20,12,6,.7); border: 2px solid #c89a52; padding: 4px 14px; cursor: pointer; }
 #skip { right: 16px; top: 14px; } #play { left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 22px; padding: 10px 26px; }
 .crack { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: screen; pointer-events: none; }
+#bub { position: fixed; z-index: 7; display: none; transform: translate(-50%, -100%); background: rgba(250,244,230,.96); border: 3px solid #3a2814; color: #3a2814; font-size: clamp(15px, 2vw, 22px); padding: 4px 12px; white-space: nowrap; }
+#bub::after { content: ''; position: absolute; left: 50%; top: 100%; width: 10px; height: 8px; margin-left: -5px; background: #3a2814; }
 </style></head><body>
 <div id="st">
   <div class="pg" id="g1"><img class="ill" src="../art/intro/p1.webp"><div class="vig"></div><div class="frame"></div></div>
@@ -27,7 +29,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 </div>
 <div id="cap"></div><div id="white"></div>
 <div id="px"><canvas id="pc" width="320" height="180"></canvas></div>
-<div id="dlg"><img id="dav"><div><b id="dn"></b><span id="dt"></span></div></div>
+<div id="bub"></div><div id="dlg"><img id="dav"><div><b id="dn"></b><span id="dt"></span></div></div>
 <button id="skip">跳过 ▶▶</button><button id="play">▶ 播放开场</button>
 <script>
 const $ = s => document.getElementById(s), wait = ms => new Promise(r => setTimeout(r, ms));
@@ -45,7 +47,7 @@ fx('ck', 'crack'); fx('cr', 'glow');
 const AT = Object.assign(new Image(), { src: '../art/hero/atlas.png' }), PR = Object.assign(new Image(), { src: '../art/heroP/atlas.png' }), BG = Object.assign(new Image(), { src: '../art/map/forest3.webp' });
 const FR = { idle: [0, 0, 36, 40, 13.6, 39], hurt: [442, 0, 45, 39, 18.5, 39], dead: [489, 0, 54, 23, 19.7, 23] }, PI = [[878, 140, 38, 40, 16.5, 40], [918, 140, 39, 40, 17.4, 40]];
 let pxState = 'off', pxT0 = 0;
-function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled = false; const t = (n - pxT0) / 1000;
+function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled = false; const t = Math.max(0, (n - pxT0) / 1000);
   if (BG.complete) g.drawImage(BG, -460, -60, 1100, 619); g.fillStyle = 'rgba(10,8,40,.35)'; g.fillRect(0, 0, 320, 180);
   // 石祭坛
   const ax = 150, ay = 118; const st = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
@@ -62,21 +64,21 @@ function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled
   const pf = PI[Math.floor(t * 2) % 2]; if (PR.complete) { g.save(); g.translate(ax + 58, 0); g.scale(-1, 1); g.drawImage(PR, pf[0], pf[1], pf[2], pf[3], -pf[4], ay - pf[5] + 2, pf[2], pf[3]); g.restore(); }
   g.fillStyle = `rgba(220,240,255,${.5 + .3 * Math.sin(t * 3)})`; g.fillRect(ax + 50, ay - 24, 3, 3);
   if (pxState === 'on') requestAnimationFrame(pxDraw); }
-async function say(id, who, av, s) { $('dlg').style.display = 'flex'; $('dn').textContent = who; $('dav').src = av; await type($('dt'), s, id, 55); await wait(1300); }
+async function say(id, who, av, s) { const b = $('bub'), c = $('pc').getBoundingClientRect(), hx = who === '勇者' ? 150 : 208, hy = who === '勇者' ? 62 : 74; b.style.left = c.left + hx / 320 * c.width + 'px'; b.style.top = c.top + hy / 180 * c.height + 'px'; b.style.display = 'block'; await type(b, s, id, 60); await wait(1400); b.style.display = 'none'; }
 async function play() { const id = ++RUN; $('play').style.display = 'none'; reset();
   const P = [['g1', 'scale(1.04)', 'scale(1.14) translate(-2%, 1%)', ['卡带世界里，有一块和平的大陆。', '每到祭典，城里的街道总是热闹非凡。']],
              ['g2', 'scale(1.16) translate(2%, 2%)', 'scale(1.05)', ['直到有一天，这盘卡带被拿去违规烧录——', '别的游戏里的怪物，被硬塞了进来。']],
              ['g2b', 'scale(1.0)', 'scale(1.1) translate(-1%, 0)', ['数据裂开的地方，哥布林占了森林，', '吸血鬼占了古城，', '兽人踏平了平原……']],
-             ['g3', 'scale(1.06) translate(0, 3%)', 'scale(1.14) translate(0, -3%)', ['公主露米娜在最后的神殿里发出呼唤——', '呼唤顺着烧录的线路，传到了屏幕的另一边。']]];
+             ['g3', 'scale(1.06) translate(0, 3%)', 'scale(1.14) translate(0, -3%)', ['公主露米娜在最后的神殿里发出呼唤——', '呼唤顺着卡带，传到了屏幕的另一边。']]];
   for (const [pg, a, b, lines] of P) { if (id !== RUN) return; const el = $(pg); el.classList.add('on'); kb(el.querySelector('.ill'), a, b, lines.length * 3200 + 1500); await wait(900);
     for (let li = 0; li < lines.length; li++) { const l = lines[li]; if (id !== RUN) return; if (pg === 'g2b') MK.go(li); await type($('cap'), l, id); await wait(1500); } if (pg === 'g2b') { MK.go(3); await wait(900); } $('cap').textContent = ''; if (pg !== 'g3') { el.classList.remove('on'); await wait(700); } }
   if (id !== RUN) return; const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); $('g3').classList.remove('on');
   $('px').style.opacity = 1; pxState = 'on'; pxT0 = performance.now(); requestAnimationFrame(pxDraw); w.style.transition = 'opacity 1.4s'; w.style.opacity = 0; await wait(3800);
-  if (id !== RUN) return; await say(id, '勇者', '../art/portrait/m.webp', '这是……我刚买的那盘合卡里面？');
+  if (id !== RUN) return; await say(id, '勇者', '../art/portrait/m.webp', '这是……我刚买的游戏里？');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '您就是回应召唤的勇者吧！');
-  if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '裂缝还在扩大……请帮帮晨星大陆！');
-  $('dlg').style.display = 'none'; $('cap').textContent = '（演示结束：这里接第一站教学）'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
-function reset() { MK.reset(); pxState = 'off'; for (const e of document.querySelectorAll('.pg')) e.classList.remove('on'); $('px').style.opacity = 0; $('white').style.opacity = 0; $('dlg').style.display = 'none'; $('cap').textContent = ''; }
+  if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '裂缝还在扩大……请帮帮这片大陆！');
+  $('bub').style.display = 'none'; $('cap').textContent = '（演示结束：这里接第一站教学）'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
+function reset() { MK.reset(); pxState = 'off'; for (const e of document.querySelectorAll('.pg')) e.classList.remove('on'); $('px').style.opacity = 0; $('white').style.opacity = 0; $('bub').style.display = 'none'; $('cap').textContent = ''; }
 $('play').onclick = play; $('skip').onclick = () => { RUN++; reset(); $('cap').textContent = '（已跳过：直接进第一站）'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; };
 
 // 2b 地图：念到哪里，哪块被墨色吞掉，冒出黑影标记；最后裂缝一闪整张变暗
