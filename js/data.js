@@ -150,7 +150,7 @@ window.DATA = {
     { hp: 1.40, name: '森林深处', waves: [{ G: 10, K: 5, D: 3, T: 2, B: 2, H: 2 }, { G: 11, K: 5, D: 4, T: 3, B: 3, H: 3 }, { G: 12, K: 6, D: 4, T: 3, B: 3, H: 3, ex: [['elite', 'gob_drum']] }] },
     { hp: 1.55, name: '森林深处', waves: [{ G: 11, K: 5, D: 4, B: 3, H: 3, R: 2 }, { G: 12, K: 6, D: 4, T: 3, B: 3, R: 3 }, { G: 12, K: 6, D: 4, T: 3, H: 3, R: 3, ex: [['mini', 'gob_paladin']] }] },
     { hp: 1.75, name: '哥布林营地', waves: [{ G: 12, K: 6, D: 4, R: 3, P: 2, M: 2 }, { G: 12, K: 6, D: 4, T: 3, P: 3, M: 3 }, { G: 13, K: 6, D: 5, P: 3, M: 3, B: 3, ex: [['elite', 'gob_necro']] }] },
-    { hp: 1.95, name: '哥布林营地', waves: [{ G: 12, K: 6, D: 5, P: 3, M: 3, O: 2 }, { G: 13, K: 6, D: 5, R: 3, M: 3, O: 3, ex: [['elite', 'gob_giant']] }, { G: 14, K: 7, D: 5, P: 3, M: 3, O: 3, ex: [['elite', 'gob_hero'], ['elite', 'gob_troll']] }] },
+    { hp: 1.95, name: '哥布林营地', waves: [{ G: 12, K: 6, D: 5, P: 3, M: 3, O: 2 }, { G: 13, K: 6, D: 5, R: 3, M: 3, O: 3, ex: [['elite', 'gob_troll']] }, { G: 14, K: 7, D: 5, P: 3, M: 3, O: 3, ex: [['elite', 'gob_troll'], ['elite', 'gob_rock']] }] },
     { hp: 2.10, name: '哥布林王座', boss: true, waves: [{ G: 12, K: 6, A: 3, D: 4, T: 3, B: 3, H: 3 }, { G: 12, K: 6, R: 3, P: 3, M: 3, O: 3, ex: [['elite', 'gob_shaman'], ['elite', 'gob_drum']] }, { boss: 'gob_king' }] },
   ],
   // 11/22 站点卡（月圆之夜式）：每站打完 3 张。第 1 张战斗，第 2 张（第 2 站起）一半是精英，第 3 张是不打仗的卡（每章最多选 restMax 次，用完变战斗）
@@ -224,8 +224,6 @@ window.DATA = {
     gob_drum: { name: '哥布林战鼓手', pdef: 10, mdef: 10, hp: 14, spd: 32, reach: 24, arc: 70, r: 36, dmg: 6, wind: .6, cool: 2, aura: 'drum', dtype: 'phys', nw: 4, k: .65 },
     gob_necro: { name: '哥布林死灵法师', pdef: 0, mdef: 25, hp: 12, spd: 30, reach: 220, keep: [110, 155], dmg: 6, wind: .9, cool: 2.6, arrow: 110, ranged: true, shot: 'bolt', summon: 'skeleton', dtype: 'magic', nw: 4, k: .75 },
     skeleton: { name: '骷髅', pdef: 0, mdef: 0, hp: 4, spd: 55, reach: 22, arc: 70, r: 34, dmg: 5, wind: .4, cool: 1.3, dtype: 'phys', nw: 4, k: .7 },
-    gob_giant: { name: '哥布林巨人', pdef: 20, mdef: 5, hp: 30, spd: 26, reach: 90, arc: 140, r: 90, dmg: 14, wind: .9, cool: 2.2, dtype: 'phys', nw: 4, k: .8 },
-    gob_hero: { name: '哥布林勇士', pdef: 25, mdef: 10, hp: 24, spd: 40, reach: 61, arc: 130, r: 55, dmg: 12, wind: .6, cool: 1.8, dtype: 'phys', k: .8 },
     gob_troll: { name: '哥布林巨魔', pdef: 15, mdef: 5, hp: 40, spd: 22, reach: 74, arc: 150, r: 70, dmg: 16, wind: 1, cool: 2.4, dtype: 'phys', k: .6 },
     gob_chief: { name: '哥布林酋长', pdef: 20, mdef: 10, hp: 40, spd: 32, reach: 34, dmg: 10, wind: .8, ai: 'boss', dtype: 'phys', nw: 4, k: .68 },
     gob_paladin: { name: '哥布林圣骑士', pdef: 25, mdef: 20, hp: 44, spd: 36, reach: 34, dmg: 11, wind: .8, ai: 'boss', dtype: 'phys', nw: 4, k: .66 },
