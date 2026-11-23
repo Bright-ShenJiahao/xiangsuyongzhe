@@ -506,7 +506,7 @@
         if (!L.length) { RUN.coins += 30; toastMsg('箱子里只有 30 铜钱'); f.rest = null; return showRoute(true); }
         o.books = L.map((id, i) => ({ kind: 'book', id, x: o.x + (i - (L.length - 1) / 2) * 36 * K, y: o.y + 34 * K, st: 0 })); toastMsg('三本书选一本'); } return; }
     if (o.k === 'chest') { for (const b of o.books) { if (SKUL(b, 14)) b.st += dt; else b.st = 0; if (b.st > .3) { CAMP.learn(b, true); gotFeed(b); f.rest = null; return showRoute(true); } } return; }
-    if (o.k === 'fire') { if (SKUL(o, 22)) o.st += dt; else o.st = 0; if (o.st > 1) { const h0 = hero.hp; hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .5 * (1 + (hero.fx.healMul || 0))); nums.push({ x: hero.x, y: hero.y - 44 * K, v: Math.round(hero.hp - h0), t: 0, col: '#7cff8a' }); RUN.xiu++; f.pr.said = 0; toastMsg('回复 50% 生命，修炼 +1（去找露米娜）'); f.rest = null; showRoute(true); } }
+    if (o.k === 'fire') { if (o.out) return; if (SKUL(o, 22)) o.st += dt; else o.st = 0; if (o.st > 1) { const h0 = hero.hp; hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .5 * (1 + (hero.fx.healMul || 0))); nums.push({ x: hero.x, y: hero.y - 44 * K, v: Math.round(hero.hp - h0), t: 0, col: '#7cff8a' }); RUN.xiu++; f.pr.said = 0; toastMsg('回复 50% 生命，修炼 +1（去找露米娜）'); o.out = G.t; showRoute(true); } }
   }
   // 奇遇场景物（临时：代码画的像素小景，等出图替换）
   const EVI = {}; const evi = n => EVI[n] || (EVI[n] = Object.assign(new Image(), { src: 'art/ev/' + n + '.png' }));
@@ -547,11 +547,12 @@
       if (o.books) for (const b of o.books) { const S = DATA.skills[b.id], bi = img(({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[S.sys]), bx = X(b.x), by = Y(b.y) - 9 * u;
         ctx.fillStyle = 'rgba(255,220,120,.3)'; ctx.beginPath(); ctx.arc(bx, by, 13 * u, 0, 7); ctx.fill(); if (bi.complete) ctx.drawImage(bi, bx - 10 * u, by - 10 * u, 20 * u, 20 * u); label(S.name, bx, by + 12 * u, ['#e6e2d6', '#e6e2d6', '#6ab8ff', '#c890ff', '#ffd84a'][S.tier]); ring(b, 15, b.st / .3, '#fff'); } }
     if (o.k === 'fire') {   // 11/23 篝火：官方美术（石圈木柴底座 + 8 帧火苗叠在木柴上）
-      const gl = ctx.createRadialGradient(x, y - 10 * u, 0, x, y - 10 * u, 60 * u), fl = .3 + .06 * Math.sin(G.t * 9); gl.addColorStop(0, `rgba(255,150,60,${fl})`); gl.addColorStop(1, 'rgba(255,150,60,0)'); ctx.fillStyle = gl; ctx.fillRect(x - 60 * u, y - 70 * u, 120 * u, 120 * u);
-      const bi = CAMPI('fire_base'), fi = CAMPI('fire_flame'), bw = 64 * u; if (bi.complete && bi.naturalWidth) { const bh = bw * bi.naturalHeight / bi.naturalWidth; ctx.drawImage(bi, x - bw * .55, y - bh * .7, bw, bh);
-        if (fi.complete && fi.naturalWidth) { const fw = fi.naturalWidth / 8, f = Math.floor(G.t * 12) % 8, h = 24 * u, w = h * fw / fi.naturalHeight; ctx.drawImage(fi, f * fw, 0, fw, fi.naturalHeight, x - bw * .55 + bw * .5 - w / 2, y - bh * .7 + bh * .55 - h, w, h); } }
-      if (Math.random() < .25) parts.push({ x: o.x + R(-5, 5) * K, y: o.y - 22 * K, vx: R(-8, 8) * K, vy: -40 * K, t: 0, T: .7, col: '#ffb040', g: 0 });
-      label('篝火 · 站一会儿', x, y + 8 * u, '#ffd0a0'); ring(o, 18, o.st, '#7cff8a'); }
+      const gl = ctx.createRadialGradient(x, y - 10 * u, 0, x, y - 10 * u, 60 * u), fl = (.3 + .06 * Math.sin(G.t * 9)) * (o.out ? Math.max(0, 1 - (G.t - o.out) / .5) : 1); gl.addColorStop(0, `rgba(255,150,60,${fl})`); gl.addColorStop(1, 'rgba(255,150,60,0)'); ctx.fillStyle = gl; ctx.fillRect(x - 60 * u, y - 70 * u, 120 * u, 120 * u);
+      const ok = o.out ? Math.max(0, 1 - (G.t - o.out) / .5) : 1, bi = CAMPI(o.out && ok <= 0 ? 'fire_out' : 'fire_base'), fi = CAMPI('fire_flame'), bw = 64 * u; if (bi.complete && bi.naturalWidth) { const bh = bw * bi.naturalHeight / bi.naturalWidth; ctx.drawImage(bi, x - bw * .55, y - bh * .7, bw, bh);
+        if (o.out && Math.random() < .12) parts.push({ x: o.x + R(-4, 4) * K, y: o.y - 10 * K, vx: R(-4, 4) * K, vy: -22 * K, t: 0, T: 1.4, col: 'rgba(220,220,220,.7)', g: 0, sz: 2 });
+        if (ok > 0 && fi.complete && fi.naturalWidth) { const fw = fi.naturalWidth / 8, f = Math.floor(G.t * 12) % 8, h = 24 * u * ok, w = h * fw / fi.naturalHeight; ctx.drawImage(fi, f * fw, 0, fw, fi.naturalHeight, x - bw * .55 + bw * .5 - w / 2, y - bh * .7 + bh * .55 - h, w, h); } }
+      if (!o.out && Math.random() < .25) parts.push({ x: o.x + R(-5, 5) * K, y: o.y - 22 * K, vx: R(-8, 8) * K, vy: -40 * K, t: 0, T: .7, col: '#ffb040', g: 0 });
+      label(o.out ? '篝火 · 已熄灭' : '篝火 · 站一会儿', x, y + 8 * u, o.out ? '#a89880' : '#ffd0a0'); if (!o.out) ring(o, 18, o.st, '#7cff8a'); }
   }
   function fieldTick(dt) {
     const f = G.fe; if (!f || G.paused || G.lock) return; f.t += dt;
