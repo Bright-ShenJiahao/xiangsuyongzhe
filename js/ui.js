@@ -148,10 +148,10 @@
   $('aReset').onclick = () => { P.free = {}; renderPrep(); };
   $('pBack').onclick = () => show('title');
   const introSeen = () => store.get('introSeen') === '1';
-  { const c = $('introOn'), saved = store.get('introPref'); c.checked = saved != null ? saved === '1' : !introSeen(); c.onchange = () => store.set('introPref', c.checked ? '1' : '0'); }
+  { const c = $('introSkip'), saved = store.get('introSkip'); c.checked = saved != null ? saved === '1' : true; c.onchange = () => store.set('introSkip', c.checked ? '1' : '0'); }
   function playIntro(go) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
-  $('pGo').onclick = () => { const b = build(); if (!introSeen() || $('introOn').checked) playIntro(() => startBattle(b)); else startBattle(b); };
+  $('pGo').onclick = () => { const b = build(); if (!introSeen() || !$('introSkip').checked) playIntro(() => startBattle(b)); else startBattle(b); };
   let heroSwing = 0;
   function drawHeroPreview(t, dt) {
     const c = $('heroCv'), r = c.getBoundingClientRect(); if (!r.width || !r.height) return;

@@ -1092,3 +1092,6 @@ body.tvbg { background: #000; }
 .tenter:hover span, .tenter:focus-visible span { opacity: 1; color: #ffe08a; text-shadow: 0 2px 6px #000, 0 0 10px #ffb040, 0 0 22px #ff8020; }
 .tenter:hover s { filter: brightness(1.6); }
 .tenter:disabled { display: none !important; }
+
+#introChk { display: flex !important; justify-content: flex-end; align-items: center; gap: 6px; margin: 6px 4px 0 0; font: 15px WenKai, serif; color: #3a2410; text-shadow: none; cursor: pointer; } #introChk.hide { display: none !important; }
+#introChk input { width: 16px; height: 16px; accent-color: #c8862a; }
