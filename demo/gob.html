@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>哥布林调试（局外）</title>
+<style>
+body{margin:0;background:#1b1410;color:#f3e6c8;font:14px/1.5 system-ui,sans-serif;display:flex;flex-wrap:wrap;min-height:100vh}
+#L{flex:1 1 560px;display:flex;flex-direction:column;align-items:center;padding:8px}
+canvas{background:#4a6b34;image-rendering:pixelated;max-width:100%;border:3px solid #6b4a2b;touch-action:none}
+#R{flex:0 1 340px;padding:10px;background:#2a1d14;overflow:auto;max-height:100vh;box-sizing:border-box}
+select,button{font:inherit;background:#4a3322;color:#f3e6c8;border:1px solid #8a6a44;padding:3px 8px;border-radius:3px}
+.row{display:flex;align-items:center;gap:6px;margin:3px 0}.row label{width:112px;flex:none}.row input[type=range]{flex:1}.row b{width:44px;text-align:right}
+.info{background:#1b1410;padding:6px 8px;margin:6px 0;border-left:3px solid #c9a15a;font-size:13px}
+#log{font-size:12px;height:110px;overflow:auto;background:#120c09;padding:4px;margin-top:6px}
+.lg{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;margin:4px 0}.lg i{display:inline-block;width:10px;height:10px;margin-right:3px;vertical-align:middle}
+</style></head><body>
+<div id="L"><canvas id="c" width="720" height="460"></canvas>
+<div class="lg"><span><i style="background:#ffe14a"></i>抬手距离 reach</span><span><i style="background:#ff5a4a"></i>劈砍扇面 r/arc</span><span><i style="background:#5ad0ff"></i>远程保持距离 keep</span><span><i style="background:#ff9a2a"></i>爆炸/冲锋</span><span><i style="background:#c87aff"></i>光环</span></div>
+<div style="font-size:12px;opacity:.8">拖动 / 方向键移动勇者（不会死）。数值只改这个页面，不会改游戏。</div></div>
+<div id="R">
+<div class="row"><label>怪物</label><select id="sel"></select></div>
+<div class="row"><label>数量</label><input type="range" id="num" min="1" max="12" value="1"><b id="numV">1</b></div>
+<div class="row"><button id="re">重新放</button><button id="st">勇者站着不动</button><button id="rs">恢复原值</button></div>
+<div class="info" id="info"></div>
+<div id="sl"></div>
+<div class="info" id="stat"></div>
+<div class="row"><button id="cp">复制当前数值</button></div>
+<div id="log"></div>
+</div>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+const cv = c, ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
+const E = DATA.enemies, ORIG = JSON.parse(JSON.stringify(E)), YS = 1.4, U = 2;
+const SKILL = T => [T.ranged && `远程（${T.shot === 'rock' ? '投石' : T.shot === 'bolt' ? '法术弹' : '箭'}，弹速 ${T.arrow}）`, T.arc && `近战劈砍 ${T.arc}° 扇面`, T.shield && `正面盾挡 ${T.shield} 下`, T.bomb && `自爆，半径 ${T.bomb}`, T.charge && `冲锋 ${T.charge} 距离`, T.ghost && '穿过别的怪', T.aura === 'heal' && '光环：给周围回血', T.aura === 'drum' && '光环：周围加速', T.summon && `召唤 ${E[T.summon] ? E[T.summon].name : T.summon}`, T.res && { iron: '铁甲：物理减半', spirit: '灵体：物理减半·法术+25%', magic: '魔抗：法术减半' }[T.res]].filter(Boolean);
+const KEYS = [['hp', '生命', 1, 60, 1], ['dmg', '攻击', 1, 30, 1], ['spd', '移速', 10, 100, 1], ['reach', '抬手距离', 10, 220, 1], ['r', '劈砍半径', 10, 80, 1], ['arc', '扇面角度°', 20, 360, 5], ['wind', '抬手时间 s', .1, 2, .05], ['cool', '招后间隔 s', .3, 4, .05], ['arrow', '弹速', 40, 260, 5], ['bomb', '爆炸半径', 10, 100, 1], ['charge', '冲锋距离', 40, 260, 5]];
+let type = 'goblin', foes = [], shots = [], fx = [], hero = { x: 360, y: 300 }, still = false, t = 0, dmgSum = 0, log = [], keys = {};
+for (const k in E) if (!E[k].boss && E[k].ai !== 'boss') sel.add(new Option(`${E[k].name}（${k}）`, k));
+function sliders() { const T = E[type]; sl.innerHTML = ''; for (const [k, n, a, b, s] of KEYS) { if (T[k] == null) continue; const d = document.createElement('div'); d.className = 'row'; d.innerHTML = `<label>${n}</label><input type=range min=${a} max=${b} step=${s} value=${T[k]}><b>${T[k]}</b>`; const i = d.querySelector('input'); i.oninput = () => { T[k] = +i.value; d.querySelector('b').textContent = i.value; showInfo(); }; sl.append(d); } showInfo(); }
+function showInfo() { const T = E[type]; const per = T.wind + T.cool; info.innerHTML = `<b>${T.name}</b><br>技能：${SKILL(T).join('；') || '普通近战'}<br>伤害 ${T.dmg}（${T.dtype === 'magic' ? '法术' : '物理'}）· 物防 ${T.pdef} 魔防 ${T.mdef}<br>出手一次 ≈ ${per.toFixed(2)} 秒（抬手 ${T.wind} + 间隔 ${T.cool}）→ 每秒 ${(1 / per).toFixed(2)} 次，单只 DPS ≈ ${(T.dmg / per).toFixed(1)}${T.bomb ? '（自爆只打一次）' : ''}`; }
+function spawn() { foes = []; shots = []; dmgSum = 0; t = 0; const n = +num.value; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; foes.push({ x: 360 + Math.cos(a) * 240, y: 230 + Math.sin(a) * 150, st: 'walk', t: 0, f: 1, aim: 0, hp: E[type].hp }); } }
+const dist = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * YS), ang = (a, b) => Math.atan2((b.y - a.y) * YS, b.x - a.x);
+function hit(d, z) { dmgSum += d; log.unshift(`${t.toFixed(1)}s ${E[type].name} 打中 ${d}`); log.length = Math.min(log.length, 40); hero.fl = .15; }
+function step(dt) {
+  t += dt; const T = E[type];
+  if (!still) { const v = 90 * dt; hero.x += ((keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0)) * v; hero.y += ((keys.ArrowDown ? 1 : 0) - (keys.ArrowUp ? 1 : 0)) * v / YS; }
+  hero.fl = Math.max(0, (hero.fl || 0) - dt);
+  for (const z of foes) { if (z.dead) continue; z.t += dt; const d = dist(z, hero), a = ang(z, hero); z.f = Math.cos(a) < 0 ? -1 : 1;
+    if (z.st === 'walk') { let mv = 1; if (T.keep) { if (d < T.keep[0]) mv = -1; else if (d < T.keep[1]) mv = 0; }
+      if (T.charge && d < T.charge && d > T.reach && z.t > 1) { z.st = 'charge'; z.t = 0; z.aim = a; }
+      else if (d < T.reach && (!T.keep || d <= T.reach)) { if (!T.keep || d >= T.keep[0] * .7) { z.st = 'wind'; z.t = 0; z.aim = a; } else mv = -1; }
+      if (z.st === 'walk' && mv) { z.x += Math.cos(a) * T.spd * dt * mv; z.y += Math.sin(a) * T.spd * dt * mv / YS; } }
+    else if (z.st === 'charge') { z.x += Math.cos(z.aim) * T.spd * 3.2 * dt; z.y += Math.sin(z.aim) * T.spd * 3.2 * dt / YS; if (!z.hd && d < 22) { z.hd = 1; hit(Math.round(T.dmg * 1.3), z); } if (z.t > T.charge / (T.spd * 3.2)) { z.st = 'cool'; z.t = 0; z.hd = 0; } }
+    else if (z.st === 'wind' && z.t >= T.wind) { z.st = 'cool'; z.t = 0;
+      if (T.ranged) shots.push({ x: z.x, y: z.y - 14, gy: z.y, vx: Math.cos(z.aim) * T.arrow, vy: Math.sin(z.aim) * T.arrow / YS, t: 0, d: T.dmg, k: T.shot });
+      else if (T.bomb) { fx.push({ x: z.x, y: z.y, r: T.bomb, t: 0, c: '#ff9a2a' }); if (d < T.bomb) hit(T.dmg, z); z.dead = 1; }
+      else { fx.push({ x: z.x, y: z.y, r: T.r, a: z.aim, arc: T.arc, t: 0, c: '#ff5a4a' }); const da = Math.abs(((a - z.aim + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (d < T.r + 6 && da < T.arc * Math.PI / 360 + .15) hit(T.dmg, z); } }
+    else if (z.st === 'cool' && z.t >= T.cool) { z.st = 'walk'; z.t = 0; } }
+  for (let i = shots.length - 1; i >= 0; i--) { const s = shots[i]; s.t += dt; s.x += s.vx * dt; s.y += s.vy * dt; s.gy += s.vy * dt; if (Math.hypot(hero.x - s.x, (hero.y - s.gy) * YS) < 10) { hit(s.d); shots.splice(i, 1); } else if (s.t > 3) shots.splice(i, 1); }
+  for (let i = fx.length - 1; i >= 0; i--) if ((fx[i].t += dt) > .35) fx.splice(i, 1);
+}
+function ell(x, y, r, col, dash) { ctx.save(); ctx.strokeStyle = col; ctx.setLineDash(dash || []); ctx.beginPath(); ctx.ellipse(x, y, r, r / YS, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
+function fan(x, y, r, a, arc, col, fill) { ctx.beginPath(); ctx.moveTo(x, y); const h = arc * Math.PI / 360; for (let q = -h; q <= h + 1e-6; q += h / 12) ctx.lineTo(x + Math.cos(a + q) * r, y + Math.sin(a + q) * r / YS); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } ctx.strokeStyle = col; ctx.stroke(); }
+function frameName(z) { const f = SPR.sets[type] && SPR.sets[type].f || {}; const pick = (...ns) => ns.find(n => f[n]); const w = Object.keys(f).filter(n => /^walk\d/.test(n)).length || 1;
+  if (z.st === 'wind') return pick('wind', 'strike', 'walk0'); if (z.st === 'cool' && z.t < .2) return pick('strike', 'walk0'); if (z.st === 'walk' || z.st === 'charge') return pick('walk' + (Math.floor(t * 10) % w), 'walk0'); return pick('idle', 'walk0'); }
+function draw() { const T = E[type]; ctx.clearRect(0, 0, cv.width, cv.height); ctx.lineWidth = 1;
+  if (T.keep) { ell(hero.x, hero.y, T.keep[0], '#5ad0ff', [4, 4]); ell(hero.x, hero.y, T.keep[1], '#5ad0ff', [4, 4]); }
+  for (const z of foes) { if (z.dead) continue; ell(z.x, z.y, T.reach, '#ffe14a', [3, 3]); if (T.arc) fan(z.x, z.y, T.r, z.st === 'wind' ? z.aim : ang(z, hero), T.arc, '#ff5a4a', z.st === 'wind' ? `rgba(255,90,74,${.15 + .4 * z.t / T.wind})` : null); if (T.bomb) ell(z.x, z.y, T.bomb, '#ff9a2a', z.st === 'wind' ? [] : [2, 4]); if (T.charge) ell(z.x, z.y, T.charge, '#ff9a2a', [6, 6]); if (T.aura) ell(z.x, z.y, 90, '#c87aff', [2, 6]); }
+  for (const f of fx) { ctx.globalAlpha = 1 - f.t / .35; if (f.arc) fan(f.x, f.y, f.r, f.a, f.arc, f.c, 'rgba(255,90,74,.5)'); else { ctx.fillStyle = 'rgba(255,154,42,.5)'; ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r, f.r / YS, 0, 0, 7); ctx.fill(); } ctx.globalAlpha = 1; }
+  const list = [...foes.filter(z => !z.dead).map(z => ({ y: z.y, z })), { y: hero.y, h: 1 }].sort((a, b) => a.y - b.y);
+  for (const o of list) { if (o.h) { const hs = SPR.sets[SPR.heroSet('m')], hn = hs && (hs.f.idle0 ? 'idle0' : hs.f.idle ? 'idle' : Object.keys(hs.f)[0]); if (hn && SPR.heroSet) SPR.drawHero(ctx, hn, 0, hero.x, hero.y, false, U, { white: hero.fl > 0 ? .7 : 0 }); else { ctx.fillStyle = '#fff'; ctx.fillRect(hero.x - 6, hero.y - 30, 12, 30); } continue; }
+    const z = o.z, n = frameName(z); if (n) SPR.draw(ctx, type, n, 0, z.x, z.y, z.f < 0, U, { k: T.k, white: z.st === 'wind' && T.bomb && Math.floor(z.t * 12) % 2 ? .7 : 0 }); else { ctx.fillStyle = '#7c4'; ctx.fillRect(z.x - 8, z.y - 20, 16, 20); }
+    if (z.st === 'wind') { ctx.fillStyle = '#ffe14a'; ctx.fillRect(z.x - 10, z.y - 52, 20 * z.t / T.wind, 3); } }
+  for (const s of shots) { ctx.fillStyle = s.k === 'bolt' ? '#c87aff' : s.k === 'rock' ? '#a99' : '#eee'; ctx.fillRect(s.x - 3, s.y - 2, 6, 4); }
+  stat.innerHTML = `时间 ${t.toFixed(1)} 秒 · 勇者共受伤 <b>${dmgSum}</b> · 实测每秒 ${(dmgSum / Math.max(1, t)).toFixed(1)}<br><span style="opacity:.7">（不含防御减伤、被围叠伤；勇者现在 85 血）</span>`; window.logEl.innerHTML = log.join('<br>'); }
+window.logEl = document.getElementById('log');
+let last = 0; function loop(ts) { const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts; step(dt); draw(); requestAnimationFrame(loop); }
+sel.onchange = () => { type = sel.value; sliders(); spawn(); }; num.oninput = () => { numV.textContent = num.value; spawn(); }; re.onclick = spawn;
+st.onclick = () => { still = !still; st.textContent = still ? '勇者可以移动' : '勇者站着不动'; };
+rs.onclick = () => { E[type] = JSON.parse(JSON.stringify(ORIG[type])); sliders(); spawn(); };
+cp.onclick = () => { const T = E[type], s = `${type}: ` + JSON.stringify(Object.fromEntries(KEYS.filter(([k]) => T[k] != null && T[k] !== ORIG[type][k]).map(([k]) => [k, T[k]]))); navigator.clipboard && navigator.clipboard.writeText(s); log.unshift('已复制：' + s); };
+addEventListener('keydown', e => { keys[e.key] = 1; if (e.key.startsWith('Arrow')) e.preventDefault(); }); addEventListener('keyup', e => keys[e.key] = 0);
+const mv = e => { const r = cv.getBoundingClientRect(); hero.x = (e.clientX - r.left) * cv.width / r.width; hero.y = (e.clientY - r.top) * cv.height / r.height; };
+cv.onpointerdown = e => { mv(e); cv.onpointermove = mv; }; addEventListener('pointerup', () => cv.onpointermove = null);
+sliders(); spawn(); requestAnimationFrame(loop);
+(SPR.load ? Promise.resolve(SPR.load()) : Promise.resolve()).catch(() => 0);
+</script></body></html>
