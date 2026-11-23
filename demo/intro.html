@@ -17,11 +17,12 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 #dlg img { width: 72px; height: 72px; object-fit: cover; object-position: top; border: 2px solid #c89a52; background: #3a2a1a; } #dlg b { color: #ffd890; display: block; margin-bottom: 4px; }
 #skip, #play { position: fixed; z-index: 10; font: 15px WenKai, serif; color: #f4ecd8; background: rgba(20,12,6,.7); border: 2px solid #c89a52; padding: 4px 14px; cursor: pointer; }
 #skip { right: 16px; top: 14px; } #play { left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 22px; padding: 10px 26px; }
-.crack { position: absolute; inset: 0; mix-blend-mode: screen; pointer-events: none; }
+.crack { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: screen; pointer-events: none; }
 </style></head><body>
 <div id="st">
   <div class="pg" id="g1"><img class="ill" src="../art/intro/p1.webp"><div class="vig"></div><div class="frame"></div></div>
   <div class="pg" id="g2"><img class="ill" src="../art/intro/p2.webp"><canvas class="crack" id="ck"></canvas><div class="vig"></div><div class="frame"></div></div>
+  <div class="pg" id="g2b"><img class="ill" src="../art/ui2/map.webp" style="filter:sepia(.75) brightness(.9) contrast(1.05)"><canvas class="crack" id="mk" style="mix-blend-mode:normal"></canvas><div class="vig"></div><div class="frame"></div></div>
   <div class="pg" id="g3"><img class="ill" src="../art/intro/p3.webp"><canvas class="crack" id="cr"></canvas><div class="vig"></div><div class="frame"></div></div>
 </div>
 <div id="cap"></div><div id="white"></div>
@@ -63,17 +64,37 @@ function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled
   if (pxState === 'on') requestAnimationFrame(pxDraw); }
 async function say(id, who, av, s) { $('dlg').style.display = 'flex'; $('dn').textContent = who; $('dav').src = av; await type($('dt'), s, id, 55); await wait(1300); }
 async function play() { const id = ++RUN; $('play').style.display = 'none'; reset();
-  const P = [['g1', 'scale(1.04)', 'scale(1.14) translate(-2%, 1%)', ['卡带世界里，有一块和平的晨星大陆。', '每年星夜祭，王城的广场总是挤满了人。']],
-             ['g2', 'scale(1.16) translate(2%, 2%)', 'scale(1.05)', ['直到有一天，这盘卡带被拿去违规烧录——', '别的游戏里的怪物，被硬塞了进来。', '哥布林占了森林，吸血鬼占了古城，兽人踏平了平原……']],
+  const P = [['g1', 'scale(1.04)', 'scale(1.14) translate(-2%, 1%)', ['卡带世界里，有一块和平的大陆。', '每到祭典，城里的街道总是热闹非凡。']],
+             ['g2', 'scale(1.16) translate(2%, 2%)', 'scale(1.05)', ['直到有一天，这盘卡带被拿去违规烧录——', '别的游戏里的怪物，被硬塞了进来。']],
+             ['g2b', 'scale(1.0)', 'scale(1.1) translate(-1%, 0)', ['数据裂开的地方，哥布林占了森林，', '吸血鬼占了古城，', '兽人踏平了平原……']],
              ['g3', 'scale(1.06) translate(0, 3%)', 'scale(1.14) translate(0, -3%)', ['公主露米娜在最后的神殿里发出呼唤——', '呼唤顺着烧录的线路，传到了屏幕的另一边。']]];
   for (const [pg, a, b, lines] of P) { if (id !== RUN) return; const el = $(pg); el.classList.add('on'); kb(el.querySelector('.ill'), a, b, lines.length * 3200 + 1500); await wait(900);
-    for (const l of lines) { if (id !== RUN) return; await type($('cap'), l, id); await wait(1500); } $('cap').textContent = ''; if (pg !== 'g3') { el.classList.remove('on'); await wait(700); } }
+    for (let li = 0; li < lines.length; li++) { const l = lines[li]; if (id !== RUN) return; if (pg === 'g2b') MK.go(li); await type($('cap'), l, id); await wait(1500); } if (pg === 'g2b') { MK.go(3); await wait(900); } $('cap').textContent = ''; if (pg !== 'g3') { el.classList.remove('on'); await wait(700); } }
   if (id !== RUN) return; const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); $('g3').classList.remove('on');
   $('px').style.opacity = 1; pxState = 'on'; pxT0 = performance.now(); requestAnimationFrame(pxDraw); w.style.transition = 'opacity 1.4s'; w.style.opacity = 0; await wait(3800);
   if (id !== RUN) return; await say(id, '勇者', '../art/portrait/m.webp', '这是……我刚买的那盘合卡里面？');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '您就是回应召唤的勇者吧！');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '裂缝还在扩大……请帮帮晨星大陆！');
   $('dlg').style.display = 'none'; $('cap').textContent = '（演示结束：这里接第一站教学）'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
-function reset() { pxState = 'off'; for (const e of document.querySelectorAll('.pg')) e.classList.remove('on'); $('px').style.opacity = 0; $('white').style.opacity = 0; $('dlg').style.display = 'none'; $('cap').textContent = ''; }
+function reset() { MK.reset(); pxState = 'off'; for (const e of document.querySelectorAll('.pg')) e.classList.remove('on'); $('px').style.opacity = 0; $('white').style.opacity = 0; $('dlg').style.display = 'none'; $('cap').textContent = ''; }
 $('play').onclick = play; $('skip').onclick = () => { RUN++; reset(); $('cap').textContent = '（已跳过：直接进第一站）'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; };
+
+// 2b 地图：念到哪里，哪块被墨色吞掉，冒出黑影标记；最后裂缝一闪整张变暗
+const MK = (() => { const c = () => $('mk'); let on = [], t0 = 0, dark = 0; const IW = 1672, IH = 941;
+  const SIL = n => Object.assign(new Image(), { src: n }), G1 = SIL('../art/goblin/gob_blade/idle0.png'), OR = SIL('../art/goblin/gob_troll/idle0.png');
+  const R = [{ x: 300, y: 470, r: 230, ic: G1, n: 6 }, { x: 1360, y: 300, r: 200, bats: 1 }, { x: 880, y: 640, r: 260, ic: OR, n: 4 }];
+  function go(i) { if (i < 3) on[i] = performance.now(); else dark = performance.now(); }
+  function reset() { on = []; dark = 0; }
+  function f(n) { const cv = c(); if (!cv) return requestAnimationFrame(f); const img = cv.parentNode.querySelector('.ill'), W = cv.width = cv.clientWidth, H = cv.height = cv.clientHeight, g = cv.getContext('2d');
+    const rc = img.getBoundingClientRect(), pr = cv.getBoundingClientRect(), sx = rc.width / IW, P = (x, y) => [rc.left - pr.left + x * sx, rc.top - pr.top + y * rc.height / IH];
+    R.forEach((r, i) => { if (!on[i]) return; const k = Math.max(0, Math.min(1, (n - on[i]) / 1400)), [x, y] = P(r.x, r.y), rr = r.r * sx * k;
+      for (let j = 0; j < 7; j++) { const a = j * 2.4, d = rr * .35, gx = x + Math.cos(a) * d, gy = y + Math.sin(a) * d * .7, gr = g.createRadialGradient(gx, gy, 0, gx, gy, rr * .75); gr.addColorStop(0, 'rgba(30,14,6,.55)'); gr.addColorStop(1, 'rgba(30,14,6,0)'); g.fillStyle = gr; g.beginPath(); g.arc(gx, gy, rr * .75, 0, 7); g.fill(); }
+      if (k > .5) { g.save(); g.globalAlpha = Math.min(1, (k - .5) * 2); g.filter = 'brightness(0)';
+        if (r.ic && r.ic.complete) for (let q = 0; q < r.n; q++) { const s = (r.ic === OR ? 70 : 46) * sx, qx = x + (q - (r.n - 1) / 2) * s * .9, qy = y + (q % 2) * s * .45 + Math.sin(n / 200 + q) * 2; g.drawImage(r.ic, qx - s / 2, qy - s, s, s * r.ic.naturalHeight / r.ic.naturalWidth); }
+        g.filter = 'none'; if (r.bats) { g.fillStyle = '#140804'; for (let q = 0; q < 9; q++) { const a = n / 600 + q * .7, bx = x + Math.cos(a) * rr * .45, by = y - rr * .25 + Math.sin(a * 1.3) * rr * .2, w = 11 + 5 * Math.sin(n / 60 + q); g.beginPath(); g.moveTo(bx - w, by - 3); g.lineTo(bx, by + 2); g.lineTo(bx + w, by - 3); g.lineTo(bx, by - 1); g.fill(); }
+          g.globalAlpha = .9; g.beginPath(); g.moveTo(x - 8, y + 20); g.lineTo(x, y - 18); g.lineTo(x + 8, y + 20); g.fill(); }
+        g.restore(); } });
+    if (dark) { const k = Math.max(0, Math.min(1, (n - dark) / 900)); if (k < .25) { g.fillStyle = `rgba(255,190,90,${.5 * (1 - k * 4)})`; g.fillRect(0, 0, W, H * .35); } g.fillStyle = `rgba(20,10,4,${k * .55})`; g.fillRect(0, 0, W, H); }
+    requestAnimationFrame(f); }
+  requestAnimationFrame(f); return { go, reset }; })();
 </script></body></html>
