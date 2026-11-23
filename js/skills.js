@@ -159,7 +159,7 @@ window.SKILLS = (A) => {
     // 地面区域
     for (let i = zones.length - 1; i >= 0; i--) { const z0 = zones[i]; z0.t += dt; z0.ti -= dt; if (z0.ti <= 0) { z0.ti = z0.every; for (const z of fs) if (inCircle(z, z0, z0.r)) A.hurt(z, z0.d, z0, 2, z0.sid, Object.assign({ quiet: true }, z0.o)); } if (z0.t >= z0.T) { zones.splice(i, 1); if (z0.end) z0.end(z0); } }
     // 守护之刃
-    for (let i = swords.length - 1; i >= 0; i--) { const s = swords[i]; s.life -= dt; s.ph += 4 * dt; const p = P(h.x, h.y, s.ph + i * PI * 2 / swords.length, 40);   // 11/22 变大：半径 26→40 s.x = p.x; s.y = p.y;
+    for (let i = swords.length - 1; i >= 0; i--) { const s = swords[i]; s.life -= dt; s.ph += 4 * dt; const p = P(h.x, h.y, s.ph + i * PI * 2 / swords.length, 40); s.x = p.x; s.y = p.y;   // 11/22 变大：半径 26→40
       for (const z of fs) { const cd = s.cd.get(z) || 0; if (cd > 0) { s.cd.set(z, cd - dt); continue; } if (!inCircle(z, s, 12)) continue; s.cd.set(z, .4); A.hurt(z, s.d, h, 14, s.sid, { bleed: s.L >= 5 }); if (--s.hits <= 0) break; }
       if (s.hits <= 0 || s.life <= 0) { swords.splice(i, 1); if (s.L >= 7) { const t = nearOf(s, 160); if (t) shoot({ x: s.x, y: s.y - 12 * K, a: A.ang(s, t), v: 320, life: .6, r: 8, pierce: 0, d: s.d * 2, sid: s.sid, look: 'sword' }); } } }
     // 暗影宝珠
