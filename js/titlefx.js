@@ -2,9 +2,10 @@
 // 坐标是原图 1672×941 上的像素位置；按 .tart 的 background-size / position 换算到屏幕，换尺寸自动对齐。
 (() => {
   const IW = 1672, IH = 941;
-  const P = { moon: [663, 124, 150], torch: [[140, 167], [383, 222]], gem: [351, 355], crystal: [636, 303] };
-  const flies = Array.from({ length: 14 }, () => ({ x: Math.random() * IW * .62, y: 560 + Math.random() * 360, p: Math.random() * 7, s: .4 + Math.random() * .8, r: 1 + Math.random() * 1.6 }));
+  const P = { moon: [663, 124, 150], torch: [[140, 167], [383, 222]], gem: [351, 355], crystal: [639, 264] };
+  const flies = Array.from({ length: 10 }, () => ({ x: Math.random() * IW * .62, y: 560 + Math.random() * 360, p: Math.random() * 7, s: .4 + Math.random() * .8, r: 1 + Math.random() * 1.6 }));
   const FL = Object.assign(new Image(), { src: 'art/fx/map/torch.webp' }), FLP = [[140, 182, 64], [385, 243, 50]];   // 11/23 火把：8 帧火焰序列盖在原画的火上（底边 x, y, 高）
+  let bats = []; const BT = { n: 2 }, BAT = [['x...x', 'xx.xx', '.xxx.'], ['.....', 'xxxxx', 'x.x.x']];
   let cv, g, run = false, t0 = 0; const bgImg = new Image(); bgImg.onload = () => { t0 = performance.now(); }; bgImg.src = 'art/title/art13.webp';   // 11/22 主图先出来，光影等主图加载完再 1 秒淡入
   function rect() {   // 背景图在屏幕上的位置和缩放
     const el = cv.parentElement, W = el.clientWidth, H = el.clientHeight, cs = getComputedStyle(el), sz = cs.backgroundSize, [bx, by] = cs.backgroundPosition.split(' ').map(v => parseFloat(v) / 100);
@@ -21,11 +22,16 @@
     glow(X(mx), Y(my), S(mr * 1.9), '170,205,255', .32 + .12 * Math.sin(t * .9));                       // ① 月光
     P.torch.forEach(([x, y], i) => { const f = .5 + .25 * Math.sin(t * 9 + i * 3) + .15 * Math.sin(t * 23 + i); glow(X(x), Y(y), S(40 + 8 * f), '255,140,50', .4 + .25 * f); });   // ③ 火把
     const gp = .5 + .5 * Math.sin(t * 2.2); glow(X(P.gem[0]), Y(P.gem[1]), S(28 + 8 * gp), '90,150,255', .5 + .35 * gp);                                          // ④ 宝珠
-    const cp = .5 + .5 * Math.sin(t * 1.6 + 1); glow(X(P.crystal[0]), Y(P.crystal[1]), S(24 + 7 * cp), '160,220,255', .45 + .35 * cp);                          // ④ 水晶
+    const cp = .5 + .5 * Math.sin(t * 1.6 + 1); glow(X(P.crystal[0]), Y(P.crystal[1]), S(12 + 3 * cp), '190,235,255', .3 + .25 * cp);   // 11/23 对准双手，小光                          // ④ 水晶
     if ((t % 4.2) < .35) { const k = 1 - (t % 4.2) / .35, x = X(P.gem[0]), y = Y(P.gem[1]), l = S(20) * k; g.strokeStyle = `rgba(220,240,255,${.8 * k})`; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - l, y); g.lineTo(x + l, y); g.moveTo(x, y - l); g.lineTo(x, y + l); g.stroke(); }
     for (const f of flies) { const x = f.x + Math.sin(t * f.s + f.p) * 30, y = f.y + Math.cos(t * f.s * .7 + f.p) * 18 - (t * 4 * f.s) % 60, a = .35 + .35 * Math.sin(t * 2 * f.s + f.p);   // ⑤ 萤火
       glow(X(x), Y(y), S(f.r * 5), '200,255,150', a * .6); g.fillStyle = `rgba(245,255,215,${Math.min(1, a * 1.6)})`; g.fillRect(X(x) - 1.5, Y(y) - 1.5, 3, 3); }
     g.globalCompositeOperation = 'source-over';
+    // 11/23 远处的小蝙蝠：只在月亮上方一条天空里从右往左飞，两头淡入淡出
+    const dt = Math.min(.05, t - (BT.last || t)); BT.last = t; if ((BT.n -= dt) <= 0) { BT.n = 5 + Math.random() * 4; const y0 = 25 + Math.random() * 55, n = 3 + Math.random() * 3 | 0; for (let i = 0; i < n; i++) bats.push({ x: 1100 + i * 32 + Math.random() * 32, y: y0 + Math.random() * 24, v: 60 + Math.random() * 36, ph: Math.random() * 6 }); }
+    const ps = S(4); for (const b of bats) { b.x -= b.v * dt; b.y += Math.sin(t * 3 + b.ph) * .3; const fr = BAT[Math.floor(t * 8 + b.ph) % 2], a = .8 * Math.max(0, Math.min(1, (b.x - 160) / 100, (1100 - b.x) / 60)); g.fillStyle = `rgba(14,10,26,${a})`;
+      fr.forEach((r, j) => [...r].forEach((c, i) => { if (c === 'x') g.fillRect(Math.round(X(b.x) + i * ps), Math.round(Y(b.y) + j * ps), Math.ceil(ps), Math.ceil(ps)); })); }
+    bats = bats.filter(b => b.x > 160);
   }
   function init() { const el = document.querySelector('#title .tart'); if (!el || cv) return; cv = document.createElement('canvas'); cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none'; el.appendChild(cv); g = cv.getContext('2d');
     const tick = () => { const on = document.getElementById('title').classList.contains('on'); if (on && !run) { run = true; requestAnimationFrame(frame); } else if (!on) run = false; }; setInterval(tick, 300); tick(); }
