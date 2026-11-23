@@ -80,7 +80,7 @@
       <p>· 暂停：${touch ? '右上角 II' : 'P 或 Esc'}。</p>`; return d; }],
   };
   for (const b of document.querySelectorAll('[data-panel]')) b.onclick = () => { const [t, fn] = PANELS[b.dataset.panel]; $('tpTitle').textContent = t; const body = $('tpBody'); body.innerHTML = ''; body.appendChild(fn()); overlay('tpanel', true); };
-  $('tpClose').onclick = () => overlay('tpanel', false);
+  $('tpX').onclick = () => $('tpClose').click(); $('tpClose').onclick = () => overlay('tpanel', false);
 
   // ================= 备战页 =================
   const P = { hero: 'm', weapon: 'sword', free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
