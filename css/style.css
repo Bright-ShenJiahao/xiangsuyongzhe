@@ -1029,3 +1029,9 @@ body.pxui #pause .cfoot { padding-top: 10px; } body.pxui #pause .cfoot .btn { pa
 
 #hud .top .hp .hrt { display: block; }
 #hud .top .hp .hrt { background: none !important; } #hud .top .hp .hrt svg { display: block; width: 100%; height: 100%; }
+/* 11/23 血条挪到左上角 */
+#hud .top .hp { left: 52px !important; top: calc(16px + env(safe-area-inset-top)) !important; bottom: auto !important; transform: none !important; width: min(300px, 26vw) !important; }
+#tip { bottom: calc(14px + env(safe-area-inset-bottom)) !important; }
+#feed { top: auto; }
+@media (orientation: portrait), (max-width: 760px) { #hud .top .hp { left: 44px !important; top: calc(52px + env(safe-area-inset-top)) !important; width: 48vw !important; } #tip { bottom: calc(150px + env(safe-area-inset-bottom)) !important; } }
+@media (min-width: 761px) and (orientation: landscape) { #hud .top .hp { width: min(250px, 20vw) !important; } #hud .top .lv { width: min(520px, 40vw) !important; } }
