@@ -65,7 +65,7 @@
     hero.crit = c.crit; hero.critMul = c.critMul; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.44 : 1.8; hero.A = c.A; hero.fx = c.fx;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20%（11/23 修：hero.A / hero.fx 之前被注释吞掉了）
     hero.ob = {}; for (const o of [...(RUN.oath || []), ...(RUN.mv || [])]) if (o && DATA.oaths[o.id]) hero.ob[o.id] = DATA.oathLv[Math.min(5, o.lv || 1) - 1];
     m.spd *= 1 + .08 * OB('jifeng'); hero.rollMax *= 1 - .08 * OB('qingyu'); hero.rollMul = 1 + .15 * OB('youlong');
-    const max = Math.round((c.hp + 5 * (G.lv - 1)) * (1 - (RUN.hpCut || 0))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
+    const max = Math.round((c.hp + 3 * (G.lv - 1)) * (1 - (RUN.hpCut || 0))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
     return c;
   }
   const banner = (t, T) => { G.banner = { t, T, left: T }; };
@@ -181,13 +181,13 @@
   }
   function damageHero(d, dtype = 'phys') {
     if (hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
-    d *= dtype === 'magic' ? hero.mIn : hero.pIn; if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); hero.hp -= d; G.taken = (G.taken || 0) + d; hero.inv = .45; hero.hurtT = .25; { const big = d >= hero.maxHp * .15; if (big) G.shake = Math.max(G.shake, .25); UI.FX.hit(big); } nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
+    d *= dtype === 'magic' ? hero.mIn : hero.pIn; { const now = G.t; hero.hitBy = (hero.hitBy || []).filter(h => now - h.t < 1); const src = damageHero.src; if (src && !hero.hitBy.some(h => h.z === src)) hero.hitBy.push({ z: src, t: now }); d *= 1 + .25 * Math.max(0, hero.hitBy.length - 1); }   // 11/23 被围：1 秒内每多一只不同的怪打到 +25% if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); hero.hp -= d; G.taken = (G.taken || 0) + d; hero.inv = .45; hero.hurtT = .25; { const big = d >= hero.maxHp * .15; if (big) G.shake = Math.max(G.shake, .25); UI.FX.hit(big); } nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
     if (hero.hp <= 0 && RUN.save) { RUN.save = false; hero.hp = hero.maxHp * .5; hero.inv = 2; banner('复活羽毛燃尽了！', 1.6); return; }
     if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; G.loseT = 3.6; G.deadR = 0; G.shake = Math.max(G.shake, .45); addEventListener('pointerdown', () => { if (G && hero.dead && G.deadR > .4) G.loseT = 0; }, { once: true }); }
   }
 
   // 杂兵：走到 reach 内抬手，抬手开始时锁定方向；出招时勇者在扇面（arc / r）里才挨打。弓手保持距离，锁方向后放箭（没有预警线）
-  function soldierAI(z, dt) {
+  function soldierAI(z, dt) { damageHero.src = z;
     const T = z.T; z.t += dt; z.cd -= dt;
     if (z.flee) { const a = ang(hero, z); z.x += Math.cos(a) * z.sp * 1.6 * K * dt; z.y += Math.sin(a) * z.sp * 1.6 * K * dt / YS; z.moving = true; z.f = Math.cos(a) < 0 ? -1 : 1; return; }
     const d = dist(z, hero), dx = hero.x - z.x, dy = hero.y - z.y, dd = Math.hypot(dx, dy) || 1, reach = T.reach * z.reachMul;
@@ -199,7 +199,7 @@
       if (p >= 1) { z.st = 'rec'; z.t = -.3; } return; }
     if (z.st === 'wind') { if (z.t > T.wind + z.windAdd) { z.st = 'strike'; z.t = 0;
         if (T.bomb) { G.shake = Math.max(G.shake, .2); fx.push({ k: 'boom', x: z.x, y: z.y, t: 0, T: .45, r: T.bomb }); if (d < T.bomb) damageHero(T.dmg * z.dmgMul, T.dtype); z.hp = 0; kill(z); return; }   // 炸弹兵：自爆
-        if (T.ranged) shots.push({ k: 'arrow', look: T.shot, x: z.x + z.f * 8 * K, y: z.y - 18 * K, gy: z.y, vx: Math.cos(z.aim) * T.arrow * K, vy: Math.sin(z.aim) * T.arrow * K / YS, a: z.aim, t: 0, dmg: T.dmg * z.dmgMul, dtype: T.dtype });
+        if (T.ranged) shots.push({ k: 'arrow', from: z, look: T.shot, x: z.x + z.f * 8 * K, y: z.y - 18 * K, gy: z.y, vx: Math.cos(z.aim) * T.arrow * K, vy: Math.sin(z.aim) * T.arrow * K / YS, a: z.aim, t: 0, dmg: T.dmg * z.dmgMul, dtype: T.dtype });
         else { const r = T.r * z.reachMul, da = Math.abs(((ang(z, hero) - z.aim + PI * 3) % (PI * 2)) - PI); if (d < r + 6 && da < T.arc * PI / 360 + .15) damageHero(T.dmg * z.dmgMul, T.dtype); } } return; }
     if (z.st === 'strike') { if (z.t > .22) { z.st = 'rec'; z.t = 0; } return; }
     if (z.st === 'rec') { if (z.t > .25) { z.st = 'run'; z.t = 0; z.cd = T.cool * R(.85, 1.15); } return; }
@@ -223,7 +223,7 @@
         for (const z of L) if (dist(z, a) < 90 && !z.T.boss && z.tier !== 'mini' && z.hp < z.maxHp) { const h = Math.ceil(z.maxHp * .2); z.hp = Math.min(z.maxHp, z.hp + h); nums.push({ x: z.x, y: z.y - 30 * K, txt: '+' + h, t: 0, col: '#7af07a' }); } } }
   }
   // 哥布林王：跺地（自身一圈）/ 冲撞（直线）/ 半血以下喊小弟。先画地面预警，再出手
-  function bossAI(z, dt) {
+  function bossAI(z, dt) { damageHero.src = z;
     z.t += dt; z.cd -= dt; z.sum = (z.sum || 0) - dt;
     const d = dist(z, hero);
     if (z.st === 'run' || z.st === 'hurt') {
@@ -308,7 +308,7 @@
     for (let i = shots.length - 1; i >= 0; i--) {
       const o = shots[i]; o.t += dt;
       if (o.k === 'arrow') { o.x += o.vx * dt; o.y += o.vy * dt; o.gy += o.vy * dt;
-        if (Math.hypot(hero.x - o.x, (hero.y - o.gy) * YS) / K < 9) { damageHero(o.dmg, o.dtype); shots.splice(i, 1); continue; }
+        if (Math.hypot(hero.x - o.x, (hero.y - o.gy) * YS) / K < 9) { damageHero.src = o.from || null; damageHero(o.dmg, o.dtype); shots.splice(i, 1); continue; }
         if (o.t > 2.4) shots.splice(i, 1); continue; }
       if (o.k === 'harrow') {   // 勇者的箭
         o.x += o.vx * dt; o.y += o.vy * dt; o.gy += o.vy * dt;

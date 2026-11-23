@@ -140,9 +140,9 @@ window.DATA = {
   // ex = 额外的精英 / 小头目；hp = 这一站的血量倍率
   codes: { G: 'goblin', K: 'gob_blade', A: 'gob_archer', S: 'gob_kid', W: 'wolf_free', D: 'gob_shield', T: 'gob_thrower', B: 'gob_bomb', H: 'gob_ghost', R: 'gob_wolf', P: 'gob_boar', M: 'gob_mage', O: 'gob_rock' },
   stations: [
-    { hp: 1.00, name: '森林外围', waves: [{ G: 6, S: 3 }, { G: 8, S: 4 }, { G: 8, S: 4, K: 2, A: 1, ex: [['mini', 'gob_blade']] }] },
-    { hp: 1.06, name: '森林外围', waves: [{ G: 8, S: 3, K: 3 }, { G: 9, S: 3, K: 3, A: 2 }, { G: 10, S: 4, K: 4, A: 3, ex: [['elite', 'gob_blade']] }] },
-    { hp: 1.15, name: '森林外围', waves: [{ G: 9, S: 3, K: 4, A: 2, W: 3 }, { G: 10, K: 4, A: 3, W: 4 }, { G: 10, K: 5, A: 3, W: 4, ex: [['mini', 'gob_chief']] }] },
+    { hp: 1.00, name: '森林外围', waves: [{ G: 6, S: 3 }, { G: 8, S: 4, A: 1 }, { G: 8, S: 4, K: 2, A: 2, ex: [['mini', 'gob_blade']] }] },
+    { hp: 1.06, name: '森林外围', waves: [{ G: 8, S: 3, K: 3 }, { G: 9, S: 3, K: 3, A: 2 }, { G: 10, S: 4, K: 4, A: 3, T: 1, ex: [['elite', 'gob_blade']] }] },
+    { hp: 1.15, name: '森林外围', waves: [{ G: 9, S: 3, K: 4, A: 2, W: 3, T: 1 }, { G: 10, K: 4, A: 3, W: 4, T: 2 }, { G: 10, K: 5, A: 3, W: 4, ex: [['mini', 'gob_chief']] }] },
     { hp: 1.25, name: '森林深处', waves: [{ G: 10, K: 4, A: 3, D: 3, T: 2 }, { G: 10, K: 5, A: 3, D: 4, T: 3 }, { G: 11, K: 5, D: 4, T: 3, W: 3, ex: [['elite', 'gob_shaman']] }] },
     { hp: 1.40, name: '森林深处', waves: [{ G: 10, K: 5, D: 3, T: 2, B: 2, H: 2 }, { G: 11, K: 5, D: 4, T: 3, B: 3, H: 3 }, { G: 12, K: 6, D: 4, T: 3, B: 3, H: 3, ex: [['elite', 'gob_drum']] }] },
     { hp: 1.55, name: '森林深处', waves: [{ G: 11, K: 5, D: 4, B: 3, H: 3, R: 2 }, { G: 12, K: 6, D: 4, T: 3, B: 3, R: 3 }, { G: 12, K: 6, D: 4, T: 3, H: 3, R: 3, ex: [['mini', 'gob_paladin']] }] },
@@ -184,10 +184,10 @@ window.DATA = {
   waveT: 30,
   // 11/22 一站 = 一场连续战斗：3 段不停顿（段落时间如下，越往后越长），第 3 段打完才结算。第 1 站第 3 段前公主出现（三选一）
   phaseT: [[15, 15, 30], [20, 25, 35], [25, 30, 40], [30, 30, 45], [30, 35, 45], [35, 35, 50], [35, 40, 50], [40, 40, 60], [40, 45, 0]],                             // 每波固定 30 秒（11/21 用户定，先这样试）
-  countMul: 2.4,   // 11/22 数量再加一些（2 → 2.4）                           // 出怪数量 = 表上 × 2（30 秒一波、不再清场，怪要多）
+  countMul: 3.12,   // 11/22 数量再加一些（2 → 2.4）                           // 出怪数量 = 表上 × 2（30 秒一波、不再清场，怪要多）
   // 精英 / 小头目：血、伤害、体型倍率（群侠四档）
   tiers: { elite: { hp: 2.5, dmg: 1.25, size: 1.15, name: '精英' }, mini: { hp: 7, dmg: 1.5, size: 1.35, reach: 1.2, wind: .1, name: '小头目' } },
-  caps: { normal: 60, archer: 14 },   // 11/22 跟着数量加      // archer = 远程怪合计      // 场上同时最多多少只
+  caps: { normal: 78, archer: 18 },   // 11/22 跟着数量加      // archer = 远程怪合计      // 场上同时最多多少只
   // 经济（起始值，Codex）
   econ: { startCoin: 18, waveCoin: [10, 2], perKills: 3, elite: 5, mini: 8, clear: 0, waveHeal: 4,
     waveXp: 8, xpPerKills: 4, xpElite: 3, xpMini: 5, xpClear: 0, xpMul: 1.3, maxLv: 12 },
@@ -279,7 +279,7 @@ window.DATA.calc = function (b) {
     crit: Math.max(0, .01 + (fx.crit || 0)), critMul: 1.5 + (fx.critMul || 0),   // 暴击率 1% 起，暴击伤害 150% 起
     // 防御：受到的伤害 × 100 / (100 + 防御)，最多减 50%。物防 = 耐力 × 4 + 力量 × 1，魔防 = 耐力 × 4 + 智力 × 1，再加宝物
     pdef: Math.max(0, 4 * A.end + A.str + (fx.pdef || 0)), mdef: Math.max(0, 4 * A.end + A.int + (fx.mdef || 0)),
-    hp: Math.round((100 + 10 * A.con + (fx.hp || 0)) * (1 + (fx.hpMul || 0))),
+    hp: Math.round((55 + 10 * A.con + (fx.hp || 0)) * (1 + (fx.hpMul || 0))),
     xp: 1 + (fx.xp || 0), coin: fx.coin || 0, pick: 1 + (fx.pick || 0),
   };
   const r = c => Math.min(.5, c / (c + 100)); out.pIn = 1 - r(out.pdef); out.mIn = 1 - r(out.mdef);   // pIn / mIn：受到物理 / 魔法伤害的倍率
