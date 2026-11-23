@@ -1087,3 +1087,8 @@ body.tvbg { background: #000; }
 /* 11/23 开场剧情 */
 #introF { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: 90; display: none; background: #000; }
 #introChk { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; font-size: 14px; color: #f4ecd8; cursor: pointer; } #introChk.hide { display: none; }
+/* 11/23 主界面按钮：去掉呼吸；载入中不显示；鼠标移上去才亮 */
+.tenter span { animation: none !important; opacity: .82; transition: opacity .12s, color .12s, text-shadow .12s; }
+.tenter:hover span, .tenter:focus-visible span { opacity: 1; color: #ffe08a; text-shadow: 0 2px 6px #000, 0 0 10px #ffb040, 0 0 22px #ff8020; }
+.tenter:hover s { filter: brightness(1.6); }
+.tenter:disabled { display: none !important; }
