@@ -31,7 +31,7 @@
     if (o.kind === 'oath') { const O = DATA.oaths[o.id], has = [...r.oath, ...r.mv, ...r.bag].find(x => x && x.kind === 'oath' && x.id === o.id);
       if (has) { if (has.lv >= 5) { r.coins += 20; toast(`${O.name} 已满级，换成 20 铜钱`); return true; } has.lv++; B().recompute(); toast(`${O.name} 升到 Lv${has.lv}`); return true; }
       const A = O.mv ? r.mv : r.oath, j = A.indexOf(null); if (j >= 0) { A[j] = { kind: 'oath', id: o.id, lv: 1, mv: !!O.mv }; B().recompute(); return true; } }
-    if (o.kind === 'use') { const c = USE(o.id), h = B().hero(); h.hp = Math.min(h.maxHp, h.hp + h.maxHp * c.heal); toast(`吃掉${c.name}，回复生命`); return true; }
+    if (o.kind === 'use') { const c = USE(o.id), h = B().hero(); B().healHero(h.maxHp * c.heal); toast(`吃掉${c.name}，回复生命`); return true; }
     if (o.kind === 'book') { const j = r.slots.findIndex((s, k) => !s && k < r.open); if (j >= 0) { r.slots[j] = { id: o.id, lv: 1, xp: o.xp || 0 }; toast(`${SK[o.id].name} 自动装上第 ${j + 1} 格` + (r.tipP ? '' : ' · 按 P 调整顺序')); r.tipP = 1; return true; } }   // 技能栏有空位就直接装上
     if (o.kind === 'item' && ITEM(o.id).d) { const has = [...r.gear, ...r.bag].find(x => x && x.kind === 'item' && x.id === o.id); if (has) { if ((has.lv || 1) >= 5) { r.coins += 20; toast(`${ITEM(o.id).name} 已满级，换成 20 铜钱`); return true; } has.lv = (has.lv || 1) + 1; has.up = Date.now(); B().recompute(); toast(`${ITEM(o.id).name} 升到 Lv${has.lv}`); UI.feed(`${ITEM(o.id).name} 升到 Lv${has.lv}！`); return true; } }
     if (o.kind === 'item') { const g = r.gear.indexOf(null); if (g >= 0) { r.gear[g] = { kind: 'item', id: o.id }; B().recompute(); return true; } }   // 11/23 宝物格有空就直接生效

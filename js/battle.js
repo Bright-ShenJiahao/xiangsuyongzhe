@@ -164,7 +164,7 @@
     if (z.hp <= 0) kill(z);
   }
   function kill(z) {
-    z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; G.wk++; G.combo = (G.combo || 0) + 1; G.comboT = 3; G.maxCombo = Math.max(G.maxCombo || 0, G.combo); G.bestCombo = Math.max(G.bestCombo || 0, G.combo); if (G.combo >= 30 && OB('lianzhan')) hero.lzT = 6; if (OB('pozhu') && Math.random() < .04 * OB('pozhu')) hero.instant = 1; if (z.tier === 'elite' && OB('tulong')) hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .05 * OB('tulong'));
+    z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; G.wk++; G.combo = (G.combo || 0) + 1; G.comboT = 3; G.maxCombo = Math.max(G.maxCombo || 0, G.combo); G.bestCombo = Math.max(G.bestCombo || 0, G.combo); if (G.combo >= 30 && OB('lianzhan')) hero.lzT = 6; if (OB('pozhu') && Math.random() < .04 * OB('pozhu')) hero.instant = 1; if (z.tier === 'elite' && OB('tulong')) healHero(hero.maxHp * .05 * OB('tulong'));
     { const E = DATA.econ, v = z.tier === 'elite' ? E.elite : z.tier === 'mini' ? E.mini : Math.random() < (1 + .05 * (RUN.luck || 0)) / E.perKills ? 1 : 0;   // 11/23 铜钱掉在地上，要走过去捡
       if (v && !z.T.boss) G.gc.push({ x: z.x, y: z.y, v, t: 0, h: 0, vh: 90, vx: R(-20, 20) * K }); }
     if (z.tier === 'elite') { G.wElite++; G.gi.push({ kind: 'book', x: z.x, y: z.y, t: 0 }); }   // 固定精英掉书，路线精英掉宝物
@@ -177,7 +177,7 @@
   const need = () => Math.round((14 + 4 * (G.lv - 1)) * DATA.econ.xpMul);
   function addXp(n) {
     n *= hero.xpMul || 1; G.xp += n; G.wx += n;
-    while (G.xp >= need() && !hero.dead && G.lv < DATA.econ.maxLv) { G.xp -= need(); G.lv++; RUN.xiu++; G.lvUpT = 2.2; recompute(); hero.hp = Math.min(hero.maxHp, hero.hp + 5); }
+    while (G.xp >= need() && !hero.dead && G.lv < DATA.econ.maxLv) { G.xp -= need(); G.lv++; RUN.xiu++; G.lvUpT = 2.2; recompute(); healHero(5); }
   }
   function damageHero(d, dtype = 'phys') {
     if (hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
@@ -300,7 +300,7 @@
   let SK = null;
   const API = { K, YS, PI, hero: () => hero, foes: () => foes, ang, aimNow, face: faceTo, spinFace: () => { hero.f = Math.floor(G.t * 12) % 2 ? 1 : -1; },
     hurt: (z, d, from, kb, sid, o) => hurt(z, d, from, kb, sid, o), fx: o => fx.push(o), tele: o => tele.push(Object.assign({ mine: true }, o)), shake: v => { G.shake = Math.max(G.shake, v); },
-    heal: n => { hero.hp = Math.min(hero.maxHp, hero.hp + n); },
+    heal: n => healHero(n), healHero,
     push: (z, a, d) => { if (z.T.boss) return; const k = z.tier === 'mini' ? 0 : z.tier === 'elite' ? .5 : 1; z.x += Math.cos(a) * d * k * K; z.y += Math.sin(a) * d * k * K / YS; clampG(z, 4 * K); },
     pull: (z, p, v, dt) => { const a = Math.atan2((p.y - z.y) * YS, p.x - z.x), d = Math.hypot(p.x - z.x, (p.y - z.y) * YS) / K, m = Math.min(d, v * dt); z.x += Math.cos(a) * m * K; z.y += Math.sin(a) * m * K / YS; clampG(z, 4 * K); },
     fireball: (x, y, T, r, cb) => shots.push({ k: 'fire', x, y, t: 0, T, r, cb }) };
@@ -427,7 +427,7 @@
     if (fx.interest) { const it = Math.min(Math.round(fx.icap), Math.floor(RUN.coins * fx.interest)); if (it > 0) { RUN.coins += it; UI.feed(`存钱罐：利息 ${it} 铜钱`); } }
     RUN.coins += cw; if (G.wi === STN().waves.length - 1) { RUN.coinBoost = 0; RUN.noThief = 0; }
     const xp0 = G.xp, lv0 = G.lv; addXp(E.waveXp + G.st + Math.floor(G.wk / E.xpPerKills) + G.wElite * E.xpElite + G.wMini * E.xpMini + (cl ? E.xpClear : 0));
-    hero.hp = Math.min(hero.maxHp, hero.hp + (E.waveHeal + hero.maxHp * (fx.waveHeal || 0)) * (1 + (fx.healMul || 0)));
+    healHero(E.waveHeal + hero.maxHp * (fx.waveHeal || 0));
     RUN.xopt = null; RUN.xrr = 0; RUN.shop = null; RUN.rr = 0;
     // 掉书只从还没拿到的书里抽（11/21 定）；全拿到了就换成铜钱
     const own = new Set([...RUN.slots, ...RUN.bag].filter(x => x && (x.kind === 'book' || !x.kind)).map(x => x.id)), ids = DATA.bookPool(own, G.st, G.drops.some(d => d.kind === 'book')), pick = a => a[Math.random() * a.length | 0], loot = [];
@@ -477,7 +477,7 @@
     switch (fx) {
       case 'fItem': { const L = [...RUN.bag, ...RUN.gear].filter(x => x && x.kind === 'item'), x = L[0]; take(x); recompute(); give({ kind: 'item', id: pick(ITEMS().filter(i => i.id !== x.id)).id }); return '泉水咕嘟一声，吐出了另一件宝物。'; }
       case 'fBook': { const b = pick(bagB), T = DATA.skills[b.id].tier, own = ownBooks(), L = Object.keys(DATA.skills).filter(id => DATA.skills[id].tier === T && !own.has(id)); take(b); if (!L.length) { RUN.coins += 30; return '没有同品阶的新书了，泉水还你 30 铜钱。'; } give({ kind: 'book', id: pick(L) }); return '泉水里浮上来一本新书。'; }
-      case 'fCoin': RUN.coins -= 20; hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .4 * (1 + (hero.fx.healMul || 0))); return '回复了 40% 生命。';
+      case 'fCoin': RUN.coins -= 20; healHero(hero.maxHp * .4); return '回复了 40% 生命。';
       case 'kHeal': hero.hp = Math.max(1, hero.hp - hero.maxHp * .15); CAMP.learn({ kind: 'oath', id: rOath() }, true); return '骑士把胸前的誓约印记交给了你。';
       case 'kTake': { const W = ITEMS().filter(i => i.w), it = pick(W.length ? W : ITEMS()); give({ kind: 'item', id: it.id }); RUN.luck = Math.max(-5, (RUN.luck || 0) - 1); return '你拿走了他的宝物……幸运 −1。'; }
       case 'cup': RUN.coins -= 20; if (Math.random() < 1 / 3) { const id = randBook(); if (id) { give({ kind: 'book', id }); return '猜中了！咕噜不情愿地递来一本书。'; } give({ kind: 'item', id: pick(ITEMS()).id }); return '猜中了！得到一件宝物。'; } return '没猜中。咕噜把 20 铜钱揣进了兜里。';
@@ -506,7 +506,7 @@
         if (!L.length) { RUN.coins += 30; toastMsg('箱子里只有 30 铜钱'); f.rest = null; return showRoute(true); }
         o.books = L.map((id, i) => ({ kind: 'book', id, x: o.x + (i - (L.length - 1) / 2) * 36 * K, y: o.y + 34 * K, st: 0 })); toastMsg('三本书选一本'); } return; }
     if (o.k === 'chest') { for (const b of o.books) { if (SKUL(b, 14)) b.st += dt; else b.st = 0; if (b.st > .3) { CAMP.learn(b, true); gotFeed(b); f.rest = null; return showRoute(true); } } return; }
-    if (o.k === 'fire') { if (o.out) return; if (SKUL(o, 22)) o.st += dt; else o.st = 0; if (o.st > 1) { const h0 = hero.hp; hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .5 * (1 + (hero.fx.healMul || 0))); nums.push({ x: hero.x, y: hero.y - 44 * K, v: Math.round(hero.hp - h0), t: 0, col: '#7cff8a' }); RUN.xiu++; f.pr.said = 0; toastMsg('回复 50% 生命，修炼 +1（去找露米娜）'); o.out = G.t; showRoute(true); } }
+    if (o.k === 'fire') { if (o.out) return; if (SKUL(o, 22)) o.st += dt; else o.st = 0; if (o.st > 1) { const h0 = hero.hp; healHero(hero.maxHp * .5); nums.push({ x: hero.x, y: hero.y - 44 * K, v: Math.round(hero.hp - h0), t: 0, col: '#7cff8a' }); RUN.xiu++; f.pr.said = 0; toastMsg('回复 50% 生命，修炼 +1（去找露米娜）'); o.out = G.t; showRoute(true); } }
   }
   // 奇遇场景物（临时：代码画的像素小景，等出图替换）
   const EVI = {}; const evi = n => EVI[n] || (EVI[n] = Object.assign(new Image(), { src: 'art/ev/' + n + '.png' }));
@@ -666,13 +666,13 @@
   function doRest(k) {
     const back = () => { G.paused = false; showRoute(true); }, base = { st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], after: back, goText: '回到路线 ▶' };
     if (k === 'chest') { const L = []; for (let i = 0; i < 3; i++) { const id = randBook(); if (id && !L.some(o => o.id === id)) L.push({ kind: 'book', id }); } return CAMP.open(Object.assign(base, { title: '宝箱 · 三本书选一本', tab: 'shi', loot: L, pickOne: true })); }
-    if (k === 'fire') { hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * .5); RUN.xiu++; RUN.xopt = null; RUN.xrr = 0; return CAMP.open(Object.assign(base, { title: '篝火 · 回复 50% 生命，修炼一次', tab: 'xiu' })); }
+    if (k === 'fire') { healHero(hero.maxHp * .5); RUN.xiu++; RUN.xopt = null; RUN.xrr = 0; return CAMP.open(Object.assign(base, { title: '篝火 · 回复 50% 生命，修炼一次', tab: 'xiu' })); }
     if (k === 'shop') { RUN.shop = null; RUN.rr = 0; return CAMP.open(Object.assign(base, { title: '地精特价商店 · 全部八折', tab: 'shang', disc: .8 })); }
     const used = RUN.evUsed || (RUN.evUsed = []), L = DATA.events.filter(e => !used.includes(e.id)), E = (L.length ? L : DATA.events)[Math.random() * (L.length || DATA.events.length) | 0]; used.push(E.id);
     back();
   }
   function doEvent(fx) {   // 返回结果文字
-    const r = Math.random(), A = DATA.attrs.map(a => a.id), heal = p => { hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * p); };
+    const r = Math.random(), A = DATA.attrs.map(a => a.id), heal = p => { healHero(hero.maxHp * p); };
     const train = (a, v) => { RUN.train[a] = (RUN.train[a] || 0) + v; recompute(); }, give = o => { CAMP.learn(o, true); gotFeed(o); };
     switch (fx) {
       case 'con2': train('con', 2); heal(0); return '体魄 +2，生命上限提高了。';
@@ -768,6 +768,8 @@
   function bossIn() { if (G.bossOut) return; G.bossOut = true; G.boss = spawn(G.W.boss || MAP.boss); G.boss.cd = 2.5; banner('哥布林王 出现了！', 2.4); G.shake = .3; }
 
   // ---------- 每帧更新 ----------
+  // 11/23 所有回血走这里：统一乘治疗倍率（狂战士项链 −30% 等）
+  function healHero(n) { if (!hero || hero.dead || n <= 0) return 0; const h0 = hero.hp; hero.hp = Math.min(hero.maxHp, hero.hp + n * Math.max(0, 1 + ((hero.fx || {}).healMul || 0))); return hero.hp - h0; }
   function update(dt) {
     { const dc = RUN.coins - (G.lastC == null ? RUN.coins : G.lastC); if (dc > 0) G.earned = (G.earned || 0) + dc; G.lastC = RUN.coins; }
     G.t += dt; hero.t += dt; if (G.lvUpT > 0) G.lvUpT -= dt;
@@ -967,7 +969,7 @@
     draw();
   }
   function init(canvas) { cv = canvas; ctx = cv.getContext('2d'); fit(); addEventListener('resize', fit); bindInput(); }
-  window.BATTLE = {
+  window.BATTLE = { healHero: n => healHero(n),
     init, start, frame, fit, roll,
     pause(v) { if (G && !G.over) G.paused = v; }, get paused() { return !!(G && G.paused); }, active: () => !!G && !G.over,
     stop() { G = null; }, g: () => G, loadSave, clearSave,
