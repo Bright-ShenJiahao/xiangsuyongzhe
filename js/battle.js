@@ -450,7 +450,7 @@
     stationEnd();
   }
   const PCV = new Map(); function portalCv(d) { let c = PCV.get(d); if (!c) { c = document.createElement('canvas'); c.width = 40; c.height = 52; PCV.set(d, c); } return c; }
-  function setDoors(cards, pick) { const f = G.fe, n = cards.length, cx = f.pr.x, y = MAP.ground.y0 + 92 * K; f.doors = cards.map((c, i) => ({ c, x: cx + (i - (n - 1) / 2) * 110 * K, y, st: 0 })); f.pick = pick; }
+  function setDoors(cards, pick) { const f = G.fe, n = cards.length, cx = f.pr.x, y = MAP.ground.y0 + 4 * K; f.doors = cards.map((c, i) => ({ c, x: cx + (i - (n - 1) / 2) * 110 * K, y, st: 0 })); f.pick = pick; }
   const SKUL = (o, r) => Math.hypot(o.x - hero.x, (o.y - hero.y) * YS) < r * K;
   function xiuOrbs() { const P = G.fe.pr, L = CAMP.rollXiu(3 + (hero.fx.xiuOpt || 0)); P.orbs = L.map((o, i) => Object.assign({ x: P.x + (i - (L.length - 1) / 2) * 40 * K, y: P.y + 40 * K, st: 0 }, o)); P.cr = P.cr || { x: P.x + (L.length / 2 + .6) * 40 * K, y: P.y + 40 * K, st: 0, n: 0 }; }
   // 11/22 不打仗的门：宝箱 / 篝火 / 特价商人在原地演出（奇遇还是弹卡片）
