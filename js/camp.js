@@ -103,7 +103,9 @@
   function fillInfo(info, box, withBtn, q) {
     const r = R(), cur = curOf(q || sel); if (!cur) return; const t = thing(cur); if (cur.kind === 'book') { const w = document.createElement('span'); w.className = 'ic'; w.appendChild(UI.skIcon(cur.id)); info.appendChild(w); } else info.appendChild(iconEl(t));
     let txt = `<b class="${t.tier ? 'tn' + t.tier : ''}">${t.name}</b> <small>${t.sub}</small><br>${t.desc}`;
-    if (cur.kind === 'book') { const S = SK[cur.id], k = B().skillInfo(cur); txt += `<br><small>伤害 ${Math.round(k.dmg)} · 前摇 ${k.wu.toFixed(2)} 秒 · 后摇 ${k.rc.toFixed(2)} 秒${S.hold ? ` · 持续 ${S.hold} 秒` : ''} · ${S.dt === 'magic' ? '魔法' : '物理'}</small><br><small>熟练 Lv${k.L}${k.next ? `（${k.xp}/${k.next}）` : '（已练满）'}</small>` + ['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<br><small class="${k.L >= +x.slice(1) ? 'on' : 'off'}">Lv${x.slice(1)}：${S[x]}</small>`).join(''); }
+    if (cur.kind === 'book') { const S = SK[cur.id], k = B().skillInfo(cur); const AN = { str: '力量', agi: '敏捷', int: '智力' }[S.type], av = (B().hero().A || {})[S.type] || 0;
+      txt += `<span class="kst"><span>伤害 <b>${Math.round(k.dmg)}</b></span><span>${S.dt === 'magic' ? '魔法' : '物理'}</span><span>前摇 ${k.wu.toFixed(2)}s</span><span>后摇 ${k.rc.toFixed(2)}s</span>${S.hold ? `<span>持续 ${S.hold}s</span>` : ''}</span>`
+        + (AN ? `<span class="katt a-${S.type}">受<b>${AN}</b>加成 · 每点 +6%（现在 +${av * 6}%）</span>` : '') + `<small>熟练 Lv${k.L}${k.next ? `（${k.xp}/${k.next}）` : '（已练满）'}</small>` + ['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<small class="${k.L >= +x.slice(1) ? 'on' : 'off'}">Lv${x.slice(1)}：${S[x]}</small>`).join(''); }
     const p = document.createElement('p'); p.innerHTML = txt; info.appendChild(p);
     if (!withBtn) return; const cs = sel;
     const btns = document.createElement('div'); btns.className = 'lob'; info.appendChild(btns);

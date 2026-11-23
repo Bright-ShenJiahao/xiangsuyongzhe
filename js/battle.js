@@ -624,13 +624,12 @@
         const im = img(o.adds[0][0] === 'end' ? 'amulet' : o.adds[0][0]); if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 8 * u, y - 8 * u, 16 * u, 16 * u);
         o.adds.forEach(([a, v], k) => label(`+${v} ${DATA.attrs.find(t => t.id === a).name}`, x, y + r + 2 * u + k * 7 * u, Q.col)); ring(o, 15, o.st / .8, '#fff', 12); }
       const c = P.cr; if (c) { const x = X(c.x), y = Y(c.y), free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1);
-        ctx.fillStyle = '#b07bff'; ctx.beginPath(); ctx.moveTo(x, y - 12 * u); ctx.lineTo(x + 7 * u, y - 2 * u); ctx.lineTo(x, y + 6 * u); ctx.lineTo(x - 7 * u, y - 2 * u); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#efe0ff'; ctx.lineWidth = u; ctx.stroke();
+        { const im = CAMPI('crystal'); if (im.complete && im.naturalWidth) { const fw = im.naturalWidth / 4, act = c.st > 0, fr = act ? 2 + (Math.floor(G.t * 8) % 2) : Math.floor(G.t * 2) % 2; ctx.drawImage(im, fr * fw, 0, fw, im.naturalHeight, rd(x - fw * u / 2), rd(y - (im.naturalHeight - 6) * u), rd(fw * u), rd(im.naturalHeight * u)); } }
         label(cost ? `刷新 ${cost} 铜钱` : `刷新（${free - c.n}）`, x, y + 8 * u, '#e6d4ff', 5); ring(c, 12, c.st / .5, '#e6d4ff', 3); if (G.st === 1 && !c.n) label('站上来刷新修炼', x, y - 24 * u, '#c8b890', 5); } }
     const M = f.mer; label('矮人商人', X(M.x), Y(M.y) + 3 * u, '#ffd860'); say(X(M.x), Y(M.y) - 44 * u, ['嘿嘿，要买点什么？', '好货不等人！', '铜钱带够了吗？'], 2.1); ring(M, 14, M.st / .4, '#ffd860');
     restDraw(label, ring);
     if (f.sign) { const S = f.sign, near = dist(S, hero) < 40, hop = near ? Math.abs(Math.sin(G.t * 8)) * 4 : 0, x = X(S.x), y = Y(S.y) - hop * u, on = Math.floor(G.t * 2.5) % 2;   // 11/23 地上的像素 P 键帽
-      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x - 11 * u, Y(S.y) + u, 22 * u, 3 * u); ctx.fillStyle = '#3a2a1a'; ctx.fillRect(x - 11 * u, y - 18 * u, 22 * u, 20 * u); ctx.fillStyle = on || near ? '#f4e8c8' : '#cfc0a0'; ctx.fillRect(x - 10 * u, y - 17 * u, 20 * u, 15 * u); ctx.fillStyle = '#9a8a6a'; ctx.fillRect(x - 10 * u, y - 2 * u, 20 * u, 3 * u);
-      ctx.fillStyle = '#3a2a1a'; ctx.font = `${Math.round(11 * u)}px Pix, monospace`; ctx.fillText('P', x, y - 16 * u); if (on || near) { ctx.strokeStyle = 'rgba(255,230,140,.8)'; ctx.lineWidth = u; ctx.strokeRect(x - 12 * u, y - 19 * u, 24 * u, 22 * u); }
+      { const im = CAMPI('pkey'); if (im.complete && im.naturalWidth) { const fw = im.naturalWidth / 2, fr = near && Math.floor(G.t * 4) % 2 ? 1 : 0; ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x - 12 * u, Y(S.y) + u, 24 * u, 3 * u); ctx.drawImage(im, fr * fw, 0, fw, im.naturalHeight, rd(x - fw * u / 2), rd(y - (im.naturalHeight - 2) * u), rd(fw * u), rd(im.naturalHeight * u)); } }
       label(UI.pKey ? UI.pKey() : '按下 P 整理', x, y + 5 * u, '#ffe8a0', 6.5); }
     ctx.restore();
   }
