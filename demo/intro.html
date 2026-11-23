@@ -92,7 +92,7 @@ async function play() { const id = ++RUN; $('play').style.display = 'none'; rese
   if (id !== RUN) return; await say(id, '勇者', '../art/portrait/m.webp', '这是……我刚买的游戏里？');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '您就是回应召唤的勇者吧！');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '裂缝还在扩大……请帮帮这片大陆！');
-  $('bub').style.display = 'none'; portalT = performance.now(); await wait(1250); $('pc').animate([{ transform: 'translate(0,3px)' }, { transform: 'none' }], 200); await wait(1200); walk = { x: 835 * CW / 1672, y: 292 * CW / 1672 }; $('cap').textContent = matchMedia('(pointer:coarse)').matches ? '按住屏幕拖动，走进传送门' : 'WASD / 方向键移动，走进传送门'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
+  $('bub').style.display = 'none'; portalT = performance.now(); await wait(1250); $('pc').animate([{ transform: 'translate(-50%, -50%) translate(0, 3px)' }, { transform: 'translate(-50%, -50%)' }], 200); await wait(1200); walk = { x: 835 * CW / 1672, y: 292 * CW / 1672 }; $('cap').textContent = matchMedia('(pointer:coarse)').matches ? '按住屏幕拖动，走进传送门' : 'WASD / 方向键移动，走进传送门'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
 function reset() { walk = null; portalT = 0; MK.reset(); pxState = 'off'; for (const e of document.querySelectorAll('.pg')) e.classList.remove('on'); $('px').style.opacity = 0; $('white').style.opacity = 0; $('bub').style.display = 'none'; $('cap').textContent = ''; }
 $('play').onclick = play;
 const GAME = /[?&]game/.test(location.search), FIRST = /[?&]first/.test(location.search);
