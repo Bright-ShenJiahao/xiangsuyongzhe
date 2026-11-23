@@ -28,7 +28,7 @@
   const X = x => rd((x - cam.x) * s), Y = y => rd((y - cam.y) * s);
 
   // ---------- 开局 ----------
-  function start(o) { if (cv) cv.classList.remove('dead');
+  function start(o) { if (cv) cv.classList.remove('dead'); if (G) { G.deadR = null; G.dust = 0; }
     opt = o; MAP = DATA.maps.find(m => m.id === (o.map || 'field')); SPR.setGrade(MAP.grade); MAPW = MAP.w || 1672; MAPH = MAP.h || 941; fit();
     MIMG = new Image(); MIMG.crossOrigin = 'anonymous'; MIMG.src = MAP.img;
     const b = o.build || { weapon: o.weapon || 'sword' }, A0 = {}; for (const a of DATA.attrs) A0[a.id] = DATA.attrBase;
@@ -183,7 +183,7 @@
     if (hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
     d *= dtype === 'magic' ? hero.mIn : hero.pIn; if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); hero.hp -= d; hero.inv = .45; hero.hurtT = .25; { const big = d >= hero.maxHp * .15; if (big) G.shake = Math.max(G.shake, .25); UI.FX.hit(big); } nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
     if (hero.hp <= 0 && RUN.save) { RUN.save = false; hero.hp = hero.maxHp * .5; hero.inv = 2; banner('复活羽毛燃尽了！', 1.6); return; }
-    if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; banner('勇者倒下了……', 99); G.loseT = 1.6; cv.classList.add('dead'); }
+    if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; G.loseT = 3.6; G.deadR = 0; G.shake = Math.max(G.shake, .45); addEventListener('pointerdown', () => { if (G && hero.dead && G.deadR > .4) G.loseT = 0; }, { once: true }); }
   }
 
   // 杂兵：走到 reach 内抬手，抬手开始时锁定方向；出招时勇者在扇面（arc / r）里才挨打。弓手保持距离，锁方向后放箭（没有预警线）
@@ -773,7 +773,7 @@
     if (G.banner) { G.banner.left -= dt; if (G.banner.left <= 0) G.banner = null; }
     G.shake = Math.max(0, G.shake - dt);
     if (G.winT != null && (G.winT -= dt) <= 0 && !G.over) { G.over = 'win'; return end(); }
-    if (hero.dead) { hero.deadT += dt; if ((G.loseT -= dt) <= 0 && !G.over) { G.over = 'lose'; return end(); } }
+    if (hero.dead) hero.deadT += dt;
     else {
       hero.rollCd -= dt; hero.inv -= dt; hero.hurtT -= dt; if (hero.cyT > 0) hero.cyT -= dt; if (hero.afterRoll > 0) hero.afterRoll -= dt; if (hero.lzT > 0) hero.lzT -= dt;
       hero.stillT = hero.moving ? 0 : (hero.stillT || 0) + dt; if (!G.fe) G.stT = (G.stT || 0) + dt;
@@ -810,7 +810,7 @@
       for (let j = -hh; j <= hh; j++) { const ww = rd(hw * Math.sqrt(1 - (j / (hh + .5)) ** 2)); ctx.fillRect(X0 + rd(ox * (j + hh) / (2 * hh) - ww + ox * .5) * u, Y0 + j * u, ww * 2 * u, u); } }
   }
   function heroFrame() {
-    if (hero.dead) return ['dead', 0];
+    if (hero.dead) return (G.deadR || 0) < .55 ? ['hurt', 0] : ['dead', 0];
     if (hero.roll > 0) return ['roll', Math.min(2, Math.floor((.3 - hero.roll) / .1))];
     const c = hero.cs; if (c) {   // 出招帧：js/skframes.js（tools/frames.html 调）
       const F = SKF.get(c.sk.id); let r = null;
@@ -877,7 +877,7 @@
         shadow(hero.x, hero.y, 26);
         if (hero.inv > 0 && hero.roll <= 0 && hero.hurtT <= 0 && !hero.dead && Math.floor(G.t * 20) % 2) continue;
         const [n, i, st, lg] = heroFrame(), bob = 0, lunge = st === 'strike' ? hero.f * (lg || 0) * u : st === 'hurt' ? -hero.f * 2 * u : 0;
-        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { w: hero.cs ? hero.cs.S.w : (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword', c: RUN.hero });
+        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { white: hero.dead && (G.deadR || 0) < .14 ? 1 : 0, w: hero.cs ? hero.cs.S.w : (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword', c: RUN.hero });
       } else {
         const z = o.z, B = z.T.boss || z.T.ai === 'boss', [n0, st] = foeFrame(z), n = z.noShield && SPR.frame(z.type, 'n_' + n0) ? 'n_' + n0 : n0;
         const a = z.dead ? Math.max(0, 1 - Math.max(0, z.deadT - (B ? 2.4 : .9)) / .4) : z.flee ? Math.max(0, 1 - z.fleeT / 1.6) : 1;
@@ -930,6 +930,12 @@
     for (const q of parts) { ctx.fillStyle = q.col; const z = (q.sz || 1) * u; ctx.fillRect(X(q.x), Y(q.y), z, z); }
     const nk = Math.max(1, rd(u * .9));
     for (const n of nums) { const y = Y(n.y) - n.t * 22 * u; if (n.txt) { ctx.font = `${7 * u}px Pix, monospace`; ctx.textAlign = 'center'; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#2a160e'; ctx.strokeText(n.txt, X(n.x), y); ctx.fillStyle = n.col; ctx.fillText(n.txt, X(n.x), y); } else num(n.v, X(n.x), y, n.col, n.big ? nk + 1 : nk); }
+    if (hero.dead && G.deadR != null) { const r = G.deadR, hx = X(hero.x), hy = Y(hero.y) - 14 * u;
+      if (r > .55 && r < .62 && !G.dust) { G.dust = 1; for (let k = 0; k < 14; k++) parts.push({ x: hero.x + R(-14, 14) * K, y: hero.y, vx: R(-20, 20) * K, vy: -R(5, 25) * K, t: 0, T: R(.5, .9), col: '#c8b090', g: 0 }); }
+      const gk = Math.min(1, Math.max(0, (r - .3) / 1.2)); if (gk > 0) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'saturation'; ctx.globalAlpha = gk; ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = gk * .35; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.restore();
+        const [n, i] = heroFrame(); SPR.drawHero(ctx, n, i, hx, Y(hero.y), hero.f < 0, u, { w: (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword', c: RUN.hero }); }
+      if (r > 1.6) { const k = Math.min(1, (r - 1.6) / 1.6), Rr = Math.hypot(W, H) * (1 - k) ** 1.6 + 2; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.moveTo(hx + Rr, hy); ctx.arc(hx, hy, Rr, 0, Math.PI * 2); ctx.fill("evenodd"); ctx.restore(); } }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (joy.on) { const dpr = W / innerWidth; ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.arc(joy.sx * dpr, joy.sy * dpr, 40 * dpr, 0, 7); ctx.fill(); const jx = joy.x - joy.sx, jy = joy.y - joy.sy, d = Math.hypot(jx, jy), k = Math.min(1, 40 / (d || 1)); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc((joy.sx + jx * k) * dpr, (joy.sy + jy * k) * dpr, 18 * dpr, 0, 7); ctx.fill(); }
     UI.hud({ fe: !!G.fe, combo: G.combo || 0, comboT: G.comboT || 0, roll: Math.max(0, hero.rollCd) / (hero.rollMax || 1.8), rollT: Math.max(0, hero.rollCd), lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
@@ -951,7 +957,9 @@
   // ---------- 主循环（由 ui.js 调用）----------
   function frame(dt) {
     if (!G) return;
-    if (!G.paused && !G.over) { if (G.hitStop > 0) { G.hitStop -= dt; dt *= .2; } update(dt); }
+    if (!G.paused && !G.over) { if (G.hitStop > 0) { G.hitStop -= dt; dt *= .2; }
+      if (hero.dead) { G.deadR = (G.deadR || 0) + dt; G.loseT -= dt; if (G.loseT <= 0 && !G.over) { G.over = 'lose'; end(); draw(); return; } dt *= G.deadR < .3 ? .06 : G.deadR < 1.3 ? .35 : 1; }   // 11/23 倒下：骤停 → 慢动作 → 正常
+      update(dt); }
     draw();
   }
   function init(canvas) { cv = canvas; ctx = cv.getContext('2d'); fit(); addEventListener('resize', fit); bindInput(); }
