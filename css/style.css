@@ -1138,3 +1138,7 @@ body.tvbg { background: #000; }
 #tpX { position: absolute; right: 12px !important; top: 18px !important; }
 #tpBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 10px; }
 #tpanel *::-webkit-scrollbar-track { margin: 0 !important; }
+
+/* 11/23 图鉴手办：静止 + 轻轻浮动，悬停放大发亮 */
+#tpBody canvas { animation: figBob 3s ease-in-out infinite; transition: transform .15s, filter .15s; } @keyframes figBob { 50% { translate: 0 -3px; } }
+#tpBody > div > div:hover canvas { transform: scale(1.08); filter: brightness(1.12) drop-shadow(0 0 6px rgba(255,220,140,.6)); }
