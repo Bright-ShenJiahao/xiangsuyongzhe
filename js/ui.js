@@ -38,9 +38,10 @@
   function iconCanvasOld(name) { const c = document.createElement('canvas'); c.width = c.height = 16; const g = c.getContext('2d'); (ICON[name] || ICON.sword).forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); } })); return c; }
 
   // ================= 主界面 =================
-  $('bStart').onclick = () => openPrep(true);
+  const tvOff = go => { const t = $('title'); if (t.classList.contains('tvoff')) return; t.classList.add('tvoff'); document.body.classList.add('tvbg'); setTimeout(() => { t.classList.remove('tvoff'); document.body.classList.remove('tvbg'); go(); }, 560); };
+  $('bStart').onclick = () => tvOff(() => openPrep(true));
   // 11/23 继续游戏：有存档就显示，从存档那一站的开头接着打
-  $('bCont').onclick = () => { const s = BATTLE.loadSave(); if (!s) return; lastBuild = s.opt.build || lastBuild; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); };
+  $('bCont').onclick = () => tvOff(() => { const s = BATTLE.loadSave(); if (!s) return; lastBuild = s.opt.build || lastBuild; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); });
   const contShow = () => { const s = BATTLE.loadSave(); $('bCont').hidden = !s; $('bStart').querySelector('span').textContent = s ? '新的冒险' : '进入游戏'; if (s) $('bCont').querySelector('small').textContent = `第 ${s.G.st} 站 · Lv${s.G.lv}`; };
   // 11/22 图鉴展示用小人（art/figure/<key>/0..3.png，比战斗小人大、更精细），有就替换图鉴里的那一个
   const FIG = {}; fetch('art/figure/meta.json').then(r => r.json()).then(M => { for (const k in M) FIG[k] = M[k].map(([ax], i) => { const im = new Image(); im.src = `art/figure/${k}/${i}.png`; return { c: im, f: { ax } }; }); }).catch(() => {});
@@ -171,8 +172,33 @@
   }
   const set = (id, prop, v) => { if (HC[id + prop] === v) return; HC[id + prop] = v; const e = $(id); if (prop === 'text') e.textContent = v; else if (prop === 'html') e.innerHTML = v; else if (prop === 'w') e.style.width = v; else if (prop === 'show') e.style.display = v ? 'block' : 'none'; else if (prop === 'cls') e.className = v; };
   const mmss = t => { t = Math.max(0, Math.ceil(t)); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
+
+  // ================= 11/23 交互动效 =================
+  const FX = (() => { let gw = 100, gT = 0, cs = null, cShow = null, lastCombo = 0;
+    function ghost(pc) { const g = $('hpGhost'); if (pc > gw || cs === null) { gw = pc; g.style.transition = 'none'; g.style.width = pc + '%'; cs = 0; return; } if (pc < gw - .01) { if (!gT) gT = setTimeout(() => { g.style.transition = 'width .5s ease-in'; g.style.width = pc + '%'; gw = pc; gT = 0; }, 400); } }
+    function hit(big) { const hp = $('hpBar').parentNode; hp.classList.add('flash'); setTimeout(() => hp.classList.remove('flash'), 70); if (big) { const v = $('hurtV'); v.classList.add('on'); setTimeout(() => v.classList.remove('on'), 60); } }
+    function coin(n) { if (cShow === null || n < cShow || n - cShow > 60) { cShow = n; $('coins').innerHTML = piH('coin', 1) + ' ' + n; return; } if (n === cShow || coin.t) return;
+      coin.t = setInterval(() => { cShow++; const e = $('coins'); e.innerHTML = piH('coin', 1) + ' ' + cShow; e.classList.remove('hit'); void e.offsetWidth; e.classList.add('hit'); if (cShow >= coin.to()) { clearInterval(coin.t); coin.t = 0; } }, 45); coin.to = () => n; }
+    function combo(c) { if (lastCombo >= 5 && c === 0 && screen === 'battle') brk(lastCombo); lastCombo = c; }
+    function brk(v) { const box = $('combo'), e = $('cN'); const r = e.getBoundingClientRect(); if (!r.width) return; const col = getComputedStyle(e.querySelector('svg path') || e).fill || '#ffb050';
+      for (let k = 0; k < 18; k++) { const p = document.createElement('div'); p.className = 'cShard'; p.style.background = col && col !== 'none' ? col : '#ffb050'; document.body.appendChild(p); let x = r.left + Math.random() * r.width, y = r.top + Math.random() * r.height, vx = (Math.random() - .5) * 5, vy = -Math.random() * 3, t = 0;
+        (function st() { vy += .35; x += vx; y += vy; t++; p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.opacity = Math.max(0, 1 - t / 40); if (t < 40) requestAnimationFrame(st); else p.remove(); })(); } }
+    function fly(src, cx, cy) { const b = $('bPause'), rb = b.getBoundingClientRect(); const i = document.createElement('img'); i.className = 'flyIc'; i.src = src; i.style.left = cx - 15 + 'px'; i.style.top = cy - 15 + 'px'; document.body.appendChild(i);
+      requestAnimationFrame(() => requestAnimationFrame(() => { i.style.left = rb.left + rb.width / 2 - 15 + 'px'; i.style.top = rb.top + rb.height / 2 - 15 + 'px'; i.style.transform = 'scale(.5) rotate(200deg)'; }));
+      setTimeout(() => { i.remove(); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }, 560); }
+    // 6B：画面裂成方块被吸进 (sx,sy)，mid() 换场后再反向拼回
+    function shatter(cv, sx, sy, mid) { const W = cv.width, H = cv.height, B = Math.max(8, Math.round(W / 120)), o = document.createElement('canvas'); o.id = 'shatter'; o.width = W; o.height = H; const rc = cv.getBoundingClientRect(); Object.assign(o.style, { left: rc.left + 'px', top: rc.top + 'px', width: rc.width + 'px', height: rc.height + 'px' }); document.body.appendChild(o);
+      const g = o.getContext('2d'), snap = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(cv, 0, 0); return c; }, bl = []; let md = 1;
+      for (let y = 0; y < H; y += B) for (let x = 0; x < W; x += B) { const d = Math.hypot(x - sx, y - sy); md = Math.max(md, d); bl.push({ x, y, d, r: Math.random() }); }
+      const run = (img, rev, T) => new Promise(res => { const t0 = performance.now(); (function f() { const k = Math.min(1, (performance.now() - t0) / T); g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+        for (const b of bl) { const st = rev ? .7 - (b.d / md) * .6 - b.r * .1 : (b.d / md) * .6 + b.r * .1; let q = Math.max(0, Math.min(1, (k - st) / .3)); if (rev) q = 1 - q; if (q >= 1) continue; const e = q * q, sc = 1 - e;
+          g.save(); g.translate(b.x + (sx - b.x) * e + B / 2, b.y + (sy - b.y) * e + B / 2); g.rotate(e * 3); g.scale(sc, sc); g.drawImage(img, b.x, b.y, B, B, -B / 2, -B / 2, B, B); g.restore(); }
+        k < 1 ? requestAnimationFrame(f) : res(); })(); });
+      run(snap(), false, 1000).then(() => { mid(); return new Promise(r => setTimeout(r, 180)); }).then(() => run(snap(), true, 800)).then(() => o.remove()); }
+    return { ghost, hit, coin, combo, fly, shatter };
+  })();
   function hud(h) {
-    set('hpBar', 'w', (h.hp / h.maxHp * 100).toFixed(1) + '%'); { const k = Math.ceil(h.hp) + '/' + h.maxHp; if (HC.hp !== k) { HC.hp = k; set('hpTxt', 'html', UI.pxNum(Math.ceil(h.hp), '#fff4e0') + '<i class="sl"></i>' + UI.pxNum(h.maxHp, '#e8c8b0')); } } $('hpBar').parentNode.classList.toggle('low', h.hp / h.maxHp < .3);
+    { const pc = h.hp / h.maxHp * 100; set('hpBar', 'w', pc.toFixed(1) + '%'); FX.ghost(pc); } { const k = Math.ceil(h.hp) + '/' + h.maxHp; if (HC.hp !== k) { HC.hp = k; set('hpTxt', 'html', UI.pxNum(Math.ceil(h.hp), '#fff4e0') + '<i class="sl"></i>' + UI.pxNum(h.maxHp, '#e8c8b0')); } } $('hpBar').parentNode.classList.toggle('low', h.hp / h.maxHp < .3);
     set('lvTxt', 'text', 'Lv ' + h.lv); set('xpBar', 'w', h.need ? (h.xp / h.need * 100).toFixed(1) + '%' : '100%');
     document.body.classList.toggle('fe', !!h.fe);
     set('clock', 'html', h.bossWave ? '<em>⌛</em><b>首领战</b>' : `<em>⌛</em><b>${pxNum(h.left == null ? '00:00' : mmss(h.left), h.left != null && h.left < 5.5 ? '#ff8a6a' : '#f4ecd8')}</b>`);
@@ -182,7 +208,7 @@
     { const c = h.combo, big = c >= 100 ? 4 : c >= 50 ? 3 : c >= 25 ? 2 : c >= 10 ? 1 : 0; set('combo', 'cls', 'cb' + big + (c > 1 ? ' on' : '') + (h.comboT < 1 && c > 1 ? ' fade' : ''));
       if (c && c !== HC.lastC) { HC.lastC = c; const e = $('cN'); e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); } }
     set('clock', 'cls', 'clock' + (h.left != null && h.left < 5.5 && !h.bossWave ? ' warn' : ''));
- set('coins', 'html', piH('coin', 1) + ' ' + h.coins);
+ FX.coin(h.coins); FX.combo(h.combo);
     const sk = JSON.stringify([h.slots, h.open, h.next]);
     if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.classList.add('tr', 't' + DATA.skills[s.id].tier); d.appendChild(skIcon(s.id)); { const L = BATTLE.profL(s); if (L) d.insertAdjacentHTML('beforeend', `<i>${L}</i>`); } } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');
@@ -200,7 +226,9 @@
   }
   function togglePause(force) {
     if (screen !== 'battle' || !BATTLE.active() || $('levelup').classList.contains('on') || $('route').classList.contains('on') || (window.CAMP && CAMP.isOpen())) return;
-    const on = force != null ? force : !$('pause').classList.contains('on'); if (!on) CAMP.commit(); BATTLE.pause(on); overlay('pause', on); if (on) CAMP.pauseOpen();
+    const P = $('pause'), on = force != null ? force : !P.classList.contains('on'); if (P.classList.contains('closing')) return; if (!on) CAMP.commit(); BATTLE.pause(on);
+    if (on) { P.classList.add('fresh'); overlay('pause', true); CAMP.pauseOpen(); setTimeout(() => P.classList.remove('fresh'), 900); }
+    else if (P.classList.contains('on')) { document.querySelectorAll('.loinfo.pop').forEach(e => e.remove()); P.classList.add('closing'); setTimeout(() => { P.classList.remove('closing'); overlay('pause', false); }, 200); }
   }
   $('bPause').onclick = () => togglePause(); $('pRes').onclick = () => { CAMP.commit(); togglePause(false); };
   $('pRe').onclick = () => startBattle(lastBuild); $('pHome').onclick = () => { BATTLE.stop(); overlay('pause', false); show('title'); };
@@ -253,7 +281,11 @@
     $('rMsg').textContent = r.win ? '哥布林王倒下了，屏幕那头好像传来了「下一关」的音乐。' : '眼前一黑……再按一次开始键吧。';
     const best = Object.entries(r.dmg || {}).sort((a, b) => b[1] - a[1])[0];
     $('rStats').innerHTML = `<span>打到</span><b>${r.win ? '通关' : r.boss ? '首领战' : `第 ${r.st} 站 第 ${Math.max(0, r.wi) + 1} 波`}</b><span>用时</span><b>${mmss(r.time)}</b><span>击倒</span><b>${r.kills}</b><span>等级</span><b>Lv ${r.lv}</b>${best ? `<span>主力</span><b>${DATA.skills[best[0]].name}</b>` : ''}`;
-    overlay('result', true);
+    const R0 = $('result'), bx = R0.querySelector('.box'); bx.querySelectorAll('.stamp').forEach(e => e.remove()); overlay('result', true);
+    if (r.win) { const st = document.createElement('div'); st.className = 'stamp'; st.textContent = '通关'; bx.appendChild(st);
+      const bs = [...$('rStats').querySelectorAll('b')], vals = bs.map(b => b.textContent); bs.forEach(b => b.style.visibility = 'hidden');
+      (async () => { for (let i = 0; i < bs.length; i++) { const b = bs[i], v = vals[i], m = v.match(/^(\D*)(\d+)(\D*)$/); b.style.visibility = ''; if (m) { const n = +m[2], t0 = performance.now(); await new Promise(res => (function f() { const k = Math.min(1, (performance.now() - t0) / 500); b.textContent = m[1] + Math.round(n * (1 - (1 - k) ** 3)) + m[3]; k < 1 ? requestAnimationFrame(f) : res(); })()); } await new Promise(r => setTimeout(r, 120)); }
+        await new Promise(r => setTimeout(r, 200)); st.classList.add('on'); await new Promise(r => setTimeout(r, 180)); R0.classList.remove('shake'); void R0.offsetWidth; R0.classList.add('shake'); })(); }
   }
   $('rAgain').onclick = () => startBattle(lastBuild);
   $('rWep').onclick = () => { BATTLE.stop(); overlay('result', false); openPrep(false); };
@@ -276,7 +308,7 @@
   const isTouch = () => matchMedia('(hover: none)').matches;
   const pTip = () => isTouch() ? '点右上角 ⏸ 看看' : '按 P 看看', pKey = () => isTouch() ? '点右上角 ⏸ 整理' : '按下 P 整理';
   const newDot = v => { const b = $('bPause'); if (b) b.classList.toggle('dot', v !== false); };
-  window.UI = { pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { FX, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来

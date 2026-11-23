@@ -52,6 +52,7 @@
   let toastT = 0; function toast0(s) { toast(s); } function toast(s) { const e = $('toast'); e.textContent = s; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 1600); }
 
   // ---------- 技能搭配（结算页「技能」页签和暂停页共用） ----------
+  let prevFill = null;
   function loadout(box) {
     const r = R(), h = B().hero(); box.innerHTML = '';
     document.querySelectorAll('.loinfo.pop').forEach(e => e.remove()); const wrap = document.createElement('div'); wrap.className = 'lo gearlo'; box.appendChild(wrap);
@@ -78,6 +79,7 @@
     const gg = document.createElement('div'); gg.className = 'bag gear'; L.appendChild(gg); cell(gg, r.gear, 'g');
     Rt.insertAdjacentHTML('beforeend', '<h4>物品栏 <small>收纳，不生效；拖到左边格子才生效</small></h4>');
     const bg = document.createElement('div'); bg.className = 'bag'; Rt.appendChild(bg); cell(bg, r.bag, 'b');
+    { const now = {}; let k = 0; L.querySelectorAll('.slots > div, .oathrow > div:not(.gap), .gear > div').forEach((el, i) => { el.style.setProperty('--k', k++); const key = i, v = el.classList.contains('has') ? el.innerHTML : ''; now[key] = v; if (prevFill && v && prevFill[key] !== v) el.classList.add('put'); }); prevFill = now; }
     // 11/23 详情改成跟着格子弹出：电脑悬停就看，点一下带按钮；手机点一下弹在格子上方
     if (sel) { const el = box.querySelector(`[data-t="${sel.t}"][data-i="${sel.i}"]`) || box.querySelector('.slot.sel'); if (el) popAt(el, sel.t === 'L' ? info => lockInfo(info, sel.i, box) : info => fillInfo(info, box, true), box); }
     box.querySelectorAll('[data-t]').forEach(el => { el.onmouseenter = () => { if (sel || matchMedia('(hover: none)').matches) return; const q = { t: el.dataset.t, i: +el.dataset.i }; if (!curOf(q)) return; popAt(el, info => fillInfo(info, box, false, q), box, 1); }; el.onmouseleave = () => { if (!sel) document.querySelectorAll('.loinfo.pop').forEach(e => e.remove()); }; });
@@ -196,7 +198,7 @@
   // ---------- 波间结算页 ----------
   // 11/22 站末整备只剩 修炼 / 商店 / 背包（技能栏 + 物品栏）。掉落自动进背包，背包满了才出「待收」页；结算只在通关 / 死亡；属性在暂停页看
   const TABS = [['shi', '待收'], ['xiu', '修炼'], ['shang', '商店'], ['ji', '背包']];
-  function open(report) {
+  function open(report) { prevFill = null;
     rep = report; loot = report.loot.map(o => Object.assign({ lv: 1 }, o)); sel = null;
     if (!rep.pickOne) loot = loot.filter(o => !learn(o, true));   // 自动收进背包（装不下的留在「待收」）
     tab = report.tab || (loot.length ? 'shi' : R().xiu ? 'xiu' : 'shang');
@@ -208,7 +210,7 @@
   function refreshCoin() { const r = R(); for (const id of ['cCoin', 'pCoin']) $(id).innerHTML = coinTxt(r.coins); if (rep && rep.field) $('cCoin').innerHTML = `<span class="pc"></span>${UI.pxNum(r.coins, '#ffe08a')}`; }
   function render() {
     const r = R(), tb = $('ctabs'); tb.innerHTML = '';
-    for (const [k, n] of TABS) { if (rep.only && k !== rep.only) continue; if (k === 'shi' && !loot.length && !rep.pickOne) continue; if (rep.pickOne && k !== 'shi') continue; const b = document.createElement('button'); b.className = k === tab ? 'on' : ''; const dn = k === 'xiu' ? r.xiu : k === 'shi' ? loot.length : k === 'shu' ? r.pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : ''); b.onclick = () => { if (tab === 'shu' && k !== 'shu') commit(); tab = k; sel = null; render(); }; tb.appendChild(b); }
+    for (const [k, n] of TABS) { if (rep.only && k !== rep.only) continue; if (k === 'shi' && !loot.length && !rep.pickOne) continue; if (rep.pickOne && k !== 'shi') continue; const b = document.createElement('button'); b.className = k === tab ? 'on' : ''; const dn = k === 'xiu' ? r.xiu : k === 'shi' ? loot.length : k === 'shu' ? r.pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : ''); b.onclick = () => { if (k === tab) return; const ks = TABS.map(x => x[0]), d = ks.indexOf(k) > ks.indexOf(tab) ? 'slideR' : 'slideL'; if (tab === 'shu' && k !== 'shu') commit(); tab = k; sel = null; render(); const cb = $('cBody'); cb.classList.remove('slideL', 'slideR'); void cb.offsetWidth; cb.classList.add(d); }; tb.appendChild(b); }
     refreshCoin(); const body = $('cBody'); body.innerHTML = ''; body.className = 'cbody t-' + tab;
     if (tab === 'jie') {
       const tot = Object.values(rep.dmg).reduce((s, v) => s + v, 0) || 1, rows = Object.entries(rep.dmg).sort((a, b) => b[1] - a[1]);
@@ -280,10 +282,10 @@
   function pauseRender() {
     const tb = $('pTabs'); tb.innerHTML = '';
     for (const [k, n] of [['ji', '技能'], ['shu', '属性']]) { const b = document.createElement('button'); b.className = k === ptab ? 'on' : ''; const dn = k === 'shu' ? R().pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : '');
-      b.onclick = () => { if (ptab === 'shu' && k !== 'shu') commit(); ptab = k; sel = null; pauseRender(); }; tb.appendChild(b); }
+      b.onclick = () => { if (k === ptab) return; const d = k === 'shu' ? 'slideR' : 'slideL'; if (ptab === 'shu' && k !== 'shu') commit(); ptab = k; sel = null; pauseRender(); const pb = $('pBody'); pb.classList.remove('slideL', 'slideR'); void pb.offsetWidth; pb.classList.add(d); }; tb.appendChild(b); }
     refreshCoin(); if (ptab === 'ji') loadout($('pBody')); else attrPanel($('pBody'));
   }
-  function pauseOpen() { UI.newDot(false); sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); }
+  function pauseOpen() { prevFill = null; UI.newDot(false); sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); }
 
   window.CAMP = { learn, rollXiu, open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
 })();

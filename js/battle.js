@@ -28,7 +28,7 @@
   const X = x => rd((x - cam.x) * s), Y = y => rd((y - cam.y) * s);
 
   // ---------- 开局 ----------
-  function start(o) {
+  function start(o) { if (cv) cv.classList.remove('dead');
     opt = o; MAP = DATA.maps.find(m => m.id === (o.map || 'field')); SPR.setGrade(MAP.grade); MAPW = MAP.w || 1672; MAPH = MAP.h || 941; fit();
     MIMG = new Image(); MIMG.crossOrigin = 'anonymous'; MIMG.src = MAP.img;
     const b = o.build || { weapon: o.weapon || 'sword' }, A0 = {}; for (const a of DATA.attrs) A0[a.id] = DATA.attrBase;
@@ -181,9 +181,9 @@
   }
   function damageHero(d, dtype = 'phys') {
     if (hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
-    d *= dtype === 'magic' ? hero.mIn : hero.pIn; if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); hero.hp -= d; hero.inv = .45; hero.hurtT = .25; G.shake = Math.max(G.shake, .15); nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
+    d *= dtype === 'magic' ? hero.mIn : hero.pIn; if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); hero.hp -= d; hero.inv = .45; hero.hurtT = .25; { const big = d >= hero.maxHp * .15; if (big) G.shake = Math.max(G.shake, .25); UI.FX.hit(big); } nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
     if (hero.hp <= 0 && RUN.save) { RUN.save = false; hero.hp = hero.maxHp * .5; hero.inv = 2; banner('复活羽毛燃尽了！', 1.6); return; }
-    if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; banner('勇者倒下了……', 99); G.loseT = 1.6; }
+    if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; banner('勇者倒下了……', 99); G.loseT = 1.6; cv.classList.add('dead'); }
   }
 
   // 杂兵：走到 reach 内抬手，抬手开始时锁定方向；出招时勇者在扇面（arc / r）里才挨打。弓手保持距离，锁方向后放箭（没有预警线）
@@ -499,7 +499,7 @@
       if (o.mst > .4) { o.mst = -99; G.lock = true; RUN.shop = null; RUN.rr = 0; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '裂缝旅商', tab: 'shang', only: 'shang', field: 1, rift: 1, goText: '离开 ▶', after: () => { G.lock = false; o.mst = -1; RUN.shop = null; } }); return; } }
     if (o.done) { if ((o.done -= dt) <= 0) { f.rest = null; showRoute(true); } return; }
     for (const p of o.pl) { const on = SKUL(p, 14), ok = evOk(p.need); if (!on) p.lock = 0; if (on && !p.lock && ok && o.t > 1) p.st += dt; else p.st = 0;
-      if (p.st > 1.2) { const msg = p.fx === 'leave' ? '' : evRun(p.fx); if (msg) { o.msg = msg; toastMsg(msg); } o.done = msg ? 1.6 : .2; return; } } }
+      if (p.st > 1.2) { G.shake = Math.max(G.shake, .15); p.fl = performance.now(); const msg = p.fx === 'leave' ? '' : evRun(p.fx); if (msg) { o.msg = msg; toastMsg(msg); } o.done = msg ? 1.6 : .2; return; } } }
   function restTick(dt) {
     const f = G.fe, o = f.rest; o.t += dt; if (o.k === 'ev') return evTick(dt);
     if (o.k === 'chest' && !o.open) { if (SKUL(o, 18)) o.st += dt; else o.st = 0; if (o.st > .3) { o.open = 1; const L = []; for (let i = 0; i < 3; i++) { const id = randBook(); if (id && !L.includes(id)) L.push(id); }
@@ -538,7 +538,7 @@
       label(E.name, x, y + 6 * u, '#e6c8ff'); if (!o.done && !o.pl.some(p => SKUL(p, 14) && p.t.includes('：'))) say(x, y - 50 * u, o.msg ? [o.msg] : E.lines, 2.1);
       if (!o.done) for (const p of o.pl) { const px = X(p.x), py = Y(p.y), ok = evOk(p.need), ty = p.fx === 'leave' ? 'x' : !ok ? 'x' : EV_RED.has(p.fx) ? 'r' : 'g';   // 11/23 符文石板踏板 + 浮空小图标
         const b0 = evi('pl_' + ty), b1 = evi('pl_' + ty + '1'), w = 64 * u * .8, h = 28 * u * .8, pr = Math.min(1, p.st / 1.2);
-        if (b0.complete && b0.naturalWidth) { ctx.save(); if (!ok) ctx.globalAlpha = .55; ctx.drawImage(b0, px - w / 2, py - h / 2, w, h); ctx.restore(); }
+        if (b0.complete && b0.naturalWidth) { ctx.save(); if (!ok) ctx.globalAlpha = .55; if (p.fl && performance.now() - p.fl < 350) ctx.filter = 'brightness(2.2)'; ctx.drawImage(b0, px - w / 2, py - h / 2, w, h); ctx.restore(); }
         if (pr > 0 && b1.complete) { ctx.save(); ctx.beginPath(); ctx.moveTo(px, py); ctx.arc(px, py, w, -PI / 2, -PI / 2 + PI * 2 * pr); ctx.closePath(); ctx.clip(); ctx.drawImage(b1, px - w / 2, py - h / 2, w, h); ctx.restore(); }
         const ic = evIcon(p), bob = Math.sin(G.t * 3 + p.x) * 2 * u; if (ic && ic.complete && ic.naturalWidth) { const k = 18 / Math.max(ic.naturalWidth, ic.naturalHeight) * u, iw = ic.naturalWidth * k, ih = ic.naturalHeight * k; ctx.save(); if (!ok) ctx.globalAlpha = .45; ctx.drawImage(ic, px - iw / 2, py - 8 * u - ih + bob, iw, ih); ctx.restore(); }
         label(p.t.split('：')[0], px, py + 10 * u, ok ? '#fff3d8' : '#888', 6.5); if (SKUL(p, 14) && p.t.includes('：')) say(x, y - 50 * u, [p.t + (ok ? '' : '（条件不够）')], 99); }
@@ -572,7 +572,7 @@
     if (M.st < 0 && !SKUL(M, 24)) M.st = 0;
     for (const d of f.doors) { if (Math.abs(d.x - hero.x) < 22 * K && Math.abs(d.y - hero.y) < 18 * K) d.st += dt; else d.st = 0;
       if (d.st > .35) { if ((RUN.xiu > 0 || f.items.length) && !f.warn) { f.warn = 1; d.st = -1; toastMsg(RUN.xiu > 0 ? '还有修炼没拿（去找露米娜），再走进门就出发' : '地上还有东西没捡，再走进门就出发'); return; }
-        if (d.st > .35) { f.doors = []; f.pick(d.c); return; } } }
+        if (d.st > .35) { const c = d.c, sx = X(d.x), sy = Y(d.y) - 26 * u; f.doors = []; G.lock = true; UI.FX.shatter(cv, sx, sy, () => { G.lock = false; f.pick(c); }); return; } } }
   }
   // 头顶对话气泡：每 5 秒说一句（打字机效果，停 3 秒），几句轮流
   function say(x, y, lines, seed) { const t = G.t + (seed || 0), cyc = 5, k = t % cyc; if (k > 3.2) return; const L = lines[Math.floor(t / cyc) % lines.length], n = Math.min(L.length, Math.floor(k * 14) + 1), tx = L.slice(0, n);
@@ -700,8 +700,8 @@
       if (c.t > .35 && d < 9) { c.got = 1; G.cf += c.v * cMul(); const n = Math.floor(G.cf); G.cf -= n; RUN.coins += n; parts.push({ x: hero.x, y: hero.y - 30 * K, vx: 0, vy: -40 * K, t: 0, T: .3, col: '#ffe08a', g: 0 }); } }
     G.gc = G.gc.filter(c => !c.got);
     for (const o of G.gi) { o.t += dt; if (o.t > .4 && dist(o, hero) < 14 && !hero.dead) { o.got = 1;   // 11/23 书 / 宝物也要走过去捡
-      if (o.kind === 'book') { const id = randBook(); if (id) { CAMP.learn({ kind: 'book', id }, true); gotFeed({ kind: 'book' }); } else { RUN.coins += 30; UI.feed('捡到 30 铜钱'); } }
-      else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; CAMP.learn({ kind: 'item', id: it.id }, true); gotFeed({ kind: 'item' }); } } }
+      if (o.kind === 'book') { const id = randBook(); if (id) { CAMP.learn({ kind: 'book', id }, true); gotFeed({ kind: 'book', id, x: o.x, y: o.y }); } else { RUN.coins += 30; UI.feed('捡到 30 铜钱'); } }
+      else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; CAMP.learn({ kind: 'item', id: it.id }, true); gotFeed({ kind: 'item', x: o.x, y: o.y }); } } }
     G.gi = G.gi.filter(o => !o.got);
     let T = G.thief; if (T) { if (T.grab > 0) { T.grab -= dt; T.t += dt; return; } if (T.hurt > 0) T.hurt -= dt; }
     if (!T && !G.fe && !RUN.noThief && G.gc.some(c => c.t > 10)) { const p = edgeSpawn(); T = G.thief = { x: p.x, y: p.y, ex: p.x, ey: p.y, bag: 0, n: 0, st: 'go', t: 0, f: 1 }; UI.feed('一只小咕噜溜进来偷钱了！'); }
@@ -760,7 +760,7 @@
       ctx.globalAlpha = 1; }
     AMB.leaves = AMB.leaves.filter(l => l.t < 12);
   }
-  function gotFeed(o) { const k = o.kind === 'book' ? '一本技能书' : o.kind === 'item' ? '一件宝物' : ''; if (k) { UI.feed(`获得${k}，${UI.pTip()}`); UI.newDot(); } }
+  function gotFeed(o) { const k = o.kind === 'book' ? '一本技能书' : o.kind === 'item' ? '一件宝物' : ''; if (k) { try { const rc = cv.getBoundingClientRect(), q = rc.width / cv.width, ic = o.kind === 'book' ? 'art/drop/book_' + (({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff' })[(DATA.skills[o.id] || {}).sys] || 'sword') + '.png' : 'art/drop/chest.png'; if (o.x != null) UI.FX.fly(ic, rc.left + X(o.x) * q, rc.top + Y(o.y) * q); } catch (e) {} UI.feed(`获得${k}，${UI.pTip()}`); UI.newDot(); } }
   function toastMsg(t) { UI.toast && UI.toast(t); }
   function bossIn() { if (G.bossOut) return; G.bossOut = true; G.boss = spawn(G.W.boss || MAP.boss); G.boss.cd = 2.5; banner('哥布林王 出现了！', 2.4); G.shake = .3; }
 
@@ -900,6 +900,7 @@
       else if (o.k === 'fire') { const p = o.t / o.T, hy = (1 - p) * 120; for (let j = 0; j < 5; j++) { ctx.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; ctx.fillRect(X(o.x) - q / 2 - rd(j * 3 * u * (1 - p)), Y(o.y) - rd((hy + j * 7) * u) - q / 2, q, q); } }
     }
     SK.drawOver(ctx, X, Y, u); { const n = performance.now(), adt = Math.min(.1, (n - (AMB.tm || n)) / 1000); AMB.tm = n; ambDraw(G.paused ? 0 : adt); }
+    if (G.lvUpT > 1.3 && !hero.dead) { const t = 2.2 - G.lvUpT, hgt = Math.min(1, t / .27) * 150 * u, a = t < .27 ? 1 : 1 - (t - .27) / .63, bw = 16 * u, bx = X(hero.x), by = Y(hero.y); ctx.save(); ctx.globalAlpha = Math.max(0, a) * .85; const gr = ctx.createLinearGradient(0, by - hgt, 0, by); gr.addColorStop(0, 'rgba(255,230,140,0)'); gr.addColorStop(1, 'rgba(255,230,140,.9)'); ctx.fillStyle = gr; ctx.fillRect(rd(bx - bw / 2), by - hgt, rd(bw), hgt); ctx.restore(); }
     if (G.lvUpT > 0 && !hero.dead) {   // 11/22：升级字跳在勇者头上（跟着人走，弹两下再慢慢淡出）
       const t = 2.2 - G.lvUpT, hop = t < .6 ? Math.abs(Math.sin(t / .6 * PI * 2)) * 10 : 0, a = Math.min(1, G.lvUpT / .5), x = X(hero.x), y = Y(hero.y) - (44 + hop + Math.min(t, .3) * 8) * u;
       ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = `bold ${Math.round(8 * u)}px Pix, monospace`;

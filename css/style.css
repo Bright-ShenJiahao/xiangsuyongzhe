@@ -1035,3 +1035,40 @@ body.pxui #pause .cfoot { padding-top: 10px; } body.pxui #pause .cfoot .btn { pa
 #feed { top: auto; }
 @media (orientation: portrait), (max-width: 760px) { #hud .top .hp { left: 44px !important; top: calc(52px + env(safe-area-inset-top)) !important; width: 48vw !important; } #tip { bottom: calc(150px + env(safe-area-inset-bottom)) !important; } }
 @media (min-width: 761px) and (orientation: landscape) { #hud .top .hp { width: min(250px, 20vw) !important; } #hud .top .lv { width: min(520px, 40vw) !important; } }
+/* ===== 11/23 交互动效（演示页通过的） ===== */
+/* T1 点击进入：像素呼吸 + M2 按钮手感 */
+.tenter span { animation: tBreath 2s steps(6) infinite alternate !important; } @keyframes tBreath { from { opacity: .35; } to { opacity: 1; text-shadow: 0 2px 6px #000, 0 0 10px #ffb040, 0 0 22px #ff8020; } }
+.tenter { transition: transform .05s; } .tenter:hover span { animation-play-state: paused; opacity: 1; color: #ffe08a; text-shadow: 0 2px 6px #000, 0 0 12px #ffc060; } .tenter:active { transform: translateY(3px); } .tenter:active span { color: #fff; }
+.btn:not(:disabled):hover { filter: brightness(1.18); } .btn:not(:disabled):active { transform: translateY(2px); }
+/* T4 老电视关机 */
+#title.tvoff { animation: tvoff .5s forwards; } @keyframes tvoff { 0% { filter: brightness(1.6); } 40% { transform: scale(1, .006); filter: brightness(3); } 100% { transform: scale(0, .006); filter: brightness(3); } }
+body.tvbg { background: #000; }
+/* 1B 血条：白色残影 + 闪白 + 大伤红边 */
+#hud .top .hp #hpGhost { position: absolute; left: 0; top: 0; bottom: 0; background: #fff0e0 !important; box-shadow: none !important; transition: none; z-index: 0; } #hud .top .hp #hpGhost::after { display: none; }
+#hud .top .hp #hpBar { z-index: 0; } #hud .top .hp.flash #hpBar { background: #fff !important; }
+#hurtV { position: fixed; inset: 0; pointer-events: none; z-index: 9; box-shadow: inset 0 0 80px 24px rgba(220, 30, 20, 0); transition: box-shadow .45s; } #hurtV.on { box-shadow: inset 0 0 80px 24px rgba(220, 30, 20, .55); transition: none; }
+/* 2 飞向暂停键 */
+.flyIc { position: fixed; z-index: 30; width: 30px; height: 30px; image-rendering: pixelated; pointer-events: none; transition: left .55s cubic-bezier(.5, -.4, .7, 1), top .55s cubic-bezier(.3, -1.2, .7, 1), transform .55s; }
+#bPause.pop { animation: pPop .3s; } @keyframes pPop { 40% { transform: scale(1.35); } }
+/* 3 铜钱跳 */
+#coins.hit { animation: pPop .2s; }
+/* 4 连击碎片 */
+.cShard { position: fixed; z-index: 12; width: 7px; height: 7px; box-shadow: 1px 1px 0 #1a1008; pointer-events: none; }
+#combo.brk #cN { animation: cBrk .25s steps(4); } @keyframes cBrk { 25% { transform: translate(-4px, 1px); } 50% { transform: translate(4px, -1px); } 75% { transform: translate(-3px, 0); } }
+/* 6B 像素碎裂转场 */
+#shatter { position: fixed; z-index: 40; pointer-events: all; image-rendering: pixelated; }
+/* M3 暂停页：背景变暗模糊，面板从上掉下带回弹；关闭反向 */
+#pause.on { animation: dimIn .25s; backdrop-filter: blur(2px); } @keyframes dimIn { from { background: rgba(10, 6, 14, 0); backdrop-filter: blur(0); } }
+#pause.on .cbox { animation: dropIn .38s cubic-bezier(.2, 1.4, .4, 1); } @keyframes dropIn { from { transform: translateY(-110vh); } }
+#pause.closing { animation: dimOut .2s forwards; } #pause.closing .cbox { animation: dropOut .2s ease-in forwards; } @keyframes dimOut { to { background: rgba(10, 6, 14, 0); backdrop-filter: blur(0); } } @keyframes dropOut { to { transform: translateY(-110vh); } }
+/* 7 格子一个个落下 */
+#pause.fresh .lol .slot, #pause.fresh .lol .oathrow > div, #pause.fresh .lol .gear > div { animation: slotIn .22s ease-out backwards; animation-delay: calc(.25s + var(--k, 0) * .04s); } @keyframes slotIn { from { opacity: 0; transform: translateY(-18px); } }
+/* 8 装上：放大弹回 + 金光一圈 */
+.put { animation: putIn .4s !important; position: relative; } @keyframes putIn { 0% { transform: scale(1.4); box-shadow: 0 0 0 0 #ffe08a; } 60% { box-shadow: 0 0 0 12px rgba(255, 224, 138, 0); } 100% { transform: none; } }
+/* M4 页签左右滑 */
+.slideL { animation: slL .22s ease-out; } .slideR { animation: slR .22s ease-out; } @keyframes slL { from { transform: translateX(-40px); opacity: 0; } } @keyframes slR { from { transform: translateX(40px); opacity: 0; } }
+/* M6 结算 */
+#result .box { position: relative; } #result .stamp { position: absolute; right: 18px; top: 14px; padding: 2px 10px; border: 4px solid #d02a20; color: #d02a20; font: 30px WenKai, serif; letter-spacing: .2em; transform: rotate(-14deg) scale(3); opacity: 0; pointer-events: none; }
+#result .stamp.on { transition: transform .18s cubic-bezier(.5, 0, .8, .5), opacity .1s; transform: rotate(-14deg) scale(1); opacity: 1; }
+#result.on .box { animation: fdIn2 .5s; } @keyframes fdIn2 { from { opacity: 0; } } #result.shake .box { animation: shk2 .25s steps(4); } @keyframes shk2 { 25% { transform: translate(-4px, 2px); } 50% { transform: translate(4px, -2px); } 75% { transform: translate(-2px, 0); } }
+#cv.dead { transition: filter 1.4s; filter: grayscale(1) brightness(.6); }
