@@ -1037,7 +1037,7 @@ body.pxui #pause .cfoot { padding-top: 10px; } body.pxui #pause .cfoot .btn { pa
 @media (min-width: 761px) and (orientation: landscape) { #hud .top .hp { width: min(250px, 20vw) !important; } #hud .top .lv { width: min(520px, 40vw) !important; } }
 /* ===== 11/23 交互动效（演示页通过的） ===== */
 /* T1 点击进入：像素呼吸 + M2 按钮手感 */
-.tenter span { animation: tBreath 2s steps(6) infinite alternate !important; } @keyframes tBreath { from { opacity: .35; } to { opacity: 1; text-shadow: 0 2px 6px #000, 0 0 10px #ffb040, 0 0 22px #ff8020; } }
+.tenter span { animation: tBreath 3.2s steps(8) infinite alternate !important; } @keyframes tBreath { from { opacity: .35; } to { opacity: 1; text-shadow: 0 2px 6px #000, 0 0 10px #ffb040, 0 0 22px #ff8020; } }
 .tenter { transition: transform .05s; } .tenter:hover span { animation-play-state: paused; opacity: 1; color: #ffe08a; text-shadow: 0 2px 6px #000, 0 0 12px #ffc060; } .tenter:active { transform: translateY(3px); } .tenter:active span { color: #fff; }
 .btn:not(:disabled):hover { filter: brightness(1.18); } .btn:not(:disabled):active { transform: translateY(2px); }
 /* T4 老电视关机 */

@@ -5,7 +5,6 @@
   const P = { moon: [663, 124, 150], torch: [[140, 167], [383, 222]], gem: [351, 355], crystal: [639, 264] };
   const flies = Array.from({ length: 10 }, () => ({ x: Math.random() * IW * .62, y: 560 + Math.random() * 360, p: Math.random() * 7, s: .4 + Math.random() * .8, r: 1 + Math.random() * 1.6 }));
   const FL = Object.assign(new Image(), { src: 'art/fx/map/torch.webp' }), FLP = [[140, 182, 64], [385, 243, 50]];   // 11/23 火把：8 帧火焰序列盖在原画的火上（底边 x, y, 高）
-  let bats = []; const BT = { n: 2 }, BAT = [['x...x', 'xx.xx', '.xxx.'], ['.....', 'xxxxx', 'x.x.x']];
   let cv, g, run = false, t0 = 0; const bgImg = new Image(); bgImg.onload = () => { t0 = performance.now(); }; bgImg.src = 'art/title/art13.webp';   // 11/22 主图先出来，光影等主图加载完再 1 秒淡入
   function rect() {   // 背景图在屏幕上的位置和缩放
     const el = cv.parentElement, W = el.clientWidth, H = el.clientHeight, cs = getComputedStyle(el), sz = cs.backgroundSize, [bx, by] = cs.backgroundPosition.split(' ').map(v => parseFloat(v) / 100);
@@ -27,11 +26,6 @@
     for (const f of flies) { const x = f.x + Math.sin(t * f.s + f.p) * 30, y = f.y + Math.cos(t * f.s * .7 + f.p) * 18 - (t * 4 * f.s) % 60, a = .35 + .35 * Math.sin(t * 2 * f.s + f.p);   // ⑤ 萤火
       glow(X(x), Y(y), S(f.r * 5), '200,255,150', a * .6); g.fillStyle = `rgba(245,255,215,${Math.min(1, a * 1.6)})`; g.fillRect(X(x) - 1.5, Y(y) - 1.5, 3, 3); }
     g.globalCompositeOperation = 'source-over';
-    // 11/23 远处的小蝙蝠：只在月亮上方一条天空里从右往左飞，两头淡入淡出
-    const dt = Math.min(.05, t - (BT.last || t)); BT.last = t; if ((BT.n -= dt) <= 0) { BT.n = 5 + Math.random() * 4; const y0 = 25 + Math.random() * 55, n = 3 + Math.random() * 3 | 0; for (let i = 0; i < n; i++) bats.push({ x: 1100 + i * 32 + Math.random() * 32, y: y0 + Math.random() * 24, v: 60 + Math.random() * 36, ph: Math.random() * 6 }); }
-    const ps = S(4); for (const b of bats) { b.x -= b.v * dt; b.y += Math.sin(t * 3 + b.ph) * .3; const fr = BAT[Math.floor(t * 8 + b.ph) % 2], a = .8 * Math.max(0, Math.min(1, (b.x - 160) / 100, (1100 - b.x) / 60)); g.fillStyle = `rgba(14,10,26,${a})`;
-      fr.forEach((r, j) => [...r].forEach((c, i) => { if (c === 'x') g.fillRect(Math.round(X(b.x) + i * ps), Math.round(Y(b.y) + j * ps), Math.ceil(ps), Math.ceil(ps)); })); }
-    bats = bats.filter(b => b.x > 160);
   }
   function init() { const el = document.querySelector('#title .tart'); if (!el || cv) return; cv = document.createElement('canvas'); cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none'; el.appendChild(cv); g = cv.getContext('2d');
     const tick = () => { const on = document.getElementById('title').classList.contains('on'); if (on && !run) { run = true; requestAnimationFrame(frame); } else if (!on) run = false; }; setInterval(tick, 300); tick(); }

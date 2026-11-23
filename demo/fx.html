@@ -125,9 +125,9 @@ h1 { text-align: center; font-weight: 400; color: #e8c070; margin: 18px 0 4px; }
 <div class="card"><h3><b>M6b</b>结算·失败</h3><p>勇者倒下的那一刻：时间放慢，整个画面慢慢褪成灰色变暗，然后结算面板淡入「勇者倒下了」。</p>
 <div class="stage" id="m6b"><div class="scr" style="position:absolute;inset:0;background:url(../art/map/forest3.webp) 40% 60%/900px"><div class="hero" style="left:50%;bottom:30px"></div></div><div class="wood" style="left:50%;top:50px;width:220px;margin-left:-110px;padding:10px;text-align:center;opacity:0;transition:opacity .6s">勇者倒下了<br><small>第 4 站 · Lv 7</small></div></div><button class="play" onclick="fm6b()">播放</button></div>
 
-<div class="card" style="grid-column:1/-1"><h3><b>D</b>勇者倒下（完整过程）</h3><p>① 最后一击：时间骤停、闪白、重震 → ② 慢动作：受伤后退 → 倒地小弹 + 尘土，画面褪灰（勇者留色）→ ③ 怪物围上，四角压黑成光圈缩到一点 → 结算面板。三个按钮对比：基础 / +灵魂上飘 / +GAME OVER 雪花。</p>
+<div class="card" style="grid-column:1/-1"><h3><b>D</b>勇者倒下（我选：基础 + GAME OVER 雪花）</h3><p>① 最后一击：时间骤停、闪白、重震 → ② 慢动作：受伤后退 → 倒地小弹 + 尘土，画面褪灰（勇者留色）→ ③ 怪物围上，四角压黑成光圈缩到一点 → ④ 一阵游戏机雪花噪点，跳出抖动的 GAME OVER（呼应「被吸进游戏机」）→ 结算面板。选这个是因为它和开头「点击进入」的老电视关机是一套：进游戏是电视关机，死了是游戏机雪花。</p>
 <div class="stage" id="sd" style="height:300px;background:#000"><canvas class="cv" width="320" height="150"></canvas><div class="wood" style="left:50%;top:100px;width:240px;margin-left:-120px;padding:10px;text-align:center;opacity:0;transition:opacity .6s">勇者倒下了<br><small>第 4 站 · Lv 7</small></div></div>
-<button class="play" onclick="fd(0)">基础</button> <button class="play" onclick="fd(1)">+灵魂</button> <button class="play" onclick="fd(2)">+GAME OVER 雪花</button></div>
+<button class="play" onclick="fd(2)">▶ 最终版</button> <span style="color:#8a7a60;font-size:12px">对比：</span><button class="play" onclick="fd(0)">只有基础</button> <button class="play" onclick="fd(1)">+灵魂</button></div>
 
 </div>
 <script>

@@ -42,7 +42,7 @@
   $('bStart').onclick = () => tvOff(() => openPrep(true));
   // 11/23 继续游戏：有存档就显示，从存档那一站的开头接着打
   $('bCont').onclick = () => tvOff(() => { const s = BATTLE.loadSave(); if (!s) return; lastBuild = s.opt.build || lastBuild; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); });
-  const contShow = () => { const s = BATTLE.loadSave(); $('bCont').hidden = !s; $('bStart').querySelector('span').textContent = s ? '新的冒险' : '进入游戏'; if (s) $('bCont').querySelector('small').textContent = `第 ${s.G.st} 站 · Lv${s.G.lv}`; };
+  const contShow = () => { const s = BATTLE.loadSave(); $('bCont').hidden = !s; $('bStart').querySelector('span').textContent = s ? '新的冒险' : '进入游戏'; };
   // 11/22 图鉴展示用小人（art/figure/<key>/0..3.png，比战斗小人大、更精细），有就替换图鉴里的那一个
   const FIG = {}; fetch('art/figure/meta.json').then(r => r.json()).then(M => { for (const k in M) FIG[k] = M[k].map(([ax], i) => { const im = new Image(); im.src = `art/figure/${k}/${i}.png`; return { c: im, f: { ax } }; }); }).catch(() => {});
 
