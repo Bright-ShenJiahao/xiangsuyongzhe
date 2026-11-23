@@ -985,7 +985,7 @@ body.fe #hud .top .clock, body.fe #combo { display: none !important; }
 #camp.fshop .chead h2 { text-shadow: 1px 1px 0 #f2e2bc, -1px -1px 0 #f2e2bc !important; }
 #camp.fshop .cbox { width: min(820px, 92vw) !important; }
 body.shopOn #feed { opacity: 0; }
-@media (min-width: 761px) and (orientation: landscape) { #camp.fshop { justify-content: flex-end !important; padding-right: 3vw; } }
+/* 11/23 商店回到画面正中 */
 
 .full .nw, .bag > div .nw { position: absolute; right: 2px; top: 1px; font: normal 11px WenKai, serif; color: #fff; background: #d83a2a; padding: 0 3px; z-index: 2; }
 
@@ -1077,3 +1077,9 @@ body.tvbg { background: #000; }
 #confirm { z-index: 60; } #confirm .cfm { width: min(440px, 92vw) !important; height: auto !important; max-height: none !important; padding: 18px 22px !important; animation: dropIn .3s cubic-bezier(.2, 1.4, .4, 1); }
 #confirm p { margin: 6px 4px 14px; line-height: 1.8; font-size: 16px; color: #f4ecd8; } #confirm .cfoot { display: flex; gap: 10px; } #confirm .cfoot .sp { flex: 1; }
 #confirm #cfYes.red { filter: hue-rotate(-35deg) saturate(1.6); }
+/* 11/23 HUD 技能栏图标铺满（和 P 页一致）：去掉内层木格边，按品阶描边；下一个要放的技能金色外框 */
+.sb.tr { border: none !important; border-image: none !important; background: #141a2a !important; padding: 0; overflow: visible; }
+.sb.tr::after { display: none; } .sb.tr .skic { width: 100% !important; height: 100% !important; object-fit: cover; display: block; padding: 0 !important; border-radius: 0; }
+.sb.tr.t1 { outline: 2px solid #9a9080; outline-offset: -2px; } .sb.tr.t2 { outline: 2px solid #5aa8ff; outline-offset: -2px; } .sb.tr.t3 { outline: 2px solid #c07aff; outline-offset: -2px; } .sb.tr.t4 { outline: 2px solid #ffcf3a; outline-offset: -2px; }
+.sb.tr.nx { box-shadow: 0 0 0 2px #1a0e06, 0 0 0 4px #ffd060, 0 0 8px 3px rgba(255, 208, 96, .5); }
+.sb.tr i { z-index: 2; }
