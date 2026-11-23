@@ -546,10 +546,15 @@
     if (o.k === 'chest') { const im = img('chest'); if (!o.open && im.complete) ctx.drawImage(im, x - 14 * u, y - 24 * u, 28 * u, 28 * u); if (!o.open) { label('宝箱', x, y + 5 * u); ring(o, 14, o.st / .3, '#ffe08a'); }
       if (o.books) for (const b of o.books) { const S = DATA.skills[b.id], bi = img(({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' })[S.sys]), bx = X(b.x), by = Y(b.y) - 9 * u;
         ctx.fillStyle = 'rgba(255,220,120,.3)'; ctx.beginPath(); ctx.arc(bx, by, 13 * u, 0, 7); ctx.fill(); if (bi.complete) ctx.drawImage(bi, bx - 10 * u, by - 10 * u, 20 * u, 20 * u); label(S.name, bx, by + 12 * u, ['#e6e2d6', '#e6e2d6', '#6ab8ff', '#c890ff', '#ffd84a'][S.tier]); ring(b, 15, b.st / .3, '#fff'); } }
-    if (o.k === 'fire') { for (let k = 0; k < 3; k++) { const fl = 1 + .25 * Math.sin(G.t * 12 + k * 2); ctx.fillStyle = ['#ff6a20', '#ffb040', '#fff0a0'][k]; ctx.beginPath(); ctx.ellipse(x, y - (8 + k * 3) * u, (9 - k * 3) * u * fl, (12 - k * 3) * u * fl, 0, 0, 7); ctx.fill(); }
-      ctx.fillStyle = '#5a3418'; ctx.fillRect(x - 12 * u, y - 2 * u, 24 * u, 4 * u); if (Math.random() < .3) parts.push({ x: o.x + R(-6, 6) * K, y: o.y - 14 * K, vx: R(-8, 8) * K, vy: -40 * K, t: 0, T: .7, col: '#ffb040', g: 0 });
-      const gl = ctx.createRadialGradient(x, y - 10 * u, 0, x, y - 10 * u, 50 * u); gl.addColorStop(0, 'rgba(255,150,60,.35)'); gl.addColorStop(1, 'rgba(255,150,60,0)'); ctx.fillStyle = gl; ctx.fillRect(x - 50 * u, y - 60 * u, 100 * u, 100 * u);
-      label('篝火 · 站一会儿', x, y + 5 * u, '#ffd0a0'); say(x, y - 34 * u, ['坐下歇歇吧……', '想当年，我膝盖中了一箭……'], 3.3); ring(o, 18, o.st, '#7cff8a'); }
+    if (o.k === 'fire') {   // 11/23 篝火：石圈 + 交叉木柴 + 地图同款 8 帧火焰，不再有老兵台词
+      const gl = ctx.createRadialGradient(x, y - 10 * u, 0, x, y - 10 * u, 56 * u), fl = .3 + .06 * Math.sin(G.t * 9); gl.addColorStop(0, `rgba(255,150,60,${fl})`); gl.addColorStop(1, 'rgba(255,150,60,0)'); ctx.fillStyle = gl; ctx.fillRect(x - 56 * u, y - 66 * u, 112 * u, 112 * u);
+      ctx.fillStyle = 'rgba(30,15,5,.45)'; ctx.beginPath(); ctx.ellipse(x, y + u, 17 * u, 5 * u, 0, 0, 7); ctx.fill();
+      for (let k = 0; k < 10; k++) { const a = k / 10 * PI * 2, sx = rd(x + Math.cos(a) * 14 * u), sy = rd(y + Math.sin(a) * 4.5 * u); if (Math.sin(a) < 0) { ctx.fillStyle = '#4a4440'; ctx.fillRect(sx - 3 * u, sy - 2 * u, 6 * u, 4 * u); ctx.fillStyle = '#8a8278'; ctx.fillRect(sx - 3 * u, sy - 2 * u, 6 * u, u); } }
+      ctx.fillStyle = '#4a2a12'; ctx.save(); ctx.translate(x, y - u); ctx.rotate(.35); ctx.fillRect(-11 * u, -1.5 * u, 22 * u, 3 * u); ctx.rotate(-.7); ctx.fillRect(-11 * u, -1.5 * u, 22 * u, 3 * u); ctx.fillStyle = '#7a4a22'; ctx.fillRect(-11 * u, -1.5 * u, 22 * u, u); ctx.restore();
+      const fi = fxi('fire'); if (okI(fi)) { const fw = fi.naturalWidth / 8, f = Math.floor(G.t * 12) % 8, h = 30 * u, w = h * fw / fi.naturalHeight; ctx.drawImage(fi, f * fw, 0, fw, fi.naturalHeight, x - w / 2, y - h + u, w, h); }
+      for (let k = 0; k < 10; k++) { const a = k / 10 * PI * 2, sx = rd(x + Math.cos(a) * 14 * u), sy = rd(y + Math.sin(a) * 4.5 * u); if (Math.sin(a) >= 0) { ctx.fillStyle = '#4a4440'; ctx.fillRect(sx - 3 * u, sy - 2 * u, 6 * u, 4 * u); ctx.fillStyle = '#8a8278'; ctx.fillRect(sx - 3 * u, sy - 2 * u, 6 * u, u); } }
+      if (Math.random() < .25) parts.push({ x: o.x + R(-5, 5) * K, y: o.y - 18 * K, vx: R(-8, 8) * K, vy: -40 * K, t: 0, T: .7, col: '#ffb040', g: 0 });
+      label('篝火 · 站一会儿', x, y + 8 * u, '#ffd0a0'); ring(o, 18, o.st, '#7cff8a'); }
   }
   function fieldTick(dt) {
     const f = G.fe; if (!f || G.paused || G.lock) return; f.t += dt;
