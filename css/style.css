@@ -1181,3 +1181,16 @@ body.tvbg { background: #000; }
 #vict .vstamp { top: auto !important; bottom: 18px; right: 200px !important; }
 .ttop { gap: 8px; } .ttop .btn.mini { font-size: 24px; padding: 2px 12px; }   /* 11/24 主界面右上角按钮放大一倍 */
 @media (max-width: 600px), (max-height: 450px) { .ttop .btn.mini { font-size: 18px; padding: 1px 8px; } }
+
+/* 11/24 宝箱老虎机：战斗画面里的像素框 */
+#slotM { position: fixed; inset: 0; z-index: 72; display: none; align-items: center; justify-content: center; background: rgba(10,6,4,.5); }
+#slotM.on { display: flex; }
+#slotM .sbox { background: #f2e2bc; border: 6px solid #3a2410; box-shadow: inset 0 0 0 3px #c89a52, inset 0 0 0 6px #3a2410, 0 8px 0 #1a0e06; padding: 14px 18px 10px; color: #3a2410; font-family: WenKai, serif; text-align: center; animation: dropIn .3s cubic-bezier(.2,1.4,.4,1); min-width: 220px; }
+#slotM h3 { margin: 0 0 10px; font-weight: 400; letter-spacing: .2em; font-size: 22px; }
+#slotM .reels { display: flex; gap: 10px; justify-content: center; }
+#slotM .reel { width: 96px; height: 108px; background: #a8703a; box-shadow: 0 0 0 3px #3a2410, inset 0 3px 0 #c88a4a; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff3d8; font-size: 13px; }
+#slotM .reel img { width: 56px; height: 56px; image-rendering: pixelated; } #slotM .reel .em { font-size: 38px; line-height: 56px; }
+#slotM .reel.stop { animation: reelPop .3s; } #slotM .reel.rare { box-shadow: 0 0 0 3px #3a2410, 0 0 22px 6px #ffb84a; color: #ffe0a0; }
+@keyframes reelPop { 0% { transform: scale(1.35); } 100% { transform: scale(1); } }
+#slotM .stip { font-size: 12px; opacity: .6; margin-top: 8px; }
+@media (max-width: 600px) { #slotM .reel { width: 78px; height: 92px; } #slotM .reel img { width: 44px; height: 44px; } }

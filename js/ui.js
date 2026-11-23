@@ -360,7 +360,19 @@
   const isTouch = () => matchMedia('(hover: none)').matches;
   const pTip = () => isTouch() ? '点右上角 ⏸ 看看' : '按 P 看看', pKey = () => isTouch() ? '点右上角 ⏸ 整理' : '按下 P 整理';
   const newDot = v => { const b = $('bPause'); if (b) b.classList.toggle('dot', v !== false); };
-  window.UI = { FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+
+  // 11/24 宝箱老虎机：picks = 最后停下的东西（每个一列）；pool = 滚动时闪过的东西。点一下跳过
+  function slot(pool, picks, done) {
+    const M = $('slotM'), R = $('reels'); R.innerHTML = ''; M.classList.add('on'); let fin = false;
+    const face = (el, o) => { el.innerHTML = ''; const im = new Image(); im.src = o.src; im.onerror = () => { im.replaceWith(Object.assign(document.createElement('div'), { className: 'em', textContent: o.em || '？' })); }; el.append(im, Object.assign(document.createElement('div'), { textContent: o.name })); };
+    const cols = picks.map(() => { const d = document.createElement('div'); d.className = 'reel'; R.appendChild(d); return d; });
+    const stopAt = picks.map((_, i) => 14 + i * 7); let n = 0, tm = null;
+    const end = () => { if (fin) return; fin = true; clearTimeout(tm); let rare = false; cols.forEach((c, i) => { face(c, picks[i]); c.classList.add('stop'); if (picks[i].rare) { c.classList.add('rare'); rare = true; } }); SFX.play(rare ? 'jackpot' : 'win'); setTimeout(() => { M.classList.remove('on'); M.onclick = null; done(); }, rare ? 1300 : 800); };
+    const tick = () => { n++; cols.forEach((c, i) => { if (n < stopAt[i]) face(c, pool[(Math.random() * pool.length) | 0]); else if (n === stopAt[i]) { face(c, picks[i]); c.classList.add('stop'); if (picks[i].rare) c.classList.add('rare'); } }); SFX.play('tick');
+      if (n >= stopAt[stopAt.length - 1]) return end(); tm = setTimeout(tick, 35 + n * n * .15); };
+    M.onclick = end; tick();
+  }
+  window.UI = { slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来

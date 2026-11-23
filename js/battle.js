@@ -160,7 +160,8 @@
     const kbm = z.T.boss || z.tier === 'mini' ? 0 : z.tier === 'elite' ? .22 : .43;
     if (kbm && z.kbT <= 0) { z.kbx = Math.cos(a) * kb * kbm * K; z.kby = Math.sin(a) * kb * kbm * K / YS; z.kbT = .2; if (z.st === 'run') { z.st = 'hurt'; z.t = 0; } }
     if (!o.quiet) for (let i = 0; i < 3; i++) parts.push({ x: z.x, y: z.y - 14 * K, vx: (R(-30, 30) + Math.cos(a) * 30) * K, vy: R(-50, -10) * K, t: 0, T: R(.2, .4), col: i % 2 ? '#ffffff' : '#ffe9a8', g: 160 * K });
-    G.hitStop = Math.max(G.hitStop, z.T.boss ? .04 : .02);
+    { const w = S && S.w, hs = w === 'bow' ? .01 : w === 'staff' ? .045 : w ? .06 : .02; G.hitStop = Math.max(G.hitStop, (z.T.boss ? Math.max(.04, hs) : hs) * (crit ? 1.5 : 1)); }   // 11/24 定格按招式：近身重、弓几乎不停、法术居中
+    z.jit = .18; SFX.play(crit ? 'crit' : 'hit');   // 受击横向抖动
     if (z.hp <= 0) kill(z);
   }
   function kill(z) {
@@ -169,7 +170,8 @@
       if (v && !z.T.boss) G.gc.push({ x: z.x, y: z.y, v, t: 0, h: 0, vh: 90, vx: R(-20, 20) * K }); }
     if (z.tier === 'elite') { G.wElite++; G.gi.push({ kind: 'book', x: z.x, y: z.y, t: 0 }); }   // 固定精英掉书，路线精英掉宝物
     if (z.tier === 'mini') { G.wMini++; G.gi.push({ kind: 'item', x: z.x, y: z.y, t: 0 }); }
-    for (let i = 0; i < 7; i++) parts.push({ x: z.x, y: z.y - 10 * K, vx: R(-45, 45) * K, vy: R(-70, -10) * K, t: 0, T: R(.4, .8), col: ['#8fd14a', '#5a8a2a', '#e8e0c8', '#c49a5c'][i % 4], g: 200 * K, sz: i < 3 ? 2 : 1 });
+    { const da = Math.atan2(z.y - hero.y, z.x - hero.x); for (let i = 0; i < 14; i++) parts.push({ x: z.x + R(-8, 8) * K, y: z.y - R(4, 30) * K, vx: (Math.cos(da) * R(30, 120) + R(-40, 40)) * K, vy: R(-160, -40) * K, t: 0, T: R(.5, 1), col: ['#8fd14a', '#5a8a2a', '#e8e0c8', '#c49a5c', '#3a2410'][i % 5], g: 360 * K, sz: i < 6 ? 3 : 2 }); }   // 11/24 像素碎块
+    z.flash = .12; SFX.play('die');
     if (z.T.boss) { G.shake = .6; G.hitStop = .8; banner('击败 哥布林王！', 3); G.winT = 2.2; G.lock = true; for (const o of foes) if (!o.dead && o !== z) kill(o); return; }
   }
   // 升级不弹框：自动加一点生命和伤害，攒一次「修炼」机会（波间结算的修炼页用）
@@ -177,12 +179,13 @@
   const need = () => Math.round((14 + 4 * (G.lv - 1)) * DATA.econ.xpMul);
   function addXp(n) {
     n *= hero.xpMul || 1; G.xp += n; G.wx += n;
-    while (G.xp >= need() && !hero.dead && G.lv < DATA.econ.maxLv) { G.xp -= need(); G.lv++; RUN.xiu++; G.lvUpT = 2.2; recompute(); healHero(5); }
+    while (G.xp >= need() && !hero.dead && G.lv < DATA.econ.maxLv) { G.xp -= need(); G.lv++; RUN.xiu++; G.lvUpT = 2.2; SFX.play('lv'); recompute(); healHero(5); }
   }
   function damageHero(d, dtype = 'phys') {
     if (hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
     if (Math.random() < (hero.eva || 0)) { nums.push({ x: hero.x, y: hero.y - 44 * K, txt: 'MISS', t: 0, col: '#ffffff' }); return; }   // 11/24 闪避
     d *= dtype === 'magic' ? hero.mIn : hero.pIn; { const now = G.t; hero.hitBy = (hero.hitBy || []).filter(h => now - h.t < 1); const src = damageHero.src; if (src && !hero.hitBy.some(h => h.z === src)) hero.hitBy.push({ z: src, t: now }); d *= 1 + .25 * Math.max(0, hero.hitBy.length - 1); }   // 11/23 被围：1 秒内每多一只不同的怪打到 +25% if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); hero.hp -= d; G.taken = (G.taken || 0) + d; hero.inv = .45; hero.hurtT = .25; { const big = d >= hero.maxHp * .15; if (big) G.shake = Math.max(G.shake, .25); UI.FX.hit(big); } nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
+    SFX.play("hurt");
     if (hero.hp <= 0 && RUN.save) { RUN.save = false; hero.hp = hero.maxHp * .5; hero.inv = 2; banner('复活羽毛燃尽了！', 1.6); return; }
     if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; G.loseT = 3.6; G.deadR = 0; G.shake = Math.max(G.shake, .45); addEventListener('pointerdown', () => { if (G && hero.dead && G.deadR > .4) G.loseT = 0; }, { once: true }); }
   }
@@ -288,6 +291,7 @@
     if (c.ph === 'wu') { c.a = aimNow(c.a); if (!hero.moving) faceTo(c.a); if (c.t < c.dur) return; faceTo(c.a);
       const L = profL(c.sk), a0 = hero.m.area; hero.m.area *= (1 + (c.ar || 0)) * (1 + ((hero.fx || {})['sarea_' + DATA.SYSK[c.S.sys]] || 0)); hero.castCrit = c.cr || 0; const r = SK.cast({ S: c.S, sk: c.sk, L, d: skillDmg(c.S, c.sk) * (c.mul || 1), a: c.a, sid: c.sk.id }); hero.m.area = a0;
       if (!r) { hero.cs = null; return; }   // 场上没敌人了：不放，等下一个敌人
+      { const w = c.S.w; SFX.play(w === 'bow' ? 'arrow' : w === 'staff' ? 'magic' : 'swing'); if (w === 'sword' || w === 'spear') { G.kx = Math.cos(c.a) * 3; G.ky = Math.sin(c.a) * 2; } }   // 11/24 出招声 + 镜头后坐
       c.sk.xp = (c.sk.xp || 0) + 1; if (profL(c.sk) > L) { nums.push({ x: hero.x, y: hero.y - 52 * K, txt: `${c.S.name} 熟练度 ${profL(c.sk)}/7`, t: 0, col: '#ffd86a' }); }
       if (r !== true && r.hold) { c.ph = 'hold'; c.t = 0; c.dur = r.hold; c.move = r.move || 1; return; }
       c.ph = 'rc'; c.t = 0; c.dur = c.rc; return; }
@@ -505,7 +509,8 @@
     const f = G.fe, o = f.rest; o.t += dt; if (o.k === 'ev') return evTick(dt);
     if (o.k === 'chest' && !o.open) { if (SKUL(o, 18)) o.st += dt; else o.st = 0; if (o.st > .3) { o.open = 1; const L = []; for (let i = 0; i < 3; i++) { const id = randBook(); if (id && !L.includes(id)) L.push(id); }
         if (!L.length) { RUN.coins += 30; toastMsg('箱子里只有 30 铜钱'); f.rest = null; return showRoute(true); }
-        o.books = L.map((id, i) => ({ kind: 'book', id, x: o.x + (i - (L.length - 1) / 2) * 36 * K, y: o.y + 34 * K, st: 0 })); toastMsg('三本书选一本'); } return; }
+        o.books = []; G.paused = true; UI.slot(slotPool(), L.map(id => slotOf({ kind: 'book', id })), () => { G.paused = false;   // 11/24 开箱先转老虎机
+        o.books = L.map((id, i) => ({ kind: 'book', id, x: o.x + (i - (L.length - 1) / 2) * 36 * K, y: o.y + 34 * K, st: 0 })); toastMsg('三本书选一本'); }); } return; }
     if (o.k === 'chest') { for (const b of o.books) { if (SKUL(b, 14)) b.st += dt; else b.st = 0; if (b.st > .3) { CAMP.learn(b, true); gotFeed(b); f.rest = null; return showRoute(true); } } return; }
     if (o.k === 'fire') { if (o.out) return; if (SKUL(o, 22)) o.st += dt; else o.st = 0; if (o.st > 1) { const h0 = hero.hp; healHero(hero.maxHp * .5); nums.push({ x: hero.x, y: hero.y - 44 * K, v: Math.round(hero.hp - h0), t: 0, col: '#7cff8a' }); RUN.xiu++; f.pr.said = 0; toastMsg('回复 50% 生命，修炼 +1（去找露米娜）'); o.out = G.t; showRoute(true); } }
   }
@@ -700,11 +705,11 @@
     const mag = 40 + (hero.fx.waveCoin || 0) * 8;
     for (const c of G.gc) { c.t += dt; if (c.h > 0 || c.vh > 0) { c.vh -= 300 * dt; c.h = Math.max(0, c.h + c.vh * dt); c.x += c.vx * dt; if (c.h === 0) { c.vh = 0; c.vx = 0; } }
       const d = dist(c, hero); if (c.t > .35 && d < mag && !hero.dead) { const k = Math.min(1, dt * (6 + 300 / Math.max(d, 5))); c.x += (hero.x - c.x) * k; c.y += (hero.y - c.y) * k; }
-      if (c.t > .35 && d < 9) { c.got = 1; G.cf += c.v * cMul(); const n = Math.floor(G.cf); G.cf -= n; RUN.coins += n; parts.push({ x: hero.x, y: hero.y - 30 * K, vx: 0, vy: -40 * K, t: 0, T: .3, col: '#ffe08a', g: 0 }); } }
+      if (c.t > .35 && d < 9) { c.got = 1; G.cf += c.v * cMul(); const n = Math.floor(G.cf); G.cf -= n; RUN.coins += n; SFX.play('coin'); parts.push({ x: hero.x, y: hero.y - 30 * K, vx: 0, vy: -40 * K, t: 0, T: .3, col: '#ffe08a', g: 0 }); } }
     G.gc = G.gc.filter(c => !c.got);
     for (const o of G.gi) { o.t += dt; if (o.t > .4 && dist(o, hero) < 14 && !hero.dead) { o.got = 1;   // 11/23 书 / 宝物也要走过去捡
       if (o.kind === 'book') { const id = randBook(); if (id) { CAMP.learn({ kind: 'book', id }, true); gotFeed({ kind: 'book', id, x: o.x, y: o.y }); } else { RUN.coins += 30; UI.feed('捡到 30 铜钱'); } }
-      else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; CAMP.learn({ kind: 'item', id: it.id }, true); gotFeed({ kind: 'item', x: o.x, y: o.y }); } } }
+      else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; G.paused = true; SFX.play('pick'); UI.slot(slotPool(), [slotOf({ kind: 'item', id: it.id })], () => { G.paused = false; CAMP.learn({ kind: 'item', id: it.id }, true); gotFeed({ kind: 'item', x: o.x, y: o.y }); }); } } }
     G.gi = G.gi.filter(o => !o.got);
     let T = G.thief; if (T) { if (T.grab > 0) { T.grab -= dt; T.t += dt; return; } if (T.hurt > 0) T.hurt -= dt; }
     if (!T && !G.fe && !RUN.noThief && G.gc.some(c => c.t > 10)) { const p = edgeSpawn(); T = G.thief = { x: p.x, y: p.y, ex: p.x, ey: p.y, bag: 0, n: 0, st: 'go', t: 0, f: 1 }; UI.feed('一只小咕噜溜进来偷钱了！'); }
@@ -764,6 +769,9 @@
       ctx.globalAlpha = 1; }
     AMB.leaves = AMB.leaves.filter(l => l.t < 12);
   }
+  const BKI = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' };
+  function slotOf(o) { if (o.kind === 'book') { const S = DATA.skills[o.id]; return { src: 'art/ui2/' + BKI[S.sys] + '.png', name: S.name, rare: S.tier >= 3 }; } const it = DATA.startItems.find(i => i.id === o.id) || {}; return { src: 'art/ui2/' + o.id + '.png', name: it.name || '宝物', em: it.icon, rare: (it.price || 0) >= 44 }; }
+  function slotPool() { const P = []; for (const id in DATA.skills) P.push(slotOf({ kind: 'book', id })); for (const it of ITEMS()) P.push(slotOf({ kind: 'item', id: it.id })); return P; }
   function gotFeed(o) { const k = o.kind === 'book' ? '一本技能书' : o.kind === 'item' ? '一件宝物' : ''; if (k) { try { const rc = cv.getBoundingClientRect(), q = rc.width / cv.width, ic = o.kind === 'book' ? 'art/drop/book_' + (({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff' })[(DATA.skills[o.id] || {}).sys] || 'sword') + '.png' : 'art/drop/chest.png'; if (o.x != null) UI.FX.fly(ic, rc.left + X(o.x) * q, rc.top + Y(o.y) * q); } catch (e) {} UI.feed(`获得${k}，${UI.pTip()}`); UI.newDot(); } }
   function toastMsg(t) { UI.toast && UI.toast(t); }
   function bossIn() { if (G.bossOut) return; G.bossOut = true; G.boss = spawn(G.W.boss || MAP.boss); G.boss.cd = 2.5; banner('哥布林王 出现了！', 2.4); G.shake = .3; }
@@ -794,7 +802,7 @@
     spawner(dt); warnTick(dt); auraTick(dt); fieldTick(dt);
     for (const z of foes) {
       if (z.dead) { z.deadT += dt; continue; }
-      z.flash -= dt; z.kbT -= dt; z.brk = (z.brk || 0) - dt; statusTick(z, dt); if (z.dead) continue;
+      z.flash -= dt; z.jit = (z.jit || 0) - dt; z.kbT -= dt; z.brk = (z.brk || 0) - dt; statusTick(z, dt); if (z.dead) continue;
       if (z.cc) z.moving = false; else if (z.T.boss || z.T.ai === 'boss') bossAI(z, dt); else soldierAI(z, dt);
       z.x += z.kbx * dt * 8; z.y += z.kby * dt * 8; z.kbx *= .8; z.kby *= .8; clampG(z, 4 * K);
     }
@@ -853,7 +861,7 @@
     { const now = performance.now(), dt = Math.min(.1, (now - (cam.tm || now)) / 1000), tx = Math.max(0, Math.min(MAPW - Wm, hero.x - Wm / 2)), ty = Math.max(0, Math.min(MAPH - Hm, hero.y - 20 * K - Hm / 2)), k = 1 - Math.exp(-12 * dt);
       cam.tm = now; if (cam.snap || cam.x == null || Math.abs(tx - cam.x) > Wm || Math.abs(ty - cam.y) > Hm) { cam.x = tx; cam.y = ty; cam.snap = false; } else { cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; } }   // 镜头平滑跟随
     const sh = G.shake > 0 && !G.paused ? rd(R(-2, 2)) * u : 0;
-    ctx.setTransform(1, 0, 0, 1, sh, 0);
+    G.kx = (G.kx || 0) * .82; G.ky = (G.ky || 0) * .82; ctx.setTransform(1, 0, 0, 1, sh - rd(G.kx * u), -rd(G.ky * u));
     if (MIMG.complete && MIMG.naturalWidth) { const k = MIMG.naturalWidth / MAPW; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(MIMG, cam.x * k, cam.y * k, Wm * k, Hm * k, 0, 0, W, H); ctx.imageSmoothingEnabled = false; }
     else { ctx.fillStyle = '#6a4a2a'; ctx.fillRect(0, 0, W, H); }
     for (const b of burns) { const a = 1 - b.t / b.T; ctx.fillStyle = `rgba(40,20,10,${.35 * a})`; ctx.beginPath(); ctx.ellipse(X(b.x), Y(b.y), b.r * u, b.r * u * .55, 0, 0, 7); ctx.fill(); }
@@ -894,7 +902,7 @@
           const w = 22 * u, y = Y(z.y) - rd(46 * z.k) * u; ctx.fillStyle = '#2a160e'; ctx.fillRect(X(z.x) - w / 2 - u, y - u, w + 2 * u, 3 * u); ctx.fillStyle = z.tier === 'mini' ? '#ff7a3a' : '#ffcf3a'; ctx.fillRect(X(z.x) - w / 2, y, rd(w * Math.max(0, z.hp / z.maxHp)), u); }
         const bob = st === 'run' ? -u : 0, lunge = st === 'strike' ? z.f * 4 * u : st === 'hurt' && !B ? -z.f * 2 * u : 0;
         const air = z.cc && z.cc.k === 'air' ? rd(Math.sin(Math.min(1, 1 - z.cc.t / z.cc.T) * PI) * 18 * u) : 0;
-        SPR.draw(ctx, z.type, n, 0, X(z.x) + lunge, Y(z.y) + bob - air, z.f < 0, u, { v: z.v, k: z.k, white: z.flash > 0 && !z.dead ? .6 : z.cc && z.cc.k === 'freeze' ? .35 : z.T.bomb && z.st === 'wind' && Math.floor(z.t * 12) % 2 ? .7 : 0, alpha: a * (z.T.ghost ? .72 : 1) });
+        SPR.draw(ctx, z.type, n, 0, X(z.x) + lunge + (z.jit > 0 && !z.dead ? (Math.floor(z.jit * 60) % 2 ? 2 : -2) * u : 0), Y(z.y) + bob - air, z.f < 0, u, { v: z.v, k: z.k, white: z.flash > 0 && !z.dead ? .6 : z.cc && z.cc.k === 'freeze' ? .35 : z.T.bomb && z.st === 'wind' && Math.floor(z.t * 12) % 2 ? .7 : 0, alpha: a * (z.T.ghost ? .72 : 1) });
         if (!z.dead && z.cc) { if (z.cc.k === 'freeze') { ctx.fillStyle = 'rgba(140,210,255,.35)'; ctx.fillRect(X(z.x) - 10 * u, Y(z.y) - 34 * u, 20 * u, 34 * u); } else if (z.cc.k === 'stun') for (let k = 0; k < 3; k++) { const aa = G.t * 6 + k * 2.1; ctx.fillStyle = '#ffe27a'; ctx.fillRect(X(z.x) + rd(Math.cos(aa) * 7 * u), Y(z.y) - 40 * u + rd(Math.sin(aa) * 2 * u), 2 * u, 2 * u); } }
         if (!z.dead && (z.burnT > 0 || z.slowL > 0 || z.curseT > 0) && Math.random() < .3) parts.push({ x: z.x + R(-6, 6) * K, y: z.y - R(4, 26) * K, vx: 0, vy: -20 * K, t: 0, T: .4, col: z.burnT > 0 ? '#ff8a30' : z.slowL > 0 ? '#8ad8ff' : '#b07bff', g: 0 });
         if (B && z.st === 'wind' && Math.floor(z.t * 12) % 2) SPR.draw(ctx, z.type, n, 0, X(z.x), Y(z.y), z.f < 0, u, { white: .35 });
