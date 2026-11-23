@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>像素勇者 · 交互动效演示</title>
+<style>
+@font-face { font-family: WenKai; src: url(../art/font/kai.woff2?v=2); }
+* { box-sizing: border-box; }
+body { margin: 0; background: #1a120c; color: #f4ecd8; font: 15px/1.6 WenKai, sans-serif; }
+h1 { text-align: center; font-weight: 400; color: #e8c070; margin: 18px 0 4px; }
+.sub { text-align: center; color: #b8a888; margin-bottom: 14px; font-size: 13px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; padding: 0 14px 30px; max-width: 1200px; margin: auto; }
+.card { background: #2a1e14; border: 2px solid #5a4028; padding: 10px 12px 12px; }
+.card h3 { margin: 0; font-weight: 400; color: #ffd890; font-size: 17px; } .card h3 b { color: #c8a060; margin-right: 6px; }
+.card p { margin: 2px 0 8px; color: #b8a888; font-size: 13px; }
+.stage { position: relative; height: 170px; background: url(../art/map/forest3.webp) 40% 60% / 900px auto; overflow: hidden; image-rendering: pixelated; border: 2px solid #120a06; }
+.play { margin-top: 8px; font: inherit; background: #e8b84a; color: #3a2410; border: none; padding: 4px 16px; box-shadow: 0 0 0 2px #3a2410, 0 3px 0 2px #3a2410; cursor: pointer; }
+.play:active { transform: translateY(2px); box-shadow: 0 0 0 2px #3a2410, 0 1px 0 2px #3a2410; }
+/* 1 血条 */
+.hp { position: absolute; left: 20px; top: 70px; width: 300px; height: 22px; background: #2a0e0a; box-shadow: 0 0 0 3px #1a0806, 0 0 0 6px #c8a060, 0 0 0 9px #1a0806; }
+.hp .ghost, .hp .bar { position: absolute; left: 0; top: 0; bottom: 0; } .hp .ghost { background: #fff0e0; } .hp .bar { background: #d8302a; box-shadow: inset 0 3px 0 #ff7a5a, inset 0 -4px 0 #9a1a14; }
+.hp.flash .bar { background: #fff; } .shake { animation: shk .25s steps(4); } @keyframes shk { 25% { transform: translate(-3px, 1px); } 50% { transform: translate(3px, -1px); } 75% { transform: translate(-2px, 0); } }
+.dmg { position: absolute; font: 22px monospace; color: #ff5a3a; text-shadow: 2px 2px 0 #000; animation: up .7s ease-out forwards; } @keyframes up { to { transform: translateY(-30px); opacity: 0; } }
+/* 通用 */
+.hero { position: absolute; width: 40px; height: 48px; background: url(../art/figure/m/0.png) center bottom / contain no-repeat; image-rendering: pixelated; }
+.pbtn { position: absolute; right: 12px; top: 10px; width: 34px; height: 34px; background: #2a1e14; border: 2px solid #c8a060; color: #fff; display: grid; place-items: center; font-size: 18px; }
+.pbtn.dot::after { content: ''; position: absolute; right: -5px; top: -5px; width: 12px; height: 12px; background: #ff3a3a; border-radius: 50%; box-shadow: 0 0 0 2px #1a0806; }
+.pbtn.pop { animation: pop .3s; } @keyframes pop { 40% { transform: scale(1.35); } }
+.fly { position: absolute; width: 28px; height: 28px; image-rendering: pixelated; z-index: 3; transition: left .55s cubic-bezier(.5, -.4, .7, 1), top .55s cubic-bezier(.3, -1.2, .7, 1), transform .55s; }
+.coin { position: absolute; right: 60px; top: 14px; font: 22px monospace; color: #ffe08a; text-shadow: 2px 2px 0 #000; } .coin.hit { animation: pop .25s; color: #fff; }
+.combo { position: absolute; right: 30px; top: 40px; font: 54px monospace; color: #ffb050; text-shadow: 3px 3px 0 #1a1008; }
+.shard { position: absolute; width: 8px; height: 8px; background: #ffb050; box-shadow: 1px 1px 0 #1a1008; }
+.plate { position: absolute; left: 50%; top: 80px; width: 160px; height: 70px; margin-left: -80px; background: url(../art/ev/pl_g.png) center / contain no-repeat; image-rendering: pixelated; }
+.plate i { position: absolute; inset: 0; background: url(../art/ev/pl_g1.png) center / contain no-repeat; clip-path: polygon(50% 50%, 50% -60%, 50% -60%); }
+.plate.done { animation: pflash .35s; } @keyframes pflash { 30% { filter: brightness(2.2); } }
+.cv { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.whiteout { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.panel { position: absolute; left: 50%; top: 18px; width: 300px; height: 135px; margin-left: -150px; background: #2a2018; border: 3px solid #8a6a3a; padding: 10px; transform: translateY(180px); opacity: 0; }
+.panel.on { transform: none; opacity: 1; transition: transform .28s cubic-bezier(.2, 1.4, .4, 1), opacity .15s; }
+.slots { display: flex; gap: 8px; } .slot { width: 46px; height: 46px; border: 2px solid #6a5030; background: #1a120c; opacity: 0; transform: translateY(-20px); }
+.panel.on .slot { opacity: 1; transform: none; transition: all .2s ease-out; }
+.slot.full { background: #1a120c url(../art/ui2/sk/sword.png) center / cover; }
+.slot.put { animation: put .35s; } @keyframes put { 0% { transform: scale(1.4); box-shadow: 0 0 0 0 #ffe08a; } 60% { box-shadow: 0 0 0 10px rgba(255,224,138,0); } }
+.beam { position: absolute; left: 50%; bottom: 30px; width: 40px; margin-left: -20px; height: 0; background: linear-gradient(transparent, rgba(255,230,140,.85)); }
+.beam.on { animation: beam .9s ease-out forwards; } @keyframes beam { 30% { height: 150px; } 100% { height: 150px; opacity: 0; } }
+.lvup { position: absolute; left: 50%; top: 40px; transform: translateX(-50%) scale(0); font: 30px monospace; color: #ffe08a; text-shadow: 3px 3px 0 #3a2410; }
+.lvup.on { animation: lv 1.1s forwards; } @keyframes lv { 20% { transform: translateX(-50%) scale(1.3); } 35% { transform: translateX(-50%) scale(1); } 85% { opacity: 1; } 100% { transform: translateX(-50%) translateY(-14px); opacity: 0; } }
+.feed { position: absolute; left: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
+.feed div { font-size: 15px; background: rgba(20,12,6,.7); border-left: 3px solid #e8c070; padding: 2px 10px; animation: fdin .25s ease-out; } @keyframes fdin { from { transform: translateX(-20px); opacity: 0; } }
+</style></head><body>
+<h1>像素勇者 · 交互动效演示</h1>
+<div class="sub">每个格子点「播放」看效果。核对完告诉我哪些要、哪些改，再放进游戏。</div>
+<div class="grid">
+
+<div class="card"><h3><b>1</b>扣血残影</h3><p>受伤时血条闪白 → 红条立刻缩短 → 白色残影 0.4 秒后慢慢追上；屏幕轻震，冒伤害数字。</p>
+<div class="stage" id="s1"><div class="hp"><div class="ghost" style="width:100%"></div><div class="bar" style="width:100%"></div></div></div><button class="play" onclick="fx1()">播放</button></div>
+
+<div class="card"><h3><b>2</b>捡东西飞向背包</h3><p>捡到书或宝物：图标从地上弹起、划弧线飞进右上角暂停键，暂停键弹一下，亮起红点；左下角播报。</p>
+<div class="stage" id="s2"><div class="pbtn">Ⅱ</div><div class="feed"></div></div><button class="play" onclick="fx2()">播放</button></div>
+
+<div class="card"><h3><b>3</b>铜钱滚动</h3><p>捡到铜钱，数字从旧值滚到新值，每加一下跳一下。</p>
+<div class="stage" id="s3"><div class="coin">◉ 18</div></div><button class="play" onclick="fx3()">播放</button></div>
+
+<div class="card"><h3><b>4</b>连击断裂</h3><p>3 秒没杀到怪，连击数字抖一下，然后碎成像素块落下。</p>
+<div class="stage" id="s4"><div class="combo">27</div></div><button class="play" onclick="fx4()">播放</button></div>
+
+<div class="card"><h3><b>5</b>踏板选定</h3><p>站上去符文顺时针点亮；亮满一瞬间石板闪白 + 轻微震屏，表示"选定了"。</p>
+<div class="stage" id="s5"><div class="plate"><i></i></div></div><button class="play" onclick="fx5()">播放</button></div>
+
+<div class="card"><h3><b>6</b>进门吸入黑洞</h3><p>走进传送门：周围画面向门中心旋转收缩，越来越暗，最后闪白 → 下一站。</p>
+<div class="stage" id="s6"><canvas class="cv" width="360" height="170"></canvas><div class="whiteout"></div></div><button class="play" onclick="fx6()">播放</button></div>
+
+<div class="card"><h3><b>7</b>按 P 打开备战页</h3><p>面板从下往上弹出（略带回弹），里面的格子一个接一个落下就位。</p>
+<div class="stage" id="s7"><div class="panel"><div class="slots"><div class="slot full"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div></div></div><button class="play" onclick="fx7()">播放</button></div>
+
+<div class="card"><h3><b>8</b>装上技能</h3><p>把书放进技能格：格子放大弹回，外面扩散一圈金光。</p>
+<div class="stage" id="s8"><div class="panel on"><div class="slots"><div class="slot full"></div><div class="slot" id="tgt"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div></div></div><button class="play" onclick="fx8()">播放</button></div>
+
+<div class="card"><h3><b>9</b>升级</h3><p>勇者脚下冲起一道金色光柱，头顶弹出 LEVEL UP，放大再回弹后上飘消失。</p>
+<div class="stage" id="s9"><div class="beam"></div><div class="hero" style="left:50%;margin-left:-20px;bottom:24px"></div><div class="lvup">LEVEL UP!</div></div><button class="play" onclick="fx9()">播放</button></div>
+
+</div>
+<script>
+const $ = (s, r = document) => r.querySelector(s), wait = ms => new Promise(r => setTimeout(r, ms));
+let hp = 100;
+async function fx1() { const s = $('#s1'), h = $('.hp', s), b = $('.bar', h), g = $('.ghost', h); if (hp < 25) { hp = 100; b.style.width = g.style.width = '100%'; await wait(200); }
+  hp -= 22; h.classList.add('flash'); s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake');
+  const d = document.createElement('div'); d.className = 'dmg'; d.textContent = '-22'; d.style.left = (20 + hp * 3) + 'px'; d.style.top = '40px'; s.appendChild(d); setTimeout(() => d.remove(), 700);
+  await wait(70); h.classList.remove('flash'); b.style.transition = 'none'; b.style.width = hp + '%'; await wait(400); g.style.transition = 'width .5s ease-in'; g.style.width = hp + '%'; }
+async function fx2() { const s = $('#s2'), p = $('.pbtn', s); p.classList.remove('dot'); const i = document.createElement('img'); i.className = 'fly'; i.src = '../art/drop/book_bow.png'; i.style.left = '80px'; i.style.top = '120px'; s.appendChild(i);
+  await wait(30); i.style.left = (s.clientWidth - 42) + 'px'; i.style.top = '14px'; i.style.transform = 'scale(.5) rotate(200deg)'; await wait(560); i.remove(); p.classList.remove('pop'); void p.offsetWidth; p.classList.add('pop', 'dot');
+  const f = document.createElement('div'); f.textContent = '获得一本技能书，按 P 看看'; $('.feed', s).appendChild(f); setTimeout(() => f.remove(), 2500); }
+let coins = 18;
+async function fx3() { const c = $('#s3 .coin'), to = coins + 12; while (coins < to) { coins++; c.textContent = '◉ ' + coins; c.classList.remove('hit'); void c.offsetWidth; c.classList.add('hit'); await wait(45); } }
+async function fx4() { const s = $('#s4'), c = $('.combo', s); c.style.visibility = 'visible'; c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); await wait(280); c.style.visibility = 'hidden'; const r = c.getBoundingClientRect(), R = s.getBoundingClientRect();
+  for (let k = 0; k < 18; k++) { const p = document.createElement('div'); p.className = 'shard'; let x = r.left - R.left + Math.random() * r.width, y = r.top - R.top + Math.random() * r.height, vx = (Math.random() - .5) * 4, vy = -Math.random() * 3; s.appendChild(p);
+    (function step(t) { vy += .35; x += vx; y += vy; p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.opacity = Math.max(0, 1 - t / 40); if (t < 40) requestAnimationFrame(() => step(t + 1)); else p.remove(); })(0); }
+  await wait(900); c.style.visibility = 'visible'; }
+async function fx5() { const s = $('#s5'), p = $('.plate', s), i = $('i', p); const T = 1200, t0 = performance.now();
+  await new Promise(res => (function f() { const k = Math.min(1, (performance.now() - t0) / T), a = -Math.PI / 2 + k * Math.PI * 2, pts = ['50% 50%', '50% -60%']; for (let q = 0; q <= 24 * k; q++) { const aa = -Math.PI / 2 + q / 24 * Math.PI * 2; pts.push(`${50 + 110 * Math.cos(aa)}% ${50 + 110 * Math.sin(aa)}%`); } pts.push(`${50 + 110 * Math.cos(a)}% ${50 + 110 * Math.sin(a)}%`); i.style.clipPath = `polygon(${pts.join(',')})`; k < 1 ? requestAnimationFrame(f) : res(); })());
+  p.classList.remove('done'); void p.offsetWidth; p.classList.add('done'); s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake'); await wait(600); i.style.clipPath = 'polygon(50% 50%, 50% -60%, 50% -60%)'; }
+// 6 吸入：把场景画在 canvas 上，旋转缩放到门中心
+const bg6 = Object.assign(new Image(), { src: '../art/map/forest3.webp' });
+function portal6(g, cx, cy, t) { const PW = 20, PH = 26, s = 3; for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) { const nx = (x + .5 - PW / 2) / (PW / 2), ny = (y + .5 - PH / 2) / (PH / 2), r = Math.hypot(nx, ny), a = Math.atan2(ny, nx), hole = .58 + .05 * Math.sin(4 * a + t * 3); if (r > 1) continue; const e = r - hole;
+  g.fillStyle = e < 0 ? (e > -.06 ? '#fff' : '#08040e') : (e < .12 ? '#d0b8ff' : e < .25 ? '#9060ff' : e < .36 + .1 * Math.sin(9 * a + t * 6) ? '#5030a0' : 'transparent'); if (g.fillStyle !== 'rgba(0, 0, 0, 0)') g.fillRect(cx + (x - PW / 2) * s, cy + (y - PH / 2) * s, s, s); } }
+async function fx6() { const s = $('#s6'), cv = $('canvas', s), g = cv.getContext('2d'), w = $('.whiteout', s), cx = 180, cy = 70, T = 1100, t0 = performance.now(); g.imageSmoothingEnabled = false; w.style.transition = 'none'; w.style.opacity = 0;
+  await new Promise(res => (function f() { const k = Math.min(1, (performance.now() - t0) / T), e = k * k; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#000'; g.fillRect(0, 0, 360, 170);
+    g.translate(cx, cy); g.rotate(e * 2.4); g.scale(1 - e * .96, 1 - e * .96); g.translate(-cx, -cy); if (bg6.complete) g.drawImage(bg6, -360, -520, 1600, 900); g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = `rgba(0,0,0,${e * .8})`; g.fillRect(0, 0, 360, 170); portal6(g, cx, cy, performance.now() / 1000); k < 1 ? requestAnimationFrame(f) : res(); })());
+  w.style.transition = 'opacity .12s'; w.style.opacity = 1; await wait(250); w.style.transition = 'opacity .5s'; w.style.opacity = 0; g.setTransform(1, 0, 0, 1, 0, 0); if (bg6.complete) g.drawImage(bg6, -360, -520, 1600, 900); }
+bg6.onload = () => { const g = $('#s6 canvas').getContext('2d'); g.drawImage(bg6, -360, -520, 1600, 900); portal6(g, 180, 70, 0); };
+async function fx7() { const p = $('#s7 .panel'); p.classList.remove('on'); [...p.querySelectorAll('.slot')].forEach((e, i) => e.style.transitionDelay = (.12 + i * .06) + 's'); await wait(60); p.classList.add('on'); }
+async function fx8() { const t = $('#tgt'); t.classList.remove('full', 'put'); await wait(250); t.classList.add('full'); void t.offsetWidth; t.classList.add('put'); }
+async function fx9() { const s = $('#s9'); for (const e of s.querySelectorAll('.beam,.lvup')) { e.classList.remove('on'); void e.offsetWidth; e.classList.add('on'); } }
+</script></body></html>
