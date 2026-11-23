@@ -172,7 +172,7 @@
   const set = (id, prop, v) => { if (HC[id + prop] === v) return; HC[id + prop] = v; const e = $(id); if (prop === 'text') e.textContent = v; else if (prop === 'html') e.innerHTML = v; else if (prop === 'w') e.style.width = v; else if (prop === 'show') e.style.display = v ? 'block' : 'none'; else if (prop === 'cls') e.className = v; };
   const mmss = t => { t = Math.max(0, Math.ceil(t)); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
   function hud(h) {
-    set('hpBar', 'w', (h.hp / h.maxHp * 100).toFixed(1) + '%'); set('hpTxt', 'text', `${Math.ceil(h.hp)} / ${h.maxHp}`);
+    set('hpBar', 'w', (h.hp / h.maxHp * 100).toFixed(1) + '%'); { const k = Math.ceil(h.hp) + '/' + h.maxHp; if (HC.hp !== k) { HC.hp = k; set('hpTxt', 'html', UI.pxNum(Math.ceil(h.hp), '#fff4e0') + '<i class="sl"></i>' + UI.pxNum(h.maxHp, '#e8c8b0')); } } $('hpBar').parentNode.classList.toggle('low', h.hp / h.maxHp < .3);
     set('lvTxt', 'text', 'Lv ' + h.lv); set('xpBar', 'w', h.need ? (h.xp / h.need * 100).toFixed(1) + '%' : '100%');
     document.body.classList.toggle('fe', !!h.fe);
     set('clock', 'html', h.bossWave ? '<em>⌛</em><b>首领战</b>' : `<em>⌛</em><b>${pxNum(h.left == null ? '00:00' : mmss(h.left), h.left != null && h.left < 5.5 ? '#ff8a6a' : '#f4ecd8')}</b>`);

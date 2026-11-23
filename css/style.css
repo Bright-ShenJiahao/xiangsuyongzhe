@@ -1012,3 +1012,20 @@ body.pxui #pause .oathrow > div { border-radius: 50% !important; }
 body.pxui #pause .btn, body.pxui #pause #pGoOn { background: #e8b84a !important; color: #3a2410 !important; border: none !important; border-image: none !important; border-radius: 0 !important; box-shadow: 0 0 0 3px #3a2410, 0 4px 0 3px #3a2410 !important; text-shadow: none !important; }
 body.pxui #pause .cbox { padding: 16px 20px !important; } body.pxui #pause .cbody { padding: 6px 4px !important; } body.pxui #pause .lol, body.pxui #pause .lor { margin: 4px; padding: 10px 12px !important; }
 body.pxui #pause .cfoot { padding-top: 10px; } body.pxui #pause .cfoot .btn { padding: 6px 14px !important; }
+
+/* ===== 11/23 像素血条：硬边深褐框 + 台阶缺角 + 平涂分段红条 + 像素数字 + 左边像素心 ===== */
+#hud .top .hp { height: 22px !important; background: #2a0e0a !important; border: none !important; border-image: none !important; border-radius: 0 !important; box-shadow: 0 0 0 3px #1a0806, 0 0 0 6px #c8a060, 0 0 0 9px #1a0806, 4px 6px 0 9px rgba(0,0,0,.35) !important; overflow: visible !important; image-rendering: pixelated; }
+#hud .top .hp .hrt { content: ''; position: absolute; left: -34px; top: 50%; width: 26px; height: 24px; margin-top: -12px; z-index: 2; background:
+  conic-gradient(from 0deg, transparent 0) 0 0 / 0 0; box-shadow: none;
+  -webkit-mask: none; image-rendering: pixelated;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 12' shape-rendering='crispEdges'%3E%3Cpath fill='%231a0806' d='M2 0h3v1h1v1h1V1h1V0h3v1h1v1h1v4h-1v1h-1v1h-1v1H9v1H8v1H7v1H6v-1H5v-1H4V9H3V8H2V7H1V6H0V2h1V1h1z'/%3E%3Cpath fill='%23e83a2a' d='M2 1h3v1h1v1h1V2h1V1h3v1h1v4h-1v1h-1v1H9v1H8v1H7v1H6v-1H5V9H4V8H3V7H2V6H1V2h1z'/%3E%3Cpath fill='%23ff9a7a' d='M2 2h2v1H3v2H2z'/%3E%3C/svg%3E") center / contain no-repeat; }
+#hud .top .hp i { background: #d8302a !important; border-radius: 0 !important; box-shadow: inset 0 3px 0 #ff7a5a, inset 0 -4px 0 #9a1a14 !important; transition: width .15s steps(4); }
+#hud .top .hp i::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), rgba(26,8,6,.6) calc(10% - 2px) 10%); }
+#hud .top .hp.low i { background: #ff4a2a !important; animation: hpLow .4s steps(2) infinite; } @keyframes hpLow { 50% { filter: brightness(1.4); } }
+#hud .top .hp span { position: absolute; inset: 0; display: flex !important; align-items: center; justify-content: center; gap: 2px; font-size: 16px !important; line-height: 1 !important; text-shadow: none !important; z-index: 1; }
+#hud .top .hp span .pxn { height: 16px; } #hud .top .hp span .sl { text-decoration: none; position: static !important; display: inline-block; width: 3px; height: 14px; background: #e8c8b0; box-shadow: 1px 1px 0 #1a0806; transform: skewX(-20deg); margin: 0 3px; }
+#tip { bottom: calc(68px + env(safe-area-inset-bottom)) !important; }
+@media (orientation: portrait), (max-width: 760px) { #hud .top .hp { height: 18px !important; } #hud .top .hp span .pxn { height: 13px; } #tip { bottom: calc(196px + env(safe-area-inset-bottom)) !important; } }
+
+#hud .top .hp .hrt { display: block; }
+#hud .top .hp .hrt { background: none !important; } #hud .top .hp .hrt svg { display: block; width: 100%; height: 100%; }
