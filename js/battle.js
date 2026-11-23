@@ -527,6 +527,8 @@
     if (o.done) { if ((o.done -= dt) <= 0) { f.rest = null; showRoute(true); } return; }
     for (const p of o.pl) { const on = SKUL(p, 14), ok = evOk(p.need); if (!on) p.lock = 0; if (on && !p.lock && ok && o.t > 1) p.st += dt; else p.st = 0;
       if (p.st > 1.2 && p.fx === 'spin') { p.st = 0; p.lock = 1; arcadeSpin(o, p); return; }
+      if (p.st > 1.2 && p.fx === 'rHand') { p.st = 0; G.paused = true; const win = Math.random() < .5, id = win ? randBook(3) : null, ok = win && id;   // 11/24 伸手进去：单列转盘在「高阶书 / 骷髅」间闪
+        UI.slot([ARC.book, ARC.skull], [ok ? slotOf({ kind: 'book', id }) : ARC.skull], () => { G.paused = false; let msg; if (ok) { CAMP.learn({ kind: 'book', id }, true); gotFeed({ kind: 'book', id }); msg = '摸出一本技能书！'; } else { hero.hp = Math.max(1, hero.hp - hero.maxHp * .2); G.shake = .25; msg = '被乱码咬了一口，掉了 20% 生命。'; } o.msg = msg; toastMsg(msg); o.done = 1.6; }); return; }
       if (p.st > 1.2) { G.shake = Math.max(G.shake, .15); p.fl = performance.now(); const msg = p.fx === 'leave' ? '' : evRun(p.fx); if (msg) { o.msg = msg; toastMsg(msg); } o.done = msg ? 1.6 : .2; return; } } }
   function restTick(dt) {
     const f = G.fe, o = f.rest; o.t += dt; if (o.k === 'ev') return evTick(dt);
