@@ -1322,3 +1322,4 @@ button:focus-visible { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,215
 .slotErr.ok { color: #9fffb0 !important; }
 .cart { touch-action: none; }
 .slotClip .cbody img { position: static !important; width: 100% !important; transform: none !important; transition: none !important; filter: none !important; left: auto !important; }
+.dragGhost { box-sizing: border-box; margin: 0; padding: 0; transform-origin: 50% 30%; }

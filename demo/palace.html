@@ -2,6 +2,10 @@
 <html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>局外 · 宫殿据点灰盒</title>
 <style>
+@font-face { font-family: WenKai; src: url(art/font/kai.woff2?v=3); }
+#bub { position: fixed; z-index: 7; display: none; transform: translate(-50%, -100%); background: rgba(250,244,230,.96); border: 3px solid #3a2814; color: #3a2814; font: clamp(15px, 2vw, 22px) WenKai, serif; padding: 4px 12px; white-space: nowrap; pointer-events: none; }
+#bub::after { content: ''; position: absolute; left: 50%; top: 100%; width: 10px; height: 8px; margin-left: -5px; background: #3a2814; }
+#panel, #panel * { font-family: WenKai, serif; }
 html,body{margin:0;height:100%;background:#0c0908;overflow:hidden;touch-action:none;color:#f3e6c8;font:14px system-ui,sans-serif;user-select:none}
 canvas{display:block}
 #hud{position:fixed;left:8px;top:8px;pointer-events:none;text-shadow:0 1px 2px #000;line-height:1.5}
@@ -18,7 +22,7 @@ canvas{display:block}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud"></div>
-<div id="act"></div>
+<div id="act"></div><div id="bub"></div>
 
 <div id="panel"><div><h3 id="pt" style="margin:0 0 6px"></h3><div id="pl"></div><div style="text-align:right;margin-top:10px"><button id="pc">关闭</button></div></div></div>
 <script src="js/slot.js"></script><script src="js/portal.js"></script><script src="js/data.js"></script><script src="js/sprites.js"></script>
@@ -42,24 +46,22 @@ const UP = {
 const NPC = [
   { id: 'p', name: '露米娜', x: 235, y: 330, kind: 'princess', av: PORT.p, lines: ['你回来了。时空门就在我身边，准备好了就出发吧。', '王座……父王走后，一直空着。'], up: 'p', upName: '公主的祝福' },
   { id: 'm', name: '大法师', x: 800, y: 650, kind: 'mage', av: PORT.mage, lines: ['你带回来的那些技能书，我研究过了。', '水晶给我，我能让你的法术更快成形。'], up: 'm', upName: '大法师的研究' },
-  { id: 'c', name: '大臣', x: 320, y: 650, kind: 'minister', av: PORT.mage, lines: ['国库和账本都归老臣管。', '您的战绩，老臣都记着呢。'], up: 'c', upName: '国库', rec: 1 },
+  { id: 'c', name: '大臣', x: 320, y: 650, kind: 'minister', av: PORT.mage, lines: ['老臣是王国的大臣，国库和账本都归我管。', '勇者大人的战绩，老臣一笔一笔都记着呢。', '国库空了……水晶给老臣，老臣替您打点。'], up: 'c', upName: '国库', rec: 1 },
   { id: 's', name: '士兵甲', x: 395, y: 1085, kind: 'guard', av: PORT.guard, lines: ['他又回来了。', '要不要去训练场转转？——哦，我们没有训练场。'], up: 's', upName: '士兵的训练' },
   { id: 's2', name: '士兵乙', x: 728, y: 1085, kind: 'guard', av: PORT.guard, lines: ['墙不够刻了。'], },
 ];
 const PORTAL = { x: 878, y: 300 }, DOOR = { x: 561, y: 1330 }, THRONE = { x: 561, y: 260 };
 const hero = { x: 561, y: 1085, f: 1, mv: 0 }, K = {}; let go1 = 0, joy = null, near = null, cam = { x: 561, y: 1085 }, T = 0, last = 0, msg = '', msgT = 0;
 const walk = (x, y) => y > 240 && (y < 900 ? x > 118 && x < 1004 : x > 25 && x < 1097) && y < 1100 && !(x > 340 && x < 780 && y < 430) &&   /* 11/24 新宫殿（4:5）：两侧柱子、王座高台、下方门洞 */ !NPC.some(n => Math.hypot(n.x - x, (n.y - y) * 1.6) < 34);
-addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'KeyE' && near) act(near, 0); }); addEventListener('keyup', e => K[e.code] = 0);
+addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'KeyE' && near) { near.ring = 1; } }); addEventListener('keyup', e => K[e.code] = 0);
 addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (t.target === cv && t.clientX < innerWidth * .6) joy = { id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0 }; }, { passive: true });
 addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy && t.identifier === joy.id) { joy.dx = t.clientX - joy.x; joy.dy = t.clientY - joy.y; } }, { passive: true });
 addEventListener('touchend', () => joy = null);
 const $ = id => document.getElementById(id);
 // 11/24 对话 = 说话人头上冒气泡（和塔顶一样），不用头像框
-let BUB = null, OV = null; function say(n, s) { const o = NPC.find(q => q.id === n.id) || n; BUB = { n: o, txt: s, t: 0, T: Math.max(2.4, s.length * .16) }; }
-function drawBub() { if (!BUB) return; BUB.t += 1 / 60; if (BUB.t > BUB.T) { BUB = null; return; } const n = BUB.n, show = BUB.txt.slice(0, Math.ceil(BUB.t * 18));
-  g.font = 'bold 24px sans-serif'; const w = Math.min(560, g.measureText(BUB.txt).width + 28), x = Math.max(10, Math.min(W - w - 10, n.x - w / 2)), y = n.y - (n.kind === 'princess' ? 200 : 180);
-  g.fillStyle = 'rgba(250,244,230,.97)'; g.fillRect(x, y - 34, w, 44); g.strokeStyle = '#3a2814'; g.lineWidth = 3; g.strokeRect(x, y - 34, w, 44);
-  g.fillStyle = 'rgba(250,244,230,.97)'; g.beginPath(); g.moveTo(n.x - 8, y + 9); g.lineTo(n.x + 8, y + 9); g.lineTo(n.x, y + 22); g.fill(); g.fillStyle = '#3a2814'; g.fillText(show, x + 14, y - 3); }
+let BUB = null, OV = null; function say(n, s) { const o = NPC.find(q => q.id === n.id) || n; BUB = { n: o, txt: s, t: 0, T: Math.max(2.4, s.length * .18) }; }   // 11/24 气泡：和塔顶一样的样式和楷体字，跟着人物
+function drawBub() { const b = $('bub'); if (!BUB) { b.style.display = 'none'; return; } BUB.t += 1 / 60; if (BUB.t > BUB.T) { BUB = null; b.style.display = 'none'; return; } const n = BUB.n, d = devicePixelRatio || 1;
+  b.textContent = BUB.txt.slice(0, Math.ceil(BUB.t * 16)); b.style.left = (n.x * Z + VW / 2 - cam.x * Z) / d + 'px'; b.style.top = ((n.y - (n.kind === 'princess' ? 95 : 108)) * Z + VH / 2 - cam.y * Z) / d + 'px'; b.style.display = 'block'; }
 function act(n, k) { if (k === 2) return prep(); if (n === PORTAL) { if (GAME) { parent.postMessage('introDone', '*'); return; } msg = '走进时空门 → 出发（demo 到此为止）'; msgT = 2.5; return; } if (k === 1 && n.up) return panel(n); n.li = ((n.li || 0) + 1) % n.lines.length; say(n, n.lines[n.li]); }
 function panel(n) { $('pt').textContent = n.upName + `　（水晶 ${crystal}）`; const L = $('pl'); L.innerHTML = '';
   if (n.rec) { const d = document.createElement('div'); d.className = 'up'; let R = {}; try { R = JSON.parse(LS.get('rec') || '{}'); } catch (e) {} d.innerHTML = `<div><b>战绩</b><small>最远：${R.best >= 99 ? '通关' : R.best ? '第 ' + R.best + ' 站' : '—'} · 击杀 ${(R.kills || 0).toLocaleString()} · 倒下 ${R.deaths || 0} 次 · 通关 ${R.wins || 0} 次</small></div>`; L.appendChild(d); }
@@ -76,8 +78,9 @@ function prep() { const L = $('pl'); $('pt').textContent = '出发准备'; L.inn
   const tb = (id, name, lock) => { const b = document.createElement('button'); b.textContent = (id === T ? '✔ ' : '') + (lock ? '？？？' : name); b.disabled = lock; b.onclick = () => { LS.set('title', id); prep(); }; r2.appendChild(b); };
   tb('', '不佩戴'); for (const t of DATA.titles) tb(t.id, t.name, !own.includes(t.id));
   const TT = DATA.titles.find(t => t.id === T); if (TT) { const d = document.createElement('p'); d.innerHTML = TT.d; d.style.fontSize = '13px'; L.appendChild(d); }
+  { const b = document.createElement('button'); b.textContent = '公主的祝福（强化）▶'; b.style.marginTop = '10px'; b.onclick = () => panel(NPC[0]); L.appendChild(b); }
   $('panel').style.display = 'flex'; }
-function updAct() { const a = $('act'); a.innerHTML = ''; if (!near) { a.style.display = 'none'; return; } a.style.display = 'flex';
+function updAct() { $('act').style.display = 'none'; return; const a = $('act'); a.innerHTML = ''; if (!near) { a.style.display = 'none'; return; } a.style.display = 'flex';
   const mk = (t, k) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => act(near, k); a.appendChild(b); };
   if (near === PORTAL) mk('进入时空门 ▶', 0); else { mk('对话', 0); if (near.up) mk('强化', 1); if (near.id === 'p' && GAME && !RUN_ON) mk('出发准备', 2); } }
 function fr(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
@@ -91,14 +94,17 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
   const l = Math.hypot(x, y); hero.mv = l > 0; if (l && $('panel').style.display !== 'flex') { x /= l; y /= l; const sp = 300 * dt; if (x) hero.f = x > 0 ? 1 : -1; if (walk(hero.x + x * sp, hero.y)) hero.x += x * sp; if (walk(hero.x, hero.y + y * sp)) hero.y += y * sp; }
   if (hero.y > 1095 && Math.abs(hero.x - 561) < 110 && !msgT) { msg = '大门紧闭……门缝外全是乱码。'; msgT = 2.5; } if (msgT > 0) msgT -= dt;
   if (GAME && Math.hypot(hero.x - PORTAL.x, (hero.y - PORTAL.y) * 1.4) < 40 && !go1) { go1 = 1; parent.postMessage('introDone', '*'); }
-  let nb = null, bd = 150; for (const o of [...NPC, PORTAL]) { const d = Math.hypot(o.x - hero.x, (o.y - hero.y) * 1.4); if (d < bd) { bd = d; nb = o; } } if (nb !== near) { near = nb; updAct(); }
+  // 11/24 靠近 NPC：自动说一句；站在旁边转满一圈（2 秒）自动打开功能界面；离开再回来才会再开
+  { const open = $('panel').style.display === 'flex'; let nb = null, bd = 120; for (const o of NPC) { const d = Math.hypot(o.x - hero.x, (o.y - hero.y) * 1.4); if (d < bd) { bd = d; nb = o; } }
+    if (nb !== near) { if (near) { near.ring = 0; near.done = 0; } near = nb; if (nb && T - (nb.spT || -99) > 5) { nb.spT = T; nb.li = ((nb.li == null ? -1 : nb.li) + 1) % nb.lines.length; say(nb, nb.lines[nb.li]); } }
+    if (near && !open && !near.done && (near.up || near.id === 'p')) { near.ring = (near.ring || 0) + dt / 2; if (near.ring >= 1) { near.done = 1; near.ring = 0; if (near.id === 'p' && GAME && !RUN_ON) prep(); else if (near.up) panel(near); } } }
   cam.x += (Math.max(Math.min(hero.x, W - VW / Z / 2), VW / Z / 2) - cam.x) * .1; if (VW / Z >= W) cam.x = W / 2; cam.y += (Math.max(Math.min(hero.y - 60, H - VH / Z / 2), VH / Z / 2) - cam.y) * .1;
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0c0908'; g.fillRect(0, 0, VW, VH); g.setTransform(Z, 0, 0, Z, Math.round(VW / 2 - cam.x * Z), Math.round(VH / 2 - cam.y * Z));
   if (BG.complete && BG.naturalWidth) { g.imageSmoothingEnabled = Z < 1; g.imageSmoothingQuality = 'high'; g.drawImage(BG, 0, 0); g.imageSmoothingEnabled = false;   /* 11/24 不放大，只缩小（高质量），人物一律最近邻 */ } else { g.fillStyle = '#5a4c42'; g.fillRect(0, 0, W, H); }
   // 时空门：和塔顶同一个红色裂缝（js/portal.js）
   if (typeof gamePortal === 'function') { g.save(); g.translate(PORTAL.x, PORTAL.y + 10); g.scale(1.5, 1.5); gamePortal(g, 0, 0, T, 1); g.restore(); g.imageSmoothingEnabled = false; }
   const L = NPC.map(n => ({ y: n.y, n })).concat([{ y: hero.y, h: 1 }]).sort((a, b) => a.y - b.y);
-  for (const e of L) { if (e.n) drawNPC(e.n); else { const W0 = LS.get('weapon') || 'sword', run = hero.mv, n0 = run ? 'run' : 'idle', c0 = Math.max(1, (SPR.count && SPR.count(SPR.heroSet(HS, W0), n0)) || (run ? 4 : 1));   // 11/24 宫殿里也有跑步帧
+  for (const e of L) { if (e.n) { const n = e.n; if (n === near && n.ring > 0) { g.save(); g.lineWidth = 5; g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, 0, 7); g.stroke(); g.strokeStyle = '#ffd77a'; g.shadowColor = '#ffd77a'; g.shadowBlur = 10; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * n.ring); g.stroke(); g.restore(); } drawNPC(n); } else { const W0 = LS.get('weapon') || 'sword', run = hero.mv, n0 = run ? 'run' : 'idle', c0 = Math.max(1, (SPR.count && SPR.count(SPR.heroSet(HS, W0), n0)) || (run ? 4 : 1));   // 11/24 宫殿里也有跑步帧
     try { SPR.drawHero(g, n0, Math.floor(T * (run ? 10 : 2)) % c0, hero.x, hero.y, hero.f < 0, 2, { w: W0, c: HS }); } catch (e) { g.fillStyle = '#fff'; g.fillRect(hero.x - 10, hero.y - 50, 20, 50); } } }
   drawBub();
   if (OV) { OV.t += 1 / 60; const d = devicePixelRatio || 1, t = OV.t; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = `rgba(0,0,0,${Math.min(.85, 3.2 - t)})`; g.fillRect(0, 0, VW, VH); g.textAlign = 'center';   // 11/24 还有命：GAME OVER 被划掉 → 游戏还没完！！！
