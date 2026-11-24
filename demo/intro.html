@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="zh"><head><script>if(/[?&]game/.test(location.search))document.documentElement.className='gm'</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>像素勇者 · 开场演示</title>
 <style>
 @font-face { font-family: WenKai; src: url(../art/font/kai.woff2?v=6); }
@@ -16,6 +16,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 @media (orientation: portrait) { #cap { bottom: auto; top: calc(50% + 28.2vw + 16px); } }
 #dlg { position: fixed; left: 50%; bottom: 5vh; transform: translateX(-50%); width: min(760px, 92vw); display: none; gap: 14px; align-items: flex-start; background: #2a1e14; border: 4px solid #c89a52; box-shadow: 0 0 0 4px #1a0e06; padding: 12px 16px; color: #f4ecd8; font-size: clamp(16px, 2vw, 20px); z-index: 7; }
 #dlg img { width: 72px; height: 72px; object-fit: cover; object-position: top; border: 2px solid #c89a52; background: #3a2a1a; } #dlg b { color: #ffd890; display: block; margin-bottom: 4px; }
+html.gm #play, html.gm #first { display: none !important; }
 #skip, #play { position: fixed; z-index: 10; font: 15px WenKai, serif; color: #f4ecd8; background: rgba(20,12,6,.7); border: 2px solid #c89a52; padding: 4px 14px; cursor: pointer; }
 #skip { right: 16px; top: 14px; display: none; align-items: center; gap: 6px; user-select: none; touch-action: none; } #play.g { display: none !important; } #first { position: fixed; left: 12px; top: 12px; z-index: 10; color: #b8a888; font-size: 13px; } #play { left: 50%; top: 18px; transform: translateX(-50%); font-size: 22px; padding: 10px 26px; }
 .crack { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.7vh); height: auto; aspect-ratio: 16/9; transform: translate(-50%, -50%); mix-blend-mode: screen; pointer-events: none; }
