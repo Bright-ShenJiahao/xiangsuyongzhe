@@ -1233,3 +1233,4 @@ body.tvbg { background: #000; }
 @media (orientation: portrait), (max-width: 700px) { .slotBox h2 { font-size: 18px; } .slotForm label { grid-template-columns: 1fr; gap: 4px; } }
 /* 11/24 图鉴框固定高度，换页 / 图片加载时不再跳动 */
 #tpanel .box.wide { height: min(86vh, 760px) !important; }
+.cart .del { display: inline-block; margin-top: 2px; font-size: 12px; color: #c8b890; text-decoration: underline; cursor: pointer; } .cart .del:hover { color: #ff8a6a; }

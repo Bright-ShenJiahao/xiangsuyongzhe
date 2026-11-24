@@ -40,11 +40,11 @@
   // ================= 主界面 =================
   const tvOff = go => { const t = $('title'); if (t.classList.contains('tvoff')) return; t.classList.add('tvoff'); document.body.classList.add('tvbg'); setTimeout(() => { t.classList.remove('tvoff'); document.body.classList.remove('tvbg'); go(); }, 560); };
   // 11/24 存档位：继续游戏 = 选存档 → 宫殿；新的游戏 = 选空位 → 选人 → 塔顶开场
-  function slotPick(mode) { $('slotT').textContent = mode === 'new' ? '新的游戏 · 选一盘卡带' : '继续游戏 · 选一盘卡带'; $('slotForm').hidden = true; $('sCon').parentNode.classList.remove('on'); const row = $('slotRow'); row.innerHTML = '';
+  function slotPick(mode) { $('slotT').textContent = '选一盘卡带'; $('slotForm').hidden = true; $('sCon').parentNode.classList.remove('on'); const row = $('slotRow'); row.innerHTML = '';
     for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'cart'; b.dataset.n = n;
-      b.innerHTML = `<img src="art/ui2/save/${has ? 'cart_gold' : 'cart'}.png" alt=""><div class="lab">${has ? `<div class="ph"><img class="av" src="art/portrait/${I.hero}.webp" alt=""><b>${I.name.replace(/[<>&]/g, '')}</b></div><span>💎 ${I.cry} · ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}</span><span>通关 ${I.wins} · 倒下 ${I.deaths}</span>` : '<span class="no">空白卡带</span>'}</div>${has && I.run ? '<i class="rled" title="有一局没打完"></i>' : ''}<span class="tag">存档 ${n}${has && I.run ? ' · 没打完' : ''}</span>`;
-      if (mode === 'cont' && !has) b.disabled = true;
-      b.onclick = () => { if (mode === 'new' && has && !confirm(`存档 ${n}「${I.name}」会被覆盖，确定吗？`)) return; row.querySelectorAll('.cart').forEach(c => c.classList.toggle('sel', c === b)); insertCart(b, () => {
+      b.innerHTML = `<img src="art/ui2/save/${has ? 'cart_gold' : 'cart'}.png" alt=""><div class="lab">${has ? `<div class="ph"><img class="av" src="art/portrait/${I.hero}.webp" alt=""><b>${I.name.replace(/[<>&]/g, '')}</b></div><span>💎 ${I.cry} · ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}</span><span>通关 ${I.wins} · 倒下 ${I.deaths}</span>` : '<span class="no">空白卡带</span>'}</div>${has && I.run ? '<i class="rled" title="有一局没打完"></i>' : ''}<span class="tag">存档 ${n}${has && I.run ? ' · 没打完' : ''}</span>${has ? '<span class="del">删除</span>' : ''}`;
+      if (has) b.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`删除存档 ${n}「${I.name}」？水晶、强化、称号都会清空，不能恢复。`)) { SLOT.wipe(n); slotPick(); } };
+      b.onclick = () => { const mode = has ? 'cont' : 'new'; row.querySelectorAll('.cart').forEach(c => c.classList.toggle('sel', c === b)); insertCart(b, () => {
           if (mode === 'new') return slotForm(n);
           setTimeout(() => { overlay('slotScr', false); SLOT.use(n); tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); }, 450); }); };
       row.appendChild(b); }
@@ -56,7 +56,7 @@
     setTimeout(() => { f.remove(); $('sCon').parentNode.classList.add('on'); try { SFX.play('pick'); } catch (e) {} done(); }, 460); }
   // 新存档：先起名字和口令 → 选人 → 塔顶开场
   function slotForm(n) { $('slotForm').hidden = false; $('slotT').textContent = `新的游戏 · 存档 ${n}`; $('sErr').textContent = ''; $('sName').value = ''; $('sPin').value = ''; setTimeout(() => $('sName').focus(), 50);
-    $('sBack').onclick = () => slotPick('new'); $('sName').oninput = () => { const L = $('slotRow').querySelector(`.cart[data-n="${n}"] .lab`); if (L) L.innerHTML = `<b>${$('sName').value.replace(/[<>&]/g, '') || '……'}</b><span>新的勇者</span>`; };
+    $('sBack').onclick = () => slotPick(); $('sName').oninput = () => { const L = $('slotRow').querySelector(`.cart[data-n="${n}"] .lab`); if (L) L.innerHTML = `<b>${$('sName').value.replace(/[<>&]/g, '') || '……'}</b><span>新的勇者</span>`; };
     $('sOk').onclick = async () => { const name = $('sName').value.trim().replace(/[<>&"'`\\]/g, ''), pin = $('sPin').value.trim();
       if (!name) return $('sErr').textContent = '请输入名字';
       if (pin.length < 4) return $('sErr').textContent = '密码至少 4 位';
@@ -64,9 +64,8 @@
       SLOT.use(n); SLOT.wipe(n); store.set('name', name); store.set('pin', h); overlay('slotScr', false); tvOff(() => openPrep(true)); };
     $('sPin').onkeydown = e => { if (e.key === 'Enter') $('sOk').click(); }; }
   $('slotX').onclick = () => overlay('slotScr', false);
-  $('bStart').onclick = () => slotPick('new');
-  $('bCont').onclick = () => slotPick('cont');
-  const contShow = () => { let any = 0; for (let n = 1; n <= SLOT.N; n++) if (SLOT.has(n)) any = 1; $('bCont').hidden = !any; $('bStart').querySelector('span').textContent = '新的游戏'; };
+  $('bStart').onclick = () => slotPick();   // 11/24 只留「进入游戏」：旧卡带=直接开始，空卡带=起名字从零开始
+  const contShow = () => { $('bCont').hidden = true; $('bStart').querySelector('span').textContent = '进入游戏'; };
   // 11/22 图鉴展示用小人（art/figure/<key>/0..3.png，比战斗小人大、更精细），有就替换图鉴里的那一个
   const FIG = {}; fetch('art/figure/meta.json').then(r => r.json()).then(M => { for (const k in M) FIG[k] = M[k].map(([ax], i) => { const im = new Image(); im.src = `art/figure/${k}/${i}.png`; return { c: im, f: { ax } }; }); }).catch(() => {});
 
