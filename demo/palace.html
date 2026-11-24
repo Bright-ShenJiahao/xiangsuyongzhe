@@ -26,8 +26,8 @@ canvas{display:block}
 // 11/24 宫殿据点灰盒（一张图）：最上空王座，公主站旁边、身边是时空门；中间大臣（钱+记录）和大法师；下面两排士兵；最下面大门走不出去。
 // 地面、柱子、红毯都是代码画的灰盒，只验证路线、距离、按钮。正式美术出一整张图替换。
 const cv = document.getElementById('c'), g = cv.getContext('2d'); let VW, VH, Z;
-function fit() { const d = devicePixelRatio || 1; cv.width = innerWidth * d; cv.height = innerHeight * d; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; VW = cv.width; VH = cv.height; Z = Math.min(VW / 948, VH / 1000, 1); /* 手机宽度铺满，电脑按高度约一屏 */ } addEventListener('resize', fit); fit();
-const PRI = Object.assign(new Image(), { src: 'art/heroP/atlas.png' }), PRF = [[878, 140, 38, 40, 16.5, 40], [918, 140, 39, 40, 17.4, 40]], W = 948, H = 1659, BG = Object.assign(new Image(), { src: 'art/hub/palace.webp' }), IM = s => Object.assign(new Image(), { src: s }), NI = {}; ['guard_idle0', 'guard_idle1', 'mage_idle0', 'mage_idle1', 'minister_idle0', 'minister_idle1'].forEach(k => NI[k] = IM('art/npc/' + k + '.png'));
+function fit() { const d = devicePixelRatio || 1; cv.width = innerWidth * d; cv.height = innerHeight * d; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; VW = cv.width; VH = cv.height; Z = Math.min(VW / 1122, VH / 1000, 1); /* 手机宽度铺满，电脑按高度约一屏 */ } addEventListener('resize', fit); fit();
+const PRI = Object.assign(new Image(), { src: 'art/heroP/atlas.png' }), PRF = [[878, 140, 38, 40, 16.5, 40], [918, 140, 39, 40, 17.4, 40]], W = 1122, H = 1402, BG = Object.assign(new Image(), { src: 'art/hub/palace.webp' }), IM = s => Object.assign(new Image(), { src: s }), NI = {}; ['guard_idle0', 'guard_idle1', 'mage_idle0', 'mage_idle1', 'minister_idle0', 'minister_idle1'].forEach(k => NI[k] = IM('art/npc/' + k + '.png'));
 const PORT = { p: IM('art/portrait/p.webp'), mage: IM('art/npc/mage_face.png'), guard: IM('art/npc/guard_face.png') };
 const RUN_ON = (() => { try { return new URLSearchParams(location.search).has('game') && !!localStorage.getItem('pxyz.save1'); } catch (e) { return false; } })(), QS = new URLSearchParams(location.search), GAME = QS.has('game'), HS = QS.get('h') === 'f' ? 'f' : 'm';
 const LS = { get: k => { try { return localStorage.getItem('xsyz-' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('xsyz-' + k, v); } catch (e) {} } };
@@ -40,17 +40,15 @@ const UP = {
   c: [['coin', '开局铜钱', '开局铜钱 +20', [20, 40, 60]], ['disc', '折扣', '局内商店价格 −5%', [50]], ['ex', '兑换', '局内商人用铜钱换水晶的汇率更好', [40]]],
 };
 const NPC = [
-  { id: 'p', name: '露米娜', x: 215, y: 330, kind: 'princess', av: PORT.p, lines: ['你回来了。时空门就在我身边，准备好了就出发吧。', '王座……父王走后，一直空着。'], up: 'p', upName: '公主的祝福' },
-  { id: 'm', name: '大法师', x: 640, y: 760, kind: 'mage', av: PORT.mage, lines: ['你带回来的那些技能书，我研究过了。', '水晶给我，我能让你的法术更快成形。'], up: 'm', upName: '大法师的研究' },
-  { id: 'c', name: '大臣', x: 300, y: 760, kind: 'minister', av: PORT.mage, lines: ['国库和账本都归老臣管。', '您的战绩，老臣都记着呢。'], up: 'c', upName: '国库', rec: 1 },
-  { id: 's', name: '士兵甲', x: 300, y: 1020, kind: 'guard', av: PORT.guard, lines: ['他又回来了。', '要不要去训练场转转？——哦，我们没有训练场。'], up: 's', upName: '士兵的训练' },
-  { id: 's2', name: '士兵乙', x: 640, y: 1020, kind: 'guard', av: PORT.guard, lines: ['墙不够刻了。'], },
-  { id: 's3', name: '士兵丙', x: 300, y: 1330, kind: 'guard', av: PORT.guard, lines: ['站岗好无聊。'] },
-  { id: 's4', name: '士兵丁', x: 640, y: 1330, kind: 'guard', av: PORT.guard, lines: ['屏幕那一边，大概没有哥布林吧。'] },
+  { id: 'p', name: '露米娜', x: 235, y: 330, kind: 'princess', av: PORT.p, lines: ['你回来了。时空门就在我身边，准备好了就出发吧。', '王座……父王走后，一直空着。'], up: 'p', upName: '公主的祝福' },
+  { id: 'm', name: '大法师', x: 800, y: 650, kind: 'mage', av: PORT.mage, lines: ['你带回来的那些技能书，我研究过了。', '水晶给我，我能让你的法术更快成形。'], up: 'm', upName: '大法师的研究' },
+  { id: 'c', name: '大臣', x: 320, y: 650, kind: 'minister', av: PORT.mage, lines: ['国库和账本都归老臣管。', '您的战绩，老臣都记着呢。'], up: 'c', upName: '国库', rec: 1 },
+  { id: 's', name: '士兵甲', x: 395, y: 1085, kind: 'guard', av: PORT.guard, lines: ['他又回来了。', '要不要去训练场转转？——哦，我们没有训练场。'], up: 's', upName: '士兵的训练' },
+  { id: 's2', name: '士兵乙', x: 728, y: 1085, kind: 'guard', av: PORT.guard, lines: ['墙不够刻了。'], },
 ];
-const PORTAL = { x: 755, y: 275 }, DOOR = { x: 474, y: 1450 }, THRONE = { x: 474, y: 230 };
-const hero = { x: 474, y: 1400, f: 1, mv: 0 }, K = {}; let go1 = 0, joy = null, near = null, cam = { x: 474, y: 1400 }, T = 0, last = 0, msg = '', msgT = 0;
-const walk = (x, y) => x > 112 && x < 836 && y > 235 && y < 1440 && !(x > 270 && x < 678 && y < 392) && !NPC.some(n => Math.hypot(n.x - x, (n.y - y) * 1.6) < 34);
+const PORTAL = { x: 878, y: 300 }, DOOR = { x: 561, y: 1330 }, THRONE = { x: 561, y: 260 };
+const hero = { x: 561, y: 1085, f: 1, mv: 0 }, K = {}; let go1 = 0, joy = null, near = null, cam = { x: 561, y: 1085 }, T = 0, last = 0, msg = '', msgT = 0;
+const walk = (x, y) => y > 240 && (y < 900 ? x > 118 && x < 1004 : x > 25 && x < 1097) && y < 1100 && !(x > 340 && x < 780 && y < 430) &&   /* 11/24 新宫殿（4:5）：两侧柱子、王座高台、下方门洞 */ !NPC.some(n => Math.hypot(n.x - x, (n.y - y) * 1.6) < 34);
 addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'KeyE' && near) act(near, 0); }); addEventListener('keyup', e => K[e.code] = 0);
 addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (t.target === cv && t.clientX < innerWidth * .6) joy = { id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0 }; }, { passive: true });
 addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy && t.identifier === joy.id) { joy.dx = t.clientX - joy.x; joy.dy = t.clientY - joy.y; } }, { passive: true });
@@ -91,7 +89,7 @@ function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s = 2.2;
 function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; T += dt; requestAnimationFrame(loop);
   let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0); if (joy && Math.hypot(joy.dx, joy.dy) > 8) { x = joy.dx; y = joy.dy; }
   const l = Math.hypot(x, y); hero.mv = l > 0; if (l && $('panel').style.display !== 'flex') { x /= l; y /= l; const sp = 300 * dt; if (x) hero.f = x > 0 ? 1 : -1; if (walk(hero.x + x * sp, hero.y)) hero.x += x * sp; if (walk(hero.x, hero.y + y * sp)) hero.y += y * sp; }
-  if (hero.y > 1425 && Math.abs(hero.x - 474) < 110 && !msgT) { msg = '大门紧闭……门缝外全是乱码。'; msgT = 2.5; } if (msgT > 0) msgT -= dt;
+  if (hero.y > 1095 && Math.abs(hero.x - 561) < 110 && !msgT) { msg = '大门紧闭……门缝外全是乱码。'; msgT = 2.5; } if (msgT > 0) msgT -= dt;
   if (GAME && Math.hypot(hero.x - PORTAL.x, (hero.y - PORTAL.y) * 1.4) < 40 && !go1) { go1 = 1; parent.postMessage('introDone', '*'); }
   let nb = null, bd = 150; for (const o of [...NPC, PORTAL]) { const d = Math.hypot(o.x - hero.x, (o.y - hero.y) * 1.4); if (d < bd) { bd = d; nb = o; } } if (nb !== near) { near = nb; updAct(); }
   cam.x += (Math.max(Math.min(hero.x, W - VW / Z / 2), VW / Z / 2) - cam.x) * .1; if (VW / Z >= W) cam.x = W / 2; cam.y += (Math.max(Math.min(hero.y - 60, H - VH / Z / 2), VH / Z / 2) - cam.y) * .1;
