@@ -365,7 +365,7 @@
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();
     G.wi = -1; Object.assign(G, { wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], stT: 0, thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
-    if (G.st > 1 && !G.stCry) { G.stCry = 1; addCrystal(2 + G.st, hero.x, hero.y); } saveRun(); G.stCry = 0; nextPhase(); banner(G.W.boss ? '首领战！' : `第 ${G.st} 站`, 1.6); G.paused = false;
+    if (G.st > 1 && (RUN.cryStn || 1) < G.st) { RUN.cryStn = G.st; addCrystal(2 + G.st, hero.x, hero.y); } saveRun();   /* 每站只给一次，续关 / 重进不重复给 */ nextPhase(); banner(G.W.boss ? '首领战！' : `第 ${G.st} 站`, 1.6); G.paused = false;
   }
   // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
   function nextPhase() {
@@ -869,8 +869,9 @@
     return { time: G.t, kills: G.kills, combo: G.bestCombo || G.maxCombo || 0, coins: Math.round(G.earned || 0), taken: Math.round(G.taken || 0), lv: G.lv, xp: G.xp / need(), dmg: RUN.dmgAll || {}, sk, got: RUN.got || [] }; }
   function end() {
     let cont = 0; if (G.over !== 'win') { const S = loadSave(), used = (RUN.livesUsed || 0) + 1, lives = RUN.lives || 2; if (S && used < lives) { S.RUN.livesUsed = used; S.RUN.lives = lives; try { localStorage.setItem(SAVE, JSON.stringify(S)); } catch (e) {} cont = lives - used; } }   // 11/24 续命：还有命就留着本站存档
-    try { const R0 = JSON.parse(localStorage.getItem('xsyz-rec') || '{}'); R0.best = Math.max(R0.best || 0, G.over === 'win' ? 99 : G.st); R0.kills = (R0.kills || 0) + G.kills; if (G.over === 'win') R0.wins = (R0.wins || 0) + 1; else R0.deaths = (R0.deaths || 0) + 1; R0.runs = (R0.runs || 0) + (cont ? 0 : 1); R0.elites = (R0.elites || 0) + (RUN.elites || 0); RUN.elites = 0; localStorage.setItem('xsyz-rec', JSON.stringify(R0));
-      const own = JSON.parse(localStorage.getItem('xsyz-titles') || '[]'); for (const t of DATA.titles) if (!own.includes(t.id) && t.need(R0, RUN)) { own.push(t.id); (RUN.newT = RUN.newT || []).push(t.name); } localStorage.setItem('xsyz-titles', JSON.stringify(own)); } catch (e) {}   // 11/24 称号解锁   // 11/24 大臣的战绩
+    try { const R0 = JSON.parse(localStorage.getItem('xsyz-rec') || '{}'); R0.best = Math.max(R0.best || 0, G.over === 'win' ? 99 : G.st); R0.kills = (R0.kills || 0) + Math.max(0, G.kills - (RUN.recK || 0)); if (G.over === 'win') R0.wins = (R0.wins || 0) + 1; else R0.deaths = (R0.deaths || 0) + 1; R0.runs = (R0.runs || 0) + (cont ? 0 : 1); R0.elites = (R0.elites || 0) + (RUN.elites || 0); RUN.elites = 0; localStorage.setItem('xsyz-rec', JSON.stringify(R0));
+      const own = JSON.parse(localStorage.getItem('xsyz-titles') || '[]'); for (const t of DATA.titles) if (!own.includes(t.id) && t.need(R0, RUN)) { own.push(t.id); (RUN.newT = RUN.newT || []).push(t.name); } localStorage.setItem('xsyz-titles', JSON.stringify(own));
+      if (cont) { const S = loadSave(); if (S) { S.RUN.recK = S.G.kills || 0; S.RUN.elites = 0; S.RUN.newT = RUN.newT || []; localStorage.setItem(SAVE, JSON.stringify(S)); } } } catch (e) {}   // 续关：已记过的击杀 / 精英不重复记，新称号留到结算页   // 11/24 称号解锁   // 11/24 大臣的战绩
     if (!cont) clearSave(); UI.result({ cont, cry: RUN.cry || 0, newT: RUN.newT || [], win: G.over === 'win', kills: G.kills, time: G.t, lv: G.lv, weapon: RUN.weapon, st: G.st, wi: G.wi, boss: !!(G.W && G.W.boss), dmg: RUN.dmgAll, killer: G.killer, killerElite: G.killerElite, stolen: G.stolen });
   }
 
@@ -1035,7 +1036,7 @@
   function frame(dt) {
     if (!G) return;
     if (!G.paused && !G.over) { if (G.hitStop > 0) { G.hitStop -= dt; dt *= .2; } else if (G.slowMo > 0) { G.slowMo -= dt; dt *= .35; }   // 暗影步慢动作
-      if (hero.dead) { G.deadR = (G.deadR || 0) + dt; G.loseT -= dt; if (G.loseT <= 0 && !G.over) { G.over = 'lose'; end(); draw(); return; } dt *= G.deadR < .3 ? .06 : G.deadR < 1.3 ? .35 : 1; }   // 11/23 倒下：骤停 → 慢动作 → 正常
+      if (hero.dead) { G.deadR = (G.deadR || 0) + dt; G.loseT -= dt; if (G.loseT <= 0 && !G.over) { G.over = 'lose'; end(); if (G) draw(); return; } dt *= G.deadR < .3 ? .06 : G.deadR < 1.3 ? .35 : 1; }   // 11/23 倒下：骤停 → 慢动作 → 正常
       update(dt); }
     draw();
   }
