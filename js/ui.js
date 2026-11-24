@@ -217,7 +217,7 @@
   $('pBack').onclick = () => show('title');
   const introSeen = () => store.get('introSeen') === '1';
   function playIntro(go, hub) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game' + (hub ? '&hub' : '') + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
-    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
+    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
   $('pGo').onclick = () => { const b = build(); if (!introSeen()) playIntro(() => startBattle(b)); else openHub('', () => startBattle(b)); };   // 11/24 选人只在新存档出现：塔顶开场 → 开打
   let heroSwing = 0;
   function drawHeroPreview(t, dt) {
@@ -396,13 +396,15 @@
   let lastRes = null, pendRes = null;   // pendRes：上一局真正结束的结果，等选完人进宫殿时再说台词
   function towerCtx(r) { const n = (+store.get('returns') || 0) + 1, wins = (+store.get('wins') || 0); store.set('returns', n); if (r.win) store.set('wins', wins + 1);
     return { n, st: r.st, boss: r.boss, win: r.win, wins: wins + (r.win ? 1 : 0), killer: r.killer, killerElite: r.killerElite, weapon: r.weapon, quick: !r.win && r.time < 60, stolen: r.stolen }; }
+  // 11/24 从 iframe（塔顶 / 宫殿）回来：把键盘焦点拿回主页面，不然方向键没反应
+  function refocus() { try { document.activeElement && document.activeElement.blur(); } catch (e) {} try { window.focus(); document.body.tabIndex = -1; document.body.focus({ preventScroll: true }); } catch (e) {} }
   function openHub(qs, go) { const f = $('introF'); f.src = 'demo/palace.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + qs + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
-    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
+    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
   function playTower(r, go) { let seen; try { seen = new Set(JSON.parse(store.get('linesSeen') || '[]')); } catch (e) { seen = new Set(); }
     const L = pickLines(towerCtx(r), seen); for (const l of L) if (!l.rep) seen.add(l.id); store.set('linesSeen', JSON.stringify([...seen]));
     const say = [].concat(...L.map(l => l.say)), f = $('introF');
     f.src = 'demo/palace.html?game&cry=' + (r.cry || 0) + '&cont=' + (r.cont || 0) + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&L=' + encodeURIComponent(JSON.stringify(say)) + '&v=' + Date.now();   /* 11/24 死后回宫殿（塔顶开场只在第一次） */ f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
-    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
+    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
   $('rAgain').onclick = () => { BATTLE.stop(); overlay('result', false); const r = lastRes || {};
     if (!r.cont) return playTower(r, () => { openPrep(true); startBattle(build()); });   // 11/24 这局结束：回宫殿（男女已经跟着存档定了）
     playTower(r, () => { const s = r.cont && BATTLE.loadSave(); if (s) mapFall(() => { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, cont: 1, drop: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); }); else startBattle(lastBuild); }); };   // 11/24 有命：续关回本站开头；没命：新的一局
