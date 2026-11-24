@@ -1,7 +1,7 @@
 // 11/25 BGM：一首一个 mp3（art/bgm/），切歌淡出淡入；浏览器要用户点一下才能出声，第一次点击后自动补播。
 // BGM.play('t1') / BGM.play(null) 淡出停；BGM.scene(屏幕id) 按界面选曲；BGM.duck(true) 压低（弹窗时）。音量存在 xsyz-bgmVol（0~1，全局，不分存档）。
 (() => {
-  const TRACKS = { t1: 'art/bgm/t1.mp3' };   // t1 = 轻快奇幻（主界面 / 选存档 / 备战 / 剧情第 1 张图）
+  const TRACKS = { t1: 'art/bgm/t1.mp3', u1: 'art/bgm/u1.mp3' };   // u1 = 入侵不安（剧情第 2、3 张）   // t1 = 轻快奇幻（主界面 / 选存档 / 备战 / 剧情第 1 张图）
   const SCENE = { title: 't1', prep: 't1', battle: null };
   let want = null, cur = null, au = null, vol = (() => { const v = parseFloat(localStorage.getItem('xsyz-bgmVol')); return isNaN(v) ? .6 : v; })(), ducked = false, unlocked = false, fadeT = 0;
   const target = () => vol * (ducked ? .35 : 1) * .8;
