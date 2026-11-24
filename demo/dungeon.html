@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>局外 · 大地图试验：哥布林地下城</title>
+<style>
+html,body{margin:0;height:100%;background:#0c0a08;overflow:hidden;touch-action:none;color:#eee;font:13px system-ui,sans-serif;user-select:none}
+canvas{display:block;image-rendering:pixelated;position:absolute}
+#hud{position:fixed;left:8px;top:8px;pointer-events:none;text-shadow:0 1px 2px #000;line-height:1.5}
+#mini{position:fixed;right:8px;top:8px;border:2px solid #6b4a2b;image-rendering:pixelated;background:#000}
+</style></head><body>
+<canvas id="c"></canvas><canvas id="mini"></canvas>
+<div id="hud">哥布林地下城 · 大地图试验（约屏幕 3×3）<br>WASD / 方向键 / 手机左半屏拖动 走动　M 切换整图预览<br>地砖 16px 原生绘制，按整数倍放大，镜头跟随</div>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+// 11/24 大地图试验：地图由 16px 地砖 + 摆件拼成（地砖先用代码画的占位像素，验证「镜头跟随 + 整数倍放大不糊」），房间约屏幕 3 倍
+const T = 16, MW = 72, MH = 44, PX = 2;            // 地图 72×44 格，每格 16 原生像素，屏幕上放大 2 倍 → 2304×1408，约 640×400 视野的 3.6×3.5
+const cv = document.getElementById('c'), g = cv.getContext('2d'); let VW = 640, VH = 400, SC = 1;
+function fit() { SC = Math.max(1, Math.floor(Math.min(innerWidth / 640, innerHeight / 400) * 2) / 2); VW = Math.ceil(innerWidth / SC); VH = Math.ceil(innerHeight / SC); cv.width = VW; cv.height = VH; cv.style.width = VW * SC + 'px'; cv.style.height = VH * SC + 'px'; } addEventListener('resize', fit); fit();
+// 随机数（固定种子，每次打开同一张图）
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+// ---------- 地形格：0 地面 1 岩壁 2 水 3 桥 4 营地泥地 ----------
+const M = []; for (let y = 0; y < MH; y++) { M.push([]); for (let x = 0; x < MW; x++) M[y].push(1); }
+const carve = (cx, cy, rx, ry, v = 0) => { for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 + (rnd() - .5) * .25; if (d < 1 && x > 1 && y > 1 && x < MW - 2 && y < MH - 2) M[y][x] = v; } };
+carve(14, 30, 12, 10); carve(36, 22, 18, 13); carve(58, 14, 12, 10); carve(56, 32, 12, 9); carve(24, 12, 10, 7); // 几个洞室连起来
+for (let x = 10; x < 62; x++) for (let w = -2; w <= 2; w++) { const y = Math.round(22 + Math.sin(x / 7) * 4) + w; if (M[y] && M[y][x] !== undefined && x > 2 && x < MW - 3) M[y][x] = M[y][x] === 1 && Math.abs(w) > 1 ? 1 : 0; } // 通道
+// 流水：从上往下斜穿
+const RIV = []; for (let y = 2; y < MH - 2; y++) { const cx = Math.round(40 + Math.sin(y / 5) * 3 + (y - 22) * .3); for (let w = -1; w <= 1; w++) if (M[y][cx + w] !== 1 || Math.abs(y - 22) < 12) { M[y][cx + w] = 2; } RIV.push(cx); }
+for (let x = RIV[20] - 2; x <= RIV[20] + 2; x++) { M[22][x] = 3; M[21][x] = 3; } // 木桥
+for (let y = 26; y < 36; y++) for (let x = 50; x < 64; x++) if (M[y][x] === 0 && ((x - 57) / 7) ** 2 + ((y - 31) / 5) ** 2 < 1) M[y][x] = 4; // 营地泥地
+// 摆件
+const PROPS = []; const isF = (x, y) => M[y] && (M[y][x] === 0 || M[y][x] === 4);
+for (let i = 0; i < 26; i++) { const x = 3 + (rnd() * (MW - 6)) | 0, y = 3 + (rnd() * (MH - 6)) | 0; if (isF(x, y) && isF(x + 1, y) && M[y][x] !== 4 && !(Math.abs(x - 14) < 3 && Math.abs(y - 30) < 3)) PROPS.push({ k: 'rock', x: x * T + 8, y: y * T + 12, s: rnd() < .3 ? 2 : 1, solid: 1 }); }
+for (let i = 0; i < 40; i++) { const x = 3 + (rnd() * (MW - 6)) | 0, y = 3 + (rnd() * (MH - 6)) | 0; if (isF(x, y)) PROPS.push({ k: rnd() < .5 ? 'mush' : 'bone', x: x * T + 8, y: y * T + 10 }); }
+const CAMP = { x: 57 * T, y: 31 * T }; PROPS.push({ k: 'fire', x: CAMP.x, y: CAMP.y });
+[[-60, -30], [55, -34], [-50, 40], [62, 30]].forEach(([dx, dy]) => PROPS.push({ k: 'tent', x: CAMP.x + dx, y: CAMP.y + dy, solid: 1, f: dx > 0 }));
+PROPS.push({ k: 'totem', x: CAMP.x + 4, y: CAMP.y - 62, solid: 1 }); PROPS.push({ k: 'crate', x: CAMP.x - 92, y: CAMP.y + 4, solid: 1 }); PROPS.push({ k: 'crate', x: CAMP.x - 80, y: CAMP.y + 16, solid: 1 });
+for (let y = 3; y < MH - 3; y++) for (let x = 3; x < MW - 3; x++) if (M[y][x] === 1 && isF(x, y + 1) && rnd() < .05) PROPS.push({ k: 'torch', x: x * T + 8, y: y * T + 14, wall: 1 });
+// 哥布林（营地里闲着 / 河边巡逻）
+const GOBS = [['gob_shield', -24, 10], ['goblin', 20, 14], ['gob_archer', 30, -10], ['goblin', -8, -18], ['gob_wolf', 90, 0], ['gob_shaman', -30, 22]].map(([s, dx, dy]) => ({ s, x: CAMP.x + dx, y: CAMP.y + dy, hx: CAMP.x + dx, hy: CAMP.y + dy, t: rnd() * 9 }));
+GOBS.push({ s: 'goblin', x: 36 * T, y: 30 * T, hx: 36 * T, hy: 30 * T, t: 0, pat: 1 }, { s: 'gob_archer', x: 28 * T, y: 12 * T, hx: 28 * T, hy: 12 * T, t: 3, pat: 1 });
+
+// ---------- 把地形预渲染成一张原生分辨率的底图（16px/格），之后整数倍放大 ----------
+const base = document.createElement('canvas'); base.width = MW * T; base.height = MH * T; const b = base.getContext('2d');
+function px(c, x, y, w = 1, h = 1) { b.fillStyle = c; b.fillRect(x, y, w, h); }
+const FLOOR = ['#4a3b2c', '#463829', '#4f3f2f'], MUD = ['#5b4630', '#614b33', '#57422d'];
+for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const v = M[y][x], X = x * T, Y = y * T;
+  if (v === 0 || v === 4 || v === 3) { const P = v === 4 ? MUD : FLOOR; px(P[(x * 7 + y * 3) % 3], X, Y, T, T); for (let i = 0; i < 6; i++) px(rnd() < .5 ? '#3d3024' : '#5a4834', X + (rnd() * T | 0), Y + (rnd() * T | 0), rnd() < .3 ? 2 : 1, 1); if (rnd() < .15) { px('#3a2e22', X + 3, Y + 5, 5, 1); px('#3a2e22', X + 8, Y + 6, 4, 1); } }
+  if (v === 1) { const open = isF(x, y + 1); px('#231b14', X, Y, T, T); for (let i = 0; i < 5; i++) px('#2d2219', X + (rnd() * 14 | 0), Y + (rnd() * 14 | 0), 3, 2);
+    if (open) { px('#3a2d20', X, Y + 6, T, 10); px('#4a3a29', X, Y + 6, T, 2); for (let i = 0; i < 4; i++) px('#2a2017', X + (rnd() * 14 | 0), Y + 9 + (rnd() * 5 | 0), 2, 1); px('#18120c', X, Y + 15, T, 1); } } }
+// 水边岸线
+for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) if (M[y][x] === 2) { for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (isF(x + dx, y + dy)) { const X = (x + dx) * T, Y = (y + dy) * T; if (dx === 1) px('#6a5a44', X, Y, 2, T); if (dx === -1) px('#6a5a44', X + T - 2, Y, 2, T); if (dy === 1) px('#6a5a44', X, Y, T, 2); if (dy === -1) px('#2e241a', X, Y + T - 2, T, 2); } }
+// 桥
+for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) if (M[y][x] === 3) { const X = x * T, Y = y * T; for (let i = 0; i < T; i += 4) { px('#8a6238', X + i, Y, 3, T); px('#6a4a28', X + i + 3, Y, 1, T); } px('#4a321b', X, Y, T, 1); if (y === 21) px('#a37a48', X, Y, T, 2); }
+
+// ---------- 摆件像素画（原生 16px 体系）----------
+function spr(w, h, f) { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); f((col, a, b, ww = 1, hh = 1) => { x.fillStyle = col; x.fillRect(a, b, ww, hh); }); return c; }
+const ROCK = [spr(20, 16, p => { p('#1a140e', 2, 13, 17, 3); p('#6b6358', 2, 4, 16, 10); p('#827a6e', 4, 2, 11, 6); p('#9a9285', 6, 3, 5, 2); p('#504a42', 3, 11, 15, 2); p('#3e3a34', 13, 6, 4, 6); }),
+  spr(36, 28, p => { p('#1a140e', 3, 24, 32, 4); p('#5e574d', 2, 8, 32, 17); p('#7a7266', 5, 3, 24, 11); p('#958c7e', 9, 4, 10, 4); p('#47423b', 4, 20, 29, 4); p('#3e3a34', 24, 9, 8, 12); p('#4f6a3a', 6, 3, 6, 2); p('#5d7c44', 8, 2, 3, 1); })];
+const MUSH = spr(8, 8, p => { p('#e8dcc0', 3, 4, 2, 4); p('#b8462e', 1, 1, 6, 3); p('#e87a5a', 2, 1, 2, 1); p('#fff', 5, 2, 1, 1); }), BONE = spr(10, 6, p => { p('#d8ccb0', 1, 2, 8, 2); p('#ece2ca', 0, 1, 2, 2); p('#ece2ca', 8, 3, 2, 2); });
+const TENT = spr(44, 36, p => { for (let i = 0; i < 26; i++) { p('#7a5a34', 22 - i * .8 | 0, 6 + i, (i * 1.6 | 0) + 1, 1); p('#946c3e', 22 - i * .8 | 0, 6 + i, (i * .5 | 0) + 1, 1); } p('#2a1a10', 18, 22, 8, 10); p('#3a2614', 19, 23, 6, 9); p('#5a3a1c', 21, 2, 2, 6); p('#c84a3a', 23, 2, 6, 3); p('#1a120a', 4, 32, 38, 2); for (let i = 0; i < 5; i++) p('#d8ccb0', 10 + i * 6, 31, 2, 1); });
+const TOTEM = spr(16, 34, p => { p('#5a3a1c', 6, 8, 4, 24); p('#1a120a', 3, 31, 10, 3); p('#ece2ca', 3, 1, 10, 8); p('#1a120a', 5, 4, 2, 2); p('#1a120a', 9, 4, 2, 2); p('#ece2ca', 1, 0, 2, 3); p('#ece2ca', 13, 0, 2, 3); p('#b8462e', 6, 12, 4, 2); p('#5d7c44', 6, 16, 4, 2); });
+const CRATE = spr(16, 14, p => { p('#1a120a', 0, 12, 16, 2); p('#8a6238', 0, 1, 16, 11); p('#6a4a28', 0, 1, 16, 1); p('#6a4a28', 0, 6, 16, 1); p('#6a4a28', 1, 1, 1, 11); p('#6a4a28', 14, 1, 1, 11); p('#a37a48', 2, 2, 12, 1); });
+const IMG = k => Object.assign(new Image(), { src: k }), FIREB = IMG('art/camp/fire_base.png'), TORCH = IMG('art/fx/map/torch.webp');
+
+// ---------- 主角 ----------
+const hero = { x: 14 * T, y: 30 * T, f: 1, mv: 0 }, K = {}; let joy = null, full = 0;
+addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'KeyM') full = !full; }); addEventListener('keyup', e => K[e.code] = 0);
+addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (t.clientX < innerWidth / 2) joy = { id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0 }; else full = !full; }, { passive: false });
+addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy && t.identifier === joy.id) { joy.dx = t.clientX - joy.x; joy.dy = t.clientY - joy.y; } e.preventDefault(); }, { passive: false });
+addEventListener('touchend', () => joy = null);
+const solidAt = (wx, wy) => { const x = wx / T | 0, y = wy / T | 0, v = M[y] && M[y][x]; if (v === 1 || v === 2 || v === undefined) return 1; return PROPS.some(p => p.solid && Math.abs(p.x - wx) < (p.k === 'tent' ? 18 : p.s === 2 ? 15 : 8) && wy - p.y < 3 && p.y - wy < (p.k === 'tent' ? 12 : 7)); };
+function stepHero(dt) { let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0); if (joy && Math.hypot(joy.dx, joy.dy) > 8) { x = joy.dx; y = joy.dy; } const l = Math.hypot(x, y); hero.mv = l > 0;
+  if (!l) return; x /= l; y /= l; const sp = 70 * dt; if (x) hero.f = x > 0 ? 1 : -1; if (!solidAt(hero.x + x * sp, hero.y)) hero.x += x * sp; if (!solidAt(hero.x, hero.y + y * sp)) hero.y += y * sp; }
+// ---------- 画 ----------
+let cam = { x: hero.x, y: hero.y }, last = 0, TT = 0;
+function frameOf(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(TT * sp) % c) : S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
+function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; TT += dt; requestAnimationFrame(loop); stepHero(dt);
+  for (const o of GOBS) { o.t += dt; if (o.pat) { o.x = o.hx + Math.sin(o.t * .5) * 40; o.f = Math.cos(o.t * .5) > 0 ? 1 : -1; } }
+  const zoom = full ? Math.min(VW / (MW * T), VH / (MH * T)) : PX;   // 整图预览时缩小看全图（这时会糊，正常玩只用 2 倍）
+  const vw = VW / zoom, vh = VH / zoom; cam.x += (hero.x - cam.x) * Math.min(1, dt * 6); cam.y += (hero.y - cam.y) * Math.min(1, dt * 6);
+  let cx = full ? MW * T / 2 : Math.max(vw / 2, Math.min(MW * T - vw / 2, cam.x)), cy = full ? MH * T / 2 : Math.max(vh / 2, Math.min(MH * T - vh / 2, cam.y));
+  const ox = Math.round((VW / 2 - cx * zoom)), oy = Math.round((VH / 2 - cy * zoom));
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0c0a08'; g.fillRect(0, 0, VW, VH); g.imageSmoothingEnabled = false;
+  g.setTransform(zoom, 0, 0, zoom, ox, oy);
+  g.drawImage(base, 0, 0);
+  // 流水动画：在水格上画移动的亮纹
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) if (M[y][x] === 2) { const X = x * T, Y = y * T; g.fillStyle = '#24526a'; g.fillRect(X, Y, T, T); g.fillStyle = '#2f6a86'; for (let i = 0; i < 3; i++) { const yy = (Y + ((TT * 22 + i * 6 + x * 5) % T)) | 0; g.fillRect(X + ((i * 5 + y) % 12), Math.min(Y + T - 1, yy), 4, 1); } g.fillStyle = '#7ab8d0'; if (((x * 13 + y * 7 + (TT * 3 | 0)) % 9) === 0) g.fillRect(X + 6, Y + ((TT * 30 + x * 3) % T | 0), 2, 1); }
+  // 按 y 排序画摆件、哥布林、勇者
+  const L = PROPS.map(p => ({ y: p.wall ? p.y - 999 : p.y, p })).concat(GOBS.map(o => ({ y: o.y, o })), [{ y: hero.y, h: 1 }]).sort((a, b) => a.y - b.y);
+  for (const e of L) { if (e.p) { const p = e.p; if (p.k === 'rock') { const R = ROCK[p.s - 1]; g.drawImage(R, Math.round(p.x - R.width / 2), Math.round(p.y - R.height + 3)); }
+      if (p.k === 'mush') g.drawImage(MUSH, p.x - 4, p.y - 8); if (p.k === 'bone') g.drawImage(BONE, p.x - 5, p.y - 4); if (p.k === 'totem') g.drawImage(TOTEM, p.x - 8, p.y - 33); if (p.k === 'crate') g.drawImage(CRATE, p.x - 8, p.y - 13);
+      if (p.k === 'tent') { g.save(); if (p.f) { g.translate(p.x * 2, 0); g.scale(-1, 1); } g.drawImage(TENT, p.x - 22, p.y - 34); g.restore(); }
+      if (p.k === 'fire' && FIREB.complete) { const w = 40, h = w * FIREB.naturalHeight / FIREB.naturalWidth; g.drawImage(FIREB, p.x - w * .55, p.y - h * .7, w, h);
+        if (TORCH.complete) { const fi = Math.floor(TT * 10) % 8, fw = TORCH.naturalWidth / 8; g.drawImage(TORCH, fi * fw, 0, fw, TORCH.naturalHeight, p.x - 11, p.y - 34, 22, 30); } }
+      if (p.k === 'torch') { g.fillStyle = '#5a3a1c'; g.fillRect(p.x - 1, p.y - 8, 2, 7); if (TORCH.complete) { const fi = Math.floor(TT * 10 + p.x) % 8, fw = TORCH.naturalWidth / 8; g.drawImage(TORCH, fi * fw, 0, fw, TORCH.naturalHeight, p.x - 5, p.y - 22, 10, 14); } } }
+    else if (e.o) { const o = e.o, nm = frameOf(o.s, o.pat ? 'walk' : 'idle', o.pat ? 9 : 2); if (nm) SPR.draw(g, o.s, nm, 0, o.x, o.y, (o.f || (hero.x < o.x ? -1 : 1)) < 0, 1); }
+    else { const hs = SPR.heroSet && SPR.heroSet('m'), nm = hs && (hero.mv ? frameOf(hs, 'run', 12) || frameOf(hs, 'walk', 10) : frameOf(hs, 'idle', 2)); if (nm) SPR.drawHero(g, nm, 0, hero.x, hero.y, hero.f < 0, 1); else { g.fillStyle = '#fff'; g.fillRect(hero.x - 4, hero.y - 12, 8, 12); } } }
+  // 光照：营地篝火、火把一圈暖光，其余压暗
+  g.setTransform(1, 0, 0, 1, 0, 0); const lc = document.createElement('canvas'); lc.width = VW; lc.height = VH; const l = lc.getContext('2d'); l.fillStyle = 'rgba(8,6,12,.55)'; l.fillRect(0, 0, VW, VH); l.globalCompositeOperation = 'destination-out';
+  const hole = (x, y, r) => { const X = x * zoom + ox, Y = y * zoom + oy, R = r * zoom * (1 + Math.sin(TT * 8 + x) * .03), gr = l.createRadialGradient(X, Y, 0, X, Y, R); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); l.fillStyle = gr; l.beginPath(); l.arc(X, Y, R, 0, 7); l.fill(); };
+  hole(hero.x, hero.y - 8, 110); hole(CAMP.x, CAMP.y - 10, 150); for (const p of PROPS) if (p.k === 'torch') hole(p.x, p.y - 14, 60);
+  g.drawImage(lc, 0, 0); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .12; g.fillStyle = '#ff9a40'; g.beginPath(); g.arc(CAMP.x * zoom + ox, (CAMP.y - 10) * zoom + oy, 90 * zoom, 0, 7); g.fill(); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  drawMini(); }
+const mini = document.getElementById('mini'), mg = mini.getContext('2d'); mini.width = MW * 2; mini.height = MH * 2; mini.style.width = MW * 2 + 'px';
+function drawMini() { mg.drawImage(base, 0, 0, MW * 2, MH * 2); mg.fillStyle = '#24526a'; for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) if (M[y][x] === 2) mg.fillRect(x * 2, y * 2, 2, 2); mg.fillStyle = '#f84'; mg.fillRect(CAMP.x / T * 2 - 2, CAMP.y / T * 2 - 2, 4, 4); mg.fillStyle = '#fff'; mg.fillRect(hero.x / T * 2 - 1, hero.y / T * 2 - 1, 3, 3);
+  mg.strokeStyle = 'rgba(255,255,255,.5)'; mg.strokeRect((cam.x - VW / PX / 2) / T * 2, (cam.y - VH / PX / 2) / T * 2, VW / PX / T * 2, VH / PX / T * 2); }
+Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
+</script></body></html>
