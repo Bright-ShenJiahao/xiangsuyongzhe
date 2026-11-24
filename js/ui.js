@@ -44,7 +44,7 @@
   const pinHash = async (name, pin) => { if (!pin) return ''; try { const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xsyz|' + name + '|' + pin)); return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (e) { return pin; } };
   // 11/24 存档：点一下或拖进游戏机 = 插入卡带。已经输了名字就直接进；还没输就停在「已插入」，输完按 Enter
   let slotIns = null;
-  function slotPick() { $('slotT').textContent = '选择存档'; $('sErr').textContent = ''; $('sErr').className = 'slotErr'; const cw = $('sCon').parentNode; cw.classList.remove('on'); cw.querySelectorAll('.slotClip').forEach(x => x.remove()); slotIns = null; const row = $('slotRow'); row.innerHTML = '';
+  function slotPick() { $('slotT').textContent = '选择存档'; $('sErr').textContent = ''; $('sErr').className = 'slotErr'; const cw = $('sCon').parentNode; cw.classList.remove('on'); cw.querySelectorAll('.slotClip').forEach(x => x.remove()); slotIns = null; $('sOk').hidden = true; $('sHint').hidden = false; const row = $('slotRow'); row.innerHTML = '';
     for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'cart'; b.dataset.n = n;
       const T = has && DATA.titles.find(t => t.id === I.title), best = I.best >= 99 ? '通关' : I.best ? '第' + I.best + '站' : '—';
       b.innerHTML = `<div class="cbody"><img src="art/ui2/save/${has ? 'cart_gold' : 'cart'}.png" alt="" draggable="false"><div class="lab">${has ? `<canvas class="av" data-h="${I.hero}" data-w="${I.weapon}"></canvas><b>${I.name.replace(/[<>&]/g, '')}</b><span>${T ? '「' + T.name + '」' : '无称号'}</span>` : '<span class="no">空存档</span>'}</div>${has && I.run ? '<i class="rled"></i>' : ''}</div><span class="tag">存档${n}${has ? `　💎${I.cry}　最远${best}` : ''}</span>${has && I.run ? `<span class="tag run">▶ 第${I.runSt}站 · 剩${I.runLife}命</span>` : ''}${has ? '<span class="del">删除</span>' : ''}`;
@@ -66,7 +66,7 @@
     const clip = document.createElement('div'); clip.className = 'slotClip'; const body = b.querySelector('.cbody').cloneNode(true); copyCv(b, body); body.classList.add('ins'); body.style.width = '46%'; clip.appendChild(body); cw.appendChild(clip);
     b.style.visibility = 'hidden'; slotIns = { n, has, b }; void body.offsetWidth; setTimeout(() => body.classList.add('in'), 20);
     setTimeout(() => { cw.classList.add('on', 'bump'); try { SFX.play('pick'); } catch (e) {} setTimeout(() => cw.classList.remove('bump'), 160);
-      if ($('sName').value.trim()) slotGo(); else { const e = $('sErr'); e.className = 'slotErr ok'; e.textContent = `已插入存档 ${n}，输入名字后按 Enter`; $('sName').focus(); } }, 520); }
+      const e = $('sErr'), named = !!$('sName').value.trim(); e.className = 'slotErr ok'; e.textContent = named ? `已插入存档 ${n}` : `已插入存档 ${n}，请输入${has ? '这个存档的' : '勇者的'}名字`; $('sOk').hidden = false; $('sHint').hidden = true; (named ? $('sOk') : $('sName')).focus(); }, 520); }   // 11/24 插入后不自动进：点「开始游戏」/ Enter / 电源确认
   let goBusy = 0;
   async function slotGo() { if (!slotIns || goBusy) return; const { n, has } = slotIns, name = $('sName').value.trim().replace(/[<>&"'`\\]/g, ''), pin = $('sPin').value.trim(), err = t => { $('sErr').className = 'slotErr'; $('sErr').textContent = t; $('sName').focus(); };
     if (!name) return err('先输入勇者的名字');
@@ -76,7 +76,8 @@
       if (!has) { SLOT.wipe(n); store.set('name', name); store.set('pin', h); return tvOff(() => openPrep(true)); }
       if (!localStorage.getItem('xsyz-s' + n + '-name')) store.set('name', name);
       tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; mapFall(() => { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, drop: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); }); } else { openPrep(true); startBattle(build()); } }); }); }, 450); }
-  for (const id of ['sName', 'sPin']) $(id).onkeydown = e => { if (e.key === 'Enter') { if (slotIns) slotGo(); else { $('sErr').className = 'slotErr ok'; $('sErr').textContent = '点一个存档，或者把它拖进游戏机'; } } };
+  for (const id of ['sName', 'sPin']) $(id).onkeydown = e => { if (e.key === 'Enter') { if (slotIns) slotGo(); else { $('sErr').className = 'slotErr ok'; $('sErr').textContent = '先点一个存档，或者把它拖进游戏机'; } } };
+  $('sOk').onclick = () => slotGo(); $('sCon').onclick = () => { if (slotIns) slotGo(); };
   $('slotX').onclick = () => overlay('slotScr', false);
   $('bStart').onclick = () => slotPick();   // 11/24 只留「进入游戏」：旧卡带=直接开始，空卡带=起名字从零开始
   const contShow = () => { $('bCont').hidden = true; $('bStart').querySelector('span').textContent = '进入游戏'; };
