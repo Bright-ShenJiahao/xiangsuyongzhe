@@ -1252,3 +1252,12 @@ body.tvbg { background: #000; }
 .sbtn.gold { color: #ffd77a; background: #2a200a; box-shadow: 0 -2px 0 0 #ffd77a, 0 2px 0 0 #ffd77a, -2px 0 0 0 #ffd77a, 2px 0 0 0 #ffd77a; }
 .slotErr { font-size: 14px; color: #ff7a5a; }
 .cart .lab canvas.av { width: clamp(28px, 4.4vw, 42px); height: clamp(28px, 4.4vw, 42px); border: 0; background: none; image-rendering: pixelated; }   /* 11/24 存档：小人 */
+/* 11/24 存档标签重排：小人 + 名字/称号；数字挪到卡带下面；全部像素字 */
+#slotScr .cart, #slotScr .cart * { font-family: FPixel, monospace !important; -webkit-font-smoothing: none; }
+.cart .lab { flex-direction: row !important; gap: 4px !important; padding: 0 4px; box-sizing: border-box; }
+.cart .lab canvas.av { flex: none; width: clamp(30px, 4.8vw, 46px) !important; height: clamp(30px, 4.8vw, 46px) !important; }
+.cart .lab .lt { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; gap: 2px; }
+.cart .lab .lt b { font-size: clamp(11px, 1.6vw, 15px) !important; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cart .lab .lt span { font-size: clamp(9px, 1.15vw, 11px) !important; color: #7a5a30 !important; white-space: nowrap; }
+.cart .tag { font-size: clamp(10px, 1.3vw, 12px) !important; white-space: nowrap; } .cart .tag.run { color: #ff9a7a; margin-top: 0; }
+.slotRow { align-items: flex-start; }
