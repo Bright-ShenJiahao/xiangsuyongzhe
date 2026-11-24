@@ -8,6 +8,16 @@ window.DATA = {
     bow: { name: '弓', skill: '疾矢', icon: 'bow', type: 'agi', desc: '远程直线箭，射最近的敌人，能穿过一个。', cd: .55, dmg: 4, range: 153, pierce: 1 },
     staff: { name: '法杖', skill: '火球术', icon: 'fire', type: 'int', desc: '砸向远处的敌群，落地炸开一圈。', cd: 1.5, dmg: 9, range: 135, boom: 30 },
   },
+  // 11/25 装备（先搭界面；属性加成待定）。slot：two=双格武器占满主手+副手；off 副手；其余各一格
+  gearSlots: { helm: '头盔', armor: '铠甲', belt: '腰带', boots: '鞋子', acc: '配饰' },
+  gear: {
+    shield: { name: '木盾', slot: 'off', tag: '副手', g: '盾' },
+    helm: { name: '皮盔', slot: 'helm', tag: '头盔', g: '盔' },
+    armor: { name: '皮甲', slot: 'armor', tag: '铠甲', img: 'art/ui2/heavy_armor.png' },
+    belt: { name: '皮带', slot: 'belt', tag: '腰带', g: '带' },
+    boots: { name: '皮靴', slot: 'boots', tag: '鞋子', img: 'art/ui2/boots.png' },
+    ring: { name: '铜戒', slot: 'acc', tag: '配饰', g: '戒' },
+  },
   // 属性：开局各 3 点，另有 5 点自由分配（备战页）
   attrs: [
     { id: 'str', name: '力量', desc: '剑、枪招式伤害 +6%、物防 +1、物理暴击伤害 +2% / 点' },
