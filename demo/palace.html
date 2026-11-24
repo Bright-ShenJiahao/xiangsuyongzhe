@@ -2,10 +2,21 @@
 <html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>局外 · 宫殿据点灰盒</title>
 <style>
-@font-face { font-family: WenKai; src: url(art/font/kai.woff2?v=4); }
+@font-face { font-family: WenKai; src: url(art/font/kai.woff2?v=5); }
 #bub { position: fixed; z-index: 7; display: none; transform: translate(-50%, -100%); background: rgba(250,244,230,.96); border: 3px solid #3a2814; color: #3a2814; font: clamp(15px, 2vw, 22px) WenKai, serif; padding: 4px 12px; white-space: nowrap; pointer-events: none; }
 #bub::after { content: ''; position: absolute; left: 50%; top: 100%; width: 10px; height: 8px; margin-left: -5px; background: #3a2814; }
 #panel, #panel * { font-family: WenKai, serif; }
+#panel .sec { margin: 12px 0 6px; color: #c8a15a; font-size: 14px; } #panel .note { font-size: 13px; color: #c8b890; margin: 6px 0; } #panel .warn { color: #ff9a7a; margin: 4px 0 8px; }
+#panel .bkg { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; }
+#panel .bkb { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px !important; background: #3a2814; border: 2px solid #6b4a2b; color: #f3e6c8; cursor: pointer; }
+#panel .bkb.own { border-color: #ffd77a; background: #5a3e1e; } #panel .bkb[disabled] { opacity: .45; cursor: default; } #panel .bkb.own[disabled] { opacity: 1; }
+#panel .bkb b { font-size: 12px; } #panel .bkb small { font-size: 11px; color: #a89878; } #panel img.bk { width: 40px; height: 40px; image-rendering: pixelated; }
+#panel .q { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #8a6a44; border: 2px dashed #6b4a2b; box-sizing: border-box; }
+#panel .pslots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } #panel .pslot { display: flex; gap: 8px; align-items: center; text-align: left; padding: 8px !important; background: #3a2814; border: 2px solid #6b4a2b; color: #f3e6c8; cursor: pointer; }
+#panel .pslot.on { border-color: #ffd77a; box-shadow: 0 0 10px rgba(255,215,122,.4); } #panel .pslot.lk { border-style: dashed; } #panel .pslot b { display: block; color: #ffd77a; font-size: 14px; } #panel .pslot span { display: block; font-size: 13px; } #panel .pslot small { color: #a89878; font-size: 11px; }
+#panel .pslots.lock .pslot { opacity: .5; } #panel .ttl { display: flex; flex-wrap: wrap; gap: 6px; } #panel .ttl button { padding: 4px 10px !important; } #panel .ttl button.on { border-color: #ffd77a; color: #ffd77a; }
+#panel .more { margin-top: 12px; } #panel .drw { display: flex; gap: 8px; } #panel .drw button { flex: 1; display: flex; flex-direction: column; padding: 8px !important; } #panel .drw small { color: #a89878; }
+#panel .reel { display: flex; justify-content: center; padding: 20px 0; } #panel .reel .win { width: 140px; height: 110px; border: 3px solid #ffd77a; background: #1a0e06; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; } #panel .reel img.bk { width: 56px; height: 56px; }
 html,body{margin:0;height:100%;background:#0c0908;overflow:hidden;touch-action:none;color:#f3e6c8;font:14px system-ui,sans-serif;user-select:none}
 canvas{display:block}
 #hud{position:fixed;left:8px;top:8px;pointer-events:none;text-shadow:0 1px 2px #000;line-height:1.5}
@@ -36,10 +47,10 @@ const PORT = { p: IM('art/portrait/p.webp'), mage: IM('art/npc/mage_face.png'), 
 const RUN_ON = (() => { try { return new URLSearchParams(location.search).has('game') && !!localStorage.getItem('pxyz.save1'); } catch (e) { return false; } })(), QS = new URLSearchParams(location.search), GAME = QS.has('game'), HS = QS.get('h') === 'f' ? 'f' : 'm';
 const LS = { get: k => { try { return localStorage.getItem('xsyz-' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('xsyz-' + k, v); } catch (e) {} } };
 let crystal = GAME ? +LS.get('crystal') || 0 : 120, owned = GAME ? (() => { try { return JSON.parse(LS.get('meta') || '{}'); } catch (e) { return {}; } })() : {};
-const SOON = new Set(['book', 'spin', 'step']);   // 这几项效果还没接进游戏
+const SOON = new Set(['step']);   // 这几项效果还没接进游戏
 const UP = {
   p: [['life', '续命', '每局多 1 条命（基础 2 条）', [60, 140]], ['hp', '生命', '最大生命 +5%', [20, 35, 55, 80, 110]], ['rev', '复活', '用命复活时多回 20% 生命', [50]]],
-  m: [['book', '开局技能书', '开局多选一次技能书', [70]], ['xp', '突破', '技能书升级所需经验 −5%', [30, 50, 80]], ['spin', '再抽一次', '老虎机每站免费重转 1 次', [60]]],
+  m: [['xp', '突破', '技能书升级所需经验 −5%', [30, 50, 80]]],
   s: [['roll3', '三格翻滚', '开局就有 3 格翻滚', [90]], ['step', '身法', '开局随机带 1 个身法', [70]], ['eva', '闪避', '基础闪避 +1%', [25, 45, 70]]],
   c: [['coin', '开局铜钱', '开局铜钱 +20', [20, 40, 60]], ['disc', '折扣', '局内商店价格 −5%', [50]], ['ex', '兑换', '局内商人用铜钱换水晶的汇率更好', [40]]],
 };
@@ -68,17 +79,51 @@ function panel(n) { $('pt').textContent = n.upName + `　（水晶 ${crystal}）
   for (const [id, name, desc, cost] of UP[n.up]) { const lv = owned[id] || 0, max = cost.length, c = cost[lv], d = document.createElement('div'); d.className = 'up';
     d.innerHTML = `<div><b>${name}</b> ${'●'.repeat(lv)}${'○'.repeat(max - lv)}<small>${desc}</small></div>`; const b = document.createElement('button'); b.textContent = lv >= max ? '已满' : `💎 ${c}`; b.disabled = lv >= max || crystal < c;
     if (SOON.has(id)) { b.textContent = '即将开放'; b.disabled = true; } b.onclick = () => { crystal -= c; owned[id] = lv + 1; if (GAME) { LS.set('crystal', crystal); LS.set('meta', JSON.stringify(owned)); } panel(n); }; d.appendChild(b); L.appendChild(d); }
+  if (n.id === 'm') mageShop(L, n);
   $('panel').style.display = 'flex'; }
 $('pc').onclick = () => $('panel').style.display = 'none';
+// 11/24 王国书库（买断）：初阶 = 局内见过才能指定买；中阶 / 高阶 = 从该品级全部书里抽（抽到没见过的顺便解锁，重复退一半）；宗师不卖
+const START = Object.values(DATA.weapons).map(w => Object.keys(DATA.skills).find(k => DATA.skills[k].name === w.skill)).filter(Boolean);
+const LIB = () => { let a = []; try { a = JSON.parse(LS.get('lib') || '[]'); } catch (e) {} return [...new Set(START.concat(a))]; };
+const libAdd = id => { const a = LIB().filter(x => !START.includes(x)); if (!a.includes(id)) a.push(id); LS.set('lib', JSON.stringify(a)); try { SEEN.add('s:' + id); } catch (e) {} };
+const spend = c => { crystal -= c; if (GAME) LS.set('crystal', crystal); };
+const bkIc = (id, cls = '') => `<img class="bk ${cls}" src="art/ui2/sk/${id}.png" alt="">`;
+const DRAW = { 2: 60, 3: 110 };
+function mageShop(L, n) { const h = document.createElement('div'); h.className = 'sec'; h.textContent = '书库 · 初阶（局内拿到过才能买）'; L.appendChild(h); const g = document.createElement('div'); g.className = 'bkg'; L.appendChild(g); const lib = LIB();
+  for (const [id, S] of Object.entries(DATA.skills)) { if (S.tier !== 1) continue; const own = lib.includes(id), seen = SEEN.has('s:' + id), b = document.createElement('button'); b.className = 'bkb' + (own ? ' own' : '');
+    b.innerHTML = seen || own ? `${bkIc(id)}<b>${S.name}</b><small>${own ? '已拥有' : '💎 30'}</small>` : `<span class="q">？</span><b>？？？</b><small>还没见过</small>`; b.disabled = own || !seen || crystal < 30;
+    b.onclick = () => { spend(30); libAdd(id); panel(n); }; g.appendChild(b); }
+  const h2 = document.createElement('div'); h2.className = 'sec'; h2.textContent = '抽书 · 中阶 / 高阶（抽到没见过的书会顺便解锁；已经有的退一半水晶）'; L.appendChild(h2); const r = document.createElement('div'); r.className = 'drw'; L.appendChild(r);
+  for (const t of [2, 3]) { const pool = Object.keys(DATA.skills).filter(k => DATA.skills[k].tier === t), have = pool.filter(k => lib.includes(k)).length, b = document.createElement('button');
+    b.innerHTML = `<b>${DATA.tierName[t]}一抽</b><small>💎 ${DRAW[t]}　已有 ${have} / ${pool.length}</small>`; b.disabled = crystal < DRAW[t] || have >= pool.length;
+    b.onclick = () => { spend(DRAW[t]); const id = pool[Math.random() * pool.length | 0], dup = lib.includes(id); drawAnim(pool, id, () => { if (dup) { crystal += DRAW[t] >> 1; if (GAME) LS.set('crystal', crystal); } else libAdd(id); msg = dup ? `抽到「${DATA.skills[id].name}」——已经有了，退还 ${DRAW[t] >> 1} 水晶` : `抽到「${DATA.skills[id].name}」！放进书库了`; msgT = 2.5; panel(n); }); }; r.appendChild(b); } }
+function drawAnim(pool, id, done) { const L = $('pl'); L.innerHTML = '<div class="reel"><div class="win"></div></div><p class="sec" style="text-align:center">大法师翻着书架……</p>'; const w = L.querySelector('.win'); let k = 0, t = 60;
+  const step = () => { const x = k++ < 18 ? pool[Math.random() * pool.length | 0] : id; w.innerHTML = bkIc(x) + `<b>${DATA.skills[x].name}</b>`; if (k <= 18) { t *= 1.12; setTimeout(step, t); } else setTimeout(done, 700); }; step(); }
 // 11/24 出发准备（公主）：换起手技能书、称号；一局没打完时不能换
 
-function prep() { const L = $('pl'); $('pt').textContent = '出发准备'; L.innerHTML = ''; const sec = (t) => { const h = document.createElement('div'); h.style.cssText = 'margin:8px 0 4px;color:#ffd77a'; h.textContent = t; L.appendChild(h); const r = document.createElement('div'); r.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px'; L.appendChild(r); return r; };
-  const W = LS.get('weapon') || 'sword', r1 = sec('起手技能书'); for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.textContent = (id === W ? '✔ ' : '') + w.name + '·' + w.skill; b.onclick = () => { LS.set('weapon', id); prep(); }; r1.appendChild(b); }
-  let own = []; try { own = JSON.parse(LS.get('titles') || '[]'); } catch (e) {} const T = LS.get('title') || '', r2 = sec('称号（佩戴 1 个）');
-  const tb = (id, name, lock) => { const b = document.createElement('button'); b.textContent = (id === T ? '✔ ' : '') + (lock ? '？？？' : name); b.disabled = lock; b.onclick = () => { LS.set('title', id); prep(); }; r2.appendChild(b); };
-  tb('', '不佩戴'); for (const t of DATA.titles) tb(t.id, t.name, !own.includes(t.id));
-  const TT = DATA.titles.find(t => t.id === T); if (TT) { const d = document.createElement('p'); d.innerHTML = TT.d; d.style.fontSize = '13px'; L.appendChild(d); }
-  { const b = document.createElement('button'); b.textContent = '公主的祝福（强化）▶'; b.style.marginTop = '10px'; b.onclick = () => panel(NPC[0]); L.appendChild(b); }
+let PSEL = 1;
+function prep() { const L = $('pl'); $('pt').textContent = `出发准备　（水晶 ${crystal}）`; L.innerHTML = ''; const lock = RUN_ON, lib = LIB(), u2 = !!owned.slot2;
+  const b1 = LS.get('book1') || START.find(k => DATA.skills[k].w === (LS.get('weapon') || 'sword')) || START[0], b2 = u2 ? LS.get('book2') || '' : '';
+  if (lock) { const p = document.createElement('p'); p.className = 'warn'; p.textContent = '这一局还没打完，开局技能书和称号要等这局打完才能换。'; L.appendChild(p); }
+  const sec = t => { const h = document.createElement('div'); h.className = 'sec'; h.textContent = t; L.appendChild(h); };
+  sec('开局技能栏'); const row = document.createElement('div'); row.className = 'pslots' + (lock ? ' lock' : ''); L.appendChild(row);
+  const slot = (k, id, title, sub) => { const d = document.createElement('button'); d.className = 'pslot' + (PSEL === k && !lock ? ' on' : ''); d.disabled = lock; const S = DATA.skills[id];
+    d.innerHTML = (S ? bkIc(id) : '<span class="q">空</span>') + `<div><b>${title}</b><span>${S ? S.name + '　' + S.sys + ' · ' + DATA.tierName[S.tier] : '（空着）'}</span><small>${sub}</small></div>`; d.onclick = () => { PSEL = k; prep(); }; row.appendChild(d); };
+  slot(1, b1, '第 1 格', '起手书，或书库里的书');
+  if (u2) slot(2, b2, '第 2 格', '书库里的书，可以空着');
+  else { const d = document.createElement('button'); d.className = 'pslot lk'; d.disabled = lock || crystal < 100; d.innerHTML = `<span class="q">🔒</span><div><b>第 2 格（未解锁）</b><span>开局多带一本书</span><small>💎 100 解锁</small></div>`; d.onclick = () => { spend(100); owned.slot2 = 1; if (GAME) LS.set('meta', JSON.stringify(owned)); PSEL = 2; prep(); }; row.appendChild(d); }
+  { const n = {}; for (const id of [b1, b2]) if (DATA.skills[id]) n[DATA.skills[id].sys] = (n[DATA.skills[id].sys] || 0) + 1; const p = document.createElement('p'); p.className = 'note'; p.textContent = '羁绊预览：' + (Object.entries(n).map(([k, v]) => `${k} ${v}/2${v >= 2 ? '（生效：' + DATA.sets[k][0][2] + '）' : ''}`).join('　') || '无'); L.appendChild(p); }
+  if (!lock) { sec(PSEL === 1 ? '选第 1 格的书' : '选第 2 格的书（书库）'); const g = document.createElement('div'); g.className = 'bkg'; L.appendChild(g);
+    const pick = (id, txt) => { const S = DATA.skills[id], b = document.createElement('button'), cur = (PSEL === 1 ? b1 : b2) === id, other = (PSEL === 1 ? b2 : b1) === id; b.className = 'bkb' + (cur ? ' own' : ''); b.disabled = other;
+      b.innerHTML = S ? `${bkIc(id)}<b>${S.name}</b><small>${other ? '另一格在用' : S.sys + ' · ' + DATA.tierName[S.tier]}</small>` : `<span class="q">空</span><b>${txt}</b><small>不带</small>`;
+      b.onclick = () => { if (PSEL === 1) { LS.set('book1', id); LS.set('weapon', S.w || 'sword'); } else LS.set('book2', id); prep(); }; g.appendChild(b); };
+    if (PSEL === 2) pick('', '空着'); for (const id of lib) pick(id);
+    for (const [id, S] of Object.entries(DATA.skills)) if (!lib.includes(id) && S.tier < 4) { const b = document.createElement('button'); b.className = 'bkb'; b.disabled = true; b.innerHTML = `<span class="q">？</span><b>${SEEN.has('s:' + id) ? S.name : '？？？'}</b><small>找大法师</small>`; g.appendChild(b); } }
+  sec('称号（佩戴 1 个）'); let ownT = []; try { ownT = JSON.parse(LS.get('titles') || '[]'); } catch (e) {} const T = LS.get('title') || '', tr = document.createElement('div'); tr.className = 'ttl'; L.appendChild(tr);
+  const tb = (id, name, lk) => { const b = document.createElement('button'); b.className = id === T ? 'on' : ''; b.textContent = lk ? '？？？' : name; b.disabled = lk || lock; b.onclick = () => { LS.set('title', id); prep(); }; tr.appendChild(b); };
+  tb('', '不佩戴'); for (const t of DATA.titles) tb(t.id, t.name, !ownT.includes(t.id));
+  const TT = DATA.titles.find(t => t.id === T); if (TT) { const d = document.createElement('p'); d.className = 'note'; d.innerHTML = TT.d.replace(/<br>/g, '　'); L.appendChild(d); }
+  { const b = document.createElement('button'); b.className = 'more'; b.textContent = '公主的祝福（强化）▶'; b.onclick = () => panel(NPC[0]); L.appendChild(b); }
   $('panel').style.display = 'flex'; }
 function updAct() { $('act').style.display = 'none'; return; const a = $('act'); a.innerHTML = ''; if (!near) { a.style.display = 'none'; return; } a.style.display = 'flex';
   const mk = (t, k) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => act(near, k); a.appendChild(b); };
@@ -97,7 +142,7 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
   // 11/24 靠近 NPC：自动说一句；站在旁边转满一圈（2 秒）自动打开功能界面；离开再回来才会再开
   { const open = $('panel').style.display === 'flex'; let nb = null, bd = 120; for (const o of NPC) { const d = Math.hypot(o.x - hero.x, (o.y - hero.y) * 1.4); if (d < bd) { bd = d; nb = o; } }
     if (nb !== near) { if (near) { near.ring = 0; near.done = 0; } near = nb; if (nb && T - (nb.spT || -99) > 7) { nb.spT = T; nb.li = ((nb.li == null ? -1 : nb.li) + 1) % nb.lines.length; say(nb, nb.lines[nb.li]); } }
-    if (near && !open && !near.done && (near.up || near.id === 'p')) { near.ring = (near.ring || 0) + dt / 2; if (near.ring >= 1) { near.done = 1; near.ring = 0; if (near.id === 'p' && GAME && !RUN_ON) prep(); else if (near.up) panel(near); } } }
+    if (near && !open && !near.done && (near.up || near.id === 'p')) { near.ring = (near.ring || 0) + dt / 2; if (near.ring >= 1) { near.done = 1; near.ring = 0; if (near.id === 'p' && GAME) prep(); else if (near.up) panel(near); } } }
   cam.x += (Math.max(Math.min(hero.x, W - VW / Z / 2), VW / Z / 2) - cam.x) * .1; if (VW / Z >= W) cam.x = W / 2; cam.y += (Math.max(Math.min(hero.y - 60, H - VH / Z / 2), VH / Z / 2) - cam.y) * .1;
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0c0908'; g.fillRect(0, 0, VW, VH); g.setTransform(Z, 0, 0, Z, Math.round(VW / 2 - cam.x * Z), Math.round(VH / 2 - cam.y * Z));
   if (BG.complete && BG.naturalWidth) { g.imageSmoothingEnabled = Z < 1; g.imageSmoothingQuality = 'high'; g.drawImage(BG, 0, 0); g.imageSmoothingEnabled = false;   /* 11/24 不放大，只缩小（高质量），人物一律最近邻 */ } else { g.fillStyle = '#5a4c42'; g.fillRect(0, 0, W, H); }

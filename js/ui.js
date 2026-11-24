@@ -167,7 +167,7 @@
   const P = { hero: 'm', weapon: 'sword', free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
   const attrsOf = () => { const o = {}; for (const a of DATA.attrs) o[a.id] = DATA.attrBase + (P.free[a.id] || 0); return o; };
   const used = () => Object.values(P.free).reduce((s, v) => s + v, 0);
-  const build = () => ({ title: store.get('title') || null, hero: P.hero, weapon: P.weapon, attrs: attrsOf(), item: P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
+  const build = () => ({ book1: store.get('book1') || null, book2: store.get('book2') || null, title: store.get('title') || null, hero: P.hero, weapon: P.weapon, attrs: attrsOf(), item: P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
   function openPrep(fresh) {
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
       const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.hero = store.get('hero') === 'f' ? 'f' : 'm';
