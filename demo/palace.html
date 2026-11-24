@@ -49,10 +49,16 @@ const LS = { get: k => { try { return localStorage.getItem('xsyz-' + k); } catch
 let crystal = GAME ? +LS.get('crystal') || 0 : 120, owned = GAME ? (() => { try { return JSON.parse(LS.get('meta') || '{}'); } catch (e) { return {}; } })() : {};
 const SOON = new Set(['step']);   // 这几项效果还没接进游戏
 const UP = {
-  p: [['life', '续命', '每局多 1 条命（基础 2 条）', [60, 140]], ['hp', '生命', '最大生命 +5%', [20, 35, 55, 80, 110]], ['rev', '复活', '用命复活时多回 20% 生命', [50]]],
+  p: [['life', '续命', '每局多 1 条命（基础 2 条）', [60, 140]], ['hp', '生命', '最大生命 +5%', [20, 35, 55, 80, 110]], ['rev', '复活', '用命复活时多回 20% 生命', [50]],
+    ['shield', '护盾', '开局带护盾，吸收最大生命 8% 的伤害', [40, 70, 110]], ['iron', '铁壁', '受到伤害 −3%', [40, 60, 90, 130]], ['aid', '战地急救', '每打完一站，回复最大生命 4%', [40, 70, 100]], ['grit', '韧性', '被打中后的无敌时间 +0.1 秒', [40, 70, 110]],
+    ['a_str', '力量', '开局力量 +1', [30, 60]], ['a_agi', '敏捷', '开局敏捷 +1', [30, 60]], ['a_int', '智力', '开局智力 +1', [30, 60]], ['a_con', '体魄', '开局体魄 +1', [30, 60]], ['a_end', '耐力', '开局耐力 +1', [30, 60]],
+    ['gift', '开局宝物', '出发准备里可以选 1 个初阶宝物带上', [90]]],
   m: [['xp', '突破', '技能书升级所需经验 −5%', [30, 50, 80]]],
-  s: [['roll3', '三格翻滚', '开局就有 3 格翻滚', [90]], ['step', '身法', '开局随机带 1 个身法', [70]], ['eva', '闪避', '基础闪避 +1%', [25, 45, 70]]],
-  c: [['coin', '开局铜钱', '开局铜钱 +20', [20, 40, 60]], ['disc', '折扣', '局内商店价格 −5%', [50]], ['ex', '兑换', '局内商人用铜钱换水晶的汇率更好', [40]]],
+  s: [['roll3', '三格翻滚', '开局就有 3 格翻滚', [90]], ['step', '身法', '开局随机带 1 个身法', [70]], ['eva', '闪避', '基础闪避 +1%', [25, 45, 70]],
+    ['pow', '力道', '基础伤害 +3%', [30, 45, 65, 90, 120]], ['cdm', '暴击伤害', '暴击伤害 +8%', [40, 60, 90, 130]], ['hunt', '猎手', '对精英和首领伤害 +4%', [35, 55, 80, 110]], ['first', '先手', '每站第一次攻击伤害 +30%', [30, 50, 80]],
+    ['crit', '暴击率', '暴击率 +1%', [30, 50, 75, 110]], ['spd', '移速', '移动速度 +2%', [25, 45, 70]], ['area', '范围', '技能范围 +3%', [30, 50, 80]]],
+  c: [['coin', '开局铜钱', '开局铜钱 +20', [20, 40, 60]], ['disc', '折扣', '局内商店价格 −5%', [50]], ['ex', '兑换', '局内商人用铜钱换水晶的汇率更好', [40]],
+    ['shelf', '货架', '局内商店多 1 个格子', [80]], ['drop', '掉落率', '掉落率 +3%', [30, 50, 75, 100]], ['reroll', '重投', '每局多 1 次重投（商店和修炼）', [40, 80]], ['chest', '宝箱', '宝箱多 1 个选项', [120]], ['xpg', '经验', '经验获取 +3%', [25, 40, 60, 90]]],
 };
 const NPC = [
   { id: 'p', name: '露米娜', x: 235, y: 330, kind: 'princess', av: PORT.p, lines: ['你回来了。时空门就在我身边，准备好了就出发吧。', '王座……父王走后，一直空着。'], up: 'p', upName: '公主的祝福' },
@@ -123,6 +129,9 @@ function prep() { const L = $('pl'); $('pt').textContent = `出发准备　（�
       b.onclick = () => { if (PSEL === 1) { LS.set('book1', id); LS.set('weapon', S.w || 'sword'); } else LS.set('book2', id); prep(); }; g.appendChild(b); };
     if (PSEL === 2) pick('', '空着'); for (const id of lib) pick(id);
     { const left = Object.values(DATA.skills).filter(S => S.tier < 4).length - lib.length; if (left > 0) { const p = document.createElement('p'); p.className = 'note'; p.textContent = `书库里还缺 ${left} 本——找大法师买或抽。`; L.appendChild(p); } } }
+  if (owned.gift) { sec('开局宝物（初阶，带 1 个）'); const gr = document.createElement('div'); gr.className = 'bkg'; L.appendChild(gr); const cur = LS.get('item') || '';
+    const gb = (id, name, sub) => { const b = document.createElement('button'), I = DATA.startItems.find(x => x.id === id); b.className = 'bkb' + (cur === id ? ' own' : ''); b.disabled = lock; b.innerHTML = (I ? `<img src="art/ui2/${id}.png" width="40" height="40" style="object-fit:contain" onerror="this.outerHTML='<span class=q>${I.icon || '?'}</span>'">` : '<span class="q">空</span>') + `<b>${name}</b><small>${sub}</small>`; b.onclick = () => { LS.set('item', id); prep(); }; gr.appendChild(b); };
+    gb('', '不带', ''); for (const I of DATA.startItems) if (DATA.itemTier(I) === 1) gb(I.id, I.name, (I.desc || '').slice(0, 14)); }
   sec('称号（佩戴 1 个）'); let ownT = []; try { ownT = JSON.parse(LS.get('titles') || '[]'); } catch (e) {} const T = LS.get('title') || '', tr = document.createElement('div'); tr.className = 'ttl'; L.appendChild(tr);
   const tb = (id, name, lk) => { const b = document.createElement('button'); b.className = id === T ? 'on' : ''; b.textContent = lk ? '？？？' : name; b.disabled = lk || lock; b.onclick = () => { LS.set('title', id); prep(); }; tr.appendChild(b); };
   tb('', '不佩戴'); for (const t of DATA.titles) tb(t.id, t.name, !ownT.includes(t.id));

@@ -17,6 +17,7 @@ window.DATA = {
     { id: 'end', name: '耐力', desc: '物防 +4、魔防 +4 / 点' },   // 11/21 用户加：耐力管两种防御
   ],
   attrBase: 3, attrFree: 5,
+  itemTier: it => { const p = (it && it.price) || 0; return p <= 26 ? 1 : p <= 36 ? 2 : p <= 44 ? 3 : 4; },   /* 11/25 宝物分级：按价格 24-26 初阶 / 30-36 进阶 / 38-44 高阶 / 46 顶阶 */
   // 11/23 誓约印记：普通 8 + 身法 6。v = Lv1 数值，等级倍率 oathLv；同名合并升级，最高 Lv5
   oathLv: [1, 1.4, 1.7, 1.9, 2.0],
   oaths: {

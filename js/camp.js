@@ -1,7 +1,7 @@
 // 像素勇者 · 波间结算页（照三国终章的整备屏：结算 / 拾取 / 修炼 / 行商 / 技能）+ 暂停时的备战页。
 // 技能搭配：点一个格子选中，再点另一个格子就交换；背包里的技能书点技能格就装上，同一招的书装到同一招上 = 升一级。
 (() => {
-  const $ = id => document.getElementById(id), B = () => BATTLE, R = () => BATTLE.run();
+  const $ = id => document.getElementById(id), B = () => BATTLE, R = () => BATTLE.run(), MLm = id => { try { return JSON.parse(localStorage.getItem('xsyz-meta') || '{}')[id] || 0; } catch (e) { return 0; } };   /* 11/25 局外强化等级 */
   const SK = DATA.skills, ITEM = id => DATA.startItems.find(i => i.id === id), USE = id => DATA.consumables.find(i => i.id === id);
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const coinTxt = n => `<span class="cn">${UI.piH('coin', 1)} ${n}</span>`;
@@ -232,7 +232,7 @@
       body.insertAdjacentHTML('beforeend', rep.pickOne ? '<p class="dim center">只能选一本，选了另外两本就消失</p>' : '<p class="dim center">没处理的战利品，出发时自动卖掉换铜钱</p>');
     } else if (tab === 'xiu') {
       if (!r.xiu) { body.innerHTML = '<p class="dim center">暂无修炼机会<br><small>打怪攒经验，每升一级得一次修炼</small></p>'; return; }
-      const fx = B().hero().fx, nOpt = 3 + (fx.xiuOpt || 0), rrMax = Math.max(0, 2 + (fx.xiuReroll || 0));
+      const fx = B().hero().fx, nOpt = 3 + (fx.xiuOpt || 0), rrMax = Math.max(0, 2 + (fx.xiuReroll || 0) + MLm('reroll'));
       if (!r.xopt) r.xopt = rollXiu(nOpt);
       body.insertAdjacentHTML('beforeend', `<p class="dim center">还有 ${r.xiu} 次修炼机会 · 三选一</p>`);
       const g = document.createElement('div'); g.className = 'cards' + (rep.field ? ' shelf' : ''); body.appendChild(g);
@@ -251,8 +251,8 @@
         else btnTo(d, rep.field ? `<span class="pc"></span>${UI.pxNum(price, '#3a2410', 0)}` : `买 ${UI.piH('coin', 1)}${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'cry') { B().addCrystal(o.n); toast(`水晶 +${o.n}`); } else if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; r.coins -= price; o.sold = true; render(); }, true);
         g.appendChild(d); });
       // 刷新：4 + 2 ×（站 − 1）+ 3 × 已刷次数，每次结算最多刷 4 次
-      const [c0, c1, c2] = DATA.price.refresh, cost = (fx.freeRoll && !r.rr) ? 0 : Math.round((c0 + c1 * (rep.st - 1) + c2 * r.rr) * (1 + (fx.reroll || 0))), left = DATA.price.refreshMax - r.rr;
-      const w = document.createElement('div'); w.className = 'center'; const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} ${rep.field ? '翻一翻货架' : '刷新货架'} ${UI.piH('coin', 1)}${cost} <small>(${left}/${DATA.price.refreshMax})</small>`; rb.disabled = left <= 0;
+      const [c0, c1, c2] = DATA.price.refresh, cost = (fx.freeRoll && !r.rr) ? 0 : Math.round((c0 + c1 * (rep.st - 1) + c2 * r.rr) * (1 + (fx.reroll || 0))), left = DATA.price.refreshMax + MLm('reroll') - r.rr;
+      const w = document.createElement('div'); w.className = 'center'; const rb = document.createElement('button'); rb.className = 'btn mini'; rb.innerHTML = `${UI.piH('reroll', 1)} ${rep.field ? '翻一翻货架' : '刷新货架'} ${UI.piH('coin', 1)}${cost} <small>(${left}/${DATA.price.refreshMax + MLm('reroll')})</small>`; rb.disabled = left <= 0;
       rb.onclick = () => { if (r.coins < cost) return toast('铜钱不够'); r.coins -= cost; r.rr++; r.shop = rollShop(); render(); }; w.appendChild(rb); body.appendChild(w);
     } else if (tab === 'ji') loadout(body);
     else if (tab === 'shu') attrPanel(body);
@@ -269,7 +269,7 @@
   }
   function rollShop() {
     // 货架：3 件宝物 + 2 本书（新书 22，已有的升 Lv2 34，再往上 52）。开技能格改成在「技能」页点锁
-    const r = R(), P = DATA.price, items = shuffle(DATA.itemPool(r)).slice(0, 3).map(i => ({ kind: 'item', id: i.id, price: i.price || 25 }));
+    const r = R(), P = DATA.price, items = shuffle(DATA.itemPool(r)).slice(0, 3 + MLm('shelf')).map(i => ({ kind: 'item', id: i.id, price: i.price || 25 }));
     const lvOf = id => { const h = r.slots.find(s => s && s.id === id) || r.bag.find(b => b && b.kind === 'book' && b.id === id); return h ? h.lv : 0; };
     const own = new Set(Object.keys(SK).filter(id => lvOf(id) || loot.some(o => o.kind === 'book' && o.id === id))), pool = DATA.bookPool(own, rep.st), books = [];   // 已经有的书不再出；按品阶抽，价格 22 / 34 / 52
     while (books.length < 2 && pool.length) { const id = pool[Math.random() * pool.length | 0]; if (!books.some(b => b.id === id)) books.push({ kind: 'book', id, lv: 1, xp: 0, price: DATA.tierPrice[SK[id].tier] }); if (pool.every(i => books.some(b => b.id === i))) break; }

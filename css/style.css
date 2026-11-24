@@ -1331,3 +1331,6 @@ button:focus-visible { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,215
 .attrlo .lol .arow { padding: 4px 6px !important; min-height: 0 !important; row-gap: 0 !important; } .attrlo .lol .arow small { font-size: 12px !important; line-height: 1.25 !important; } .attrlo .lol .arow b { font-size: 17px !important; } .attrlo .lol .arow em { font-size: 20px !important; }
 .attrlo .lol h4 { margin: 0 0 2px !important; } .attrlo .lol .dim { margin: 2px 0 0 !important; font-size: 12px !important; line-height: 1.3; }
 .attrlo .lor .stats.big { row-gap: 0 !important; font-size: 13px !important; line-height: 1.5; } .attrlo .lor h5 { margin: 3px 0 0 !important; font-size: 13px !important; } .attrlo .lor h4 { font-size: 17px !important; }
+
+/* 11/25 图鉴·宝物分级：图标框按品阶上色（和技能书同一套：灰 / 蓝 / 紫 / 橙） */
+.cxi.t1 .ic { outline: 2px solid #9a9080; outline-offset: -2px; } .cxi.t2 .ic { outline: 2px solid #5aa8ff; outline-offset: -2px; } .cxi.t3 .ic { outline: 2px solid #c07aff; outline-offset: -2px; } .cxi.t4 .ic { outline: 2px solid #ffb347; outline-offset: -2px; box-shadow: 0 0 8px #ffb34788; }

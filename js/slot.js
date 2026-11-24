@@ -1,6 +1,6 @@
 // 11/24 存档位（3 个）：按存档位区分的键自动加前缀 xsyz-s{N}-，其他代码照常读写 localStorage 就行
 (function () {
-  const PER = ['xsyz-crystal', 'xsyz-meta', 'xsyz-titles', 'xsyz-title', 'xsyz-rec', 'xsyz-linesSeen', 'xsyz-returns', 'xsyz-wins', 'xsyz-hero', 'xsyz-weapon', 'xsyz-introSeen', 'xsyz-name', 'xsyz-pin', 'xsyz-seen', 'xsyz-lib', 'xsyz-book1', 'xsyz-book2', 'xsyz-eggs', 'xsyz-bonusCoin', 'pxyz.save1'];
+  const PER = ['xsyz-crystal', 'xsyz-meta', 'xsyz-titles', 'xsyz-title', 'xsyz-rec', 'xsyz-linesSeen', 'xsyz-returns', 'xsyz-wins', 'xsyz-hero', 'xsyz-weapon', 'xsyz-introSeen', 'xsyz-name', 'xsyz-pin', 'xsyz-seen', 'xsyz-lib', 'xsyz-book1', 'xsyz-book2', 'xsyz-eggs', 'xsyz-item', 'xsyz-bonusCoin', 'pxyz.save1'];
   const P = Storage.prototype, g0 = P.getItem, s0 = P.setItem, r0 = P.removeItem;
   let cur = +(g0.call(localStorage, 'xsyz-slot') || 0) || 1;   // 没选过就当存档 1（调试「直接开打」也记进存档 1）
   const map = k => cur && PER.includes(k) ? 'xsyz-s' + cur + '-' + k.replace(/^xsyz-|^pxyz\./, '') : k;

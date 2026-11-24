@@ -31,7 +31,7 @@
   function start(o) { if (cv) cv.classList.remove('dead'); if (G) { G.deadR = null; G.dust = 0; }
     opt = o; MAP = DATA.maps.find(m => m.id === (o.map || 'field')); SPR.setGrade(MAP.grade); MAPW = MAP.w || 1672; MAPH = MAP.h || 941; fit();
     MIMG = new Image(); MIMG.crossOrigin = 'anonymous'; MIMG.src = MAP.img;
-    const b = o.build || { weapon: o.weapon || 'sword' }, A0 = {}; for (const a of DATA.attrs) A0[a.id] = DATA.attrBase;
+    const b = o.build || { weapon: o.weapon || 'sword' }, A0 = {}; for (const a of DATA.attrs) A0[a.id] = DATA.attrBase + ML('a_' + a.id);   /* 11/25 局外属性点 */
     // st = 第几站（1–8，9 = 首领站），wi = 这一站第几波（0–2），route = 这一站是从哪张卡进来的
     G = { t: 0, kills: 0, boss: null, bossOut: false, over: null, overT: 0, shake: 0, hitStop: 0, paused: false, xp: 0, lv: 1, god: false, banner: null,
       st: 1, wi: -1, route: 'fight', waveOn: false, wave: 0 };
@@ -52,7 +52,7 @@
       boom: (x, y, r) => fx.push({ k: 'boom', x, y, t: 0, T: .45, r }), slash: z => { for (let i = 0; i < 5; i++) parts.push({ x: z.x, y: z.y - 14 * K, vx: R(-60, 60) * K, vy: R(-60, 0) * K, t: 0, T: .3, col: '#fff', g: 0 }); } });
     ESK.reset();
     if (o.resume) { const S = o.resume; Object.assign(RUN, JSON.parse(JSON.stringify(S.RUN))); Object.assign(G, S.G); RUN.lives = Math.max(RUN.lives || 2, 2 + ML('life')); recompute(); hero.hp = Math.max(1, Math.round(hero.maxHp * Math.min(1, o.cont ? Math.max(S.hp || 1, .6) + .2 * ML('rev') : (S.hp || 1)))); }   // 续关：至少 60% 血，复活强化再 +20%
-    nextWave(); if (!o.resume || o.drop) { G.drop = { t: 0 }; SFX.play('fall'); }   // 11/24 新开一局：勇者从森林上空掉下来
+    nextWave(); if (!o.resume || o.drop) { G.drop = { t: 0 }; SFX.play('fall'); } if (!o.resume && ML('shield')) hero.mShield = Math.round(hero.maxHp * .08 * ML('shield'));   /* 11/25 开局护盾 */   // 11/24 新开一局：勇者从森林上空掉下来
   }
   // 11/23 存档：每站开打时自动存（勇者状态 + 本局全部构筑）；通关或败北时删掉
   const SAVE = 'pxyz.save1';
@@ -79,6 +79,7 @@
       if (F.dmg) m.dmg *= 1 + F.dmg; if (hero.fx) for (const k of ['sspd_bow', 'srng_bow', 'sdmg_staff']) if (F[k]) hero.fx[k] = (hero.fx[k] || 0) + F[k];
       const pd = (c.pdef || 0) + (F.pdef || 0), md = (c.mdef || 0) + (F.mdef || 0); hero.pIn = 1 - Math.min(.5, pd / (pd + 100)); hero.mIn = 1 - Math.min(.5, md / (md + 100)); }
     hero.rollN0 = 2 + (OB('erduan') ? 1 : 0) + (ML('roll3') ? 1 : 0); if (hero.rollN == null || hero.rollN > hero.rollN0) hero.rollN = hero.rollN0; hero.eva += .01 * ML('eva') + (TT().eva || 0); hero.critP += TT().crit || 0; hero.critM += TT().crit || 0; m.move *= 1 + (TT().move || 0); if (hero.fx) hero.fx.coinMul = (hero.fx.coinMul || 0) + (TT().coin || 0); if (TT().take) { hero.pIn *= 1 + TT().take; hero.mIn *= 1 + TT().take; } if (hero.fx && ML('disc')) hero.fx.shop = (hero.fx.shop || 0) - .05 * ML('disc');   // 局外：三格翻滚、闪避
+    m.dmg *= 1 + .03 * ML('pow'); hero.critMulP += .08 * ML('cdm'); hero.critMulM += .08 * ML('cdm'); hero.critP += .01 * ML('crit'); hero.critM += .01 * ML('crit'); m.move *= 1 + .02 * ML('spd'); m.area *= 1 + .03 * ML('area'); hero.xpMul *= 1 + .03 * ML('xpg'); if (ML('iron')) { hero.pIn *= 1 - .03 * ML('iron'); hero.mIn *= 1 - .03 * ML('iron'); }   /* 11/25 局外强化：力道/暴击伤害/暴击率/移速/范围/经验/铁壁 */
     const max = Math.round((c.hp + 3 * (G.lv - 1)) * (1 - (RUN.hpCut || 0)) * (1 + .05 * ML('hp')) * (1 + ((hero.setF || {}).hp || 0)) * (1 + (TT().hp || 0))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
     return c;
   }
@@ -172,7 +173,8 @@
     if (z.eShield > 0 && d > 0) { const a = Math.min(z.eShield, d); z.eShield -= a; d -= a; if (!d) { nums.push({ x: z.x, y: z.y - 40 * K, txt: '盾', t: 0, col: '#ffe08a' }); return; } }   // 11/24 圣骑士护盾
     if (z.dead || z.flee) return;
     const S = sid && DATA.skills[sid], dt = o.dt || (S && S.dt) || 'phys', T = z.T;
-    const def = dt === 'magic' ? (T.mdef || 0) : (T.pdef || 0) * (z.tier ? 1.5 : 1); d *= 1 - Math.min(.6, def / (def + 100));   // 怪物防御：和勇者同一公式，最多减 60%
+    const def = dt === 'magic' ? (T.mdef || 0) : (T.pdef || 0) * (z.tier ? 1.5 : 1); d *= 1 - Math.min(.6, def / (def + 100));   /* 怪物防御：和勇者同一公式，最多减 60% */
+    if (ML('hunt') && (T.boss || z.tier)) d *= 1 + .04 * ML('hunt'); if (G.firstArm) { G.firstArm = false; if (ML('first')) d *= 1 + .3 * ML('first'); }   /* 11/25 猎手 / 先手 */
     if (T.res === 'iron' && dt === 'phys') d *= .5; else if (T.res === 'spirit') d *= dt === 'phys' ? .5 : 1.25; else if (T.res === 'magic' && dt === 'magic') d *= .5;   // 11/22 体质
     if (z.shieldHp > 0 && from && (from.x - z.x) * z.f > 0 && !(z.cc)) { d *= .3; if (--z.shieldHp <= 0) { z.noShield = true; z.st = 'hurt'; z.t = -.25; z.brk = .45; nums.push({ x: z.x, y: z.y - 40 * K, txt: '盾碎了！', t: 0, col: '#ffcf6a' }); } else for (let i = 0; i < 3; i++) parts.push({ x: z.x + z.f * 10 * K, y: z.y - 16 * K, vx: z.f * R(10, 50) * K, vy: R(-50, -10) * K, t: 0, T: .3, col: '#fff2a0', g: 120 * K }); }   // 盾兵正面挡 70%，挡够次数盾碎
     if (z.curseT > 0) d *= 1.15; if (z.vulnN && z.vulnT > 0) d *= 1 + .05 * z.vulnN; if (z.cc && z.cc.k === 'air' && z.airVuln) d *= 1.3;
@@ -193,8 +195,8 @@
   }
   function kill(z) {
     z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; if (z.tier === 'elite') RUN.elites = (RUN.elites || 0) + 1; G.wk++; G.combo = (G.combo || 0) + 1; G.comboT = 3; G.maxCombo = Math.max(G.maxCombo || 0, G.combo); G.bestCombo = Math.max(G.bestCombo || 0, G.combo); if (G.combo >= 30 && OB('lianzhan')) hero.lzT = 6; if (OB('pozhu') && Math.random() < .04 * OB('pozhu')) hero.instant = 1; if (z.tier === 'elite' && OB('tulong')) healHero(hero.maxHp * .05 * OB('tulong'));
-    { const c = z.T.boss ? 15 : z.tier === 'elite' ? (Math.random() < .6 ? 3 : 0) : z.tier === 'mini' ? (Math.random() < .3 ? 2 : 0) : Math.random() < .02 ? 1 : 0; addCrystal(c, z.x, z.y); }   // 11/24 水晶：小怪随机、精英大概率、首领必掉
-    { const E = DATA.econ, v = z.tier === 'elite' ? E.elite : z.tier === 'mini' ? E.mini : Math.random() < (1 + .05 * (RUN.luck || 0)) / E.perKills ? 1 : 0;   // 11/23 铜钱掉在地上，要走过去捡
+    { const c = z.T.boss ? 15 : z.tier === 'elite' ? (Math.random() < .6 ? 3 : 0) : z.tier === 'mini' ? (Math.random() < .3 ? 2 : 0) : Math.random() < .02 * (1 + .03 * ML('drop')) ? 1 : 0; addCrystal(c, z.x, z.y); }   // 11/24 水晶：小怪随机、精英大概率、首领必掉
+    { const E = DATA.econ, v = z.tier === 'elite' ? E.elite : z.tier === 'mini' ? E.mini : Math.random() < (1 + .05 * (RUN.luck || 0)) * (1 + .03 * ML('drop')) / E.perKills ? 1 : 0;   // 11/23 铜钱掉在地上，要走过去捡
       if (v && !z.T.boss) G.gc.push({ x: z.x, y: z.y, v, t: 0, h: 0, vh: 90, vx: R(-20, 20) * K }); }
     if (z.tier === 'elite') { G.wElite++; G.gi.push({ kind: 'book', x: z.x, y: z.y, t: 0 }); }   // 固定精英掉书，路线精英掉宝物
     if (z.tier === 'mini') { G.wMini++; G.gi.push({ kind: 'item', x: z.x, y: z.y, t: 0 }); }
@@ -214,7 +216,8 @@
     if (hero.rShield) { hero.rShield = 0; hero.inv = .3; nums.push({ x: hero.x, y: hero.y - 44 * K, txt: '护盾抵挡', t: 0, col: '#9fdcff' }); return; }
     if (Math.random() < (hero.eva || 0) + (hero.cyT > 0 ? .15 * OB('canying') : 0)) { nums.push({ x: hero.x, y: hero.y - 44 * K, txt: 'MISS', t: 0, col: '#ffffff' }); return; }   // 11/24 闪避
     if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; }   // 残影步：下一次受击减伤
-    d *= dtype === 'magic' ? hero.mIn : hero.pIn; { const now = G.t; hero.hitBy = (hero.hitBy || []).filter(h => now - h.t < 1); const src = damageHero.src; if (src && !hero.hitBy.some(h => h.z === src)) hero.hitBy.push({ z: src, t: now }); d *= 1 + .25 * Math.max(0, hero.hitBy.length - 1); }   /* 11/23 被围：1 秒内每多一只不同的怪打到 +25% */ if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); hero.hp -= d; G.taken = (G.taken || 0) + d; hero.inv = .45; hero.hurtT = .25; { const big = d >= hero.maxHp * .15; if (big) G.shake = Math.max(G.shake, .25); UI.FX.hit(big); } nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
+    d *= dtype === 'magic' ? hero.mIn : hero.pIn; { const now = G.t; hero.hitBy = (hero.hitBy || []).filter(h => now - h.t < 1); const src = damageHero.src; if (src && !hero.hitBy.some(h => h.z === src)) hero.hitBy.push({ z: src, t: now }); d *= 1 + .25 * Math.max(0, hero.hitBy.length - 1); }   /* 11/23 被围：1 秒内每多一只不同的怪打到 +25% */ if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); if (hero.mShield > 0 && d > 0) { const ab = Math.min(hero.mShield, d); hero.mShield -= ab; d -= ab; nums.push({ x: hero.x, y: hero.y - 52 * K, txt: '护盾', t: 0, col: '#9fdcff' }); }   /* 开局护盾 */
+    hero.hp -= d; G.taken = (G.taken || 0) + d; hero.inv = .45 + .1 * ML('grit');   /* 韧性 */ hero.hurtT = .25; { const big = d >= hero.maxHp * .15; if (big) G.shake = Math.max(G.shake, .25); UI.FX.hit(big); } nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
     SFX.play("hurt");
     if (hero.hp <= 0 && RUN.save) { RUN.save = false; hero.hp = hero.maxHp * .5; hero.inv = 2; banner('复活羽毛燃尽了！', 1.6); return; }
     if (hero.hp <= 0) { { const k = damageHero.src; G.killer = k && k.type; G.killerElite = !!(k && k.tier); }   // 11/24 记下被谁打死（塔顶台词用）
@@ -376,7 +379,7 @@
   function nextWave() {   // 进下一站（第 1 段）；站打完 → 路线卡
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();
-    G.wi = -1; Object.assign(G, { wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], stT: 0, thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
+    G.wi = -1; Object.assign(G, { firstArm: true, wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], stT: 0, thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
     if (G.st > 1 && (RUN.cryStn || 1) < G.st) { RUN.cryStn = G.st; addCrystal(2 + G.st, hero.x, hero.y); } saveRun();   /* 每站只给一次，续关 / 重进不重复给 */ nextPhase(); banner(G.W.boss ? '首领战！' : `第 ${G.st} 站`, 1.6); G.paused = false;
   }
   // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
@@ -730,7 +733,7 @@
   function randBook(minTier) { const all = DATA.bookPool(ownBooks(), Math.max(G.st, minTier >= 3 ? 4 : 1), minTier >= 3); const f = all.filter(id => DATA.skills[id].tier >= (minTier || 1)); const L = f.length ? f : all; return L[Math.random() * L.length | 0]; }
   function doRest(k) {
     const back = () => { G.paused = false; showRoute(true); }, base = { st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], after: back, goText: '回到路线 ▶' };
-    if (k === 'chest') { const L = []; for (let i = 0; i < 3; i++) { const id = randBook(); if (id && !L.some(o => o.id === id)) L.push({ kind: 'book', id }); } return CAMP.open(Object.assign(base, { title: '宝箱 · 三本书选一本', tab: 'shi', loot: L, pickOne: true })); }
+    if (k === 'chest') { const L = []; for (let i = 0; i < 3 + ML('chest'); i++) { const id = randBook(); if (id && !L.some(o => o.id === id)) L.push({ kind: 'book', id }); } return CAMP.open(Object.assign(base, { title: '宝箱 · 三本书选一本', tab: 'shi', loot: L, pickOne: true })); }
     if (k === 'fire') { healHero(hero.maxHp * .5); RUN.xiu++; RUN.xopt = null; RUN.xrr = 0; return CAMP.open(Object.assign(base, { title: '篝火 · 回复 50% 生命，修炼一次', tab: 'xiu' })); }
     if (k === 'shop') { RUN.shop = null; RUN.rr = 0; return CAMP.open(Object.assign(base, { title: '地精特价商店 · 全部八折', tab: 'shang', disc: .8 })); }
     const used = RUN.evUsed || (RUN.evUsed = []), L = DATA.events.filter(e => !used.includes(e.id)), E = (L.length ? L : DATA.events)[Math.random() * (L.length || DATA.events.length) | 0]; used.push(E.id);
@@ -1071,7 +1074,7 @@
     debug: { rest(k) { if (G.fe) fieldRest(k); }, ev(id) { const f = G.fe; if (!f) return; RUN.evUsed = DATA.events.map(e => e.id).filter(x => x !== id); f.doors = []; fieldRest('event'); }, oath(id) { const ks = Object.keys(DATA.oaths); CAMP.learn({ kind: 'oath', id: id || ks[Math.random() * ks.length | 0] }); }, tp(fx, fy) { hero.x = MAPW * fx; hero.y = MAPH * fy; cam.snap = true; }, book() { G.gi.push({ kind: 'book', x: hero.x + 30 * K, y: hero.y, t: 0 }, { kind: 'item', x: hero.x + 9 * K, y: hero.y, t: 0 }); }, coin() { for (let i = 0; i < 6; i++) G.gc.push({ x: hero.x + R(60, 120) * K, y: hero.y + R(-20, 20) * K, v: 2, t: 11, h: 0, vh: 0, vx: 0 }); },   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）
       // 本段胜利：清场，进下一段（第 1 站第 2 段之后会触发公主）；已经是最后一段就结算这一站
       wave: () => { if (!G || G.endT != null || !G.waveOn || G.pr) return; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z));
-        if (G.wi < STN().waves.length - 1 && !STN().waves[G.wi + 1].boss) { G.wt = G.T; return; } G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; liveTitles(); },
+        if (G.wi < STN().waves.length - 1 && !STN().waves[G.wi + 1].boss) { G.wt = G.T; return; } G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; liveTitles(); if (ML('aid')) { healHero(hero.maxHp * .04 * ML('aid')); UI.feed('战地急救：回复了一些生命'); } },
       rest: k => G && G.fe && fieldRest(k),
       station: () => { if (!G || G.endT != null || !G.waveOn) return; const n = STN().waves.length; G.wi = STN().waves[n - 1].boss ? n - 2 : n - 1; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z)); G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; },
       boss: () => G && (foes.forEach(z => !z.dead && kill(z)), G.st = DATA.stations.length, G.wi = 1, nextWave()), god: () => G && (G.god = !G.god), clear: () => G && (G.q = [], warns.length = 0, foes.forEach(z => !z.T.boss && !z.dead && kill(z)), G.wt = Math.max(G.wt, G.T - .1)), skip: () => G && G.W && (G.wt = G.T), st: n => G && (G.st = n, G.wi = -1), lvl: () => G && addXp(need() / (hero.xpMul || 1) - G.xp + .01), win: () => G && (G.boss ? kill(G.boss) : (G.st = DATA.stations.length, G.wi = 1, nextWave(), bossIn(), kill(G.boss))), heal: () => hero && (hero.hp = hero.maxHp), route: () => G && (G.paused = true, showRoute()), spawn: (t, tier) => G && spawn(t, { x: hero.x + R(60, 120) * K * (Math.random() < .5 ? -1 : 1), y: hero.y + R(-20, 20) * K }, tier), state: () => ({ G, hero, foes, RUN, u, s, W, H }) },
