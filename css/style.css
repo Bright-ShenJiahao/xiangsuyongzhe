@@ -1384,3 +1384,5 @@ body:not(.touch) #bRoll .pips { font-size: 9px; bottom: 3px; letter-spacing: 2px
 /* 11/25 选人界面：恢复立绘（不用像素小人） */
 .pnL img { display: block !important; } .pnL #heroCv { display: none !important; }
 .pnL { overflow: visible !important; clip-path: inset(0 -80% 0 0) !important; }
+
+.eqD .slot .sil { width: 74%; max-height: 78%; image-rendering: pixelated; opacity: .42; }

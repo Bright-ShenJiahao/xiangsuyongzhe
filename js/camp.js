@@ -290,11 +290,26 @@
   const gearSave = g => localStorage.setItem('xsyz-gear', JSON.stringify(g));
   let eqMsg = '起手只有一把兵器，其余格子都空着。';
   const gearIcon = it => it.img ? `<img src="${it.img}" alt="" style="width:62%;image-rendering:pixelated">` : `<b class="gl">${it.g}</b>`;
+  // 空装备格的像素剪影（16×16，# 为填充）
+  const SIL = {
+    helm: ['................', '.....######.....', '....########....', '...##########...', '...##########...', '...##########...', '...###....###...', '...###....###...', '...##......##...', '...##......##...'],
+    armor: ['..###......###..', '.####......####.', '.#####....#####.', '.##############.', '.##############.', '..############..', '..############..', '..############..', '..############..', '...##########...', '...##########...', '...##########...', '....########....'],
+    belt: ['################', '################', '#######..#######', '#######..#######', '################', '################'],
+    boots: ['..####....####..', '..####....####..', '..####....####..', '..####....####..', '..####....####..', '.#####....#####.', '#######..#######', '#######..#######'],
+    acc: ['.......##.......', '......####......', '.....######.....', '......####......', '....########....', '...###....###...', '..###......###..', '..##........##..', '..##........##..', '..###......###..', '...###....###...', '....########....'],
+    main: ['.......##.......', '......####......', '......####......', '......####......', '......####......', '......####......', '......####......', '......####......', '......####......', '....########....', '.......##.......', '.......##.......', '......####......'],
+    off: ['..############..', '.##############.', '.##############.', '.##############.', '.##############.', '.##############.', '..############..', '..############..', '...##########...', '....########....', '.....######.....', '......####......'],
+  };
+  function drawSil(box) {
+    for (const c of box.querySelectorAll('canvas[data-sil]')) { const g = c.getContext('2d'), rows = SIL[c.dataset.sil], dy = Math.floor((16 - rows.length) / 2);
+      rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '#') return; g.fillStyle = '#7a6040'; g.fillRect(x, y + dy, 1, 1); }));
+      g.fillStyle = '#9a7c52'; rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#' && (rows[y - 1] || '')[x] !== '#') g.fillRect(x, y + dy, 1, 1); })); }
+  }
   function equipPanel(box) {
     const G = gearLoad(), wp = R().weapon || 'sword', W = DATA.weapons[wp], two = wp !== 'sword', worn = new Set(Object.values(G.eq)), it = id => DATA.gear[id];
     if (two) G.eq.off = null;
     const cellOf = (key, label, area) => {   // 装备格：用技能栏同款 .slot
-      let inner = '<span>空</span>', cls = 'slot', dim = false;
+      let inner = `<canvas class="sil" data-sil="${key}" width="16" height="16"></canvas>`, cls = 'slot', dim = false;
       if (key === 'main') { cls += ' has full'; inner = '<span data-ic="' + wp + '"></span><span>' + W.name + '</span>'; }
       else if (key === 'off' && two) { cls += ' has full'; dim = true; inner = '<span data-ic="' + wp + '"></span><span>双格占用</span>'; }
       else if (G.eq[key]) { cls += ' has full'; inner = gearIcon(it(G.eq[key])) + '<span>' + it(G.eq[key]).name + '</span>'; }
@@ -306,6 +321,7 @@
       `</div><p class="eqMsg">${eqMsg}</p></div><div class="lor"><h4>物品栏 <small>点一下装备</small></h4><div class="bag">` +
       Array.from({ length: cells }, (_, i) => { const id = G.bag[i]; if (!id) return '<div></div>'; const w = worn.has(id); return `<div class="has full eqI${w ? ' eqdim' : ''}" data-i="${id}" title="${it(id).name}（${it(id).tag}）">${gearIcon(it(id))}<i style="color:#ffd860">${w ? '已装' : ''}</i><em class="bk" style="font-style:normal;font-size:10px;color:#fff3d0;position:absolute;left:3px;bottom:0">${it(id).name}</em></div>`; }).join('') + `</div></div></div>`;
     for (const e of box.querySelectorAll('[data-ic]')) e.replaceWith(UI.icon(e.dataset.ic));
+    drawSil(box);
     const redo = m => { eqMsg = m; equipPanel(box); };
     for (const e of box.querySelectorAll('.eqD .slot')) e.onclick = () => { const k = e.dataset.s; if (k === 'main') return redo('主手就是本局的兵器，局内不能换。'); if (k === 'off' && two) return redo('双格武器占着副手，只有拿剑才能放盾。'); if (!G.eq[k]) return; G.eq[k] = null; gearSave(G); redo('已卸下，回到物品栏。'); };
     for (const e of box.querySelectorAll('.eqI')) e.onclick = () => { const id = e.dataset.i, d = DATA.gear[id]; if (worn.has(id)) return; if (d.slot === 'off' && two) return redo('现在拿的是双格武器，副手用不了盾。'); G.eq[d.slot] = id; gearSave(G); redo(d.name + '已装备。'); };
