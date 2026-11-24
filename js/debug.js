@@ -15,6 +15,7 @@
   B('本站胜利', () => UI.mod().debug.station());
   B('给印记', () => UI.mod().debug.oath());
   B('直接胜利', () => UI.mod().debug.win());
+  B('选人页', () => { try { BATTLE.stop(); } catch (e) {} for (const id of ['levelup', 'pause', 'result', 'camp']) { const e = document.getElementById(id); if (e) e.classList.remove('on'); } UI.openPrep(true); });
   B('直接开打', () => { if (window.UI) UI.startBattle(); });
   // 11/23 演练场：一键进入要看的场景（自动开一局、无敌、给钱给书）
   const sel = document.createElement('select'); sel.style.cssText = 'font:inherit;background:#1c2a1c;color:#ffd860;border:1px solid #4a8a3a;padding:3px';

@@ -488,7 +488,7 @@
         if (best) { if (!best.matches('button, input')) best.tabIndex = 0; best.focus(); best.scrollIntoView({ block: 'nearest' }); } return; }
       if ((e.key === 'Enter' || e.key === ' ') && a && L.contains(a) && !a.matches('button, input')) { e.preventDefault(); e.stopImmediatePropagation(); a.click(); }
     }, true); }
-  window.UI = { slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
+  window.UI = { openPrep, slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   /* 11/25 加载完：只剩发光的 logo，玩家点一下（浏览器规定点过才能放 BGM）→ 「进入游戏」冒出来 */
   function titleGate() { const t = $('title'); if (t.dataset.gated) return; t.dataset.gated = 1; t.classList.add('gate');
