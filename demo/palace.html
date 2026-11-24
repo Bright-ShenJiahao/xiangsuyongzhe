@@ -47,7 +47,7 @@ const NPC = [
 ];
 const PORTAL = { x: 755, y: 275 }, DOOR = { x: 474, y: 1450 }, THRONE = { x: 474, y: 230 };
 const hero = { x: 474, y: 1400, f: 1, mv: 0 }, K = {}; let joy = null, near = null, cam = { x: 474, y: 1400 }, T = 0, last = 0, msg = '', msgT = 0;
-const walk = (x, y) => x > 112 && x < 836 && y > 235 && y < 1440 && !(x > 270 && x < 678 && y < 392) && !((x < 225 || x > 725) && ((y > 545 && y < 765) || (y > 1075 && y < 1295))) && !NPC.some(n => Math.hypot(n.x - x, (n.y - y) * 1.6) < 34);
+const walk = (x, y) => x > 112 && x < 836 && y > 235 && y < 1440 && !(x > 270 && x < 678 && y < 392) && !NPC.some(n => Math.hypot(n.x - x, (n.y - y) * 1.6) < 34);
 addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'KeyE' && near) act(near, 0); }); addEventListener('keyup', e => K[e.code] = 0);
 addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (t.target === cv && t.clientX < innerWidth * .6) joy = { id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0 }; }, { passive: true });
 addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy && t.identifier === joy.id) { joy.dx = t.clientX - joy.x; joy.dy = t.clientY - joy.y; } }, { passive: true });
