@@ -138,6 +138,22 @@ function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s0 = 2.2;
   else if (PRI.complete) { const f = PRF[Math.floor(T * 2) % 2], k = 2.2; g.drawImage(PRI, f[0], f[1], f[2], f[3], Math.round(n.x - f[4] * k), Math.round(n.y - f[5] * k), f[2] * k, f[3] * k); }   // 11/24 公主和塔顶用同一个形象
   else { g.fillStyle = '#f3b8d0'; g.beginPath(); g.moveTo(n.x - 34, n.y); g.lineTo(n.x + 34, n.y); g.lineTo(n.x + 14, n.y - 90); g.lineTo(n.x - 14, n.y - 90); g.fill(); g.fillStyle = '#f6dcc0'; g.beginPath(); g.arc(n.x, n.y - 108, 20, 0, 7); g.fill(); g.fillStyle = '#f2d16a'; g.fillRect(n.x - 22, n.y - 132, 44, 18); g.fillStyle = '#ffd77a'; g.fillRect(n.x - 12, n.y - 140, 24, 8); }
   /* 11/24 头上不再显示名字 */ }
+/* 11/24 门外的布偶猫：慢走、舔毛、发呆；主角靠近会被吓跑，过一阵再回来 */
+const CF = {}; ['walk0','walk1','walk2','walk3','lick0','lick1','lick2','lick3','idle0','idle1','run0','run1','run2','shock'].forEach(k => CF[k] = IM('art/npc/cat/' + k + '.png'));
+const CAT = { x: 640, y: 1350, d: 1, st: 'walk', t: 5, tx: 760, at: 0 };
+function catGo(st, t) { CAT.st = st; CAT.t = t; CAT.at = 0; }
+function catStep(dt) { const c = CAT; c.at += dt; c.t -= dt;
+  const dh = Math.hypot(c.x - hero.x, (c.y - hero.y) * 1.2), vis = c.x > -60 && c.x < W + 60;
+  if (c.st !== 'shock' && c.st !== 'run' && c.st !== 'gone' && dh < 190) { c.d = c.x >= hero.x ? 1 : -1; catGo('shock', .45); return; }
+  if (c.st === 'shock') { if (c.t <= 0) catGo('run', 99); return; }
+  if (c.st === 'run') { c.x += c.d * 420 * dt; if (!vis) catGo('gone', 25 + Math.random() * 25); return; }
+  if (c.st === 'gone') { if (c.t <= 0) { c.d = Math.random() < .5 ? 1 : -1; c.x = c.d > 0 ? -50 : W + 50; c.tx = 300 + Math.random() * 520; catGo('walk', 99); } return; }
+  if (c.st === 'walk') { c.d = c.tx > c.x ? 1 : -1; c.x += c.d * 26 * dt; if (Math.abs(c.tx - c.x) < 4) { const r = Math.random(); if (r < .6) catGo('lick', 4 + Math.random() * 4); else if (r < .85) catGo('idle', 2 + Math.random() * 3); else { c.tx = 280 + Math.random() * 560; catGo('walk', 99); } } return; }
+  if (c.t <= 0) { c.tx = 280 + Math.random() * 560; catGo('walk', 99); } }
+function catDraw() { const c = CAT; let k;
+  if (c.st === 'walk') k = 'walk' + (Math.floor(c.at * 6) % 4); else if (c.st === 'run') k = 'run' + (Math.floor(c.at * 12) % 3); else if (c.st === 'shock') k = 'shock';
+  else if (c.st === 'lick') { const q = Math.floor(c.at * 3); k = 'lick' + (q < 1 ? 0 : [1, 2, 3, 2][(q - 1) % 4]); } else if (c.st === 'idle') k = 'idle' + ((Math.floor(c.at * 1.2) % 5) === 4 ? 1 : 0); else return;
+  const im = CF[k]; if (!im || !im.complete || !im.naturalWidth) return; g.save(); if (c.d < 0) { g.translate(c.x * 2, 0); g.scale(-1, 1); } g.drawImage(im, Math.round(c.x - im.width / 2), Math.round(c.y - im.height)); g.restore(); }
 function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; T += dt; requestAnimationFrame(loop);
   let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0); if (joy && Math.hypot(joy.dx, joy.dy) > 8) { x = joy.dx; y = joy.dy; }
   const l = Math.hypot(x, y); hero.mv = l > 0; if (l && $('panel').style.display !== 'flex') { x /= l; y /= l; const sp = 300 * dt; if (x) hero.f = x > 0 ? 1 : -1; if (walk(hero.x + x * sp, hero.y)) hero.x += x * sp; if (walk(hero.x, hero.y + y * sp)) hero.y += y * sp; }
@@ -156,6 +172,7 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
   for (const e of L) { if (e.n) { const n = e.n; if (n === near && n.ring > 0) { g.save(); g.lineWidth = 5; g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, 0, 7); g.stroke(); g.strokeStyle = '#ffd77a'; g.shadowColor = '#ffd77a'; g.shadowBlur = 10; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * n.ring); g.stroke(); g.restore(); } drawNPC(n); } else { const W0 = LS.get('weapon') || 'sword', run = hero.mv, n0 = run ? 'run' : 'idle', c0 = Math.max(1, (SPR.count && SPR.count(SPR.heroSet(HS, W0), n0)) || (run ? 4 : 1));   // 11/24 宫殿里也有跑步帧
     g.save(); if (hero.y > 1110) g.globalAlpha = .45;   /* 11/24 走到下面的墙后面：半透明 */
     try { SPR.drawHero(g, n0, Math.floor(T * (run ? 10 : 2)) % c0, hero.x, hero.y, hero.f < 0, 2, { w: W0, c: HS }); } catch (e) { g.fillStyle = '#fff'; g.fillRect(hero.x - 10, hero.y - 50, 20, 50); } g.restore(); } }
+  catStep(dt); catDraw();   /* 11/24 门外的布偶猫彩蛋 */
   drawBub();
   if (OV) { OV.t += 1 / 60; const d = devicePixelRatio || 1, t = OV.t; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = `rgba(0,0,0,${Math.min(.85, 3.2 - t)})`; g.fillRect(0, 0, VW, VH); g.textAlign = 'center';   // 11/24 还有命：GAME OVER 被划掉 → 游戏还没完！！！
     if (t < 1.1) { g.font = `bold ${44 * d}px sans-serif`; g.fillStyle = '#e84a4a'; g.fillText('GAME OVER', VW / 2, VH * .45); if (t > .55) { const k = Math.min(1, (t - .55) / .25), w = g.measureText('GAME OVER').width; g.fillStyle = '#ffe9a8'; g.fillRect(VW / 2 - w / 2 - 10, VH * .45 - 16 * d, (w + 20) * k, 6 * d); } }
