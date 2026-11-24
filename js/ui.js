@@ -237,7 +237,14 @@
 
   // ================= 战斗 =================
   let lastBuild = null, tipT = 0, HC = {};
-  function startBattle(b) {
+  // 11/24 过场：世界地图上，勇者从高空转着圈掉进哥布林森林（然后战斗里再从森林上空掉下来）
+  function mapFall(go) { const c = DATA.chapters[0]; worldMap(() => {}); $('wmap').classList.add('fall'); $('wmTitle').textContent = ''; $('wmHint').textContent = '';
+    const wm = document.querySelector('#wmap .wm'), sc = $('wmScroll'); sc.scrollLeft = Math.max(0, c.x * sc.scrollWidth - sc.clientWidth / 2);
+    const cv = document.createElement('canvas'); cv.className = 'wmFall'; cv.width = cv.height = 96; cv.style.left = c.x * 100 + '%'; cv.style.top = c.y * 100 + '%'; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+    try { SPR.drawHero(g, 'idle', 0, 48, 88, false, 2, { w: store.get('weapon') || 'sword', c: store.get('hero') === 'f' ? 'f' : 'm' }); } catch (e) {} wm.appendChild(cv);
+    setTimeout(() => { const p = document.createElement('div'); p.className = 'wmPuff'; p.style.left = cv.style.left; p.style.top = cv.style.top; wm.appendChild(p); try { SFX.play('pick'); } catch (e) {} }, 1500);
+    setTimeout(() => { cv.remove(); wm.querySelectorAll('.wmPuff').forEach(x => x.remove()); $('wmap').classList.remove('fall'); overlay('wmap', false); go(); }, 2300); }
+  function startBattle(b, noFall) { if (!noFall && !(window.location.search.includes('nofall'))) return mapFall(() => startBattle(b, true));
     lastBuild = b || lastBuild || build(); HC = {};
     BATTLE.start({ weapon: lastBuild.weapon, map: 'field', build: lastBuild }); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); tipT = 6;
   }
@@ -431,7 +438,7 @@
       if (n >= stopAt[stopAt.length - 1]) return end(); tm = setTimeout(tick, 35 + n * n * .15); };
     M.onclick = end; tick();
   }
-  window.UI = { slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle, openPrep, get screen() { return screen; } };
+  window.UI = { slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来

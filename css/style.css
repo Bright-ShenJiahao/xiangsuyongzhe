@@ -1286,3 +1286,9 @@ body.tvbg { background: #000; }
 .conWrap.bump { animation: cbump .16s; } @keyframes cbump { 50% { transform: translateY(3px); } }
 .slotHint { margin: 0; text-align: center; color: #3f8a52; font-size: 13px; }
 .slotRow { margin-bottom: 26px; }
+/* 11/24 世界地图过场：勇者从高空转圈掉进哥布林森林 */
+#wmap.fall .wmbar { display: none; }
+.wmFall { position: absolute; width: 96px; height: 96px; image-rendering: pixelated; pointer-events: none; z-index: 5; animation: wmfall 1.5s cubic-bezier(.4,0,.9,.6) forwards; }
+@keyframes wmfall { 0% { transform: translate(-50%, -420%) scale(3.2) rotate(0deg); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(-50%, -85%) scale(.7) rotate(1440deg); } }
+.wmPuff { position: absolute; width: 140px; height: 140px; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none; z-index: 4; background: radial-gradient(circle, rgba(255,240,200,.9), rgba(255,200,120,.4) 40%, transparent 70%); animation: wmpuff .8s ease-out forwards; }
+@keyframes wmpuff { from { transform: translate(-50%, -50%) scale(.2); opacity: 1; } to { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
