@@ -118,7 +118,7 @@ function prep() { const L = $('pl'); $('pt').textContent = `出发准备　（�
       b.innerHTML = S ? `${bkIc(id)}<b>${S.name}</b><small>${other ? '另一格在用' : S.sys + ' · ' + DATA.tierName[S.tier]}</small>` : `<span class="q">空</span><b>${txt}</b><small>不带</small>`;
       b.onclick = () => { if (PSEL === 1) { LS.set('book1', id); LS.set('weapon', S.w || 'sword'); } else LS.set('book2', id); prep(); }; g.appendChild(b); };
     if (PSEL === 2) pick('', '空着'); for (const id of lib) pick(id);
-    for (const [id, S] of Object.entries(DATA.skills)) if (!lib.includes(id) && S.tier < 4) { const b = document.createElement('button'); b.className = 'bkb'; b.disabled = true; b.innerHTML = `<span class="q">？</span><b>${SEEN.has('s:' + id) ? S.name : '？？？'}</b><small>找大法师</small>`; g.appendChild(b); } }
+    { const left = Object.values(DATA.skills).filter(S => S.tier < 4).length - lib.length; if (left > 0) { const p = document.createElement('p'); p.className = 'note'; p.textContent = `书库里还缺 ${left} 本——找大法师买或抽。`; L.appendChild(p); } } }
   sec('称号（佩戴 1 个）'); let ownT = []; try { ownT = JSON.parse(LS.get('titles') || '[]'); } catch (e) {} const T = LS.get('title') || '', tr = document.createElement('div'); tr.className = 'ttl'; L.appendChild(tr);
   const tb = (id, name, lk) => { const b = document.createElement('button'); b.className = id === T ? 'on' : ''; b.textContent = lk ? '？？？' : name; b.disabled = lk || lock; b.onclick = () => { LS.set('title', id); prep(); }; tr.appendChild(b); };
   tb('', '不佩戴'); for (const t of DATA.titles) tb(t.id, t.name, !ownT.includes(t.id));
