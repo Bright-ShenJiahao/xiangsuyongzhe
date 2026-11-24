@@ -166,13 +166,13 @@
   $('tpX').onclick = () => $('tpClose').click(); $('tpClose').onclick = () => { overlay('tpanel', false); document.querySelectorAll('.cxtabs, .cxpop, .cxtop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } };
 
   // ================= 备战页 =================
-  const P = { hero: 'm', weapon: 'sword', free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
+  const SK2 = { sword: 'whirl', spear: 'sweep', bow: 'fan', staff: 'nova' }, P = { hero: 'm', weapon: 'sword', sk: 0, free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
   const attrsOf = () => { const o = {}; for (const a of DATA.attrs) o[a.id] = DATA.attrBase + (P.free[a.id] || 0); return o; };
   const used = () => Object.values(P.free).reduce((s, v) => s + v, 0);
-  const build = () => ({ book1: store.get('book1') || null, book2: store.get('book2') || null, title: store.get('title') || null, hero: P.hero, weapon: P.weapon, attrs: attrsOf(), item: store.get('item') || P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
+  const build = () => ({ book1: store.get('book1') || null, book2: store.get('book2') || null, title: store.get('title') || null, hero: P.hero, weapon: P.weapon, skill: P.sk ? SK2[P.weapon] : P.weapon, attrs: attrsOf(), item: store.get('item') || P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
   function openPrep(fresh) {
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
-      const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.hero = store.get('hero') === 'f' ? 'f' : 'm';
+      const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.sk = store.get('wsk') === '1' ? 1 : 0; P.hero = store.get('hero') === 'f' ? 'f' : 'm';
       P.free = {}; P.habitOpts = shuffle(DATA.habits).slice(0, 3).map(h => h.id); P.itemOpts = shuffle(DATA.startItems).slice(0, 3).map(i => i.id);
       P.habit = null; P.item = null;   // 11/22 开局宝物删除   // 11/22 现实习惯删除：永远不选
  P.hrr = 0;
@@ -194,9 +194,10 @@
         <div class="pills">${PL('hp', '生命', c0.hp)}${PL(dmgA, W0.name + '伤害', pct(c0.dmg - 1))}${PL('guard', '物防 / 魔防', c0.pdef + ' / ' + c0.mdef)}${PL('move', '移速', pct(c0.move - 1))}${PL('crit', '暴击率', Math.round(c0.critP * 100) + '% / ' + Math.round(c0.critM * 100) + '%')}${PL('move', '闪避', Math.round(c0.eva * 100) + '%')}${PL('xp', '经验', pct(c0.xp - 1))}</div>`; }
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
-    for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
-    const W = DATA.weapons[P.weapon], SK0 = DATA.skills[P.weapon] || {}, AT = DATA.attrs.find(a => a.id === W.type);   // 11/22 起手技能介绍（铃兰式：上面选兵器，下面讲技能）
-    $('wDesc').innerHTML = `<div class="skI" title="${['l3', 'l5', 'l7'].filter(k => SK0[k]).map(k => 'Lv' + k.slice(1) + '：' + SK0[k]).join('\n')}"><div class="skIc">${skIcon(P.weapon).outerHTML}</div><div class="skIb"><div class="skIt"><b>${SK0.name || W.skill}</b><em>${SK0.dt === 'magic' ? '魔法' : '物理'}</em></div><p>${SK0.desc || W.desc}</p></div></div>`;
+    for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; P.sk = 0; store.set('weapon', id); store.set('wsk', '0'); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
+    const W = DATA.weapons[P.weapon], AT = DATA.attrs.find(a => a.id === W.type);   // 11/25 起手技能：每种兵器 2 个初级技能二选一
+    $('wDesc').innerHTML = [P.weapon, SK2[P.weapon]].map((id, k) => { const S = DATA.skills[id] || {}; return `<div class="skI${P.sk === k ? ' on' : ''}" data-k="${k}" title="${['l3', 'l5', 'l7'].filter(q => S[q]).map(q => 'Lv' + q.slice(1) + '：' + S[q]).join('\n')}"><div class="skIc">${skIcon(id).outerHTML}</div><div class="skIb"><div class="skIt"><b>${S.name || id}</b><em>${S.dt === 'magic' ? '魔法' : '物理'}</em></div><p>${S.brief || S.desc || ''}</p></div></div>`; }).join('');
+    for (const e of $('wDesc').children) e.onclick = () => { P.sk = +e.dataset.k; store.set('wsk', String(P.sk)); renderPrep(); };
     // 属性
     const c = DATA.calc(build()), left = DATA.attrFree - used(); $("aLeft").textContent = left ? `剩余 ${left} 点（可带进游戏）` : "剩余 0 点";
     const ar = $('aRows'); ar.innerHTML = '';

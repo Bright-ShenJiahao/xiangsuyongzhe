@@ -39,10 +39,10 @@
     cam.snap = true; hero = { gap: 0, rollBuf: 0, x: MAPW / 2, y: (g.y0 + g.y1) / 2, hp: 0, maxHp: 0, f: 1, t: 0, roll: 0, rollCd: 0, inv: 0, hurtT: 0, atkT: 0, moving: false, cd: .6, dead: false,
       m: { dmg: 1, spd: 1, area: 1, move: 1 }, critP: .01, critM: .01, critMulP: 1.5, critMulM: 1.5, eva: 0, pIn: 1, mIn: 1, xpMul: 1, fx: {}, A: {} };
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
-    try { SEEN.add('s:' + (b.book1 || b.weapon || 'sword')); if (b.book2) SEEN.add('s:' + b.book2); } catch (e) {}
+    try { SEEN.add('s:' + (b.book1 || b.skill || b.weapon || 'sword')); if (b.book2) SEEN.add('s:' + b.book2); } catch (e) {}
     RUN = { title: b.title || null, hero: b.hero || 'm', weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0,   /* 11/22 属性加点删除，只靠修炼 */ alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
       bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: [null], coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
-    RUN.slots[0] = { id: (b.book1 && DATA.skills[b.book1]) ? b.book1 : b.weapon, lv: 1, xp: 0 };   // 11/24 公主出发准备：第 1 格可放书库的书
+    RUN.slots[0] = { id: (b.book1 && DATA.skills[b.book1]) ? b.book1 : (b.skill && DATA.skills[b.skill] && DATA.skills[b.skill].w === b.weapon) ? b.skill : b.weapon, lv: 1, xp: 0 };   // 11/24 公主出发准备：第 1 格可放书库的书
     if (b.book2 && DATA.skills[b.book2] && ML('slot2') && b.book2 !== RUN.slots[0].id) RUN.slots[1] = { id: b.book2, lv: 1, xp: 0 };   /* 解锁了第 2 格就多带一本 */ if (b.item) RUN.gear[0] = { kind: 'item', id: b.item };
     RUN.heat = HEATLS(); if (!ML('oath')) RUN.heat = {}; RUN.hpCut = .1 * (RUN.heat.life || 0);   /* 誓约石热度（要先解锁） */
     if (ML('step')) { const L = Object.keys(DATA.oaths).filter(k => DATA.oaths[k].mv), id = L[Math.random() * L.length | 0]; RUN.mv[0] = { kind: 'oath', id, lv: 1, mv: true }; try { SEEN.add('o:' + id); } catch (e) {} }   /* 11/25 局外「身法」：开局随机带 1 个身法 */
@@ -646,7 +646,7 @@
     if (M.st < 0 && !SKUL(M, 24)) M.st = 0;
     for (const d of f.doors) { if (Math.abs(d.x - hero.x) < 22 * K && Math.abs(d.y - hero.y) < 18 * K) d.st += dt; else d.st = 0;
       if (d.st > .35) { if ((RUN.xiu > 0 || f.items.length) && !f.warn) { f.warn = 1; d.st = -1; toastMsg(RUN.xiu > 0 ? '还有修炼没拿（去找露米娜），再走进门就出发' : '地上还有东西没捡，再走进门就出发'); return; }
-        if (d.st > .35) { const c = d.c, sx = X(d.x), sy = Y(d.y) - 26 * u; f.doors = []; G.lock = true; UI.FX.shatter(cv, sx, sy, () => { G.lock = false; f.pick(c); }); return; } } }
+        if (d.st > .35) { const c = d.c, sx = X(d.x), sy = Y(d.y) - 26 * u; f.doors = []; if (c.rest) { f.pick(c); return; }   /* 11/25 宝箱 / 篝火 / 商人 / 奇遇在当前界面就能完成：不碎屏，直接摆在地图上 */ G.lock = true; UI.FX.shatter(cv, sx, sy, () => { G.lock = false; f.pick(c); }); return; } } }
   }
   // 头顶对话气泡：每 5 秒说一句（打字机效果，停 3 秒），几句轮流
   function say(x, y, lines, seed) { const t = G.t + (seed || 0), cyc = 5, k = t % cyc; if (k > 3.2) return; const L = lines[Math.floor(t / cyc) % lines.length], n = Math.min(L.length, Math.floor(k * 14) + 1), tx = L.slice(0, n);

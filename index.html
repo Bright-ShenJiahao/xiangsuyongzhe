@@ -32,10 +32,10 @@
 <div id="prep" class="scr menu">
   <!-- 11/22 选人出发（铃兰角色详情式）：左大立绘 + 人物切换；右 头牌 / 属性 / 起手兵器 / 开局宝物。习惯删除、加点挪到游戏内 -->
   <div class="pnew">
-    <div class="pnL"><img id="pPort" alt=""></div>
+    <div class="pnL"><img id="pPort" alt="" hidden><canvas id="heroCv"></canvas></div>
     <div class="pnR">
       <div class="pnPick"><span>选择勇者</span><div class="pnSel csel" id="cSel"></div></div>
-      <div class="pnHead"><canvas id="heroCv"></canvas><div id="hInfo"></div></div>
+      <div class="pnHead" hidden><div id="hInfo"></div></div>
       <div class="pnSec"><h4>起手兵器</h4><div class="pnWep" id="wSel"></div><p class="wdesc" id="wDesc"></p></div>
       <div class="pnFoot"><button class="btn" id="pBack">返回</button><button class="btn gold" id="pGo">出发！</button></div>
     </div>

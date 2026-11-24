@@ -1350,3 +1350,11 @@ button:focus-visible { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,215
 @keyframes lgGlow { 0%, 100% { filter: drop-shadow(0 4px 10px #000a) drop-shadow(0 0 6px #ffd86a66); transform: scale(1); } 50% { filter: drop-shadow(0 4px 10px #000a) drop-shadow(0 0 26px #ffe9a8) drop-shadow(0 0 48px #ffb84a88); transform: scale(1.025); } }
 @keyframes tgIn { to { opacity: 1; } } @keyframes tgBlink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 @keyframes tentIn { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+
+/* 11/25 选人页新布局：左边放大像素小人，右边 选人（圆圈头像）/ 起手兵器 / 两个初级技能二选一 */
+.pnL img { display: none !important; } .pnL #heroCv { position: absolute; left: 0; top: 0; width: 100% !important; height: 100% !important; flex: none; min-height: 0; background: radial-gradient(ellipse at 50% 80%, rgba(232, 184, 74, .28), transparent 62%); image-rendering: pixelated; }
+.pnL { overflow: visible !important; clip-path: none !important; } .pnHead { display: none !important; }
+#prep .pnSec .wdesc { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; text-align: left; }
+.wdesc .skI { cursor: pointer; opacity: .78; border: 2px solid rgba(150, 105, 45, .3); } .wdesc .skI.on { opacity: 1; border-color: #e8a820; background: rgba(255, 244, 205, .85); box-shadow: 0 0 0 2px rgba(240, 190, 70, .4); }
+.wdesc .skIc > * { width: 52px !important; height: 52px !important; } .wdesc .skIt b { font-size: 19px; } .wdesc .skIb p { font-size: 14px; }
+@media (orientation: portrait), (max-width: 760px) { #prep .pnSec .wdesc { grid-template-columns: 1fr; gap: 8px; } .wdesc .skI { padding: 6px 10px; } .wdesc .skIc > * { width: 40px !important; height: 40px !important; } .wdesc .skIt b { font-size: 16px; } .wdesc .skIb p { font-size: 13px; } }
