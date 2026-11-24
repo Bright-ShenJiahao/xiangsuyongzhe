@@ -13,6 +13,8 @@
     die: () => { noise(.18, .14, 300); tone(140, 40, .2, 'square', .07); }, hurt: () => { noise(.15, .2, 200); tone(220, 90, .2, 'square', .1); },
     coin: () => tone(1300 + Math.random() * 300, 1900, .07, 'square', .05), pick: () => [880, 1320].forEach((f, i) => tone(f, f, .1, 'square', .07, i * .06)),
     lv: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, f, .14, 'square', .08, i * .07)), tick: () => tone(700, 700, .03, 'square', .04),
+    fall: () => { for (let i = 0; i < 9; i++) tone(1700 - i * 120, 700 - i * 40, .085, 'triangle', .07, i * .1); },   /* 11/25 动漫掉落：jujujuju */
+    pon: () => { tone(950, 240, .16, 'sine', .22); tone(1900, 500, .05, 'triangle', .09); noise(.05, .12, 1500); },
     win: () => [659, 784, 988].forEach((f, i) => tone(f, f, .16, 'triangle', .1, i * .08)), jackpot: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, f * 1.01, .22, 'triangle', .12, i * .09)) };
   window.SFX = { play(k) { if (!on || !AC || !S[k]) return; const n = performance.now(); if (n - (last[k] || 0) < 40) return; last[k] = n; try { S[k](); } catch (e) {} }, get on() { return on; }, set on(v) { on = !!v; localStorage.setItem('xsyz-sfx', on ? '1' : '0'); } };
 })();

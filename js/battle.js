@@ -52,7 +52,7 @@
       boom: (x, y, r) => fx.push({ k: 'boom', x, y, t: 0, T: .45, r }), slash: z => { for (let i = 0; i < 5; i++) parts.push({ x: z.x, y: z.y - 14 * K, vx: R(-60, 60) * K, vy: R(-60, 0) * K, t: 0, T: .3, col: '#fff', g: 0 }); } });
     ESK.reset();
     if (o.resume) { const S = o.resume; Object.assign(RUN, JSON.parse(JSON.stringify(S.RUN))); Object.assign(G, S.G); RUN.lives = Math.max(RUN.lives || 2, 2 + ML('life')); recompute(); hero.hp = Math.max(1, Math.round(hero.maxHp * Math.min(1, o.cont ? Math.max(S.hp || 1, .6) + .2 * ML('rev') : (S.hp || 1)))); }   // 续关：至少 60% 血，复活强化再 +20%
-    nextWave(); if (!o.resume || o.drop) G.drop = { t: 0 };   // 11/24 新开一局：勇者从森林上空掉下来
+    nextWave(); if (!o.resume || o.drop) { G.drop = { t: 0 }; SFX.play('fall'); }   // 11/24 新开一局：勇者从森林上空掉下来
   }
   // 11/23 存档：每站开打时自动存（勇者状态 + 本局全部构筑）；通关或败北时删掉
   const SAVE = 'pxyz.save1';
@@ -82,6 +82,11 @@
     const max = Math.round((c.hp + 3 * (G.lv - 1)) * (1 - (RUN.hpCut || 0)) * (1 + .05 * ML('hp')) * (1 + ((hero.setF || {}).hp || 0)) * (1 + (TT().hp || 0))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
     return c;
   }
+  const DROP_T = 1.0;   /* 11/25 落地动画：下落 1 秒 + 落地 PON!! */
+  function dropFx() { const t = G.drop.t, hx = X(hero.x), hy = Y(hero.y);
+    if (t < DROP_T) { const sd = Math.floor(t * 30); ctx.fillStyle = 'rgba(255,255,255,.4)'; for (let i = 0; i < 16; i++) { const r = Math.abs(Math.sin((i + 1) * 91.7 + sd * 13.3)), x = hx + (i - 7.5) * 14 * u + (r - .5) * 10 * u, len = (70 + r * 170) * u * (.4 + t / DROP_T), y = ((r * 1.7 + t * 4.2 + i * .37) % 1.2 - .1) * H; ctx.fillRect(x, y, Math.max(1, u * .8), len); } }
+    else { const p = t - DROP_T, a = Math.max(0, Math.min(1, 1.15 - p * 1.3)), sc = 1 + Math.max(0, .12 - p) * 6; ctx.save(); ctx.translate(hx, hy - 52 * u); ctx.rotate(-.12); ctx.scale(sc, sc); ctx.globalAlpha = a; ctx.font = `bold ${15 * u}px Pix, monospace`; ctx.textAlign = 'center'; ctx.lineWidth = 3 * u; ctx.strokeStyle = '#2a160e'; ctx.strokeText('PON!!', 0, 0); ctx.fillStyle = '#ffe45c'; ctx.fillText('PON!!', 0, 0); ctx.restore();
+      ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#fff6b8'; ctx.font = `${7 * u}px Pix, monospace`; ctx.textAlign = 'center'; for (let i = 0; i < 6; i++) { const ang = -PI * (.1 + .8 * i / 5), d = (14 + p * 90) * u; ctx.fillText('✦', hx + Math.cos(ang) * d, hy - 20 * u + Math.sin(ang) * d * .8); } ctx.restore(); } }
   const banner = (t, T) => { G.banner = { t, T, left: T }; };
 
   // ---------- 输入 ----------
@@ -837,9 +842,9 @@
     { const dc = RUN.coins - (G.lastC == null ? RUN.coins : G.lastC); if (dc > 0) G.earned = (G.earned || 0) + dc; G.lastC = RUN.coins; }
     G.t += dt; hero.t += dt; if (G.lvUpT > 0) G.lvUpT -= dt;
     if (G.comboT > 0 && (G.comboT -= dt) <= 0) G.combo = 0; coinTick(dt);   // 11/22 连击：3 秒没杀到怪就断
-    if (G.drop) { G.drop.t += dt; hero.inv = Math.max(hero.inv, .2); if (G.drop.t >= .7 && !G.drop.land) { G.drop.land = 1; G.shake = Math.max(G.shake, .45); SFX.play('pick');
-        for (let i = 0; i < 22; i++) { const a = R(0, PI * 2), v = R(30, 90) * K; parts.push({ x: hero.x, y: hero.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .4 - 10 * K, t: 0, T: R(.4, .8), col: i % 3 ? '#c8b088' : '#e8dcc0', g: 0 }); }
-        banner(MAP.name || '哥布林森林', 2.4); } if (G.drop.t > 1.2) G.drop = null; }
+    if (G.drop) { G.drop.t += dt; hero.inv = Math.max(hero.inv, .2); if (G.drop.t >= DROP_T && !G.drop.land) { G.drop.land = 1; G.shake = Math.max(G.shake, .7); SFX.play('pon');
+        for (let i = 0; i < 40; i++) { const a = R(0, PI * 2), v = R(40, 130) * K; parts.push({ x: hero.x, y: hero.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .4 - 10 * K, t: 0, T: R(.4, .8), col: i % 3 ? '#c8b088' : '#e8dcc0', g: 0 }); }
+        banner(MAP.name || '哥布林森林', 2.4); } if (G.drop.t > DROP_T + .8) G.drop = null; }
     if (G.banner) { G.banner.left -= dt; if (G.banner.left <= 0) G.banner = null; }
     G.shake = Math.max(0, G.shake - dt);
     if (G.winT != null && (G.winT -= dt) <= 0 && !G.over && !G.vic) { G.vic = 1; G.paused = true; clearSave(); return UI.victory(vicStats(), () => { G.paused = false; G.lock = false; G.winT = null; banner('', 0); fieldEnd([]); setDoors([{ k: 'boss', lbl: '下一章', name: '下一章', btn: '前往' }], () => { G.fe = null; G.over = 'win'; UI.nextChapter(); }); { const d = G.fe.doors[0]; d.x = G.fe.pr.x + 110 * K; d.y = G.fe.pr.y + 20 * K; } }); }
@@ -958,12 +963,13 @@
       if (o.h) {
         shadow(hero.x, hero.y, 26);
         if (hero.inv > 0 && hero.roll <= 0 && hero.hurtT <= 0 && !hero.dead && !(hero.shadowT > 0) && Math.floor(G.t * 20) % 2) continue;
+        if (G.drop && G.drop.t < DROP_T) { const k = G.drop.t / DROP_T; ctx.fillStyle = `rgba(0,0,0,${.12 + .3 * k})`; ctx.beginPath(); ctx.ellipse(X(hero.x), Y(hero.y), (3 + 11 * k) * u, (1.5 + 4 * k) * u, 0, 0, 7); ctx.fill(); }   /* 影子越来越大 */
         const [n, i, st, lg] = heroFrame(), wp = hero.cs ? hero.cs.S.w : (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword';
         if (G.decoy) { ctx.save(); ctx.globalAlpha = .45 + .15 * Math.sin(G.t * 10); SPR.drawHero(ctx, 'idle', 0, X(G.decoy.x), Y(G.decoy.y), hero.f < 0, u, { white: .5, w: wp, c: RUN.hero }); ctx.restore(); }   // 暗影步假身
         if (hero.shadowT > 0) { ctx.save(); ctx.globalAlpha = .55; ctx.filter = 'brightness(.15) sepia(1) hue-rotate(220deg) saturate(3)'; SPR.drawHero(ctx, n, i, X(hero.x), Y(hero.y), hero.f < 0, u, { w: wp, c: RUN.hero }); ctx.restore();
           if (Math.random() < .6) parts.push({ x: hero.x + R(-12, 12) * K, y: hero.y - R(0, 40) * K, vx: 0, vy: -20 * K, t: 0, T: .5, col: '#6a4aa8', g: 0 }); continue; }   // 暗影步：黑影
         if (hero.rShield) { const r = 22 * u, a0 = G.t * 2; ctx.fillStyle = 'rgba(159,220,255,.8)'; for (let a = 0; a < PI * 2; a += .12) ctx.fillRect(X(hero.x) + Math.cos(a + a0) * r, Y(hero.y) - 14 * u + Math.sin(a + a0) * r * .9, u * ((a * 10 | 0) % 3 ? 1 : 2), u); }   // 二段滚护盾
-        const bob = G.drop && G.drop.t < .7 ? -Math.pow(1 - G.drop.t / .7, 2) * 320 * u : 0, lunge = st === 'strike' ? hero.f * (lg || 0) * u : st === 'hurt' ? -hero.f * 2 * u : 0;
+        const bob = G.drop && G.drop.t < DROP_T ? -(1 - Math.pow(G.drop.t / DROP_T, 2)) * (Y(hero.y) + 70 * u) : 0, lunge = st === 'strike' ? hero.f * (lg || 0) * u : st === 'hurt' ? -hero.f * 2 * u : 0;
         SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { white: hero.dead && (G.deadR || 0) < .14 ? 1 : 0, w: hero.cs ? hero.cs.S.w : (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword', c: RUN.hero });
       } else {
         if (o.z.hideT > 0) continue;
@@ -1025,6 +1031,7 @@
         const [n, i] = heroFrame(); SPR.drawHero(ctx, n, i, hx, Y(hero.y), hero.f < 0, u, { w: (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword', c: RUN.hero }); }
       if (r > 1.6) { const k = Math.min(1, (r - 1.6) / 1.6), Rr = Math.hypot(W, H) * (1 - k) ** 1.6 + 2; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.moveTo(hx + Rr, hy); ctx.arc(hx, hy, Rr, 0, Math.PI * 2); ctx.fill("evenodd"); ctx.restore(); } }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (G.drop) dropFx();
     if (joy.on) { const dpr = W / innerWidth; ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.arc(joy.sx * dpr, joy.sy * dpr, 40 * dpr, 0, 7); ctx.fill(); const jx = joy.x - joy.sx, jy = joy.y - joy.sy, d = Math.hypot(jx, jy), k = Math.min(1, 40 / (d || 1)); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc((joy.sx + jx * k) * dpr, (joy.sy + jy * k) * dpr, 18 * dpr, 0, 7); ctx.fill(); }
     UI.hud({ fe: !!G.fe, combo: G.combo || 0, comboT: G.comboT || 0, roll: hero.rollN >= 1 ? 0 : Math.max(0, hero.rollCd) / (hero.rollMax || 1.5), rollT: hero.rollN >= 1 ? 0 : Math.max(0, hero.rollCd), rollN: hero.rollN, rollN0: hero.rollN0, lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
   }

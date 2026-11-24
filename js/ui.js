@@ -38,7 +38,7 @@
   function iconCanvasOld(name) { const c = document.createElement('canvas'); c.width = c.height = 16; const g = c.getContext('2d'); (ICON[name] || ICON.sword).forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); } })); return c; }
 
   // ================= 主界面 =================
-  const tvOff = go => { const t = $('title'); if (t.classList.contains('tvoff')) return; t.classList.add('tvoff'); document.body.classList.add('tvbg'); setTimeout(() => { t.classList.remove('tvoff'); document.body.classList.remove('tvbg'); go(); }, 560); };
+  const tvOff = go => { if (window.TV) { TV.on(go); return; } const t = $('title'); if (t.classList.contains('tvoff')) return; t.classList.add('tvoff'); document.body.classList.add('tvbg'); setTimeout(() => { t.classList.remove('tvoff'); document.body.classList.remove('tvbg'); go(); }, 560); };
   // 11/24 存档位：继续游戏 = 选存档 → 宫殿；新的游戏 = 选空位 → 选人 → 塔顶开场
   // 11/24 存档界面：先输入名字（和口令），再点存档就进游戏。空存档 = 新建，旧存档 = 核对名字和口令
   const pinHash = async (name, pin) => { if (!pin) return ''; try { const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xsyz|' + name + '|' + pin)); return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (e) { return pin; } };
