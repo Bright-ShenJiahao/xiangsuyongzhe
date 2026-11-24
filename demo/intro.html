@@ -87,7 +87,7 @@ async function play() { const id = ++RUN; $('play').style.display = 'none'; rese
              ['g3', 'scale(1.06) translate(0, 3%)', 'scale(1.14) translate(0, -3%)', ['公主露米娜在最后的神殿里发出呼唤——', '呼唤顺着卡带，传到了屏幕的另一边。']]];
   for (const [pg, a, b, lines] of P) { if (id !== RUN) return; const el = $(pg); el.classList.add('on'); kb(el.querySelector('.ill'), a, b, lines.length * 3200 + 1500); await wait(900);
     for (let li = 0; li < lines.length; li++) { const l = lines[li]; if (id !== RUN) return; if (pg === 'g2b') MK.go(li); await type($('cap'), l, id); await wait(1500); } if (pg === 'g2b') { MK.go(3); await wait(900); } $('cap').textContent = ''; if (pg !== 'g3') { el.classList.remove('on'); await wait(700); } }
-  if (id !== RUN) return; tower(id); }
+  if (id !== RUN) return; if (QS.has('hub')) { const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); return done(); } tower(id); }   // 11/24 不是第一次：剧情播完白光 → 宫殿
 // 塔顶：白光淡入 → 对话 → 开门 → 走进门（11/24 长按跳过：故事书跳到这里；这里再长按 = 跳过对话直接开门）
 async function tower(id, fromSkip) { setSkip(true, 'tower'); const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); if (id !== RUN) return; $('g3').classList.remove('on');
   $('px').style.opacity = 1; pxT0 = performance.now(); if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); } w.style.transition = 'opacity 1.4s'; w.style.opacity = 0; await wait(3600); if (id !== RUN) return;
@@ -118,6 +118,7 @@ addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault();
 $('skip').addEventListener('pointerdown', holdOn); addEventListener('pointerup', holdOff); addEventListener('pointercancel', holdOff);
 if (matchMedia('(pointer:coarse)').matches) $('skt').textContent = '长按跳过';
 function doSkip() { const st = skipStage, id = ++RUN; setSkip(false);
+  if (st === 'story' && QS.has('hub')) return done();
   if (st === 'story') { reset(); $('white').style.transition = 'none'; $('white').style.opacity = 1; tower(id, true); return; }
   // 塔顶：跳过对话和开门动画，门直接开好，勇者已经站好，马上能走
   $('bub').style.display = 'none'; $('white').style.opacity = 0; $('px').style.opacity = 1; if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); }

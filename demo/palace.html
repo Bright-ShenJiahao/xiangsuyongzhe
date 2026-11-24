@@ -57,7 +57,7 @@ addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy &
 addEventListener('touchend', () => joy = null);
 const $ = id => document.getElementById(id);
 // 11/24 对话 = 说话人头上冒气泡（和塔顶一样），不用头像框
-let BUB = null; function say(n, s) { const o = NPC.find(q => q.id === n.id) || n; BUB = { n: o, txt: s, t: 0, T: Math.max(2.4, s.length * .16) }; }
+let BUB = null, OV = null; function say(n, s) { const o = NPC.find(q => q.id === n.id) || n; BUB = { n: o, txt: s, t: 0, T: Math.max(2.4, s.length * .16) }; }
 function drawBub() { if (!BUB) return; BUB.t += 1 / 60; if (BUB.t > BUB.T) { BUB = null; return; } const n = BUB.n, show = BUB.txt.slice(0, Math.ceil(BUB.t * 18));
   g.font = 'bold 24px sans-serif'; const w = Math.min(560, g.measureText(BUB.txt).width + 28), x = Math.max(10, Math.min(W - w - 10, n.x - w / 2)), y = n.y - (n.kind === 'princess' ? 200 : 180);
   g.fillStyle = 'rgba(250,244,230,.97)'; g.fillRect(x, y - 34, w, 44); g.strokeStyle = '#3a2814'; g.lineWidth = 3; g.strokeRect(x, y - 34, w, 44);
@@ -94,10 +94,14 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
   const L = NPC.map(n => ({ y: n.y, n })).concat([{ y: hero.y, h: 1 }]).sort((a, b) => a.y - b.y);
   for (const e of L) { if (e.n) drawNPC(e.n); else { const hs = SPR.heroSet && SPR.heroSet(HS), nm = hs && (hero.mv ? fr(hs, 'run', 12) || fr(hs, 'walk', 10) : fr(hs, 'idle', 2)); if (nm) SPR.drawHero(g, nm, 0, hero.x, hero.y, hero.f < 0, 2); else { g.fillStyle = '#fff'; g.fillRect(hero.x - 10, hero.y - 50, 20, 50); } } }
   drawBub();
+  if (OV) { OV.t += 1 / 60; const d = devicePixelRatio || 1, t = OV.t; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = `rgba(0,0,0,${Math.min(.85, 3.2 - t)})`; g.fillRect(0, 0, VW, VH); g.textAlign = 'center';   // 11/24 还有命：GAME OVER 被划掉 → 游戏还没完！！！
+    if (t < 1.1) { g.font = `bold ${44 * d}px sans-serif`; g.fillStyle = '#e84a4a'; g.fillText('GAME OVER', VW / 2, VH * .45); if (t > .55) { const k = Math.min(1, (t - .55) / .25), w = g.measureText('GAME OVER').width; g.fillStyle = '#ffe9a8'; g.fillRect(VW / 2 - w / 2 - 10, VH * .45 - 16 * d, (w + 20) * k, 6 * d); } }
+    else if (t < 3.2) { const k = Math.min(1, (t - 1.1) / .15), sc = 1 + (1 - k) * .6; g.save(); g.translate(VW / 2, VH * .45); g.scale(sc, sc); g.font = `bold ${46 * d}px sans-serif`; g.fillStyle = '#ffd77a'; g.fillText('游戏还没完！！！', (Math.random() - .5) * 4 * (1 - k), 0); g.restore(); g.font = `${20 * d}px sans-serif`; g.fillStyle = '#fff'; g.fillText(`还剩 ${CONT} 条命`, VW / 2, VH * .45 + 50 * d); }
+    g.textAlign = 'left'; }
   if (msgT > 0) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(0, VH * .4 - 30 * devicePixelRatio, VW, 50 * devicePixelRatio); g.fillStyle = '#ffe9a8'; g.font = `${20 * devicePixelRatio}px sans-serif`; g.fillText(msg, VW / 2 - g.measureText(msg).width / 2, VH * .4); }
   $('hud').innerHTML = GAME ? `💎 水晶 ${crystal}${CONT ? `　❤ 还剩 ${CONT} 条命` : ''}<br><small>走进公主身边的时空门出发</small>` : `宫殿据点（正式美术，一张图，镜头上下跟随）<br>💎 水晶 ${crystal}（demo 送的）<br>WASD 走 · 靠近人按 E 对话 / 点按钮`; }
 const CONT = +QS.get('cont') || 0, CRY = +QS.get('cry') || 0;
-if (GAME) { let L = []; try { L = JSON.parse(QS.get('L') || '[]'); } catch (e) {} (async () => { const w = t => new Promise(r => setTimeout(r, t)); await w(600); if (CONT) { msg = 'GAME OVER'; msgT = 1.3; await w(1300); msg = `CONTINUE ?　（还剩 ${CONT} 条命）`; msgT = 1.6; await w(1700); } if (CRY) { msg = `带回 ${CRY} 水晶`; msgT = 2; await w(1800); }
+if (GAME) { let L = []; try { L = JSON.parse(QS.get('L') || '[]'); } catch (e) {} (async () => { const w = t => new Promise(r => setTimeout(r, t)); await w(600); if (CONT) { OV = { t: 0 }; await w(3200); OV = null; } if (CRY) { msg = `带回 ${CRY} 水晶`; msgT = 2; await w(1800); }
   for (const [who, txt] of L) { const n = NPC.find(o => o.name === who) || (who === '露米娜' ? NPC[0] : NPC[3]); say(n, txt); await w(Math.max(2200, txt.length * 160)); } })(); }
 Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
 </script></body></html>

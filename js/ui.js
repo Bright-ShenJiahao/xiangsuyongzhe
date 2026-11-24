@@ -175,9 +175,10 @@
   $('aReset').onclick = () => { P.free = {}; renderPrep(); };
   $('pBack').onclick = () => show('title');
   const introSeen = () => store.get('introSeen') === '1';
-  function playIntro(go) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+  { const c = $('introSkip'); c.checked = store.get('introSkip') === '1'; c.onchange = () => store.set('introSkip', c.checked ? '1' : '0'); }
+  function playIntro(go, hub) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game' + (hub ? '&hub' : '') + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
-  $('pGo').onclick = () => { const b = build(); if (!introSeen()) playIntro(() => startBattle(b)); else if (pendRes) { const r = pendRes; pendRes = null; playTower(r, () => startBattle(b)); } else openHub('', () => startBattle(b)); };   // 11/24 第一次：塔顶开场；之后：从宫殿出发
+  $('pGo').onclick = () => { const b = build(); if (!introSeen()) playIntro(() => startBattle(b)); else { const hub = () => { if (pendRes) { const r = pendRes; pendRes = null; playTower(r, () => startBattle(b)); } else openHub('', () => startBattle(b)); }; if ($('introSkip').checked) hub(); else playIntro(hub, true); } };   // 11/24 勾了跳过剧情：直接宫殿；没勾：剧情 → 宫殿   // 11/24 第一次：塔顶开场；之后：从宫殿出发
   let heroSwing = 0;
   function drawHeroPreview(t, dt) {
     const c = $('heroCv'), r = c.getBoundingClientRect(); if (!r.width || !r.height) return;
