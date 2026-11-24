@@ -1,0 +1,48 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>塔顶：前后遮挡 + 背后走透明（局外）</title>
+<style>html,body{margin:0;height:100%;background:#0c0908;color:#f4ecd8;font:14px sans-serif;overflow:hidden}#w{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}canvas{width:min(100vw,calc(100vh*856/482));image-rendering:pixelated;touch-action:none}#t{position:fixed;top:6px;left:0;right:0;text-align:center;text-shadow:0 1px 3px #000;pointer-events:none}</style>
+<div id="w"><canvas id="c" width="856" height="482"></canvas></div><div id="t">WASD / 方向键走动；手机按住屏幕拖。走到火盆、树、柱子、祭坛后面，它们会变半透明。　加 ?dbg 看范围线</div>
+<script>
+const CW=856,CH=482,S=CW/1672,$=i=>document.getElementById(i),c=$('c'),g=c.getContext('2d'),DBG=/dbg/.test(location.search);
+const IM=s=>Object.assign(new Image(),{src:s}),BG=IM('../art/intro/tower.webp'),AT=IM('../art/hero/atlas.png'),PR=IM('../art/heroP/atlas.png'),NI={};
+['guard_idle0','guard_idle1','mage_idle0','mage_idle1'].forEach(k=>NI[k]=IM('../art/npc/'+k+'.png'));
+let HF=null;fetch('../art/hero/atlas.json').then(r=>r.json()).then(j=>HF={idle:j.f['hero:sword.idle'],run:j.f['hero:sword.run']});
+const PRF=[[878,140,38,40,16.5,40],[918,140,39,40,17.4,40]];
+/* 遮挡物：多边形（1672x941 图坐标）+ 脚底线 base（主角脚的 y 比它小=在它后面） */
+const mir=p=>p.map(([x,y])=>[1672-x,y]);
+const TL=[[108,640],[125,600],[170,580],[215,585],[250,615],[250,650],[235,670],[215,690],[240,700],[238,735],[215,762],[150,762],[125,735],[120,705],[150,690],[170,680],[130,660]];
+const PL=[[580,45],[660,45],[665,215],[655,248],[595,248],[598,200],[585,150]];
+const OCC=[
+ {n:'火盆左',p:[[215,325],[280,325],[280,447],[215,447]],base:447},{n:'火盆右',p:[[1392,325],[1457,325],[1457,447],[1392,447]],base:447},
+ {n:'树左',p:TL,base:765},{n:'树右',p:mir(TL),base:765},
+ {n:'柱子左',p:PL,base:248},{n:'柱子右',p:mir(PL),base:248},
+ {n:'祭坛',p:[[775,168],[900,168],[900,236],[775,236]],base:236},
+ {n:'下栏杆',p:[[58,748],[1614,748],[1614,852],[58,852]],base:9999}];
+/* 挡路的脚底范围（1672 坐标 x1,y1,x2,y2） */
+const BLK=[[215,420,280,450],[1392,420,1457,450],[140,700,230,768],[1442,700,1532,768],[592,205,657,250],[1015,205,1080,250],[775,205,900,238]];
+/* 可走区域 */
+const WALK=[[95,420,1580,770],[200,330,500,425],[1172,330,1470,425],[535,292,1140,425],[570,125,1105,295]];
+const inR=(x,y,r)=>x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3];
+const NPCS=[{x:835,y:430,k:'p'},{x:1270,y:425,k:'m',f:1},{x:505,y:418,k:'g'},{x:1165,y:418,k:'g',f:1}];
+const okAt=(x,y)=>{const X=x/S,Y=y/S;if(!WALK.some(r=>inR(X,Y,r)))return false;if(BLK.some(r=>inR(X,Y,r)))return false;if(NPCS.some(o=>Math.hypot((X-o.x)/26,(Y-o.y)/12)<1))return false;return true;};
+let hero={x:835*S,y:540*S,f:1,mv:0},LAY=null;
+function mkLay(){LAY=OCC.map(o=>{const l=document.createElement('canvas');l.width=CW;l.height=CH;const q=l.getContext('2d');q.imageSmoothingEnabled=false;q.beginPath();o.p.forEach(([x,y],i)=>i?q.lineTo(x*S,y*S):q.moveTo(x*S,y*S));q.closePath();q.clip();q.drawImage(BG,0,0,CW,CH);const xs=o.p.map(p=>p[0]*S),ys=o.p.map(p=>p[1]*S);return{l,x1:Math.min(...xs),x2:Math.max(...xs),y1:Math.min(...ys),y2:Math.max(...ys),base:o.base*S};});}
+const KEY={};addEventListener('keydown',e=>KEY[e.code]=1);addEventListener('keyup',e=>KEY[e.code]=0);let tp=null;
+c.addEventListener('pointerdown',e=>tp=e);addEventListener('pointermove',e=>{if(tp)tp=e});addEventListener('pointerup',()=>tp=null);
+let last=0,T=0;
+function frame(n){requestAnimationFrame(frame);const dt=Math.min(.05,(n-last)/1000||0);last=n;T+=dt;
+ let dx=(KEY.KeyD||KEY.ArrowRight?1:0)-(KEY.KeyA||KEY.ArrowLeft?1:0),dy=(KEY.KeyS||KEY.ArrowDown?1:0)-(KEY.KeyW||KEY.ArrowUp?1:0);
+ if(tp){const r=c.getBoundingClientRect();dx=(tp.clientX-r.left)/r.width*CW-hero.x;dy=(tp.clientY-r.top)/r.height*CH-hero.y;}
+ const l=Math.hypot(dx,dy);hero.mv=l>(tp?3:0);if(hero.mv){if(Math.abs(dx)>.5)hero.f=dx<0?-1:1;const nx=hero.x+dx/l*110*dt,ny=hero.y+dy/l*110*dt;if(okAt(nx,hero.y))hero.x=nx;if(okAt(hero.x,ny))hero.y=ny;}
+ if(!BG.complete)return;if(!LAY)mkLay();g.imageSmoothingEnabled=false;g.drawImage(BG,0,0,CW,CH);
+ const E=[];
+ for(const o of NPCS){E.push({y:o.y*S,d:()=>{if(o.k==='p'){if(!PR.complete)return;const f=PRF[Math.floor(T*2)%2];g.drawImage(PR,f[0],f[1],f[2],f[3],Math.round(o.x*S-f[4]),Math.round(o.y*S-f[5]),f[2],f[3]);}else{const im=NI[(o.k==='g'?'guard_idle':'mage_idle')+(Math.floor(T*1.5)%2)];if(!im.complete)return;g.save();g.translate(Math.round(o.x*S),Math.round(o.y*S));if(o.f)g.scale(-1,1);g.drawImage(im,-Math.round(im.width/2),-im.height);g.restore();}}});}
+ E.push({y:hero.y,d:()=>{if(!HF||!AT.complete)return;const A=hero.mv?HF.run:HF.idle,f=A[Math.floor(T*(hero.mv?10:2))%A.length];g.save();if(hero.f<0){g.translate(hero.x*2,0);g.scale(-1,1);}g.drawImage(AT,f[0],f[1],f[2],f[3],Math.round(hero.x-f[4]),Math.round(hero.y-f[5]),f[2],f[3]);g.restore();}});
+ E.sort((a,b)=>a.y-b.y);for(const e of E)e.d();
+ /* 主角在物体后面：把物体再盖回来，半透明，透出主角 */
+ const hb={x1:hero.x-20,x2:hero.x+20,y1:hero.y-44,y2:hero.y};
+ for(const o of LAY){if(hero.y<o.base-1&&hb.x2>o.x1&&hb.x1<o.x2&&hb.y2>o.y1&&hb.y1<o.y2){g.globalAlpha=.5;g.drawImage(o.l,0,0);g.globalAlpha=1;}}
+ if(DBG){g.lineWidth=1;g.strokeStyle='#f44';OCC.forEach(o=>{g.beginPath();o.p.forEach(([x,y],i)=>i?g.lineTo(x*S,y*S):g.moveTo(x*S,y*S));g.closePath();g.stroke();});g.strokeStyle='#4af';BLK.forEach(r=>g.strokeRect(r[0]*S,r[1]*S,(r[2]-r[0])*S,(r[3]-r[1])*S));g.strokeStyle='#4f4';WALK.forEach(r=>g.strokeRect(r[0]*S,r[1]*S,(r[2]-r[0])*S,(r[3]-r[1])*S));}
+}
+requestAnimationFrame(frame);
+if(/test=/.test(location.search)){const m=location.search.match(/test=(\d+),(\d+)/);hero.x=+m[1]*S;hero.y=+m[2]*S;}
+</script>
