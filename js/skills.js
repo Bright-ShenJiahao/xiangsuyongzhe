@@ -8,7 +8,7 @@ window.SKILLS = (A) => {
   const D2 = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * YS) / K;
   const P = (x, y, a, d) => ({ x: x + Math.cos(a) * d * K, y: y + Math.sin(a) * d * K / YS });
   const wait = (t, fn) => later.push({ t, fn });
-  const area = () => A.hero().m.area;
+  const area = () => A.hero().m.area, MR = 1.45;   // 11/24 近身招式射程 ×1.45（近战加强）
   // ---------- 命中判定 ----------
   const inCircle = (z, c, r) => D2(z, c) < r + 6 * (z.k || 1);
   function inFan(z, c, a, r, half) { if (D2(z, c) > r + 6) return false; const b = A.ang(c, z), da = Math.abs(((b - a + PI * 3) % (PI * 2)) - PI); return da < half + .12; }
@@ -30,11 +30,11 @@ window.SKILLS = (A) => {
   // ---------- 每本书出手 ----------
   // c = { S, sk, L(熟练度格数), d(本次伤害), a(朝向), sid }；返回 false = 场上没有敌人，不放
   const C = {
-    sword(c) { const r = 52 * (c.L >= 3 ? 1.25 : 1) * area(), half = 1.18 * (c.L >= 3 ? 1.2 : 1), h = H();
+    sword(c) { const r = 52 * MR * (c.L >= 3 ? 1.25 : 1) * area(), half = 1.18 * (c.L >= 3 ? 1.2 : 1), h = H();
       const slash = (rev) => { const a = A.aimNow(c.a); A.fx({ k: 'slash', x: h.x, y: h.y - 12 * K, a, t: 0, T: .2, r, half, rev }); hitAll(z => inFan(z, h, a, r, half), c.d, { sid: c.sid, kb: 12 }); };
       slash(); if (c.L >= 5) wait(.15, () => slash(true));
       if (c.L >= 7) shoot({ x: h.x, y: h.y, a: c.a, v: 260, life: .6, r: 12, pierce: 99, d: c.d * .7, sid: c.sid, look: 'crescent' }); },
-    whirl(c) { const r = 40 * area(), h = H(), spin = (k) => { A.fx({ k: 'ring', x: h.x, y: h.y, t: 0, T: .3, r, col: '#e8ecf4' }); hitAll(z => inCircle(z, h, r), c.d * k, { sid: c.sid, kb: 12, slowP: c.L >= 3 ? [.3, 1.5] : 0 }); };
+    whirl(c) { const r = 40 * MR * area(), h = H(), spin = (k) => { A.fx({ k: 'ring', x: h.x, y: h.y, t: 0, T: .3, r, col: '#e8ecf4' }); hitAll(z => inCircle(z, h, r), c.d * k, { sid: c.sid, kb: 12, slowP: c.L >= 3 ? [.3, 1.5] : 0 }); };
       spin(1); if (c.L >= 5) wait(.25, () => spin(1));
       if (c.L >= 7) zone({ x: h.x, y: h.y, r: r * .7, T: 1, every: .2, d: c.d * .4, sid: c.sid, look: 'wind' }); },
     guard(c) { const max = c.L >= 3 ? 3 : 2; if (swords.length >= max) swords.sort((a, b) => a.life - b.life).shift(); swords.push({ hits: 8, life: 6, ph: R(0, 7), d: c.d, sid: c.sid, L: c.L, cd: new Map() }); },
@@ -49,17 +49,17 @@ window.SKILLS = (A) => {
       hitAll(z => inFan(z, h, c.a, r, PI / 2), c.d, { sid: c.sid, kb: 16, crit: c.S.crit });
       if (c.L >= 7) shoot({ x: h.x, y: h.y, a: c.a, v: 220, life: .9, r: 22, pierce: 99, d: c.d * .6, sid: c.sid, look: 'crescent', big: 2 }); },
     storm(c) { return { hold: c.L >= 5 ? 3 : 2, move: c.L >= 3 ? 1.3 : 1, every: .2, spin: true,
-      tick: () => { const h = H(), r = 30 * area(); A.fx({ k: 'ring', x: h.x, y: h.y, t: 0, T: .2, r, col: '#e8ecf4' }); hitAll(z => inCircle(z, h, r), c.d, { sid: c.sid, kb: 6 }); },
+      tick: () => { const h = H(), r = 30 * MR * area(); A.fx({ k: 'ring', x: h.x, y: h.y, t: 0, T: .2, r, col: '#e8ecf4' }); hitAll(z => inCircle(z, h, r), c.d, { sid: c.sid, kb: 6 }); },
       end: () => { if (c.L >= 7) { const h = H(); A.fx({ k: 'ring', x: h.x, y: h.y, t: 0, T: .4, r: 60, col: '#fff2b0' }); hitAll(z => inCircle(z, h, 60 * area()), c.d * 3, { sid: c.sid, kb: 16 }); } } }; },
     holysword(c) { const p0 = dense(40) || H(), n = c.L >= 3 ? 18 : 12;
       for (let i = 0; i < n; i++) { const p = { x: p0.x + R(-50, 50) * K, y: p0.y + R(-35, 35) * K }; A.tele({ k: 'circle', x: p.x, y: p.y, r: 14, t: 0, T: .3 + i * .06 }); wait(.3 + i * .06, () => { A.fx({ k: 'pillar', x: p.x, y: p.y, t: 0, T: .3, r: 8, col: '#fff2b0' }); hitAll(z => inCircle(z, p, 14), c.d, { sid: c.sid, kb: 8 }); }); }
       if (c.L >= 5) wait(.4, () => zone({ x: p0.x, y: p0.y, r: 50, T: 3, every: .3, d: c.d * .3, sid: c.sid, look: 'holy' }));
       if (c.L >= 7) wait(.4 + n * .06, () => { A.fx({ k: 'pillar', x: p0.x, y: p0.y, t: 0, T: .5, r: 24, col: '#ffffff' }); A.shake(.4); hitAll(z => inCircle(z, p0, 50), c.d * 4, { sid: c.sid, kb: 20 }); }); },
     // ---- 枪 ----
-    spear(c) { const h = H(), L = 82 * (c.L >= 3 ? 1.25 : 1) * area(), w = 14 * area(), go = () => { const a = A.aimNow(c.a); A.fx({ k: 'thrust', x: h.x, y: h.y - 12 * K, a, L, w, t: 0, T: .2 }); hitAll(z => inLine(z, h, a, L, w), c.d, { sid: c.sid, kb: 12 }); return a; };
+    spear(c) { const h = H(), L = 82 * MR * (c.L >= 3 ? 1.25 : 1) * area(), w = 14 * area(), go = () => { const a = A.aimNow(c.a); A.fx({ k: 'thrust', x: h.x, y: h.y - 12 * K, a, L, w, t: 0, T: .2 }); hitAll(z => inLine(z, h, a, L, w), c.d, { sid: c.sid, kb: 12 }); return a; };
       const a = go(); if (c.L >= 5) wait(.15, go);
       if (c.L >= 7) { const e = P(h.x, h.y, a, L * .8); shoot({ x: e.x, y: e.y, a, v: 300, life: .4, r: 10, pierce: 99, d: c.d * .6, sid: c.sid, look: 'beam' }); } },
-    sweep(c) { const h = H(), r = 48 * (c.L >= 3 ? 1.25 : 1) * area(), half = 1.4, st = c.L >= 5 ? .6 : .3, go = (rev) => { const a = A.aimNow(c.a); A.fx({ k: 'slash', x: h.x, y: h.y - 10 * K, a, t: 0, T: .22, r, half, rev, wood: true }); hitAll(z => inFan(z, h, a, r, half), c.d, { sid: c.sid, kb: 22, cc: ['stun', st] }); };
+    sweep(c) { const h = H(), r = 48 * MR * (c.L >= 3 ? 1.25 : 1) * area(), half = 1.4, st = c.L >= 5 ? .6 : .3, go = (rev) => { const a = A.aimNow(c.a); A.fx({ k: 'slash', x: h.x, y: h.y - 10 * K, a, t: 0, T: .22, r, half, rev, wood: true }); hitAll(z => inFan(z, h, a, r, half), c.d, { sid: c.sid, kb: 22, cc: ['stun', st] }); };
       go(); if (c.L >= 7) wait(.2, () => go(true)); },
     javelin(c) { const h = H(), n = c.L >= 7 ? 2 : 1; for (let i = 0; i < n; i++) shoot({ x: h.x, y: h.y - 14 * K, a: c.a + (i - (n - 1) / 2) * .12, v: 300, life: .8, r: 9, pierce: c.L >= 3 ? 4 : 2, d: c.d, sid: c.sid, look: 'spear', o: { slowP: [.5, 2] },
       onEnd: p => { marks.push({ k: 'stuck', x: p.x, y: p.y + 14 * K, a: p.a, t: 0, T: 1.2 }); if (c.L >= 5) { A.fx({ k: 'boom', x: p.x, y: p.y + 14 * K, t: 0, T: .35, r: 30 }); hitAll(z => inCircle(z, { x: p.x, y: p.y + 14 * K }, 30), c.d * .8, { sid: c.sid, kb: 12 }); } } }); },
@@ -67,15 +67,15 @@ window.SKILLS = (A) => {
       tick: () => { const h = H(), t = near(); if (!t) return; const a = A.ang(h, t) + R(-.25, .25), L = 70 * area(), w = 10; k++; A.face(a); A.fx({ k: 'thrust', x: h.x, y: h.y - 12 * K, a, L, w, t: 0, T: .12 });
         if (c.L >= 5) hitAll(z => inLine(z, h, a, L, w), c.d, { sid: c.sid, kb: 4 }); else { const z = F().filter(z => inLine(z, h, a, L, w)).sort((p, q) => D2(p, h) - D2(q, h))[0]; if (z) A.hurt(z, c.d, h, 4, c.sid); }
         if (c.L >= 7 && k === n) shoot({ x: h.x, y: h.y, a, v: 320, life: .5, r: 16, pierce: 99, d: c.d * 4, sid: c.sid, look: 'beam', big: 2 }); } }; },
-    rising(c) { const h = H(), k = c.L >= 3 ? 1.25 : 1, L = 70 * k * area(), w = 22 * k * area(), hit = [];
+    rising(c) { const h = H(), k = c.L >= 3 ? 1.25 : 1, L = 70 * MR * k * area(), w = 22 * k * area(), hit = [];
       A.fx({ k: 'thrust', x: h.x, y: h.y - 12 * K, a: c.a, L, w, t: 0, T: .25 });
       hitAll(z => inLine(z, h, c.a, L, w), c.d, { sid: c.sid, kb: 4, cc: ['air', .6], airVuln: c.L >= 5, on: z => hit.push(z) });
       wait(.6, () => { for (const z of hit) if (!z.dead) { A.hurt(z, c.d * .67, z, 0, c.sid); if (c.L >= 7) { A.fx({ k: 'ring', x: z.x, y: z.y, t: 0, T: .3, r: 22, col: '#c8a066' }); hitAll(o => o !== z && inCircle(o, z, 22), c.d * .5, { sid: c.sid, kb: 8 }); } } }); },
     drill(c) { const h = H(); shoot({ x: h.x, y: h.y - 10 * K, a: c.a, v: 60, life: 2, r: 14 * (c.L >= 3 ? 1.3 : 1) * area(), pierce: 999, d: c.d, sid: c.sid, look: 'drill', tick: .2, pullSide: c.L >= 5,
       onEnd: p => { if (c.L >= 7) { A.fx({ k: 'boom', x: p.x, y: p.y + 10 * K, t: 0, T: .4, r: 40 }); A.shake(.2); hitAll(z => inCircle(z, { x: p.x, y: p.y + 10 * K }, 40), c.d * 4, { sid: c.sid, kb: 16 }); } } }); },
-    leap(c) { const h = H(), r = 40 * area(), n = c.L >= 3 ? 6 : 4, a0 = R(0, PI); A.shake(.3);
+    leap(c) { const h = H(), r = 40 * MR * area(), n = c.L >= 3 ? 6 : 4, a0 = R(0, PI); A.shake(.3);
       const slam = (k) => { A.fx({ k: 'ring', x: h.x, y: h.y, t: 0, T: .4, r, col: '#c8a066' }); hitAll(z => inCircle(z, h, r), c.d * k, { sid: c.sid, kb: 18, cc: c.L >= 5 && k === 1 ? ['air', .6] : 0 }); };
-      slam(1); for (let i = 0; i < n; i++) { const a = a0 + i / n * PI * 2; A.fx({ k: 'line', x: h.x, y: h.y, a, L: 90, w: 10, t: 0, T: .35, col: '#c8a066' }); hitAll(z => inLine(z, h, a, 90, 12), c.d * .5, { sid: c.sid, kb: 8 }); }
+      slam(1); for (let i = 0; i < n; i++) { const a = a0 + i / n * PI * 2; A.fx({ k: 'line', x: h.x, y: h.y, a, L: 120, w: 10, t: 0, T: .35, col: '#c8a066' }); hitAll(z => inLine(z, h, a, 120, 12), c.d * .5, { sid: c.sid, kb: 8 }); }
       if (c.L >= 7) wait(.5, () => slam(.6)); },
     dragon(c) { let th = A.ang(H(), near() || H()); return { hold: 4, move: 1, every: .1,
       tick: () => { th += .35; const h = H(), p = P(h.x, h.y, th, 70); A.fx({ k: 'orb', x: p.x, y: p.y - 14 * K, t: 0, T: .25, r: c.L >= 3 ? 14 : 10, col: '#6fd8c8' }); hitAll(z => inCircle(z, p, c.L >= 3 ? 22 : 16), c.d * .4, { sid: c.sid, kb: 10 }); },

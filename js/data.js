@@ -99,22 +99,22 @@ window.DATA = {
   // l3 / l5 / l7 = 熟练度第 3 / 5 / 7 格的变化（说明用）
   skills: {
     // ---- 剑（力量，物理）----
-    sword: { name: '半月斩', brief: '身前大扇面横扫', rg: 60, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .4, dmg: 6, desc: '身前 135° 大扇面一刀。', l3: '扇面扩大 +25%', l5: '反手再补一刀', l7: '斩完飞出一道月牙剑气' },
-    whirl: { name: '旋风斩', brief: '原地转一圈', rg: 48, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .45, dmg: 4, desc: '原地转一圈，打身边一整圈。', l3: '打中的怪减速', l5: '连转两圈', l7: '转完留下小旋风' },
+    sword: { name: '半月斩', brief: '身前大扇面横扫', rg: 87, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .4, dmg: 6, desc: '身前 135° 大扇面一刀。', l3: '扇面扩大 +25%', l5: '反手再补一刀', l7: '斩完飞出一道月牙剑气' },
+    whirl: { name: '旋风斩', brief: '原地转一圈', rg: 70, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .45, dmg: 4, desc: '原地转一圈，打身边一整圈。', l3: '打中的怪减速', l5: '连转两圈', l7: '转完留下小旋风' },
     guard: { name: '守护之刃', brief: '召唤飞剑绕身转', rg: 90, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .5, rc: .3, dmg: 4, frame: 'big', desc: '每次召唤 1 把大飞剑绕身转（最多 2 把），碰 8 次才碎。', l3: '最多 3 把', l5: '碰到的怪流血', l7: '碎掉时飞向敌人' },
     wave: { name: '破空斩', brief: '飞出月牙剑气', rg: 220, sys: '剑', w: 'sword', tier: 2, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .5, dmg: 7, desc: '朝最近的敌人射出月牙剑气，穿透 3 只。', l3: '扇形 3 道', l5: '穿透不限', l7: '飞到尽头再飞回来' },
     phantom: { name: '幻影斩', brief: '剑气直线 + 留残影', rg: 130, sys: '剑', w: 'sword', tier: 2, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .5, dmg: 9, desc: '瞬间斩出一条直线，尽头留下残影转身斩一圈。', l3: '残影停留 2 秒，跟着你出剑招', l5: '直线留伤痕，怪流血', l7: '两端各留一个残影' },
     flash: { name: '瞬光斩', brief: '蓄力拔剑大半圆', rg: 110, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .8, rc: .5, dmg: 20, crit: .3, charge: true, desc: '蓄力后向前砍出一个大半圆，暴击率 +30%。蓄力时翻滚就作废。', l3: '蓄力缩短到 0.5 秒', l5: '半圆扩大 +30%', l7: '出刀后飞出巨大月牙剑气' },
-    storm: { name: '剑刃风暴', brief: '持续旋转的剑刃风暴', rg: 60, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .4, rc: .4, hold: 2, dmg: 3, desc: '旋转 2 秒一路割过去，能走，翻滚不取消。', l3: '旋转时移速 +30%', l5: '持续 3 秒', l7: '结束时爆开一圈剑气' },
+    storm: { name: '剑刃风暴', brief: '持续旋转的剑刃风暴', rg: 87, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .4, rc: .4, hold: 2, dmg: 3, desc: '旋转 2 秒一路割过去，能走，翻滚不取消。', l3: '旋转时移速 +30%', l5: '持续 3 秒', l7: '结束时爆开一圈剑气' },
     holysword: { name: '圣剑审判', brief: '天降剑雨砸怪群', rg: 220, sys: '剑', w: 'sword', tier: 4, icon: 'sword', type: 'str', dt: 'phys', wu: 1, rc: .8, dmg: 12, frame: 'big', desc: '天上落下十几把剑砸向怪最多的地方。', l3: '剑数 +50%', l5: '剑插地形成剑阵', l7: '最后落下一把巨剑' },
     // ---- 枪（力量，物理）----
-    spear: { name: '疾风刺', brief: '直线突刺穿透一排', rg: 90, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .25, rc: .45, dmg: 7, desc: '朝最近的敌人长直线突刺，穿透一排。', l3: '长度 +25%', l5: '连刺两下', l7: '枪芒继续往前飞' },
-    sweep: { name: '回旋枪扫', brief: '横扫击晕', rg: 56, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .35, rc: .4, dmg: 5, desc: '枪杆横扫身前 160°，把怪击晕 0.3 秒。', l3: '扇面扩大 +25%', l5: '眩晕加时到 0.6 秒', l7: '反手再扫回来' },
+    spear: { name: '疾风刺', brief: '直线突刺穿透一排', rg: 130, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .25, rc: .45, dmg: 7, desc: '朝最近的敌人长直线突刺，穿透一排。', l3: '长度 +25%', l5: '连刺两下', l7: '枪芒继续往前飞' },
+    sweep: { name: '回旋枪扫', brief: '横扫击晕', rg: 81, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .35, rc: .4, dmg: 5, desc: '枪杆横扫身前 160°，把怪击晕 0.3 秒。', l3: '扇面扩大 +25%', l5: '眩晕加时到 0.6 秒', l7: '反手再扫回来' },
     javelin: { name: '穿云枪', brief: '投枪钉地减速', rg: 240, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .4, rc: .4, dmg: 10, frame: 'big', desc: '把枪投向最近的敌人，穿透 2 只后钉在地上，钉中的怪减速。', l3: '穿透 4 只', l5: '钉地处炸开一圈', l7: '一次投 2 支' },
-    hundred: { name: '百裂刺', brief: '原地快刺 6 下', rg: 90, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .2, rc: .4, hold: 1, dmg: 3, desc: '原地朝前方快刺 6 下（占 1 秒，能慢慢走）。', l3: '刺 9 下', l5: '每下都穿透', l7: '最后一刺放出粗枪芒' },
-    rising: { name: '升龙挑', brief: '上挑浮空一排', rg: 80, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .3, rc: .45, dmg: 6, frame: 'big', desc: '向前上挑，前方一条宽直线的怪全部浮空 0.6 秒，落地再伤。', l3: '直线变长变宽 +25%', l5: '浮空的怪受伤 +30%', l7: '落地砸出冲击' },
+    hundred: { name: '百裂刺', brief: '原地快刺 6 下', rg: 130, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .2, rc: .4, hold: 1, dmg: 3, desc: '原地朝前方快刺 6 下（占 1 秒，能慢慢走）。', l3: '刺 9 下', l5: '每下都穿透', l7: '最后一刺放出粗枪芒' },
+    rising: { name: '升龙挑', brief: '上挑浮空一排', rg: 116, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .3, rc: .45, dmg: 6, frame: 'big', desc: '向前上挑，前方一条宽直线的怪全部浮空 0.6 秒，落地再伤。', l3: '直线变长变宽 +25%', l5: '浮空的怪受伤 +30%', l7: '落地砸出冲击' },
     drill: { name: '螺旋龙枪', brief: '慢速钻头穿透', rg: 200, sys: '枪', w: 'spear', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .6, rc: .5, dmg: 3, desc: '刺出一道旋转枪芒缓慢向前，持续搅伤路上的怪。', l3: '枪芒变粗 +30%', l5: '两边的怪被吸向中线', l7: '走到尽头爆炸' },
-    leap: { name: '跃龙击', brief: '跃起砸地 + 地裂', rg: 60, sys: '枪', w: 'spear', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .7, rc: .5, dmg: 16, frame: 'big', desc: '跃起砸地：一圈冲击 + 四道地裂。', l3: '地裂 6 道', l5: '中心冲击把怪击飞', l7: '0.5 秒后再震一次' },
+    leap: { name: '跃龙击', brief: '跃起砸地 + 地裂', rg: 87, sys: '枪', w: 'spear', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .7, rc: .5, dmg: 16, frame: 'big', desc: '跃起砸地：一圈冲击 + 四道地裂。', l3: '地裂 6 道', l5: '中心冲击把怪击飞', l7: '0.5 秒后再震一次' },
     dragon: { name: '苍龙之枪', brief: '苍龙盘旋撞怪', rg: 220, sys: '枪', w: 'spear', tier: 4, icon: 'spear', type: 'str', dt: 'phys', wu: 1, rc: .8, hold: 4, dmg: 6, frame: 'big', desc: '枪化苍龙在场上盘旋 4 秒撞击怪。', l3: '龙更大', l5: '每秒喷龙息', l7: '结束时俯冲重击' },
     // ---- 弓（敏捷，物理）----
     bow: { name: '疾矢', brief: '射最近的怪', rg: 207, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .2, rc: .35, dmg: 4, desc: '射最近的敌人，能穿过 1 只。出手最快。', l3: '穿透 +1', l5: '一次射 2 支', l7: '命中后分裂 3 支小箭' },
@@ -230,6 +230,19 @@ window.DATA = {
     gob_paladin: { name: '哥布林圣骑士', pdef: 25, mdef: 20, hp: 44, spd: 36, reach: 34, dmg: 11, wind: .8, ai: 'boss', dtype: 'phys', nw: 4, k: .66 },
     gob_king: { name: '哥布林王', pdef: 30, mdef: 20, hp: 600, spd: 30, reach: 30, dmg: 14, wind: .9, boss: true, dtype: 'phys' },
   },
+  // 11/24 称号（哥布林森林篇）：解锁后永久，选人界面佩戴 1 个，一加一减。need(rec, run) 判定解锁
+  titles: [
+    { id: 'rookie', name: '初出茅庐', how: '第一次打完一局', fx: { hp: .05, dmg: -.03 }, d: '生命上限 +5%<br><span class="bad">伤害 −3%</span>', need: (R) => (R.runs || 0) >= 1 },
+    { id: 'gobkiller', name: '哥布林杀手', how: '累计击杀 3000 只哥布林', fx: { dmg: .08, take: .05 }, d: '伤害 +8%<br><span class="bad">受到伤害 +5%</span>', need: (R) => (R.kills || 0) >= 3000 },
+    { id: 'undying', name: '不死之身', how: '累计倒下 20 次', fx: { hp: .15, dmg: -.05 }, d: '生命上限 +15%<br><span class="bad">伤害 −5%</span>', need: (R) => (R.deaths || 0) >= 20 },
+    { id: 'gale', name: '疾风', how: '一局翻滚 300 次', fx: { move: .08, hp: -.08 }, d: '移速 +8%<br><span class="bad">生命上限 −8%</span>', need: (R, r) => (r.rolls || 0) >= 300 },
+    { id: 'gambler', name: '赌徒', how: '街机拉出 777', fx: { crit: .05, eva: -.03 }, d: '暴击率 +5%<br><span class="bad">闪避 −3%</span>', need: (R, r) => !!r.s777 },
+    { id: 'gollum', name: '小咕噜之友', how: '一局里抓到小咕噜 5 次', fx: { coin: .05, take: .05 }, d: '铜钱获得 +5%<br><span class="bad">受到伤害 +5%</span>', need: (R, r) => (r.thief || 0) >= 5 },
+    { id: 'elitehunter', name: '精英猎人', how: '累计击败 50 只哥布林精英', fx: { elite: .12, mob: -.05 }, d: '对精英伤害 +12%<br><span class="bad">对小怪伤害 −5%</span>', need: (R) => (R.elites || 0) >= 50 },
+    { id: 'kingbane', name: '哥布林王的克星', how: '打倒哥布林王', fx: { boss: .10, hp: -.05 }, d: '对首领伤害 +10%<br><span class="bad">生命上限 −5%</span>', need: (R) => (R.wins || 0) >= 1 },
+  ],
+  // 11/24 近战书：带一本 生命 +6% 物防 +6；远程书：带一本 移速 +3%
+  meleeBooks: ['sword', 'whirl', 'spear', 'sweep', 'storm', 'leap', 'rising', 'hundred', 'flash'],
   // 地图：第一版只开打谷场
   maps: [
     { id: 'field', name: '哥布林森林', img: 'art/map/forest3.webp', w: 2508, h: 1412,   // 11/21 哥布林森林扩图版：图 1672×941，世界按 1.5 倍算（forest / forest2 / 打谷场 field 都留着）

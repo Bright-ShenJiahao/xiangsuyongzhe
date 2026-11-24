@@ -39,7 +39,7 @@
     cam.snap = true; hero = { gap: 0, rollBuf: 0, x: MAPW / 2, y: (g.y0 + g.y1) / 2, hp: 0, maxHp: 0, f: 1, t: 0, roll: 0, rollCd: 0, inv: 0, hurtT: 0, atkT: 0, moving: false, cd: .6, dead: false,
       m: { dmg: 1, spd: 1, area: 1, move: 1 }, critP: .01, critM: .01, critMulP: 1.5, critMulM: 1.5, eva: 0, pIn: 1, mIn: 1, xpMul: 1, fx: {}, A: {} };
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
-    RUN = { hero: b.hero || 'm', weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0,   /* 11/22 属性加点删除，只靠修炼 */ alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
+    RUN = { title: b.title || null, hero: b.hero || 'm', weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0,   /* 11/22 属性加点删除，只靠修炼 */ alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
       bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: [null], coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
     RUN.slots[0] = { id: b.weapon, lv: 1, xp: 0 }; if (b.item) RUN.gear[0] = { kind: 'item', id: b.item };
     recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0) + 20 * ML('coin'); RUN.lives = 2 + ML('life'); RUN.livesUsed = 0;
@@ -63,17 +63,20 @@
   function trainAll() { const o = {}; for (const src of [RUN.train, RUN.alloc, RUN.tmp]) for (const k in src) o[k] = (o[k] || 0) + src[k]; return o; }
   const OB = id => (hero.ob && hero.ob[id]) || 0;
   // 11/24 局外：水晶（永久）+ 宫殿强化等级（xsyz-meta）
+  const TT = () => { const t = DATA.titles.find(x => x.id === RUN.title); return (t && t.fx) || {}; };   // 11/24 佩戴的称号
   const META = () => { try { return JSON.parse(localStorage.getItem('xsyz-meta') || '{}'); } catch (e) { return {}; } }, ML = id => META()[id] || 0;
   function addCrystal(n, x, y) { if (!n) return; try { localStorage.setItem('xsyz-crystal', (+localStorage.getItem('xsyz-crystal') || 0) + n); } catch (e) {} RUN.cry = (RUN.cry || 0) + n; nums.push({ x, y: y - 60 * K, txt: '+' + n + ' 水晶', t: 0, col: '#9fe6ff' }); }
   function recompute() {
     const items = RUN.gear.filter(x => x && x.kind === 'item').map(x => ({ id: x.id, lv: x.lv || 1 }));   // 11/23 只有左边宝物格里的宝物生效
     const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit }), m = hero.m;
-    m.dmg = (1 + (c.fx.dmg || 0)) * (1 + .03 * (G.lv - 1)); m.spd = c.spd; m.area = c.area; m.move = c.move;
+    m.dmg = (1 + (c.fx.dmg || 0)) * (1 + .03 * (G.lv - 1)) * (1 + (TT().dmg || 0)); m.spd = c.spd; m.area = c.area; m.move = c.move;
     hero.critP = c.critP; hero.critM = c.critM; hero.critMulP = c.critMulP; hero.critMulM = c.critMulM; hero.eva = c.eva; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.2 : 1.5; hero.rollN0 = 2 + (OB('erduan') ? 1 : 0); if (hero.rollN == null || hero.rollN > hero.rollN0) hero.rollN = hero.rollN0; /* 11/24 翻滚 2 格（二段滚 3 格），每格 1.5 秒回 */ hero.A = c.A; hero.fx = c.fx;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20%（11/23 修：hero.A / hero.fx 之前被注释吞掉了）
     hero.ob = {}; for (const o of [...(RUN.oath || []), ...(RUN.mv || [])]) if (o && DATA.oaths[o.id]) hero.ob[o.id] = DATA.oathLv[Math.min(5, o.lv || 1) - 1];
     m.spd *= 1 + .08 * OB('jifeng'); hero.rollMax *= 1 - .08 * OB('qingyu'); hero.rollMul = 1 + .15 * OB('youlong');
-    hero.rollN0 = 2 + (OB('erduan') ? 1 : 0) + (ML('roll3') ? 1 : 0); if (hero.rollN == null || hero.rollN > hero.rollN0) hero.rollN = hero.rollN0; hero.eva += .01 * ML('eva'); if (hero.fx && ML('disc')) hero.fx.shop = (hero.fx.shop || 0) - .05 * ML('disc');   // 局外：三格翻滚、闪避
-    const max = Math.round((c.hp + 3 * (G.lv - 1)) * (1 - (RUN.hpCut || 0)) * (1 + .05 * ML('hp'))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
+    { const bk = RUN.slots.filter(x => x && DATA.skills[x.id]), nM = bk.filter(x => DATA.meleeBooks.includes(x.id)).length, nR = bk.filter(x => !DATA.meleeBooks.includes(x.id) && (DATA.skills[x.id].rg || 0) >= 130).length;   // 11/24 近战书越多越耐打，远程书越多越快
+      hero.nM = nM; const pd = (c.pdef || 0) + 6 * nM; hero.pIn = 1 - Math.min(.5, pd / (pd + 100)); m.move *= 1 + .03 * nR; }
+    hero.rollN0 = 2 + (OB('erduan') ? 1 : 0) + (ML('roll3') ? 1 : 0); if (hero.rollN == null || hero.rollN > hero.rollN0) hero.rollN = hero.rollN0; hero.eva += .01 * ML('eva') + (TT().eva || 0); hero.critP += TT().crit || 0; hero.critM += TT().crit || 0; m.move *= 1 + (TT().move || 0); if (hero.fx) hero.fx.coinMul = (hero.fx.coinMul || 0) + (TT().coin || 0); if (TT().take) { hero.pIn *= 1 + TT().take; hero.mIn *= 1 + TT().take; } if (hero.fx && ML('disc')) hero.fx.shop = (hero.fx.shop || 0) - .05 * ML('disc');   // 局外：三格翻滚、闪避
+    const max = Math.round((c.hp + 3 * (G.lv - 1)) * (1 - (RUN.hpCut || 0)) * (1 + .05 * ML('hp')) * (1 + .06 * (hero.nM || 0)) * (1 + (TT().hp || 0))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
     return c;
   }
   const banner = (t, T) => { G.banner = { t, T, left: T }; };
@@ -100,7 +103,7 @@
     if (!running() || hero.dead) return; hero.rollBuf = 0;
     const [dx, dy] = moveDir(), d = Math.hypot(dx, dy); hero.rvx = d ? dx / d : hero.f; hero.rvy = d ? dy / d : 0; if (dx) hero.f = dx < 0 ? -1 : 1;
     const full = hero.rollN >= hero.rollN0; if (full) hero.rollCd = hero.rollMax; hero.rollN--; hero.rollFull = full;   // 11/24 满格那一滚才触发身法效果
-    hero.roll = .3; hero.inv = Math.max(hero.inv, .3); hero.rolling = 1; hero.pushed = new Set(); if (OB('fanji')) hero.afterRoll = 3;
+    hero.roll = .3; hero.inv = Math.max(hero.inv, .3); hero.rolling = 1; RUN.rolls = (RUN.rolls || 0) + 1; hero.pushed = new Set(); if (OB('fanji')) hero.afterRoll = 3;
     if (full) { if (OB('canying')) hero.cyT = 1;
       if (OB('erduan')) { hero.rShield = 1; nums.push({ x: hero.x, y: hero.y - 50 * K, txt: '护盾', t: 0, col: '#9fdcff' }); }
       if (OB('jinghua')) { if (ESK && ESK.cleanse) ESK.cleanse(); healHero(hero.maxHp * .01 * OB('jinghua')); fx.push({ k: 'ring', x: hero.x, y: hero.y, t: 0, T: .4, r: 34, col: '#bfffd0' }); }
@@ -164,6 +167,7 @@
     if (z.shieldHp > 0 && from && (from.x - z.x) * z.f > 0 && !(z.cc)) { d *= .3; if (--z.shieldHp <= 0) { z.noShield = true; z.st = 'hurt'; z.t = -.25; z.brk = .45; nums.push({ x: z.x, y: z.y - 40 * K, txt: '盾碎了！', t: 0, col: '#ffcf6a' }); } else for (let i = 0; i < 3; i++) parts.push({ x: z.x + z.f * 10 * K, y: z.y - 16 * K, vx: z.f * R(10, 50) * K, vy: R(-50, -10) * K, t: 0, T: .3, col: '#fff2a0', g: 120 * K }); }   // 盾兵正面挡 70%，挡够次数盾碎
     if (z.curseT > 0) d *= 1.15; if (z.vulnN && z.vulnT > 0) d *= 1 + .05 * z.vulnN; if (z.cc && z.cc.k === 'air' && z.airVuln) d *= 1.3;
     if ((z.tier || T.boss) && OB('tulong')) d *= 1 + .12 * OB('tulong');
+    { const tf = TT(); d *= 1 + (T.boss ? tf.boss || 0 : z.tier ? tf.elite || 0 : tf.mob || 0); }
     const mg = dt === 'magic', crit = Math.random() < (mg ? hero.critM : hero.critP) + (hero.castCrit || 0) + (o.crit || 0); if (crit) d *= mg ? hero.critMulM : hero.critMulP; d = Math.max(1, rd(d));
     status(z, o, d);
     if (sid) { const r = Math.min(d, Math.max(0, z.hp)); RUN.dmgW[sid] = (RUN.dmgW[sid] || 0) + r; RUN.dmgAll[sid] = (RUN.dmgAll[sid] || 0) + r; }
@@ -178,7 +182,7 @@
     if (z.hp <= 0) kill(z);
   }
   function kill(z) {
-    z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; G.wk++; G.combo = (G.combo || 0) + 1; G.comboT = 3; G.maxCombo = Math.max(G.maxCombo || 0, G.combo); G.bestCombo = Math.max(G.bestCombo || 0, G.combo); if (G.combo >= 30 && OB('lianzhan')) hero.lzT = 6; if (OB('pozhu') && Math.random() < .04 * OB('pozhu')) hero.instant = 1; if (z.tier === 'elite' && OB('tulong')) healHero(hero.maxHp * .05 * OB('tulong'));
+    z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; if (z.tier === 'elite') RUN.elites = (RUN.elites || 0) + 1; G.wk++; G.combo = (G.combo || 0) + 1; G.comboT = 3; G.maxCombo = Math.max(G.maxCombo || 0, G.combo); G.bestCombo = Math.max(G.bestCombo || 0, G.combo); if (G.combo >= 30 && OB('lianzhan')) hero.lzT = 6; if (OB('pozhu') && Math.random() < .04 * OB('pozhu')) hero.instant = 1; if (z.tier === 'elite' && OB('tulong')) healHero(hero.maxHp * .05 * OB('tulong'));
     { const c = z.T.boss ? 15 : z.tier === 'elite' ? (Math.random() < .6 ? 3 : 0) : z.tier === 'mini' ? (Math.random() < .3 ? 2 : 0) : Math.random() < .02 ? 1 : 0; addCrystal(c, z.x, z.y); }   // 11/24 水晶：小怪随机、精英大概率、首领必掉
     { const E = DATA.econ, v = z.tier === 'elite' ? E.elite : z.tier === 'mini' ? E.mini : Math.random() < (1 + .05 * (RUN.luck || 0)) / E.perKills ? 1 : 0;   // 11/23 铜钱掉在地上，要走过去捡
       if (v && !z.T.boss) G.gc.push({ x: z.x, y: z.y, v, t: 0, h: 0, vh: 90, vx: R(-20, 20) * K }); }
@@ -531,7 +535,7 @@
         case 'book': { const id = randBook(2) || randBook(); if (id) give({ kind: 'book', id }); else RUN.coins += 40; msg = '三本书！掉出一本技能书。'; break; }
         case 'chest': give({ kind: 'item', id: ITEMS()[Math.random() * ITEMS().length | 0].id }); addCrystal(2, hero.x, hero.y); msg = '三个宝箱！掉出一件宝物和 2 水晶。'; break;
         case 'oath': { const L = Object.keys(DATA.oaths); CAMP.learn({ kind: 'oath', id: L[Math.random() * L.length | 0] }, true); msg = '三个印记！得到一个誓约印记。'; break; }
-        case 'seven': { const id = randBook(3) || randBook(); if (id) give({ kind: 'book', id }); give({ kind: 'item', id: ITEMS()[Math.random() * ITEMS().length | 0].id }); addCrystal(8, hero.x, hero.y); msg = '大奖！高阶书 + 宝物 + 8 水晶！'; break; }
+        case 'seven': { const id = randBook(3) || randBook(); if (id) give({ kind: 'book', id }); give({ kind: 'item', id: ITEMS()[Math.random() * ITEMS().length | 0].id }); RUN.s777 = 1; addCrystal(8, hero.x, hero.y); msg = '大奖！高阶书 + 宝物 + 8 水晶！'; break; }
         case 'skull': hero.hp = Math.max(1, hero.hp - hero.maxHp * .15); o.broke = 1; G.shake = .3; msg = '三个骷髅……街机炸了，掉了 15% 生命。'; break;
         case 'pair': RUN.coins += Math.round(price / 2); msg = `两个一样，退回 ${Math.round(price / 2)} 铜钱。`; break;
         default: msg = '什么都没中。';
@@ -760,7 +764,7 @@
     if (T.st === 'go') { let best = null, bd = 1e9; for (const c of G.gc) if (c.t > 6) { const d = dist(c, T); if (d < bd) { bd = d; best = c; } } if (!best || T.n >= 3) T.st = 'run'; else { tx = best.x; ty = best.y; if (bd < 8) { const s = Math.ceil(best.v * .5); T.bag += s; T.grab = .45; best.v -= s; T.n++; if (best.v <= 0) G.gc = G.gc.filter(c => c !== best); } } }
     const dx = tx - T.x, dy = ty - T.y, dd = Math.hypot(dx, dy) || 1, sp = (T.st === 'run' ? 130 : 105) * K * dt; T.f = dx < 0 ? -1 : 1;
     if (dd <= sp) { T.x = tx; T.y = ty; if (T.st === 'run') { if (T.bag) { UI.feed(`小咕噜偷走了 ${T.bag} 铜钱`); G.stolen = 1; } G.thief = null; return; } } else { T.x += dx / dd * sp; T.y += dy / dd * sp; }
-    if (dist(T, hero) < 22 && T.bag && !hero.dead) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`抓到小咕噜！${T.bag} 铜钱掉了出来`); T.bag = 0; T.hurt = .4; T.st = 'run'; T.n = 9; }
+    if (dist(T, hero) < 22 && T.bag && !hero.dead) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`抓到小咕噜！${T.bag} 铜钱掉了出来`); RUN.thief = (RUN.thief || 0) + 1; T.bag = 0; T.hurt = .4; T.st = 'run'; T.n = 9; }
   }
   // 11/23 掉落物和小咕噜换成出的像素图（art/drop、art/goblin/gob_thief）
   const DI = {}; const dimg = n => DI[n] || (DI[n] = Object.assign(new Image(), { src: 'art/drop/' + n + '.png' }));
@@ -864,8 +868,9 @@
     return { time: G.t, kills: G.kills, combo: G.bestCombo || G.maxCombo || 0, coins: Math.round(G.earned || 0), taken: Math.round(G.taken || 0), lv: G.lv, xp: G.xp / need(), dmg: RUN.dmgAll || {}, sk, got: RUN.got || [] }; }
   function end() {
     let cont = 0; if (G.over !== 'win') { const S = loadSave(), used = (RUN.livesUsed || 0) + 1, lives = RUN.lives || 2; if (S && used < lives) { S.RUN.livesUsed = used; S.RUN.lives = lives; try { localStorage.setItem(SAVE, JSON.stringify(S)); } catch (e) {} cont = lives - used; } }   // 11/24 续命：还有命就留着本站存档
-    try { const R0 = JSON.parse(localStorage.getItem('xsyz-rec') || '{}'); R0.best = Math.max(R0.best || 0, G.over === 'win' ? 99 : G.st); R0.kills = (R0.kills || 0) + G.kills; if (G.over === 'win') R0.wins = (R0.wins || 0) + 1; else R0.deaths = (R0.deaths || 0) + 1; R0.runs = (R0.runs || 0) + (cont ? 0 : 1); localStorage.setItem('xsyz-rec', JSON.stringify(R0)); } catch (e) {}   // 11/24 大臣的战绩
-    if (!cont) clearSave(); UI.result({ cont, cry: RUN.cry || 0, win: G.over === 'win', kills: G.kills, time: G.t, lv: G.lv, weapon: RUN.weapon, st: G.st, wi: G.wi, boss: !!(G.W && G.W.boss), dmg: RUN.dmgAll, killer: G.killer, killerElite: G.killerElite, stolen: G.stolen });
+    try { const R0 = JSON.parse(localStorage.getItem('xsyz-rec') || '{}'); R0.best = Math.max(R0.best || 0, G.over === 'win' ? 99 : G.st); R0.kills = (R0.kills || 0) + G.kills; if (G.over === 'win') R0.wins = (R0.wins || 0) + 1; else R0.deaths = (R0.deaths || 0) + 1; R0.runs = (R0.runs || 0) + (cont ? 0 : 1); R0.elites = (R0.elites || 0) + (RUN.elites || 0); RUN.elites = 0; localStorage.setItem('xsyz-rec', JSON.stringify(R0));
+      const own = JSON.parse(localStorage.getItem('xsyz-titles') || '[]'); for (const t of DATA.titles) if (!own.includes(t.id) && t.need(R0, RUN)) { own.push(t.id); (RUN.newT = RUN.newT || []).push(t.name); } localStorage.setItem('xsyz-titles', JSON.stringify(own)); } catch (e) {}   // 11/24 称号解锁   // 11/24 大臣的战绩
+    if (!cont) clearSave(); UI.result({ cont, cry: RUN.cry || 0, newT: RUN.newT || [], win: G.over === 'win', kills: G.kills, time: G.t, lv: G.lv, weapon: RUN.weapon, st: G.st, wi: G.wi, boss: !!(G.W && G.W.boss), dmg: RUN.dmgAll, killer: G.killer, killerElite: G.killerElite, stolen: G.stolen });
   }
 
   // ---------- 绘制 ----------

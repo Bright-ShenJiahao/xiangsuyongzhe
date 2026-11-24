@@ -109,7 +109,7 @@
   const P = { hero: 'm', weapon: 'sword', free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
   const attrsOf = () => { const o = {}; for (const a of DATA.attrs) o[a.id] = DATA.attrBase + (P.free[a.id] || 0); return o; };
   const used = () => Object.values(P.free).reduce((s, v) => s + v, 0);
-  const build = () => ({ hero: P.hero, weapon: P.weapon, attrs: attrsOf(), item: P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
+  const build = () => ({ title: store.get('title') || null, hero: P.hero, weapon: P.weapon, attrs: attrsOf(), item: P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
   function openPrep(fresh) { try { $('introChk').classList.toggle('hide', store.get('introSeen') !== '1'); } catch (e) {}
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
       const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.hero = store.get('hero') === 'f' ? 'f' : 'm';
@@ -133,6 +133,10 @@
       $('hInfo').innerHTML = `<div class="pnName"><h5>${h.name}</h5><span>${h.desc}</span></div><div class="hperk">◆ 特长 · ${h.perk}</div>
         <div class="pills">${PL('hp', '生命', c0.hp)}${PL(dmgA, W0.name + '伤害', pct(c0.dmg - 1))}${PL('guard', '物防 / 魔防', c0.pdef + ' / ' + c0.mdef)}${PL('move', '移速', pct(c0.move - 1))}${PL('crit', '暴击率', Math.round(c0.critP * 100) + '% / ' + Math.round(c0.critM * 100) + '%')}${PL('move', '闪避', Math.round(c0.eva * 100) + '%')}${PL('xp', '经验', pct(c0.xp - 1))}</div>`; }
     // 起手兵器
+    { const own = (() => { try { return JSON.parse(store.get('titles') || '[]'); } catch (e) { return []; } })(), cur = store.get('title') || '', ts = $('tSel'); ts.innerHTML = '';   // 11/24 称号：佩戴 1 个
+      const mk = (id, name, lock) => { const b = document.createElement('button'); b.className = 'btn mini' + (id === cur ? ' gold' : ''); b.textContent = lock ? '？？？' : name; b.disabled = lock; b.onclick = () => { store.set('title', id); openPrep(false); }; ts.appendChild(b); };
+      mk('', '不佩戴'); for (const t of DATA.titles) mk(t.id, t.name, !own.includes(t.id));
+      const T = DATA.titles.find(t => t.id === cur); $('tDesc').innerHTML = T ? `<b>${T.name}</b>　${T.d}` : `已解锁 ${own.length} / ${DATA.titles.length}　<small>（未解锁：${DATA.titles.filter(t => !own.includes(t.id)).map(t => t.how).slice(0, 2).join('、')}……）</small>`; }
     const ws = $('wSel'); ws.innerHTML = '';
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
     const W = DATA.weapons[P.weapon], SK0 = DATA.skills[P.weapon] || {}, AT = DATA.attrs.find(a => a.id === W.type);   // 11/22 起手技能介绍（铃兰式：上面选兵器，下面讲技能）
@@ -330,7 +334,7 @@
   $('rAgain').textContent = '再来一局 ▶';
     if (r.win && !r.mapShown) return worldMap(() => result(Object.assign({}, r, { mapShown: true })));
     $('rTitle').textContent = r.win ? '胜利！' : '败北……';
-    setTimeout(() => { if (r.cry) $('rMsg').textContent += `　这一局带回 ${r.cry} 水晶。`; }, 0);
+    setTimeout(() => { if (r.cry) $('rMsg').textContent += `　这一局带回 ${r.cry} 水晶。`; if (r.newT && r.newT.length) $('rMsg').textContent += `　获得新称号：${r.newT.join('、')}！`; }, 0);
     $('rMsg').textContent = r.win ? '哥布林王倒下了，屏幕那头好像传来了「下一关」的音乐。' : '眼前一黑……再按一次开始键吧。';
     const best = Object.entries(r.dmg || {}).sort((a, b) => b[1] - a[1])[0];
     $('rStats').innerHTML = `<span>打到</span><b>${r.win ? '通关' : r.boss ? '首领战' : `第 ${r.st} 站 第 ${Math.max(0, r.wi) + 1} 波`}</b><span>用时</span><b>${mmss(r.time)}</b><span>击倒</span><b>${r.kills}</b><span>等级</span><b>Lv ${r.lv}</b>${best ? `<span>主力</span><b>${DATA.skills[best[0]].name}</b>` : ''}`;

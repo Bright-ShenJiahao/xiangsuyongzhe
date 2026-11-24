@@ -1195,3 +1195,6 @@ body.tvbg { background: #000; }
 #slotM .stip { font-size: 12px; opacity: .6; margin-top: 8px; }
 @media (max-width: 600px) { #slotM .reel { width: 78px; height: 92px; } #slotM .reel img { width: 44px; height: 44px; } }
 #bRoll.full { box-shadow: 0 0 10px 3px rgba(255,220,120,.85); }   /* 11/24 翻滚满格发光 */
+
+.pnTit { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }   /* 11/24 称号 */
+.pnTit button[disabled] { opacity: .45; }
