@@ -40,9 +40,9 @@
   // ================= 主界面 =================
   const tvOff = go => { const t = $('title'); if (t.classList.contains('tvoff')) return; t.classList.add('tvoff'); document.body.classList.add('tvbg'); setTimeout(() => { t.classList.remove('tvoff'); document.body.classList.remove('tvbg'); go(); }, 560); };
   // 11/24 存档位：继续游戏 = 选存档 → 宫殿；新的游戏 = 选空位 → 选人 → 塔顶开场
-  function slotPick(mode) { $('slotT').textContent = '选一盘卡带'; $('slotForm').hidden = true; $('sCon').parentNode.classList.remove('on'); const row = $('slotRow'); row.innerHTML = '';
+  function slotPick(mode) { $('slotT').textContent = '选择存档'; $('slotForm').hidden = true; $('sCon').parentNode.classList.remove('on'); const row = $('slotRow'); row.innerHTML = '';
     for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'cart'; b.dataset.n = n;
-      b.innerHTML = `<img src="art/ui2/save/${has ? 'cart_gold' : 'cart'}.png" alt=""><div class="lab">${has ? `<div class="ph"><img class="av" src="art/portrait/${I.hero}.webp" alt=""><b>${I.name.replace(/[<>&]/g, '')}</b></div><span>💎 ${I.cry} · ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}</span><span>通关 ${I.wins} · 倒下 ${I.deaths}</span>` : '<span class="no">空白卡带</span>'}</div>${has && I.run ? '<i class="rled" title="有一局没打完"></i>' : ''}<span class="tag">存档 ${n}${has && I.run ? ' · 没打完' : ''}</span>${has ? '<span class="del">删除</span>' : ''}`;
+      b.innerHTML = `<img src="art/ui2/save/${has ? 'cart_gold' : 'cart'}.png" alt=""><div class="lab">${has ? `<div class="ph"><img class="av" src="art/portrait/${I.hero}.webp" alt=""><b>${I.name.replace(/[<>&]/g, '')}</b></div><span>💎 ${I.cry} · ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}</span><span>通关 ${I.wins} · 倒下 ${I.deaths}</span>` : '<span class="no">空存档</span>'}</div>${has && I.run ? '<i class="rled" title="有一局没打完"></i>' : ''}<span class="tag">存档 ${n}${has && I.run ? ' · 没打完' : ''}</span>${has ? '<span class="del">删除</span>' : ''}`;
       if (has) b.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`删除存档 ${n}「${I.name}」？水晶、强化、称号都会清空，不能恢复。`)) { SLOT.wipe(n); slotPick(); } };
       b.onclick = () => { row.querySelectorAll('.cart').forEach(c => c.classList.toggle('sel', c === b)); insertCart(b, () => slotForm(n, has)); };
       row.appendChild(b); }
