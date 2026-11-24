@@ -39,10 +39,19 @@
 
   // ================= 主界面 =================
   const tvOff = go => { const t = $('title'); if (t.classList.contains('tvoff')) return; t.classList.add('tvoff'); document.body.classList.add('tvbg'); setTimeout(() => { t.classList.remove('tvoff'); document.body.classList.remove('tvbg'); go(); }, 560); };
-  $('bStart').onclick = () => tvOff(() => openPrep(true));
-  // 11/23 继续游戏：有存档就显示，从存档那一站的开头接着打
-  $('bCont').onclick = () => tvOff(() => { const s = BATTLE.loadSave(); if (!s) return; lastBuild = s.opt.build || lastBuild; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); });
-  const contShow = () => { const s = BATTLE.loadSave(); $('bCont').hidden = !s; $('bStart').querySelector('span').textContent = s ? '新的冒险' : '进入游戏'; };
+  // 11/24 存档位：继续游戏 = 选存档 → 宫殿；新的游戏 = 选空位 → 选人 → 塔顶开场
+  function slotPick(mode) { $('tpTitle').textContent = mode === 'new' ? '新的游戏：选一个存档位' : '继续游戏：选择存档'; const body = $('tpBody'); body.innerHTML = ''; const box = document.createElement('div'); box.className = 'slots';
+    for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'btn slot';
+      b.innerHTML = has ? `<b>存档 ${n}</b><span>${I.hero === 'f' ? '女勇者' : '男勇者'} · 💎 ${I.cry} · 最远 ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}${I.run ? ' · 有一局没打完' : ''}</span>` : `<b>存档 ${n}</b><span>空</span>`;
+      if (mode === 'cont' && !has) b.disabled = true;
+      b.onclick = () => { if (mode === 'new' && has && !confirm(`存档 ${n} 里已经有进度，确定要覆盖吗？`)) return; overlay('tpanel', false); SLOT.use(n);
+        if (mode === 'new') { SLOT.wipe(n); return tvOff(() => openPrep(true)); }
+        tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); };
+      box.appendChild(b); }
+    body.appendChild(box); overlay('tpanel', true); }
+  $('bStart').onclick = () => slotPick('new');
+  $('bCont').onclick = () => slotPick('cont');
+  const contShow = () => { let any = 0; for (let n = 1; n <= SLOT.N; n++) if (SLOT.has(n)) any = 1; $('bCont').hidden = !any; $('bStart').querySelector('span').textContent = '新的游戏'; };
   // 11/22 图鉴展示用小人（art/figure/<key>/0..3.png，比战斗小人大、更精细），有就替换图鉴里的那一个
   const FIG = {}; fetch('art/figure/meta.json').then(r => r.json()).then(M => { for (const k in M) FIG[k] = M[k].map(([ax], i) => { const im = new Image(); im.src = `art/figure/${k}/${i}.png`; return { c: im, f: { ax } }; }); }).catch(() => {});
 
@@ -357,7 +366,7 @@
     f.src = 'demo/palace.html?game&cry=' + (r.cry || 0) + '&cont=' + (r.cont || 0) + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&L=' + encodeURIComponent(JSON.stringify(say)) + '&v=' + Date.now();   /* 11/24 死后回宫殿（塔顶开场只在第一次） */ f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
   $('rAgain').onclick = () => { BATTLE.stop(); overlay('result', false); const r = lastRes || {};
-    if (!r.cont) { pendRes = r; return openPrep(false); }   // 11/24 这局结束：先回选人界面（男女要先定），再进宫殿
+    if (!r.cont) return playTower(r, () => { openPrep(true); startBattle(build()); });   // 11/24 这局结束：回宫殿（男女已经跟着存档定了）
     playTower(r, () => { const s = r.cont && BATTLE.loadSave(); if (s) { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, cont: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else startBattle(lastBuild); }); };   // 11/24 有命：续关回本站开头；没命：新的一局
   $('rWep').onclick = () => { BATTLE.stop(); overlay('result', false); openPrep(false); };
   $('rHome').onclick = () => { BATTLE.stop(); overlay('result', false); show('title'); };
