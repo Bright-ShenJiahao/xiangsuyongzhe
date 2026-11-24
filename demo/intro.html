@@ -211,6 +211,6 @@ function stepWalk() { const n = performance.now(), dt = Math.min(.05, (n - (wLas
   if (touchP) { const c = $('pc').getBoundingClientRect(), tx = (touchP.clientX - c.left) / c.width * CW, ty = (touchP.clientY - c.top) / c.height * CH; dx = tx - walk.x; dy = ty - walk.y; }
   const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv) { const nx = walk.x + dx / l * 110 * dt, ny = walk.y + dy / l * 110 * dt; let o = hitNPC(nx, walk.y); if (!o) { if (okW(nx, walk.y)) walk.x = nx; } else bumpSay(o); o = hitNPC(walk.x, ny); if (!o) { if (okW(walk.x, ny)) walk.y = ny; } else bumpSay(o); }
   if (window.EGG && GAME) eggStep(dt); tpStep(dt);
-  walk.x = Math.max(40 * Z, Math.min(600 * Z, walk.x)); walk.y = Math.max(105 * Z, Math.min(300 * Z, walk.y));
+  walk.x = Math.max(95 * S1, Math.min(1580 * S1, walk.x)); walk.y = Math.max(138 * S1, Math.min(770 * S1, walk.y));   /* 11/25 夹边跟 WALKR 一致（旧夹边把祭台一带挡在外面） */
   if (!QS.has('visit') && Math.hypot(walk.x - 835 * CW / 1672, (walk.y - 735 * CW / 1672) * 1.4) < 18 && !walk.done) { walk.done = 1; $('cap').textContent = ''; $('white').style.transition = 'opacity .5s'; $('white').style.opacity = 1; setTimeout(done, 550); } }
 </script></body></html>
