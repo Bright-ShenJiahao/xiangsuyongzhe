@@ -45,7 +45,7 @@
     recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0);
     foes = []; shots = []; fx = []; parts = []; nums = []; tele = []; burns = []; pend = []; warns.length = 0;
     if (!SK) SK = SKILLS(API); SK.reset(); hero.cs = null;
-    if (!ESK) ESK = ESKILL({ K, YS, hero: () => hero, spawn: (t, at) => spawn(t, at), clamp: o => clampG(o), hurt: (d, src) => { damageHero.src = src || null; damageHero(d, 'phys'); },
+    if (!ESK) ESK = ESKILL({ K, YS, hero: () => hero, spawn: (t, at) => spawn(t, at), clamp: o => clampG(o), hurt: (d, src) => { damageHero.src = src || null; damageHero(d, 'phys'); }, foes: () => foes,
       say: txt => nums.push({ x: hero.x, y: hero.y - 60 * K, txt, t: 0, col: '#ffb84a' }), num: (o, txt, col) => nums.push({ x: o.x, y: o.y - 40 * K, txt, t: 0, col }),
       boom: (x, y, r) => fx.push({ k: 'boom', x, y, t: 0, T: .45, r }), slash: z => { for (let i = 0; i < 5; i++) parts.push({ x: z.x, y: z.y - 14 * K, vx: R(-60, 60) * K, vy: R(-60, 0) * K, t: 0, T: .3, col: '#fff', g: 0 }); } });
     ESK.reset();
@@ -149,6 +149,7 @@
   }
   // 打怪：o = { dt 伤害类型, crit 额外暴击, slow 缓滞层数, slowP [减速, 秒], burn, bleed, curse, vuln, cc [硬控, 秒], airVuln, quiet }
   function hurt(z, d, from, kb = 14, sid, o = {}) {
+    if (z.eShield > 0 && d > 0) { const a = Math.min(z.eShield, d); z.eShield -= a; d -= a; if (!d) { nums.push({ x: z.x, y: z.y - 40 * K, txt: '盾', t: 0, col: '#ffe08a' }); return; } }   // 11/24 圣骑士护盾
     if (z.dead || z.flee) return;
     const S = sid && DATA.skills[sid], dt = o.dt || (S && S.dt) || 'phys', T = z.T;
     const def = dt === 'magic' ? (T.mdef || 0) : (T.pdef || 0) * (z.tier ? 1.5 : 1); d *= 1 - Math.min(.6, def / (def + 100));   // 怪物防御：和勇者同一公式，最多减 60%
@@ -225,7 +226,7 @@
   }
   // 11/22 光环：战鼓手 90 格内的怪移速 +40%；萨满每 4 秒给 90 格内的怪回 20% 血（首领、小头目不回）
   function auraTick(dt) {
-    const L = foes.filter(z => !z.dead && !z.flee); for (const z of L) z.haste = 1;
+    const L = foes.filter(z => !z.dead && !z.flee); for (const z of L) z.haste = z.hornT > 0 ? 1.6 : 1;
     for (const a of L) { if (!a.T.aura || a.cc) continue; a.auraT = (a.auraT || 0) - dt;
       if (a.T.aura === 'drum') for (const z of L) if (z !== a && dist(z, a) < 90) z.haste = 1.4;
       if (a.T.aura === 'heal' && a.auraT <= 0) { a.auraT = 4; fx.push({ k: 'ring', x: a.x, y: a.y, t: 0, T: .5, r: 90, col: '#7af07a' });
