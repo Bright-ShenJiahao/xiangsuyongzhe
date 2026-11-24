@@ -146,6 +146,9 @@
       g('防御', [['hp', '生命', `${Math.ceil(h.hp)} / ${h.maxHp}`], ['guard', '物防', `${c.pdef} <small>受物理 ×${c.pIn.toFixed(2)}</small>`], ['star', '魔防', `${c.mdef} <small>受魔法 ×${c.mIn.toFixed(2)}</small>`], ['move', '闪避', `${Math.round(c.eva * 100)}% <small>物理、魔法都能躲</small>`]]) +
       g('其他', [['clover', '幸运', `${r.luck || 0} <small>掉落 ${pct(.05 * (r.luck || 0))} · 价格 ${pct(-.03 * (r.luck || 0))}</small>`], ['move', '移速', pct(c.move - 1)], ['xp', '经验', pct(c.xp * (r.hero === 'm' ? 1.1 : 1) - 1)]]);
     L.insertAdjacentHTML('beforeend', `<p class="dim">人物被动：${hp.name || ''} · ${hp.perk || '无'}</p><p class="dim">生效宝物：${items.length ? items.map(e => (DATA.startItems.find(i => i.id === e.id) || {}).name + (e.lv > 1 ? ' Lv' + e.lv : '')).join('、') : '无'}</p>`);
+    /* 11/25 属性页收进一页：放不下就整体缩小（不出现滚动条） */
+    const fitAttr = () => { let sc = wrap.parentNode; while (sc && sc !== document.body && sc.scrollHeight <= sc.clientHeight + 1) sc = sc.parentNode; if (!sc || sc === document.body) return; wrap.style.zoom = 1; let z = 1; for (let k = 0; k < 8 && sc.scrollHeight > sc.clientHeight + 1 && z > .5; k++) { z = Math.max(.5, z * (sc.clientHeight / sc.scrollHeight) * .98); wrap.style.zoom = z; } if (z < 1) sc.style.overflowY = 'hidden'; };
+    requestAnimationFrame(fitAttr); setTimeout(fitAttr, 150);
   }
   // 拖动：按住技能格或背包里的东西拖到另一个格子上 = 交换 / 装上（PC 鼠标、手机手指都行）；没拖动就还是点选
   let dragged = false;

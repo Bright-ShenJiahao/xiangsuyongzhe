@@ -1326,3 +1326,8 @@ button:focus-visible { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,215
 #rTtl .ttBan { margin: 12px auto 4px; padding: 10px 10px; border: 3px solid #e8c070; background: linear-gradient(90deg, #4a3010, #7a5418, #4a3010); box-shadow: 0 0 16px #ffb83a66; text-align: center; animation: ttPop .4s cubic-bezier(.2,1.5,.4,1); }
 #rTtl .ttBan small { display: block; color: #f2dca4; letter-spacing: .3em; font-size: 13px; } #rTtl .ttBan b { font-size: 28px; color: #fff1b8; letter-spacing: .14em; text-shadow: 0 2px 0 #000, 0 0 14px #ffb83a; }
 @keyframes ttPop { from { opacity: 0; transform: scale(1.5); } }
+
+/* 11/25 备战·属性页：收进一页，不用拖动（先压紧行距，放不下再整体缩小，见 camp.js fitAttr） */
+.attrlo .lol .arow { padding: 4px 6px !important; min-height: 0 !important; row-gap: 0 !important; } .attrlo .lol .arow small { font-size: 12px !important; line-height: 1.25 !important; } .attrlo .lol .arow b { font-size: 17px !important; } .attrlo .lol .arow em { font-size: 20px !important; }
+.attrlo .lol h4 { margin: 0 0 2px !important; } .attrlo .lol .dim { margin: 2px 0 0 !important; font-size: 12px !important; line-height: 1.3; }
+.attrlo .lor .stats.big { row-gap: 0 !important; font-size: 13px !important; line-height: 1.5; } .attrlo .lor h5 { margin: 3px 0 0 !important; font-size: 13px !important; } .attrlo .lor h4 { font-size: 17px !important; }
