@@ -44,9 +44,7 @@
     for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'cart'; b.dataset.n = n;
       b.innerHTML = `<img src="art/ui2/save/${has ? 'cart_gold' : 'cart'}.png" alt=""><div class="lab">${has ? `<div class="ph"><img class="av" src="art/portrait/${I.hero}.webp" alt=""><b>${I.name.replace(/[<>&]/g, '')}</b></div><span>💎 ${I.cry} · ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}</span><span>通关 ${I.wins} · 倒下 ${I.deaths}</span>` : '<span class="no">空白卡带</span>'}</div>${has && I.run ? '<i class="rled" title="有一局没打完"></i>' : ''}<span class="tag">存档 ${n}${has && I.run ? ' · 没打完' : ''}</span>${has ? '<span class="del">删除</span>' : ''}`;
       if (has) b.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`删除存档 ${n}「${I.name}」？水晶、强化、称号都会清空，不能恢复。`)) { SLOT.wipe(n); slotPick(); } };
-      b.onclick = () => { const mode = has ? 'cont' : 'new'; row.querySelectorAll('.cart').forEach(c => c.classList.toggle('sel', c === b)); insertCart(b, () => {
-          if (mode === 'new') return slotForm(n);
-          setTimeout(() => { overlay('slotScr', false); SLOT.use(n); tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); }, 450); }); };
+      b.onclick = () => { row.querySelectorAll('.cart').forEach(c => c.classList.toggle('sel', c === b)); insertCart(b, () => slotForm(n, has)); };
       row.appendChild(b); }
     overlay('slotScr', true); }
   // 选中的卡带飞进游戏机卡槽，电源灯亮
@@ -55,14 +53,21 @@
     requestAnimationFrame(() => { f.style.transform = `translate(${tx}px, ${ty}px) scale(${sc})`; f.style.opacity = 0; });
     setTimeout(() => { f.remove(); $('sCon').parentNode.classList.add('on'); try { SFX.play('pick'); } catch (e) {} done(); }, 460); }
   // 新存档：先起名字和口令 → 选人 → 塔顶开场
-  function slotForm(n) { $('slotForm').hidden = false; $('slotT').textContent = `新的游戏 · 存档 ${n}`; $('sErr').textContent = ''; $('sName').value = ''; $('sPin').value = ''; setTimeout(() => $('sName').focus(), 50);
-    $('sBack').onclick = () => slotPick(); $('sName').oninput = () => { const L = $('slotRow').querySelector(`.cart[data-n="${n}"] .lab`); if (L) L.innerHTML = `<b>${$('sName').value.replace(/[<>&]/g, '') || '……'}</b><span>新的勇者</span>`; };
+  // 11/24 插好卡带后：输入名字和口令（口令可以不输）。旧卡带要对上名字和口令，空卡带就新建
+  const pinHash = async (name, pin) => { if (!pin) return ''; try { const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xsyz|' + name + '|' + pin)); return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (e) { return pin; } };
+  function slotForm(n, has) { $('slotForm').hidden = false; $('slotT').textContent = has ? `存档 ${n} · 输入名字和口令` : `存档 ${n} · 新的勇者`; $('sErr').textContent = ''; $('sName').value = ''; $('sPin').value = ''; setTimeout(() => $('sName').focus(), 50);
+    $('sBack').onclick = () => slotPick();
+    $('sName').oninput = () => { if (has) return; const L = $('slotRow').querySelector(`.cart[data-n="${n}"] .lab`); if (L) L.innerHTML = `<b>${$('sName').value.replace(/[<>&]/g, '') || '……'}</b><span>新的勇者</span>`; };
     $('sOk').onclick = async () => { const name = $('sName').value.trim().replace(/[<>&"'`\\]/g, ''), pin = $('sPin').value.trim();
-      if (!name) return $('sErr').textContent = '请输入名字';
-      if (pin.length < 4) return $('sErr').textContent = '密码至少 4 位';
-      let h = pin; try { const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xsyz|' + name + '|' + pin)); h = [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (e) {}
+      if (!name) return $('sErr').textContent = '请输入勇者的名字';
+      const h = await pinHash(name, pin);
+      if (has) { const raw = k => localStorage.getItem('xsyz-s' + n + '-' + k), nm = raw('name'), ph = raw('pin') || '';
+        if (nm && nm !== name) return $('sErr').textContent = '名字不对';
+        if (ph && ph !== h) return $('sErr').textContent = '口令不对';
+        SLOT.use(n); if (!nm) store.set('name', name); overlay('slotScr', false);
+        return tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); }
       SLOT.use(n); SLOT.wipe(n); store.set('name', name); store.set('pin', h); overlay('slotScr', false); tvOff(() => openPrep(true)); };
-    $('sPin').onkeydown = e => { if (e.key === 'Enter') $('sOk').click(); }; }
+    for (const id of ['sName', 'sPin']) $(id).onkeydown = e => { if (e.key === 'Enter') $('sOk').click(); }; }
   $('slotX').onclick = () => overlay('slotScr', false);
   $('bStart').onclick = () => slotPick();   // 11/24 只留「进入游戏」：旧卡带=直接开始，空卡带=起名字从零开始
   const contShow = () => { $('bCont').hidden = true; $('bStart').querySelector('span').textContent = '进入游戏'; };
