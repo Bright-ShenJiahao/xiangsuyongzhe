@@ -327,9 +327,10 @@
   }
   function nextChapter() { const w = document.createElement('div'); w.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:95;opacity:0;transition:opacity .4s'; document.body.appendChild(w); requestAnimationFrame(() => w.style.opacity = 1);
     setTimeout(() => { worldMap(() => { BATTLE.stop(); overlay('wmap', false); show('title'); }, true); w.style.opacity = 0; setTimeout(() => w.remove(), 450); }, 450); }
-  function result(r) { lastRes = r;
+  function result(r) { lastRes = r; $('rAgain').textContent = r.cont ? `回到宫殿，续关（还剩 ${r.cont} 条命） ▶` : r.win ? '回到宫殿 ▶' : '回到宫殿，重新开始 ▶';
     if (r.win && !r.mapShown) return worldMap(() => result(Object.assign({}, r, { mapShown: true })));
     $('rTitle').textContent = r.win ? '胜利！' : '败北……';
+    setTimeout(() => { if (r.cry) $('rMsg').textContent += `　这一局带回 ${r.cry} 水晶。`; }, 0);
     $('rMsg').textContent = r.win ? '哥布林王倒下了，屏幕那头好像传来了「下一关」的音乐。' : '眼前一黑……再按一次开始键吧。';
     const best = Object.entries(r.dmg || {}).sort((a, b) => b[1] - a[1])[0];
     $('rStats').innerHTML = `<span>打到</span><b>${r.win ? '通关' : r.boss ? '首领战' : `第 ${r.st} 站 第 ${Math.max(0, r.wi) + 1} 波`}</b><span>用时</span><b>${mmss(r.time)}</b><span>击倒</span><b>${r.kills}</b><span>等级</span><b>Lv ${r.lv}</b>${best ? `<span>主力</span><b>${DATA.skills[best[0]].name}</b>` : ''}`;
@@ -346,9 +347,10 @@
   function playTower(r, go) { let seen; try { seen = new Set(JSON.parse(store.get('linesSeen') || '[]')); } catch (e) { seen = new Set(); }
     const L = pickLines(towerCtx(r), seen); for (const l of L) if (!l.rep) seen.add(l.id); store.set('linesSeen', JSON.stringify([...seen]));
     const say = [].concat(...L.map(l => l.say)), f = $('introF');
-    f.src = 'demo/intro.html?game&tower&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + '&L=' + encodeURIComponent(JSON.stringify(say)) + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+    f.src = 'demo/palace.html?game&cry=' + (r.cry || 0) + '&cont=' + (r.cont || 0) + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&L=' + encodeURIComponent(JSON.stringify(say)) + '&v=' + Date.now();   /* 11/24 死后回宫殿（塔顶开场只在第一次） */ f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
-  $('rAgain').onclick = () => { BATTLE.stop(); overlay('result', false); playTower(lastRes || {}, () => startBattle(lastBuild)); };
+  $('rAgain').onclick = () => { BATTLE.stop(); overlay('result', false); const r = lastRes || {};
+    playTower(r, () => { const s = r.cont && BATTLE.loadSave(); if (s) { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, cont: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else startBattle(lastBuild); }); };   // 11/24 有命：续关回本站开头；没命：新的一局
   $('rWep').onclick = () => { BATTLE.stop(); overlay('result', false); openPrep(false); };
   $('rHome').onclick = () => { BATTLE.stop(); overlay('result', false); show('title'); };
   // 11/22 切走自动暂停：只在正中间显示一个暂停图标（点一下 / 按任意键继续）；按 P 或点右上角才进备战页
