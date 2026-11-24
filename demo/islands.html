@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>局外 · 板块房间试验</title>
+<style>
+html,body{margin:0;height:100%;background:#07060a;overflow:hidden;touch-action:none;color:#eee;font:13px system-ui,sans-serif;user-select:none}
+canvas{display:block}
+#hud{position:fixed;left:8px;top:8px;pointer-events:none;text-shadow:0 1px 2px #000;line-height:1.5}
+#btn{position:fixed;right:8px;bottom:8px;padding:10px 16px;background:#3a2814;border:2px solid #c9a15a;color:#ffe9a8;border-radius:6px;font-size:15px}
+#mini{position:fixed;right:8px;top:8px;border:2px solid #6b4a2b;background:#000}
+</style></head><body>
+<canvas id="c"></canvas><canvas id="mini"></canvas>
+<div id="hud">板块房间试验：几块森林石台浮在深渊上，用木桥连起来<br>WASD / 方向键 / 手机左半屏拖动　R 或右下按钮：换一种摆法<br>板块是从现有 forest.webp 原尺寸切出来的（1:1，不放大）</div>
+<button id="btn">换一种摆法 ↻</button>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+// 11/24 板块房间：每块板块 = 原图原尺寸切下的一块 + 悬崖边，摆在黑色深渊上，木桥相连；镜头跟随，图片 1:1 显示（不缩放 → 画质和现在一样）
+const cv = document.getElementById('c'), g = cv.getContext('2d'); let VW, VH, Z;
+function fit() { cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; VW = cv.width; VH = cv.height; Z = Math.min(1.25, Math.max(.6, VW / 1300)); } addEventListener('resize', fit); fit();
+const SRC = Object.assign(new Image(), { src: 'art/map/forest.webp' }), SRC2 = Object.assign(new Image(), { src: 'art/map/forest2.webp' }), SRC3 = Object.assign(new Image(), { src: 'art/map/forest3.webp' });
+// 从三张森林图里切的候选板块（原图坐标）
+const CUTS = [[SRC, 260, 330, 620, 420], [SRC, 820, 300, 560, 460], [SRC2, 300, 360, 700, 380], [SRC2, 900, 320, 520, 520], [SRC3, 200, 300, 560, 480], [SRC3, 760, 380, 700, 400], [SRC, 500, 520, 480, 340], [SRC2, 600, 520, 420, 320]];
+let isl = [], bridges = [], gobs = [], door = null, hero = { x: 0, y: 0, f: 1, mv: 0 }, seed = 1;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function shape(w, h) { const P = [], n = 40; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, c = Math.cos(a), s = Math.sin(a), e = .28, r = 1 - (rnd() * .06);   // 圆角方块 + 一点随机缺口
+    const k = Math.pow(Math.pow(Math.abs(c), 2 / e) + Math.pow(Math.abs(s), 2 / e), -e / 2); P.push([w / 2 + c * k * w / 2 * r, h / 2 + s * k * h / 2 * r]); } return P; }
+function build() { seed = (Math.random() * 1e9 | 0) + 1; isl = []; bridges = []; gobs = [];
+  const n = 3 + (rnd() * 2 | 0), pool = CUTS.slice().sort(() => rnd() - .5); let x = 0, y = 0, dir = 0;
+  for (let i = 0; i < n; i++) { const [img, sx, sy, w, h] = pool[i], fl = rnd() < .5; let I = { img, sx, sy, w, h, fl, x, y, P: shape(w, h) };
+    if (i) { const p = isl[i - 1], gap = 150 + rnd() * 120; for (let t = 0; t < 20; t++) { const d = [[1, 0], [0, -1], [0, 1], [1, -.6], [1, .6]][rnd() * 5 | 0]; I.x = p.x + (d[0] ? p.w + gap : (rnd() - .5) * 200) * (d[0] || 1); I.y = d[1] ? p.y + (d[1] < 0 ? -(h + gap) : p.h + gap) * Math.abs(d[1]) : p.y + (rnd() - .5) * 160;
+        if (!isl.some(o => I.x < o.x + o.w + 60 && I.x + w + 60 > o.x && I.y < o.y + o.h + 60 && I.y + h + 60 > o.y)) break; }
+      const a = { x: p.x + p.w / 2, y: p.y + p.h / 2 }, b = { x: I.x + w / 2, y: I.y + h / 2 }; bridges.push({ a, b }); }
+    I.path = new Path2D(); I.P.forEach(([px, py], k) => k ? I.path.lineTo(I.x + px, I.y + py) : I.path.moveTo(I.x + px, I.y + py)); I.path.closePath();
+    I.tex = makeTex(I); isl.push(I); }
+  const s = isl[0], e = isl[isl.length - 1]; hero.x = s.x + s.w * .3; hero.y = s.y + s.h * .55; door = { x: e.x + e.w * .6, y: e.y + e.h * .45 };
+  const SETS = ['goblin', 'gob_shield', 'gob_archer', 'gob_wolf', 'gob_shaman'];
+  for (const I of isl.slice(1)) for (let k = 0; k < 2 + (rnd() * 3 | 0); k++) { const gx = I.x + I.w * (.25 + rnd() * .5), gy = I.y + I.h * (.3 + rnd() * .45); gobs.push({ s: SETS[rnd() * SETS.length | 0], x: gx, y: gy, t: rnd() * 9 }); } }
+// 板块贴图：原图 1:1 裁出来、按形状挖好，下面加一圈悬崖断面
+function makeTex(I) { const CL = 70, c = document.createElement('canvas'); c.width = I.w; c.height = I.h + CL; const x = c.getContext('2d'), P = new Path2D(); I.P.forEach(([px, py], k) => k ? P.lineTo(px, py) : P.moveTo(px, py)); P.closePath();
+  x.save(); x.translate(0, CL); x.fillStyle = '#2a1f16'; x.fill(P); x.restore();                     // 悬崖底
+  for (let d = CL; d > 0; d -= 2) { x.save(); x.translate(0, d); x.fillStyle = `rgb(${60 - d * .45 | 0},${44 - d * .35 | 0},${30 - d * .25 | 0})`; x.fill(P); x.restore(); }   // 悬崖断面（越往下越暗）
+  for (let i = 0; i < 60; i++) { const k = rnd() * I.P.length | 0, [px, py] = I.P[k]; if (py < I.h * .5) continue; x.fillStyle = rnd() < .5 ? '#1a130c' : '#4a3826'; x.fillRect(px, py + 6 + rnd() * 50, 2 + rnd() * 4, 6 + rnd() * 14); }   // 岩缝
+  x.save(); x.clip(P); if (I.fl) { x.translate(I.w, 0); x.scale(-1, 1); } x.drawImage(I.img, I.sx, I.sy, I.w, I.h, 0, 0, I.w, I.h); x.restore();
+  x.strokeStyle = 'rgba(20,14,8,.85)'; x.lineWidth = 3; x.stroke(P); x.strokeStyle = 'rgba(255,230,170,.18)'; x.lineWidth = 1; x.stroke(P); return c; }
+// 能不能站：板块里，或者桥上
+const HT = document.createElement('canvas').getContext('2d');
+function walk(px, py) { for (const I of isl) if (HT.isPointInPath(I.path, px, py)) return true;
+  for (const b of bridges) { const dx = b.b.x - b.a.x, dy = b.b.y - b.a.y, L = Math.hypot(dx, dy), t = ((px - b.a.x) * dx + (py - b.a.y) * dy) / (L * L); if (t < 0 || t > 1) continue; const qx = b.a.x + dx * t, qy = b.a.y + dy * t; if (Math.hypot(px - qx, py - qy) < 34) return true; } return false; }
+const K = {}; let joy = null;
+addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'KeyR') build(); }); addEventListener('keyup', e => K[e.code] = 0);
+document.getElementById('btn').onclick = build;
+addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (t.clientX < innerWidth / 2) joy = { id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0 }; }, { passive: false });
+addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy && t.identifier === joy.id) { joy.dx = t.clientX - joy.x; joy.dy = t.clientY - joy.y; } e.preventDefault(); }, { passive: false });
+addEventListener('touchend', () => joy = null);
+let cam = { x: 0, y: 0 }, last = 0, T = 0, P = [];
+for (let i = 0; i < 80; i++) P.push({ x: Math.random(), y: Math.random(), z: .2 + Math.random() * .8 });
+function fr(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
+function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; T += dt; requestAnimationFrame(loop); if (!isl.length || !isl[0].tex) return;
+  let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0); if (joy && Math.hypot(joy.dx, joy.dy) > 8) { x = joy.dx; y = joy.dy; }
+  const l = Math.hypot(x, y); hero.mv = l > 0; if (l) { x /= l; y /= l; const sp = 260 * dt; if (x) hero.f = x > 0 ? 1 : -1; if (walk(hero.x + x * sp, hero.y)) hero.x += x * sp; if (walk(hero.x, hero.y + y * sp)) hero.y += y * sp; }
+  cam.x += (hero.x - cam.x) * Math.min(1, dt * 5); cam.y += (hero.y - cam.y) * Math.min(1, dt * 5); if (!cam.ok) { cam.x = hero.x; cam.y = hero.y; cam.ok = 1; }
+  g.setTransform(1, 0, 0, 1, 0, 0); const bg = g.createRadialGradient(VW / 2, VH * .7, 0, VW / 2, VH * .7, VW); bg.addColorStop(0, '#1c0c10'); bg.addColorStop(1, '#050407'); g.fillStyle = bg; g.fillRect(0, 0, VW, VH);
+  for (const p of P) { const px = ((p.x * VW - cam.x * Z * p.z * .3) % VW + VW) % VW, py = ((p.y * VH - cam.y * Z * p.z * .3 - T * 12 * p.z) % VH + VH) % VH; g.fillStyle = `rgba(255,120,80,${.15 + .3 * p.z})`; g.fillRect(px, py, 2 * p.z + 1, 2 * p.z + 1); }   // 深渊里飘的火星
+  g.setTransform(Z, 0, 0, Z, Math.round(VW / 2 - cam.x * Z), Math.round(VH / 2 - cam.y * Z)); g.imageSmoothingEnabled = Z < 1;
+  for (const b of bridges) { const dx = b.b.x - b.a.x, dy = b.b.y - b.a.y, L = Math.hypot(dx, dy), a = Math.atan2(dy, dx); g.save(); g.translate(b.a.x, b.a.y); g.rotate(a);
+    g.fillStyle = '#1a120a'; g.fillRect(0, -30, L, 64); for (let i = 0; i < L; i += 14) { g.fillStyle = (i / 14 | 0) % 2 ? '#7a5634' : '#8a6238'; g.fillRect(i, -28, 12, 56); g.fillStyle = '#5a3c20'; g.fillRect(i + 11, -28, 1, 56); } g.fillStyle = '#4a321b'; g.fillRect(0, -32, L, 4); g.fillRect(0, 28, L, 4); g.restore(); }
+  for (const I of isl) g.drawImage(I.tex, I.x, I.y);
+  const L = gobs.map(o => ({ y: o.y, o })).concat([{ y: hero.y, h: 1 }]).sort((a, b) => a.y - b.y);
+  if (door) { const k = .6 + .4 * Math.sin(T * 3); g.fillStyle = `rgba(140,200,255,${.25 * k})`; g.beginPath(); g.ellipse(door.x, door.y, 70, 30, 0, 0, 7); g.fill(); g.strokeStyle = `rgba(190,230,255,${.8 * k})`; g.lineWidth = 3; g.beginPath(); g.ellipse(door.x, door.y, 54, 22, 0, 0, 7); g.stroke(); g.fillStyle = '#e8f4ff'; g.font = 'bold 22px sans-serif'; g.fillText('下一间 ▶', door.x - 48, door.y - 34); }
+  for (const e of L) { if (e.o) { const o = e.o, nm = fr(o.s, 'idle', 2); if (nm) SPR.draw(g, o.s, nm, 0, o.x, o.y, hero.x < o.x, 2.4); }
+    else { const hs = SPR.heroSet && SPR.heroSet('m'), nm = hs && (hero.mv ? fr(hs, 'run', 12) || fr(hs, 'walk', 10) : fr(hs, 'idle', 2)); if (nm) SPR.drawHero(g, nm, 0, hero.x, hero.y, hero.f < 0, 2.4); } }
+  if (door && Math.hypot(hero.x - door.x, (hero.y - door.y) * 2) < 60) build();
+  drawMini(); }
+const mini = document.getElementById('mini'), mg = mini.getContext('2d'); mini.width = 160; mini.height = 110;
+function drawMini() { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const I of isl) { x0 = Math.min(x0, I.x); y0 = Math.min(y0, I.y); x1 = Math.max(x1, I.x + I.w); y1 = Math.max(y1, I.y + I.h + 70); } const s = Math.min(150 / (x1 - x0), 100 / (y1 - y0)), X = v => 5 + (v - x0) * s, Y = v => 5 + (v - y0) * s;
+  mg.fillStyle = '#000'; mg.fillRect(0, 0, 160, 110); mg.strokeStyle = '#8a6238'; mg.lineWidth = 2; for (const b of bridges) { mg.beginPath(); mg.moveTo(X(b.a.x), Y(b.a.y)); mg.lineTo(X(b.b.x), Y(b.b.y)); mg.stroke(); }
+  for (const I of isl) { mg.fillStyle = '#4a6a3a'; mg.fillRect(X(I.x), Y(I.y), I.w * s, I.h * s); } mg.fillStyle = '#8cf'; mg.fillRect(X(door.x) - 2, Y(door.y) - 2, 5, 5); mg.fillStyle = '#fff'; mg.fillRect(X(hero.x) - 2, Y(hero.y) - 2, 4, 4);
+  const vw = VW / Z, vh = VH / Z; mg.strokeStyle = 'rgba(255,255,255,.5)'; mg.lineWidth = 1; mg.strokeRect(X(cam.x - vw / 2), Y(cam.y - vh / 2), vw * s, vh * s); }
+let ready = 0; const one = () => { if (++ready === 3) build(); }; [SRC, SRC2, SRC3].forEach(i => i.complete && i.naturalWidth ? one() : i.onload = one);
+Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
+</script></body></html>
