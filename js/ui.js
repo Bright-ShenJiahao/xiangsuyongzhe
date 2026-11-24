@@ -242,7 +242,7 @@
     set('lvUp', 'cls', '');   // 11/22：升级字改成画在勇者头上，角落的不再显示
     // 右下角翻滚按钮：冷却时一圈暗色扇面倒转，中间显示剩余秒数
     const rp = Math.round(h.roll * 60) / 60; if (HC.rollP !== rp) { HC.rollP = rp; $('rollCd').style.setProperty('--p', rp); }
-    set('rollT', 'text', h.rollT > .05 ? h.rollT.toFixed(1) : ''); set('bRoll', 'cls', 'btn round' + (h.rollT > .05 ? ' cd' : ''));
+    const rn = h.rollN == null ? 1 : h.rollN, full = rn >= (h.rollN0 || 1); set('rollT', 'text', rn < 1 && h.rollT > .05 ? h.rollT.toFixed(1) : rn >= 1 ? '×' + rn : ''); set('bRoll', 'cls', 'btn round' + (rn < 1 ? ' cd' : '') + (full ? ' full' : ''));   // 11/24 翻滚格数；满格发光
     set('banner', 'text', h.banner || ''); set('banner', 'show', !!h.banner);
     set('tip', 'text', tipT > 0 ? (touch ? '按住屏幕拖动走位 · 右下角翻滚 · 技能自动出手' : 'WASD / 方向键移动 · 空格翻滚 · 技能自动出手 · P 暂停') : '');
   }

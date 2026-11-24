@@ -66,7 +66,7 @@
     const items = RUN.gear.filter(x => x && x.kind === 'item').map(x => ({ id: x.id, lv: x.lv || 1 }));   // 11/23 只有左边宝物格里的宝物生效
     const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit }), m = hero.m;
     m.dmg = (1 + (c.fx.dmg || 0)) * (1 + .03 * (G.lv - 1)); m.spd = c.spd; m.area = c.area; m.move = c.move;
-    hero.critP = c.critP; hero.critM = c.critM; hero.critMulP = c.critMulP; hero.critMulM = c.critMulM; hero.eva = c.eva; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.44 : 1.8; hero.A = c.A; hero.fx = c.fx;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20%（11/23 修：hero.A / hero.fx 之前被注释吞掉了）
+    hero.critP = c.critP; hero.critM = c.critM; hero.critMulP = c.critMulP; hero.critMulM = c.critMulM; hero.eva = c.eva; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.2 : 1.5; hero.rollN0 = 2 + (OB('erduan') ? 1 : 0); if (hero.rollN == null || hero.rollN > hero.rollN0) hero.rollN = hero.rollN0;   // 11/24 翻滚 2 格（二段滚 3 格），每格 1.5 秒回 hero.A = c.A; hero.fx = c.fx;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20%（11/23 修：hero.A / hero.fx 之前被注释吞掉了）
     hero.ob = {}; for (const o of [...(RUN.oath || []), ...(RUN.mv || [])]) if (o && DATA.oaths[o.id]) hero.ob[o.id] = DATA.oathLv[Math.min(5, o.lv || 1) - 1];
     m.spd *= 1 + .08 * OB('jifeng'); hero.rollMax *= 1 - .08 * OB('qingyu'); hero.rollMul = 1 + .15 * OB('youlong');
     const max = Math.round((c.hp + 3 * (G.lv - 1)) * (1 - (RUN.hpCut || 0))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
@@ -92,14 +92,17 @@
     return [dx, dy];
   }
   function roll() {
-    if (running() && !hero.dead && (hero.roll > 0 || hero.rollCd > 0)) { if (Math.max(hero.roll, hero.rollCd) < .2) hero.rollBuf = .2; return; }
+    if (running() && !hero.dead && (hero.roll > 0 || !(hero.rollN >= 1))) { if (hero.roll > 0 || hero.rollCd < .2) hero.rollBuf = .2; return; }
     if (!running() || hero.dead) return; hero.rollBuf = 0;
     const [dx, dy] = moveDir(), d = Math.hypot(dx, dy); hero.rvx = d ? dx / d : hero.f; hero.rvy = d ? dy / d : 0; if (dx) hero.f = dx < 0 ? -1 : 1;
-    hero.roll = .3; hero.rollCd = hero.rollMax || 1.8; hero.inv = Math.max(hero.inv, .3); hero.rolling = 1;
-    if (OB('canying')) { hero.cyT = 1; } if (OB('fanji')) hero.afterRoll = 3;
-    if (OB('fengren')) { const m = OB('fengren'), n = m >= 2 ? 3 : m >= 1.7 ? 2 : 1, a0 = Math.atan2(hero.rvy, hero.rvx), dmg = skillDmg(DATA.skills.sword, { id: 'sword', lv: 1, xp: 0 }) * .5;
-      for (let k = 0; k < n; k++) { const a = a0 + (k - (n - 1) / 2) * .35; for (let s = 0; s < 14; s++) parts.push({ x: hero.x + Math.cos(a) * s * 8 * K, y: hero.y - 10 * K + Math.sin(a) * s * 8 * K / YS, vx: Math.cos(a) * 40 * K, vy: Math.sin(a) * 40 * K, t: 0, T: .35, col: s % 2 ? '#e8fff4' : '#9ef0d0', g: 0 });
-        for (const z of foes) if (!z.dead && !z.flee) { const dx = z.x - hero.x, dy = (z.y - hero.y) * YS, l = dx * Math.cos(a) + dy * Math.sin(a), w = Math.abs(-dx * Math.sin(a) + dy * Math.cos(a)); if (l > 0 && l < 115 * K && w < 16 * K) hurt(z, dmg, hero, 8, null, { quiet: true }); } } }
+    const full = hero.rollN >= hero.rollN0; if (full) hero.rollCd = hero.rollMax; hero.rollN--; hero.rollFull = full;   // 11/24 满格那一滚才触发身法效果
+    hero.roll = .3; hero.inv = Math.max(hero.inv, .3); hero.rolling = 1; hero.pushed = new Set(); if (OB('fanji')) hero.afterRoll = 3;
+    if (full) { if (OB('canying')) hero.cyT = 1;
+      if (OB('erduan')) { hero.rShield = 1; nums.push({ x: hero.x, y: hero.y - 50 * K, txt: '护盾', t: 0, col: '#9fdcff' }); }
+      if (OB('jinghua')) { if (ESK && ESK.cleanse) ESK.cleanse(); healHero(hero.maxHp * .01 * OB('jinghua')); fx.push({ k: 'ring', x: hero.x, y: hero.y, t: 0, T: .4, r: 34, col: '#bfffd0' }); }
+      if (OB('youlong')) for (const c of G.gc) if (dist(c, hero) < 130) { c.pull = 1; } }
+    if (OB('anying')) { const soon = foes.some(z => !z.dead && z.st === 'wind' && z.T.wind + (z.windAdd || 0) - z.t < .25 && dist(z, hero) < (z.T.reach || 40) * 1.6 + 30) || tele.some(q => q.T - q.t < .25 && Math.hypot(q.x - hero.x, (q.y - hero.y) * YS) < 220 * K);
+      if (soon) { const m = OB('anying'); hero.shadowT = .8 * m; hero.inv = Math.max(hero.inv, .8 * m); G.slowMo = .3; G.decoy = { x: hero.x, y: hero.y, t: 1.5 }; nums.push({ x: hero.x, y: hero.y - 50 * K, txt: '暗影！', t: 0, col: '#b48cff' }); } }
     const c = hero.cs; if (c && (c.ph === 'wu' || c.ph === 'rc')) { if (c.ph === 'wu') nums.push({ x: hero.x, y: hero.y - 50 * K, txt: c.S.name + ' 中断', t: 0, col: '#c8b890' }); endCast(); }
   }
 
@@ -188,8 +191,10 @@
     while (G.xp >= need() && !hero.dead && G.lv < DATA.econ.maxLv) { G.xp -= need(); G.lv++; RUN.xiu++; G.lvUpT = 2.2; SFX.play('lv'); recompute(); healHero(5); }
   }
   function damageHero(d, dtype = 'phys') {
-    if (hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
-    if (Math.random() < (hero.eva || 0)) { nums.push({ x: hero.x, y: hero.y - 44 * K, txt: 'MISS', t: 0, col: '#ffffff' }); return; }   // 11/24 闪避
+    if (G.decoyOn || hero.inv > 0 || hero.dead || G.over || G.god || G.ending) return;
+    if (hero.rShield) { hero.rShield = 0; hero.inv = .3; nums.push({ x: hero.x, y: hero.y - 44 * K, txt: '护盾抵挡', t: 0, col: '#9fdcff' }); return; }
+    if (Math.random() < (hero.eva || 0) + (hero.cyT > 0 ? .15 * OB('canying') : 0)) { nums.push({ x: hero.x, y: hero.y - 44 * K, txt: 'MISS', t: 0, col: '#ffffff' }); return; }   // 11/24 闪避
+    if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; }   // 残影步：下一次受击减伤
     d *= dtype === 'magic' ? hero.mIn : hero.pIn; { const now = G.t; hero.hitBy = (hero.hitBy || []).filter(h => now - h.t < 1); const src = damageHero.src; if (src && !hero.hitBy.some(h => h.z === src)) hero.hitBy.push({ z: src, t: now }); d *= 1 + .25 * Math.max(0, hero.hitBy.length - 1); }   // 11/23 被围：1 秒内每多一只不同的怪打到 +25% if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); hero.hp -= d; G.taken = (G.taken || 0) + d; hero.inv = .45; hero.hurtT = .25; { const big = d >= hero.maxHp * .15; if (big) G.shake = Math.max(G.shake, .25); UI.FX.hit(big); } nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
     SFX.play("hurt");
     if (hero.hp <= 0 && RUN.save) { RUN.save = false; hero.hp = hero.maxHp * .5; hero.inv = 2; banner('复活羽毛燃尽了！', 1.6); return; }
@@ -736,7 +741,7 @@
   function coinTick(dt) {
     const mag = 40 + (hero.fx.waveCoin || 0) * 8;
     for (const c of G.gc) { c.t += dt; if (c.h > 0 || c.vh > 0) { c.vh -= 300 * dt; c.h = Math.max(0, c.h + c.vh * dt); c.x += c.vx * dt; if (c.h === 0) { c.vh = 0; c.vx = 0; } }
-      const d = dist(c, hero); if (c.t > .35 && d < mag && !hero.dead) { const k = Math.min(1, dt * (6 + 300 / Math.max(d, 5))); c.x += (hero.x - c.x) * k; c.y += (hero.y - c.y) * k; }
+      const d = dist(c, hero); if (c.pull && c.t > .35) { const k = Math.min(1, dt * 8); c.x += (hero.x - c.x) * k; c.y += (hero.y - c.y) * k; } if (c.t > .35 && d < mag && !hero.dead) { const k = Math.min(1, dt * (6 + 300 / Math.max(d, 5))); c.x += (hero.x - c.x) * k; c.y += (hero.y - c.y) * k; }
       if (c.t > .35 && d < 9) { c.got = 1; G.cf += c.v * cMul(); const n = Math.floor(G.cf); G.cf -= n; RUN.coins += n; SFX.play('coin'); parts.push({ x: hero.x, y: hero.y - 30 * K, vx: 0, vy: -40 * K, t: 0, T: .3, col: '#ffe08a', g: 0 }); } }
     G.gc = G.gc.filter(c => !c.got);
     for (const o of G.gi) { o.t += dt; if (o.t > .4 && dist(o, hero) < 14 && !hero.dead) { o.got = 1;   // 11/23 书 / 宝物也要走过去捡
@@ -820,13 +825,16 @@
     if (G.winT != null && (G.winT -= dt) <= 0 && !G.over && !G.vic) { G.vic = 1; G.paused = true; clearSave(); return UI.victory(vicStats(), () => { G.paused = false; G.lock = false; G.winT = null; banner('', 0); fieldEnd([]); setDoors([{ k: 'boss', lbl: '下一章', name: '下一章', btn: '前往' }], () => { G.fe = null; G.over = 'win'; UI.nextChapter(); }); { const d = G.fe.doors[0]; d.x = G.fe.pr.x + 110 * K; d.y = G.fe.pr.y + 20 * K; } }); }
     if (hero.dead) hero.deadT += dt;
     else {
-      hero.rollCd -= dt; hero.inv -= dt; hero.hurtT -= dt; if (hero.cyT > 0) hero.cyT -= dt; if (hero.afterRoll > 0) hero.afterRoll -= dt; if (hero.lzT > 0) hero.lzT -= dt;
+      if (hero.rollN < hero.rollN0) { hero.rollCd -= dt; if (hero.rollCd <= 0) { hero.rollN++; hero.rollCd = hero.rollN < hero.rollN0 ? hero.rollMax : 0; } } else hero.rollCd = 0;
+      if (hero.shadowT > 0) hero.shadowT -= dt; if (G.decoy && (G.decoy.t -= dt) <= 0) G.decoy = null;
+      hero.inv -= dt; hero.hurtT -= dt; if (hero.cyT > 0) hero.cyT -= dt; if (hero.afterRoll > 0) hero.afterRoll -= dt; if (hero.lzT > 0) hero.lzT -= dt;
       hero.stillT = hero.moving ? 0 : (hero.stillT || 0) + dt; if (!G.fe) G.stT = (G.stT || 0) + dt;
-      if (hero.rolling && hero.roll <= 0) { hero.rolling = 0; if (OB('zhendi')) { const sec = .2 * OB('zhendi'); G.shake = Math.max(G.shake, .1); fx.push({ k: 'ring', x: hero.x, y: hero.y, t: 0, T: .35, r: 46 });
-        for (const z of foes) if (!z.dead && !z.flee && dist(z, hero) < 46 && !(z.zdT > G.t)) { z.zdT = G.t + 2; hurt(z, 1, hero, 30, null, { cc: ['stun', z.T.boss || z.tier === 'mini' ? sec / 2 : sec], quiet: true }); } } } if (hero.rollBuf > 0) { hero.rollBuf -= dt; if (hero.roll <= 0 && hero.rollCd <= 0) roll(); }
+      if (hero.rolling && hero.roll <= 0) { hero.rolling = 0; if (OB('zhendi') && hero.rollFull) { const sec = .2 * OB('zhendi'); G.shake = Math.max(G.shake, .1); fx.push({ k: 'ring', x: hero.x, y: hero.y, t: 0, T: .35, r: 46 });
+        for (const z of foes) if (!z.dead && !z.flee && dist(z, hero) < 46 && !(z.zdT > G.t)) { z.zdT = G.t + 2; hurt(z, 0, hero, 30, null, { cc: ['stun', z.T.boss || z.tier === 'mini' ? sec / 2 : sec], quiet: true }); } } } if (hero.rollBuf > 0) { hero.rollBuf -= dt; if (hero.roll <= 0 && hero.rollCd <= 0) roll(); }
+      if (hero.roll > 0 && OB('zhendi') && hero.rollFull) for (const z of foes) if (!z.dead && !z.flee && !hero.pushed.has(z) && dist(z, hero) < 26) { hero.pushed.add(z); const a = Math.atan2(z.y - hero.y, z.x - hero.x); z.kbx += Math.cos(a) * 26 * K; z.kby += Math.sin(a) * 26 * K; }   // 震地步：路上的怪被推开
       if (hero.roll > 0) { hero.roll -= dt; hero.x += hero.rvx * 240 * K * dt * (hero.rollMul || 1); hero.y += hero.rvy * 182 * K * dt * (hero.rollMul || 1); if (Math.random() < .7) parts.push({ x: hero.x, y: hero.y, vx: R(-10, 10) * K, vy: R(-10, 0) * K, t: 0, T: .3, col: '#e6dcb4', g: 0 }); }
       else { const c = hero.cs, root = false, mm = !c ? 1 : c.ph === 'wu' ? (c.S.charge ? .5 : 1) : c.ph === 'hold' ? c.move : (!c.move && c.t < SKF.get(c.sk.id).hitT) ? 1 : .4;   // 11/22：出手那一下不减速，之后的后摇 40% 慢走（翻滚取消）
-        const [dx, dy] = root ? [0, 0] : moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { hero.mvx = (hero.mvx || 0) * .9 + dx / (d || 1) * .1; hero.mvy = (hero.mvy || 0) * .9 + dy / (d || 1) * .1; hero.mvT = (hero.mvT || 0) + dt; } else hero.mvT = 0; if (hero.moving) { const k = Math.min(1, d), v = 80 * hero.m.move * mm * K * (ESK ? ESK.slow() : 1) * (OB('jixing') && hero.mvT > 2 ? 1 + .06 * OB('jixing') : 1); hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (!c || c.ph !== 'hold') hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
+        const [dx, dy] = root ? [0, 0] : moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { hero.mvx = (hero.mvx || 0) * .9 + dx / (d || 1) * .1; hero.mvy = (hero.mvy || 0) * .9 + dy / (d || 1) * .1; hero.mvT = (hero.mvT || 0) + dt; } else hero.mvT = 0; if (hero.moving) { const k = Math.min(1, d), v = 80 * hero.m.move * mm * K * (ESK ? ESK.slow() : 1) * (OB('qingyu') && hero.mvT > 2 ? 1 + .06 * OB('qingyu') : 1) * (hero.shadowT > 0 ? 1.3 : 1); hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (!c || c.ph !== 'hold') hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
       clampG(hero, 8 * K); weapon(dt);
     }
     if (!hero.dead) { SK.tick(dt);
@@ -835,7 +843,9 @@
     for (const z of foes) {
       if (z.dead) { z.deadT += dt; continue; }
       z.flash -= dt; z.jit = (z.jit || 0) - dt; z.kbT -= dt; z.brk = (z.brk || 0) - dt; statusTick(z, dt); if (z.dead) continue;
+      const dc = G.decoy; let hx0, hy0; if (dc) { hx0 = hero.x; hy0 = hero.y; hero.x = dc.x; hero.y = dc.y; G.decoyOn = 1; }   // 暗影步假身：这段时间怪把假身当成勇者
       if (z.cc) z.moving = false; else if (z.eLock) z.moving = false; else if (z.T.boss || z.T.ai === 'boss') bossAI(z, dt); else soldierAI(z, dt);
+      if (dc) { hero.x = hx0; hero.y = hy0; G.decoyOn = 0; }
       z.x += z.kbx * dt * 8; z.y += z.kby * dt * 8; z.kbx *= .8; z.kby *= .8; clampG(z, 4 * K);
     }
     if (ESK) ESK.tick(dt, foes);
@@ -987,7 +997,7 @@
       if (r > 1.6) { const k = Math.min(1, (r - 1.6) / 1.6), Rr = Math.hypot(W, H) * (1 - k) ** 1.6 + 2; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.moveTo(hx + Rr, hy); ctx.arc(hx, hy, Rr, 0, Math.PI * 2); ctx.fill("evenodd"); ctx.restore(); } }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (joy.on) { const dpr = W / innerWidth; ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.arc(joy.sx * dpr, joy.sy * dpr, 40 * dpr, 0, 7); ctx.fill(); const jx = joy.x - joy.sx, jy = joy.y - joy.sy, d = Math.hypot(jx, jy), k = Math.min(1, 40 / (d || 1)); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc((joy.sx + jx * k) * dpr, (joy.sy + jy * k) * dpr, 18 * dpr, 0, 7); ctx.fill(); }
-    UI.hud({ fe: !!G.fe, combo: G.combo || 0, comboT: G.comboT || 0, roll: Math.max(0, hero.rollCd) / (hero.rollMax || 1.8), rollT: Math.max(0, hero.rollCd), lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
+    UI.hud({ fe: !!G.fe, combo: G.combo || 0, comboT: G.comboT || 0, roll: hero.rollN >= 1 ? 0 : Math.max(0, hero.rollCd) / (hero.rollMax || 1.5), rollT: hero.rollN >= 1 ? 0 : Math.max(0, hero.rollCd), rollN: hero.rollN, rollN0: hero.rollN0, lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
   }
   // 蓄力类前摇：脚下画金色预警（瞬光斩半圆、贯星箭长线、跃龙击圆圈 + 地裂）
   function chargePreview() {
@@ -1006,7 +1016,7 @@
   // ---------- 主循环（由 ui.js 调用）----------
   function frame(dt) {
     if (!G) return;
-    if (!G.paused && !G.over) { if (G.hitStop > 0) { G.hitStop -= dt; dt *= .2; }
+    if (!G.paused && !G.over) { if (G.hitStop > 0) { G.hitStop -= dt; dt *= .2; } else if (G.slowMo > 0) { G.slowMo -= dt; dt *= .35; }   // 暗影步慢动作
       if (hero.dead) { G.deadR = (G.deadR || 0) + dt; G.loseT -= dt; if (G.loseT <= 0 && !G.over) { G.over = 'lose'; end(); draw(); return; } dt *= G.deadR < .3 ? .06 : G.deadR < 1.3 ? .35 : 1; }   // 11/23 倒下：骤停 → 慢动作 → 正常
       update(dt); }
     draw();

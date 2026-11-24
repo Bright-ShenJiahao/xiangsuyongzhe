@@ -115,5 +115,5 @@ window.ESKILL = function (A) {
     for (const b of shots) spr(ctx, b.k === 'curse' ? 'curse' + f2 : b.k === 'axe' ? 'axe' : b.k === 'orb' ? 'orb' + f2 : 'wisp' + f2, X(b.x), Y(b.y), u, b.k === 'curse' ? b.t * 4 : b.k === 'axe' ? b.t * 14 : b.k === 'orb' ? 0 : b.a + PI * .75);
     if (st.rev > 0) { spr(ctx, 'dizzy', X(h.x), Y(h.y) - 62 * s, u, Math.sin(t * 4) * .3, .8); }
     if (st.grab) { ctx.fillStyle = '#ffb84a'; ctx.font = `${12 * s}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText('被抱住（翻滚甩开）', X(h.x), Y(h.y) + 16 * s); } }
-  return { tick, drawUnder, drawOver, reset, rev: () => st.rev > 0, slow: () => st.grab ? .35 : 1, pulled: () => !!st.pull };
+  return { tick, drawUnder, drawOver, reset, rev: () => st.rev > 0, cleanse: () => { st.rev = 0; st.dot = 0; st.grab = 0; st.grabT = 0; }, slow: () => st.grab ? .35 : 1, pulled: () => !!st.pull };
 };
