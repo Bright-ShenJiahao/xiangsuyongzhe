@@ -327,7 +327,7 @@
   }
   function nextChapter() { const w = document.createElement('div'); w.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:95;opacity:0;transition:opacity .4s'; document.body.appendChild(w); requestAnimationFrame(() => w.style.opacity = 1);
     setTimeout(() => { worldMap(() => { BATTLE.stop(); overlay('wmap', false); show('title'); }, true); w.style.opacity = 0; setTimeout(() => w.remove(), 450); }, 450); }
-  function result(r) {
+  function result(r) { lastRes = r;
     if (r.win && !r.mapShown) return worldMap(() => result(Object.assign({}, r, { mapShown: true })));
     $('rTitle').textContent = r.win ? '胜利！' : '败北……';
     $('rMsg').textContent = r.win ? '哥布林王倒下了，屏幕那头好像传来了「下一关」的音乐。' : '眼前一黑……再按一次开始键吧。';
@@ -339,7 +339,16 @@
       (async () => { for (let i = 0; i < bs.length; i++) { const b = bs[i], v = vals[i], m = v.match(/^(\D*)(\d+)(\D*)$/); b.style.visibility = ''; if (m) { const n = +m[2], t0 = performance.now(); await new Promise(res => (function f() { const k = Math.min(1, (performance.now() - t0) / 500); b.textContent = m[1] + Math.round(n * (1 - (1 - k) ** 3)) + m[3]; k < 1 ? requestAnimationFrame(f) : res(); })()); } await new Promise(r => setTimeout(r, 120)); }
         await new Promise(r => setTimeout(r, 200)); st.classList.add('on'); await new Promise(r => setTimeout(r, 180)); R0.classList.remove('shake'); void R0.offsetWidth; R0.classList.add('shake'); })(); }
   }
-  $('rAgain').onclick = () => startBattle(lastBuild);
+  // 11/24 回到塔顶再来一次：GAME OVER → 塔顶（公主 / 法师 / 士兵说几句）→ 走进传送门开新局
+  let lastRes = null;
+  function towerCtx(r) { const n = (+store.get('returns') || 0) + 1, wins = (+store.get('wins') || 0); store.set('returns', n); if (r.win) store.set('wins', wins + 1);
+    return { n, st: r.st, boss: r.boss, win: r.win, wins: wins + (r.win ? 1 : 0), killer: r.killer, killerElite: r.killerElite, weapon: r.weapon, quick: !r.win && r.time < 60, stolen: r.stolen }; }
+  function playTower(r, go) { let seen; try { seen = new Set(JSON.parse(store.get('linesSeen') || '[]')); } catch (e) { seen = new Set(); }
+    const L = pickLines(towerCtx(r), seen); for (const l of L) if (!l.rep) seen.add(l.id); store.set('linesSeen', JSON.stringify([...seen]));
+    const say = [].concat(...L.map(l => l.say)), f = $('introF');
+    f.src = 'demo/intro.html?game&tower&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + '&L=' + encodeURIComponent(JSON.stringify(say)) + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
+  $('rAgain').onclick = () => { BATTLE.stop(); overlay('result', false); playTower(lastRes || {}, () => startBattle(lastBuild)); };
   $('rWep').onclick = () => { BATTLE.stop(); overlay('result', false); openPrep(false); };
   $('rHome').onclick = () => { BATTLE.stop(); overlay('result', false); show('title'); };
   // 11/22 切走自动暂停：只在正中间显示一个暂停图标（点一下 / 按任意键继续）；按 P 或点右上角才进备战页

@@ -193,7 +193,8 @@
     d *= dtype === 'magic' ? hero.mIn : hero.pIn; { const now = G.t; hero.hitBy = (hero.hitBy || []).filter(h => now - h.t < 1); const src = damageHero.src; if (src && !hero.hitBy.some(h => h.z === src)) hero.hitBy.push({ z: src, t: now }); d *= 1 + .25 * Math.max(0, hero.hitBy.length - 1); }   // 11/23 被围：1 秒内每多一只不同的怪打到 +25% if (hero.cyT > 0) { d *= 1 - .2 * OB('canying'); hero.cyT = 0; } d *= 1 + ((hero.fx && hero.fx.take) || 0); hero.hp -= d; G.taken = (G.taken || 0) + d; hero.inv = .45; hero.hurtT = .25; { const big = d >= hero.maxHp * .15; if (big) G.shake = Math.max(G.shake, .25); UI.FX.hit(big); } nums.push({ x: hero.x, y: hero.y - 44 * K, v: rd(d), t: 0, col: '#ff6a5a' });
     SFX.play("hurt");
     if (hero.hp <= 0 && RUN.save) { RUN.save = false; hero.hp = hero.maxHp * .5; hero.inv = 2; banner('复活羽毛燃尽了！', 1.6); return; }
-    if (hero.hp <= 0) { hero.hp = 0; hero.dead = true; hero.deadT = 0; G.loseT = 3.6; G.deadR = 0; G.shake = Math.max(G.shake, .45); addEventListener('pointerdown', () => { if (G && hero.dead && G.deadR > .4) G.loseT = 0; }, { once: true }); }
+    if (hero.hp <= 0) { { const k = damageHero.src; G.killer = k && k.type; G.killerElite = !!(k && k.tier); }   // 11/24 记下被谁打死（塔顶台词用）
+      hero.hp = 0; hero.dead = true; hero.deadT = 0; G.loseT = 3.6; G.deadR = 0; G.shake = Math.max(G.shake, .45); addEventListener('pointerdown', () => { if (G && hero.dead && G.deadR > .4) G.loseT = 0; }, { once: true }); }
   }
 
   // 杂兵：走到 reach 内抬手，抬手开始时锁定方向；出招时勇者在扇面（arc / r）里才挨打。弓手保持距离，锁方向后放箭（没有预警线）
@@ -748,7 +749,7 @@
     let tx = T.ex, ty = T.ey;
     if (T.st === 'go') { let best = null, bd = 1e9; for (const c of G.gc) if (c.t > 6) { const d = dist(c, T); if (d < bd) { bd = d; best = c; } } if (!best || T.n >= 3) T.st = 'run'; else { tx = best.x; ty = best.y; if (bd < 8) { const s = Math.ceil(best.v * .5); T.bag += s; T.grab = .45; best.v -= s; T.n++; if (best.v <= 0) G.gc = G.gc.filter(c => c !== best); } } }
     const dx = tx - T.x, dy = ty - T.y, dd = Math.hypot(dx, dy) || 1, sp = (T.st === 'run' ? 130 : 105) * K * dt; T.f = dx < 0 ? -1 : 1;
-    if (dd <= sp) { T.x = tx; T.y = ty; if (T.st === 'run') { if (T.bag) UI.feed(`小咕噜偷走了 ${T.bag} 铜钱`); G.thief = null; return; } } else { T.x += dx / dd * sp; T.y += dy / dd * sp; }
+    if (dd <= sp) { T.x = tx; T.y = ty; if (T.st === 'run') { if (T.bag) { UI.feed(`小咕噜偷走了 ${T.bag} 铜钱`); G.stolen = 1; } G.thief = null; return; } } else { T.x += dx / dd * sp; T.y += dy / dd * sp; }
     if (dist(T, hero) < 22 && T.bag && !hero.dead) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`抓到小咕噜！${T.bag} 铜钱掉了出来`); T.bag = 0; T.hurt = .4; T.st = 'run'; T.n = 9; }
   }
   // 11/23 掉落物和小咕噜换成出的像素图（art/drop、art/goblin/gob_thief）
@@ -847,7 +848,7 @@
   function vicStats() { const sk = RUN.slots.filter(Boolean).map(k => ({ id: k.id, name: DATA.skills[k.id].name, L: profL(k), p: (() => { const nx = DATA.prof[profL(k)]; return nx ? Math.min(1, (k.xp || 0) / nx) : 1; })() }));
     return { time: G.t, kills: G.kills, combo: G.bestCombo || G.maxCombo || 0, coins: Math.round(G.earned || 0), taken: Math.round(G.taken || 0), lv: G.lv, xp: G.xp / need(), dmg: RUN.dmgAll || {}, sk, got: RUN.got || [] }; }
   function end() {
-    clearSave(); UI.result({ win: G.over === 'win', kills: G.kills, time: G.t, lv: G.lv, weapon: RUN.weapon, st: G.st, wi: G.wi, boss: !!(G.W && G.W.boss), dmg: RUN.dmgAll });
+    clearSave(); UI.result({ win: G.over === 'win', kills: G.kills, time: G.t, lv: G.lv, weapon: RUN.weapon, st: G.st, wi: G.wi, boss: !!(G.W && G.W.boss), dmg: RUN.dmgAll, killer: G.killer, killerElite: G.killerElite, stolen: G.stolen });
   }
 
   // ---------- 绘制 ----------

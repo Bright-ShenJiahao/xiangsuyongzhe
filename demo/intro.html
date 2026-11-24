@@ -79,7 +79,7 @@ function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled
   // 公主：站在台阶下
   const px = 835 * S, py = 430 * S, pf = portalT && (n - portalT) < 1600 ? [749, 185, 48, 37, 19.6, 37] : PI[Math.floor(t * 2) % 2]; if (PR.complete) { g.drawImage(PR, pf[0], pf[1], pf[2], pf[3], px - pf[4], py - pf[5], pf[2], pf[3]); }
   if (pxState === 'on') requestAnimationFrame(pxDraw); }
-async function say(id, who, av, s) { const b = $('bub'), c = $('pc').getBoundingClientRect(), hx = CW / 2, hy = who === '勇者' ? 66 * Z + 14 : 120 * Z + 10; b.style.left = c.left + hx / CW * c.width + 'px'; b.style.top = c.top + hy / CH * c.height + 'px'; b.style.display = 'block'; await type(b, s, id, 60); await wait(1400); b.style.display = 'none'; }
+async function say(id, who, av, s) { const b = $('bub'), c = $('pc').getBoundingClientRect(), S0 = CW / 1672, POS = { '大法师': [1270 * S0, 425 * S0 - 70 * Z], '士兵甲': [505 * S0, 418 * S0 - 70 * Z], '士兵乙': [1165 * S0, 418 * S0 - 70 * Z] }, ps = POS[who], hx = ps ? ps[0] : CW / 2, hy = ps ? ps[1] : who === '勇者' ? 66 * Z + 14 : 120 * Z + 10; b.style.left = c.left + hx / CW * c.width + 'px'; b.style.top = c.top + hy / CH * c.height + 'px'; b.style.display = 'block'; await type(b, s, id, 60); await wait(1400); b.style.display = 'none'; }
 async function play() { const id = ++RUN; $('play').style.display = 'none'; reset(); setSkip(true);
   const P = [['g1', 'scale(1.04)', 'scale(1.14) translate(-2%, 1%)', ['卡带世界里，有一块和平的大陆。', '每到祭典，城里的街道总是热闹非凡。']],
              ['g2', 'scale(1.16) translate(2%, 2%)', 'scale(1.05)', ['直到有一天，这盘卡带被拿去违规烧录——', '别的游戏里的怪物，被硬塞了进来。']],
@@ -95,12 +95,20 @@ async function tower(id, fromSkip) { setSkip(true, 'tower'); const w = $('white'
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '您就是回应召唤的勇者吧！');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '裂缝还在扩大……请帮帮这片大陆！');
   if (id !== RUN) return; $('bub').style.display = 'none'; setSkip(false); portalT = performance.now(); await wait(1250); if (id !== RUN) return; $('pc').animate([{ transform: 'translate(-50%, -50%) translate(0, 3px)' }, { transform: 'translate(-50%, -50%)' }], 200); await wait(1200); if (id !== RUN) return; startWalk(); }
+// 11/24 死后回塔顶：GAME OVER → CONTINUE? → 白光进塔顶 → 公主/法师/士兵说几句 → 开门走进去
+async function towerBack() { const id = ++RUN; reset(); let L = []; try { L = JSON.parse(QS.get('L') || '[]'); } catch (e) {}
+  const c = $('cap'); c.style.color = '#e84a4a'; c.textContent = 'GAME OVER'; await wait(1300); if (id !== RUN) return; c.style.color = '#ffe9a8'; c.textContent = 'CONTINUE ?'; await wait(1100); if (id !== RUN) return; c.style.color = ''; c.textContent = '';
+  const w = $('white'); w.style.transition = 'opacity .6s'; w.style.opacity = 1; await wait(700); if (id !== RUN) return;
+  $('px').style.opacity = 1; pxT0 = performance.now() - 4000; if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); } w.style.transition = 'opacity 1s'; w.style.opacity = 0; await wait(1300);
+  setSkip(true, 'tower');
+  for (const [who, txt] of L) { if (id !== RUN) return; await say(id, who, '', txt); }
+  if (id !== RUN) return; $('bub').style.display = 'none'; setSkip(false); portalT = performance.now(); await wait(1250); if (id !== RUN) return; startWalk(); }
 function startWalk() { walk = { x: 835 * CW / 1672, y: 292 * CW / 1672 }; $('cap').textContent = matchMedia('(pointer:coarse)').matches ? '按住屏幕拖动，走进传送门' : 'WASD / 方向键移动，走进传送门'; $('play').style.display = 'block'; $('play').textContent = '↺ 再看一次'; }
 function reset() { walk = null; portalT = 0; MK.reset(); pxState = 'off'; for (const e of document.querySelectorAll('.pg')) e.classList.remove('on'); $('px').style.opacity = 0; $('white').style.opacity = 0; $('bub').style.display = 'none'; $('cap').textContent = ''; }
 $('play').onclick = play;
 const GAME = /[?&]game/.test(location.search), FIRST = /[?&]first/.test(location.search);
 const done = () => { if (GAME) parent.postMessage('introDone', '*'); };
-if (GAME) { $('play').classList.add('g'); $('first').style.display = 'none'; $('play').style.display = 'none'; $('fst').checked = FIRST; addEventListener('load', () => setTimeout(play, 300)); } // 长按跳过：只在故事书插图部分有效；第一次玩不显示；塔顶像素部分不能跳
+if (GAME) { $('play').classList.add('g'); $('first').style.display = 'none'; $('play').style.display = 'none'; $('fst').checked = FIRST; addEventListener('load', () => setTimeout(QS.has('tower') ? towerBack : play, 300)); } // 长按跳过：只在故事书插图部分有效；第一次玩不显示；塔顶像素部分不能跳
 let canSkip = false, hold = 0, holdT0 = 0; const HOLD = 1000;
 let skipStage = ''; function setSkip(on, st = 'story') { skipStage = on ? st : ''; canSkip = on && !$('fst').checked; $('skip').style.display = canSkip ? 'flex' : 'none'; hold = 0; $('skc').style.strokeDashoffset = 50.3; }
 function holdTick() { if (!hold) return; const k = Math.min(1, (performance.now() - holdT0) / HOLD); $('skc').style.strokeDashoffset = 50.3 * (1 - k); if (k >= 1) { hold = 0; doSkip(); } else requestAnimationFrame(holdTick); }
