@@ -40,15 +40,25 @@
   // ================= 主界面 =================
   const tvOff = go => { const t = $('title'); if (t.classList.contains('tvoff')) return; t.classList.add('tvoff'); document.body.classList.add('tvbg'); setTimeout(() => { t.classList.remove('tvoff'); document.body.classList.remove('tvbg'); go(); }, 560); };
   // 11/24 存档位：继续游戏 = 选存档 → 宫殿；新的游戏 = 选空位 → 选人 → 塔顶开场
-  function slotPick(mode) { $('tpTitle').textContent = mode === 'new' ? '新的游戏：选一个存档位' : '继续游戏：选择存档'; const body = $('tpBody'); body.innerHTML = ''; const box = document.createElement('div'); box.className = 'slots';
-    for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'btn slot';
-      b.innerHTML = has ? `<b>存档 ${n}</b><span>${I.hero === 'f' ? '女勇者' : '男勇者'} · 💎 ${I.cry} · 最远 ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}${I.run ? ' · 有一局没打完' : ''}</span>` : `<b>存档 ${n}</b><span>空</span>`;
+  function slotPick(mode) { $('slotT').textContent = mode === 'new' ? '新的游戏 · 选一个存档位' : '继续游戏 · 选择存档'; $('slotForm').hidden = true; const row = $('slotRow'); row.hidden = false; row.innerHTML = '';
+    for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'scard';
+      b.innerHTML = has ? `<img class="por" src="art/portrait/${I.hero}.webp" alt=""><b>${I.name.replace(/[<>&]/g, '')}</b><span class="sn">存档 ${n} · ${I.hero === 'f' ? '女勇者' : '男勇者'}</span><span class="sl">💎 ${I.cry}　最远 ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}<br>通关 ${I.wins} 次 · 倒下 ${I.deaths} 次</span>${I.run ? '<span class="run">▶ 有一局没打完</span>' : ''}`
+        : `<span class="empty">＋</span><b>空存档</b><span class="sn">存档 ${n}</span>`;
       if (mode === 'cont' && !has) b.disabled = true;
-      b.onclick = () => { if (mode === 'new' && has && !confirm(`存档 ${n} 里已经有进度，确定要覆盖吗？`)) return; overlay('tpanel', false); SLOT.use(n);
-        if (mode === 'new') { SLOT.wipe(n); return tvOff(() => openPrep(true)); }
-        tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); };
-      box.appendChild(b); }
-    body.appendChild(box); overlay('tpanel', true); }
+      b.onclick = () => { if (mode === 'new') { if (has && !confirm(`存档 ${n}「${I.name}」会被覆盖，确定吗？`)) return; return slotForm(n); }
+        overlay('slotScr', false); SLOT.use(n); tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); };
+      row.appendChild(b); }
+    overlay('slotScr', true); }
+  // 新存档：先起名字和口令 → 选人 → 塔顶开场
+  function slotForm(n) { $('slotRow').hidden = true; $('slotForm').hidden = false; $('slotT').textContent = `新的游戏 · 存档 ${n}`; $('sErr').textContent = ''; $('sName').value = ''; $('sPin').value = ''; setTimeout(() => $('sName').focus(), 50);
+    $('sBack').onclick = () => slotPick('new');
+    $('sOk').onclick = async () => { const name = $('sName').value.trim().replace(/[<>&"'`\\]/g, ''), pin = $('sPin').value.trim();
+      if (!name) return $('sErr').textContent = '请输入名字';
+      if (pin.length < 4) return $('sErr').textContent = '口令至少 4 位';
+      let h = pin; try { const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xsyz|' + name + '|' + pin)); h = [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (e) {}
+      SLOT.use(n); SLOT.wipe(n); store.set('name', name); store.set('pin', h); overlay('slotScr', false); tvOff(() => openPrep(true)); };
+    $('sPin').onkeydown = e => { if (e.key === 'Enter') $('sOk').click(); }; }
+  $('slotX').onclick = () => overlay('slotScr', false);
   $('bStart').onclick = () => slotPick('new');
   $('bCont').onclick = () => slotPick('cont');
   const contShow = () => { let any = 0; for (let n = 1; n <= SLOT.N; n++) if (SLOT.has(n)) any = 1; $('bCont').hidden = !any; $('bStart').querySelector('span').textContent = '新的游戏'; };
@@ -142,10 +152,6 @@
       $('hInfo').innerHTML = `<div class="pnName"><h5>${h.name}</h5><span>${h.desc}</span></div><div class="hperk">◆ 特长 · ${h.perk}</div>
         <div class="pills">${PL('hp', '生命', c0.hp)}${PL(dmgA, W0.name + '伤害', pct(c0.dmg - 1))}${PL('guard', '物防 / 魔防', c0.pdef + ' / ' + c0.mdef)}${PL('move', '移速', pct(c0.move - 1))}${PL('crit', '暴击率', Math.round(c0.critP * 100) + '% / ' + Math.round(c0.critM * 100) + '%')}${PL('move', '闪避', Math.round(c0.eva * 100) + '%')}${PL('xp', '经验', pct(c0.xp - 1))}</div>`; }
     // 起手兵器
-    { const own = (() => { try { return JSON.parse(store.get('titles') || '[]'); } catch (e) { return []; } })(), cur = store.get('title') || '', ts = $('tSel'); ts.innerHTML = '';   // 11/24 称号：佩戴 1 个
-      const mk = (id, name, lock) => { const b = document.createElement('button'); b.className = 'btn mini' + (id === cur ? ' gold' : ''); b.textContent = lock ? '？？？' : name; b.disabled = lock; b.onclick = () => { store.set('title', id); openPrep(false); }; ts.appendChild(b); };
-      mk('', '不佩戴'); for (const t of DATA.titles) mk(t.id, t.name, !own.includes(t.id));
-      const T = DATA.titles.find(t => t.id === cur); $('tDesc').innerHTML = T ? `<b>${T.name}</b>　${T.d}` : `已解锁 ${own.length} / ${DATA.titles.length}　<small>（未解锁：${DATA.titles.filter(t => !own.includes(t.id)).map(t => t.how).slice(0, 2).join('、')}……）</small>`; }
     const ws = $('wSel'); ws.innerHTML = '';
     for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; store.set('weapon', id); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
     const W = DATA.weapons[P.weapon], SK0 = DATA.skills[P.weapon] || {}, AT = DATA.attrs.find(a => a.id === W.type);   // 11/22 起手技能介绍（铃兰式：上面选兵器，下面讲技能）
