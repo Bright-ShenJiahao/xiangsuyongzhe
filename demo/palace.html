@@ -101,7 +101,12 @@ const libAdd = id => { const a = LIB().filter(x => !START.includes(x)); if (!a.i
 const spend = c => { crystal -= c; if (GAME) LS.set('crystal', crystal); };
 const bkIc = (id, cls = '') => `<img class="bk ${cls}" src="art/ui2/sk/${id}.png" alt="">`;
 const DRAW = { 2: 60, 3: 110 };
-function mageShop(L, n) { const h = document.createElement('div'); h.className = 'sec'; h.textContent = '书库 · 初阶（局内拿到过才能买）'; L.appendChild(h); const g = document.createElement('div'); g.className = 'bkg'; L.appendChild(g); const lib = LIB();
+function mageRecycle(L, n) { let S = null; try { S = JSON.parse(localStorage.getItem('pxyz.save1') || 'null'); } catch (e) {} if (!S || !S.RUN || !Array.isArray(S.RUN.bag)) return;   /* 11/25 回收：只收背包里带回来的书（还有命、这一局没结束）；水晶按铜钱价 ÷8.5 再打 7 折，大法师占便宜 */
+  const bs = S.RUN.bag.map((o, i) => o && o.kind === 'book' && DATA.skills[o.id] ? { o, i } : null).filter(Boolean); if (!bs.length) return;
+  const h = document.createElement('div'); h.className = 'sec'; h.textContent = '回收 · 背包里带回来的技能书（换水晶，大法师占点便宜）'; L.appendChild(h); const g = document.createElement('div'); g.className = 'bkg'; L.appendChild(g);
+  for (const { o, i } of bs) { const T = DATA.skills[o.id], pay = Math.max(1, Math.round(DATA.tierPrice[T.tier] / 8.5 * .7)), b = document.createElement('button'); b.className = 'bkb'; b.innerHTML = `${bkIc(o.id)}<b>${T.name}</b><small>${DATA.tierName[T.tier]} · 💎 +${pay}</small>`;
+    b.onclick = () => { S.RUN.bag[i] = null; try { localStorage.setItem('pxyz.save1', JSON.stringify(S)); } catch (e) {} crystal += pay; if (GAME) LS.set('crystal', crystal); panel(n); }; g.appendChild(b); } }
+function mageShop(L, n) { mageRecycle(L, n); const h = document.createElement('div'); h.className = 'sec'; h.textContent = '书库 · 初阶（局内拿到过才能买）'; L.appendChild(h); const g = document.createElement('div'); g.className = 'bkg'; L.appendChild(g); const lib = LIB();
   for (const [id, S] of Object.entries(DATA.skills)) { if (S.tier !== 1) continue; const own = lib.includes(id), seen = SEEN.has('s:' + id), b = document.createElement('button'); b.className = 'bkb' + (own ? ' own' : '');
     b.innerHTML = seen || own ? `${bkIc(id)}<b>${S.name}</b><small>${own ? '已拥有' : '💎 30'}</small>` : `<span class="q">？</span><b>？？？</b><small>还没见过</small>`; b.disabled = own || !seen || crystal < 30;
     b.onclick = () => { spend(30); libAdd(id); panel(n); }; g.appendChild(b); }

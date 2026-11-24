@@ -12,7 +12,7 @@
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
     // 出售：书半价（22 / 34 / 52 → 11 / 17 / 26），宝物拿基价的 35%
-    if (o.kind === 'book') { const S = SK[o.id], st = DATA.setOf(R().slots), n = st.n[S.sys] || 0, L = DATA.sets[S.sys], nx = L && L.find(t => t[0] > n); return { tier: S.tier, icon: UI.bookOf(o.id), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc + (L ? `<br><small class="${st.on[S.sys] ? 'on' : 'off'}">${S.sys}系羁绊 ${n}/${nx ? nx[0] : 4}${nx ? '：' + nx[2] : '（已满）'}</small>` : ''), brief: S.brief, sell: Math.round(DATA.tierPrice[S.tier] * .5) }; }   // 11/22：书卖掉 = 半价（不管用没用过）
+    if (o.kind === 'book') { const S = SK[o.id], st = DATA.setOf(R().slots), n = st.n[S.sys] || 0, L = DATA.sets[S.sys], nx = L && L.find(t => t[0] > n); return { tier: S.tier, icon: UI.bookOf(o.id), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc + (L ? `<br><small class="${st.on[S.sys] ? 'on' : 'off'}">${S.sys}系羁绊 ${n}/${nx ? nx[0] : 4}${nx ? '：' + nx[2] : '（已满）'}</small>` : ''), brief: S.brief, sell: null }; }   /* 11/25 技能书不能在营地卖：带回宫殿，死了还有命就能带回去，让大法师换水晶 */
     if (o.kind === 'oup') return { icon: UI.pi('reroll'), name: '印记升级 +1', sub: '裂缝里的符文', desc: '随机让一个已装备、未满级的誓约印记升 1 级', sell: 0 };
     if (o.kind === 'oath') { const O = DATA.oaths[o.id], L = Math.min(5, o.lv || 1), ic = UI.pi('oath/' + o.id); ic.classList.add('oimg');
       return { icon: ic, name: O.name, sub: `${O.mv ? '身法印记' : '誓约印记'} · Lv${L}`, desc: O.d(DATA.oathLv[L - 1]) + (L < 5 ? `<br><small class="off">下一级：${O.d(DATA.oathLv[L])}</small>` : '<br><small class="on">已满级</small>'), sell: 10 + 6 * L }; }
@@ -35,7 +35,7 @@
     if (o.kind === 'book') { const j = r.slots.findIndex((s, k) => !s && k < r.open); if (j >= 0) { r.slots[j] = { id: o.id, lv: 1, xp: o.xp || 0 }; toast(`${SK[o.id].name} 自动装上第 ${j + 1} 格` + (r.tipP ? '' : ' · 按 P 调整顺序')); r.tipP = 1; return true; } }   // 技能栏有空位就直接装上
     if (o.kind === 'item' && ITEM(o.id).d) { const has = [...r.gear, ...r.bag].find(x => x && x.kind === 'item' && x.id === o.id); if (has) { if ((has.lv || 1) >= 5) { r.coins += 20; toast(`${ITEM(o.id).name} 已满级，换成 20 铜钱`); return true; } has.lv = (has.lv || 1) + 1; has.up = Date.now(); B().recompute(); toast(`${ITEM(o.id).name} 升到 Lv${has.lv}`); UI.feed(`${ITEM(o.id).name} 升到 Lv${has.lv}！`); return true; } }
     if (o.kind === 'item') { const g = r.gear.indexOf(null); if (g >= 0) { r.gear[g] = { kind: 'item', id: o.id }; B().recompute(); return true; } }   // 11/23 宝物格有空就直接生效
-    const i = r.bag.indexOf(null); if (i < 0) { toast('物品栏满了，先卖掉点东西'); return false; }
+    const i = r.bag.indexOf(null); if (i < 0) { toast('物品栏满了，先腾出点位置'); return false; }
     r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : o.kind === 'oath' ? { kind: 'oath', id: o.id, lv: 1, mv: !!DATA.oaths[o.id].mv } : { kind: o.kind, id: o.id }; if (inFight()) r.bag[i].fresh = 1;
     return true;
   }
@@ -119,7 +119,7 @@
       if (cur.kind === 'item' && cs.t === 'b') btn('放上', () => { const j = r.gear.indexOf(null); if (j < 0) return toast('宝物格满了：拖到一件宝物上替换'); r.gear[j] = cur; r.bag[cs.i] = null; sel = null; B().recompute(); loadout(box); }, true);
       if (cs.t === 'g' && !F) btn('收进物品栏', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = cur; r.gear[cs.i] = null; sel = null; B().recompute(); loadout(box); });
       if (cur.kind === 'use') btn('吃掉', () => { learn(cur); A[cs.i] = null; sel = null; loadout(box); }, true);
-      if (!F) btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; A[cs.i] = null; sel = null; B().recompute(); loadout(box); refreshCoin(); });
+      if (!F && t.sell != null) btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; A[cs.i] = null; sel = null; B().recompute(); loadout(box); refreshCoin(); });
     }
   }
   // ---------- 属性页：升级攒的属性点手动加；这次结算 / 暂停里加的点，离开前都能退 ----------
@@ -228,8 +228,8 @@
       const g = document.createElement('div'); g.className = 'cards' + (rep.field ? ' shelf' : ''); body.appendChild(g);
       loot.forEach((o, i) => { const t = thing(o), d = card(t, o);
         btnTo(d, o.kind === 'book' ? '学会' : o.kind === 'use' ? '吃掉' : '收下', () => { if (learn(o)) { if (rep.pickOne) loot = []; else loot.splice(i, 1); render(); } }, true);
-        if (!rep.pickOne) btnTo(d, `卖 ${t.sell}`, () => { r.coins += t.sell; loot.splice(i, 1); render(); }); g.appendChild(d); });
-      body.insertAdjacentHTML('beforeend', rep.pickOne ? '<p class="dim center">只能选一本，选了另外两本就消失</p>' : '<p class="dim center">没处理的战利品，出发时自动卖掉换铜钱</p>');
+        if (!rep.pickOne && t.sell != null) btnTo(d, `卖 ${t.sell}`, () => { r.coins += t.sell; loot.splice(i, 1); render(); }); g.appendChild(d); });
+      body.insertAdjacentHTML('beforeend', rep.pickOne ? '<p class="dim center">只能选一本，选了另外两本就消失</p>' : '<p class="dim center">没处理的战利品，出发时自动卖掉换铜钱（技能书卖不了，不拿就没了）</p>');
     } else if (tab === 'xiu') {
       if (!r.xiu) { body.innerHTML = '<p class="dim center">暂无修炼机会<br><small>打怪攒经验，每升一级得一次修炼</small></p>'; return; }
       const fx = B().hero().fx, nOpt = 3 + (fx.xiuOpt || 0), rrMax = Math.max(0, 2 + (fx.xiuReroll || 0) + MLm('reroll'));
@@ -281,7 +281,7 @@
     return L;
   }
   $('cGo').onclick = () => {
-    commit(); const r = R(); if (!rep.pickOne) for (const o of loot) r.coins += thing(o).sell; loot = [];   // 没处理的自动卖掉
+    commit(); const r = R(); if (!rep.pickOne) for (const o of loot) r.coins += thing(o).sell || 0; loot = [];   // 没处理的自动卖掉
     $('camp').classList.remove('on'); document.body.classList.remove('shopOn'); if (rep.after) rep.after(); else B().nextWave();
   };
 
