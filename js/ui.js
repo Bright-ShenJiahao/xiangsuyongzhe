@@ -40,43 +40,50 @@
   // ================= 主界面 =================
   const tvOff = go => { const t = $('title'); if (t.classList.contains('tvoff')) return; t.classList.add('tvoff'); document.body.classList.add('tvbg'); setTimeout(() => { t.classList.remove('tvoff'); document.body.classList.remove('tvbg'); go(); }, 560); };
   // 11/24 存档位：继续游戏 = 选存档 → 宫殿；新的游戏 = 选空位 → 选人 → 塔顶开场
-  function slotPick(mode) { $('slotT').textContent = '选择存档'; $('slotForm').hidden = true; $('sCon').parentNode.classList.remove('on'); const row = $('slotRow'); row.innerHTML = '';
+  // 11/24 存档界面：先输入名字（和口令），再点存档就进游戏。空存档 = 新建，旧存档 = 核对名字和口令
+  const pinHash = async (name, pin) => { if (!pin) return ''; try { const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xsyz|' + name + '|' + pin)); return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (e) { return pin; } };
+  function slotPick() { $('slotT').textContent = '选择存档'; $('sErr').textContent = ''; const cw = $('sCon').parentNode; cw.classList.remove('on'); cw.querySelectorAll('.slotClip').forEach(x => x.remove()); const row = $('slotRow'); row.innerHTML = ''; let busy = 0;
     for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'cart'; b.dataset.n = n;
       const T = has && DATA.titles.find(t => t.id === I.title), best = I.best >= 99 ? '通关' : I.best ? '第' + I.best + '站' : '—';
       b.innerHTML = `<img src="art/ui2/save/${has ? 'cart_gold' : 'cart'}.png" alt=""><div class="lab">${has ? `<canvas class="av" data-h="${I.hero}" data-w="${I.weapon}"></canvas><div class="lt"><b>${I.name.replace(/[<>&]/g, '')}</b><span>${T ? '「' + T.name + '」' : '无称号'}</span></div>` : '<span class="no">空存档</span>'}</div>${has && I.run ? '<i class="rled"></i>' : ''}<span class="tag">存档${n}${has ? `　💎${I.cry}　最远${best}` : ''}</span>${has && I.run ? `<span class="tag run">▶ 第${I.runSt}站 · 剩${I.runLife}命</span>` : ''}${has ? '<span class="del">删除</span>' : ''}`;
       if (has) b.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`删除存档 ${n}「${I.name}」？水晶、强化、称号都会清空，不能恢复。`)) { SLOT.wipe(n); slotPick(); } };
-      b.onclick = () => { row.querySelectorAll('.cart').forEach(c => c.classList.toggle('sel', c === b)); insertCart(b, () => slotForm(n, has)); };
+      b.onclick = async () => { if (busy) return; const name = $('sName').value.trim().replace(/[<>&"'`\\]/g, ''), pin = $('sPin').value.trim(), err = t => { $('sErr').textContent = t; $('sName').focus(); };
+        if (!name) return err('先输入勇者的名字，再点存档');
+        const h = await pinHash(name, pin);
+        if (has) { const raw = k => localStorage.getItem('xsyz-s' + n + '-' + k), nm = raw('name'), ph = raw('pin') || '';
+          if (nm && nm !== name) return err(`存档 ${n} 的名字不对`); if (ph && ph !== h) return err('口令不对'); }
+        busy = 1; $('sErr').textContent = ''; b.classList.add('sel'); insertCart(b, () => setTimeout(() => { overlay('slotScr', false); SLOT.use(n);
+          if (!has) { SLOT.wipe(n); store.set('name', name); store.set('pin', h); return tvOff(() => openPrep(true)); }
+          if (!localStorage.getItem('xsyz-s' + n + '-name')) store.set('name', name);
+          tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); }, 650)); };
       row.appendChild(b); }
-    overlay('slotScr', true);
-    for (const c of row.querySelectorAll('canvas.av')) { const d = Math.min(3, devicePixelRatio || 1), S = Math.round(c.getBoundingClientRect().width * d) || 64; c.width = c.height = S; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;   // 11/24 存档上画游戏里的小人
+    overlay('slotScr', true); setTimeout(() => $('sName').focus(), 80);
+    for (const c of row.querySelectorAll('canvas.av')) { const d = Math.min(3, devicePixelRatio || 1), S = Math.round(c.getBoundingClientRect().width * d) || 64; c.width = c.height = S; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
       try { const u = Math.max(1, Math.floor(S * .85 / 48)); SPR.drawHero(g, 'idle', 0, S / 2, S * .95, false, u, { w: c.dataset.w, c: c.dataset.h }); } catch (e) {} } }
-  // 选中的卡带飞进游戏机卡槽，电源灯亮
-  function insertCart(b, done) { const r = b.getBoundingClientRect(), c = $('sCon').getBoundingClientRect(), f = b.querySelector('img').cloneNode(); f.className = 'flyCart'; Object.assign(f.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px' }); document.body.appendChild(f);
-    const tx = c.left + c.width * .5 - (r.left + r.width / 2), ty = c.top + c.height * .28 - (r.top + r.height * .85), sc = (c.width * .46) / r.width;
-    requestAnimationFrame(() => { f.style.transform = `translate(${tx}px, ${ty}px) scale(${sc})`; f.style.opacity = 0; });
-    setTimeout(() => { f.remove(); $('sCon').parentNode.classList.add('on'); try { SFX.play('pick'); } catch (e) {} done(); }, 460); }
-  // 新存档：先起名字和口令 → 选人 → 塔顶开场
-  // 11/24 插好卡带后：输入名字和口令（口令可以不输）。旧卡带要对上名字和口令，空卡带就新建
-  const pinHash = async (name, pin) => { if (!pin) return ''; try { const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xsyz|' + name + '|' + pin)); return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (e) { return pin; } };
-  function slotForm(n, has) { $('slotForm').hidden = false; $('slotT').textContent = has ? `存档 ${n} · 输入名字和口令` : `存档 ${n} · 新的勇者`; $('sErr').textContent = ''; $('sName').value = ''; $('sPin').value = ''; setTimeout(() => $('sName').focus(), 50);
-    $('sBack').onclick = () => slotPick();
-    $('sName').oninput = () => { if (has) return; const L = $('slotRow').querySelector(`.cart[data-n="${n}"] .lab`); if (L) L.innerHTML = `<b>${$('sName').value.replace(/[<>&]/g, '') || '……'}</b><span>新的勇者</span>`; };
-    $('sOk').onclick = async () => { const name = $('sName').value.trim().replace(/[<>&"'`\\]/g, ''), pin = $('sPin').value.trim();
-      if (!name) return $('sErr').textContent = '请输入勇者的名字';
-      const h = await pinHash(name, pin);
-      if (has) { const raw = k => localStorage.getItem('xsyz-s' + n + '-' + k), nm = raw('name'), ph = raw('pin') || '';
-        if (nm && nm !== name) return $('sErr').textContent = '名字不对';
-        if (ph && ph !== h) return $('sErr').textContent = '口令不对';
-        SLOT.use(n); if (!nm) store.set('name', name); overlay('slotScr', false);
-        return tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); }
-      SLOT.use(n); SLOT.wipe(n); store.set('name', name); store.set('pin', h); overlay('slotScr', false); tvOff(() => openPrep(true)); };
-    for (const id of ['sName', 'sPin']) $(id).onkeydown = e => { if (e.key === 'Enter') $('sOk').click(); }; }
+  // 卡带真的插进游戏机：从上面落下，下半截没进卡槽里（被挡住），然后电源灯亮
+  function insertCart(b, done) { const cw = $('sCon').parentNode, clip = document.createElement('div'); clip.className = 'slotClip'; const im = b.querySelector('img').cloneNode(); clip.appendChild(im); cw.appendChild(clip);
+    b.style.visibility = 'hidden'; void im.offsetWidth; setTimeout(() => im.classList.add('in'), 20);
+    setTimeout(() => { cw.classList.add('on', 'bump'); try { SFX.play('pick'); } catch (e) {} setTimeout(() => cw.classList.remove('bump'), 160); done(); }, 520); }
+  for (const id of ['sName', 'sPin']) $(id).onkeydown = e => { if (e.key === 'Enter') $('sErr').textContent = '点一个存档进入游戏'; };
   $('slotX').onclick = () => overlay('slotScr', false);
   $('bStart').onclick = () => slotPick();   // 11/24 只留「进入游戏」：旧卡带=直接开始，空卡带=起名字从零开始
   const contShow = () => { $('bCont').hidden = true; $('bStart').querySelector('span').textContent = '进入游戏'; };
   // 11/22 图鉴展示用小人（art/figure/<key>/0..3.png，比战斗小人大、更精细），有就替换图鉴里的那一个
   const FIG = {}; fetch('art/figure/meta.json').then(r => r.json()).then(M => { for (const k in M) FIG[k] = M[k].map(([ax], i) => { const im = new Image(); im.src = `art/figure/${k}/${i}.png`; return { c: im, f: { ax } }; }); }).catch(() => {});
 
+  // 11/24 图鉴大分类：角色 / 技能书 / 宝物 / 印记 / 称号（收集式，没拿到的显示？？？）
+  function codexTop(row, bar, cur) { const P0 = row.parentNode; P0.querySelectorAll('.cxtop').forEach(x => x.remove()); const top = document.createElement('div'); top.className = 'cxtop';
+    for (const [k, n] of [['char', '角色'], ['book', '技能书'], ['item', '宝物'], ['oath', '印记'], ['title', '称号']]) { const b = document.createElement('button'); b.textContent = n; b.className = k === cur ? 'on' : '';
+      b.onclick = () => { if (k === cur) return; if (k === 'char') return document.querySelector('[data-panel="codex"]').click(); cur = k; top.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); bar.style.display = 'none'; const sd = row.querySelector('.cxside'); if (sd) sd.style.display = 'none'; codexList(k); }; top.appendChild(b); }
+    (bar.style.display === 'none' ? row : bar).insertAdjacentElement('beforebegin', top); }
+  function codexList(k) { const body = $('tpBody'), g = document.createElement('div'); g.className = 'cxlist'; let got = 0, tot = 0;
+    const card = (has, ic, name, sub, desc) => { tot++; if (has) got++; const e = document.createElement('div'); e.className = 'cxi' + (has ? '' : ' lock'); const i = document.createElement('div'); i.className = 'ic'; if (ic) i.appendChild(ic); e.appendChild(i);
+      e.insertAdjacentHTML('beforeend', `<div><b>${has ? name : '？？？'}</b><small>${sub}</small><p>${has ? desc : '还没拿到过'}</p></div>`); g.appendChild(e); };
+    if (k === 'book') for (const sys of ['剑', '枪', '弓', '法杖']) { g.insertAdjacentHTML('beforeend', `<div class="cxh">— ${sys} —</div>`); for (const [id, S] of Object.entries(DATA.skills)) if (S.sys === sys) card(SEEN.has('s:' + id), skIcon(id), S.name, `${S.sys} · ${DATA.tierName[S.tier]} · ${S.dt === 'magic' ? '魔法' : '物理'}`, `${S.desc}${['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<br><span class="lv">Lv${x.slice(1)}：${S[x]}</span>`).join('')}`); }
+    if (k === 'item') for (const it of DATA.startItems) card(SEEN.has('i:' + it.id), pi(it.id), it.name, '宝物', typeof it.d === 'function' ? it.d(1) : (it.desc || ''));
+    if (k === 'oath') for (const [id, O] of Object.entries(DATA.oaths)) { const ic = pi('oath/' + id); ic.classList.add('oimg'); card(SEEN.has('o:' + id), ic, O.name, O.mv ? '身法印记' : '誓约印记', O.d(DATA.oathLv[4]) + '<br><span class="lv">（满级效果）</span>'); }
+    if (k === 'title') { let own = []; try { own = JSON.parse(store.get('titles') || '[]'); } catch (e) {} for (const t of DATA.titles) { const has = own.includes(t.id) || SEEN.all(); tot++; if (has) got++; const e = document.createElement('div'); e.className = 'cxi' + (has ? '' : ' lock'); e.innerHTML = `<div class="ic tt">称</div><div><b>${has ? t.name : '？？？'}</b><small>获得条件：${t.how}</small><p>${has ? t.d : '还没获得'}</p></div>`; g.appendChild(e); } }
+    g.insertAdjacentHTML('afterbegin', `<div class="cxcount">已收集 ${got} / ${tot}</div>`); body.innerHTML = ''; body.appendChild(g); body.scrollTop = 0; }
   const PANELS = {
     codex: ['图鉴', () => { const d = document.createElement('div'); d.className = 'codex';
       // 11/22 手办收藏式（铃兰角色一览）：等距立体底座 + 循环播放的像素小人。底座分档：勇者金 / 首领红 / 远程蓝 / 近战灰
@@ -104,37 +111,44 @@
         st.insertAdjacentHTML('beforeend', ped(tier, lab)); e.appendChild(st); e.insertAdjacentHTML('beforeend', `<b>${name}</b><small>${note}</small>`); d.appendChild(e); };
       const draw = a => { const g = a.c.getContext('2d'), f = a.fr[a.i % a.fr.length]; g.clearRect(0, 0, a.c.width, a.c.height); g.drawImage(f.c, Math.round(a.c.width / 2 - f.f.ax), a.c.height - f.bot); };   // 按脚底锚点对齐底座中心
       for (const h of DATA.heroes) { const n = SPR.count(SPR.heroSet(h.id, 'sword'), 'sword.idle') || 1; add(SPR.heroSet(h.id, 'sword'), Array.from({ length: Math.max(2, n) }, (_, i) => ['sword.idle', i % n]), h.name, h.perk, 'gold', '勇者', h.id); }
-      for (const [k, T] of Object.entries(DATA.enemies)) { const tier = T.boss ? 'red' : T.ranged ? 'blue' : 'grey'; add(k, ['idle0', 'idle1', 'walk0', 'walk1', 'walk2', 'walk3'].filter(n => SPR.crop(k, n)), T.name, T.boss ? '首领' : T.ranged ? '远程' : '近战', tier, T.boss ? '首领' : T.ranged ? '远程' : '近战', k); }
+      for (const [k, T] of Object.entries(DATA.enemies)) { const tier = 'grey'; add(k, ['idle0', 'idle1', 'walk0', 'walk1', 'walk2', 'walk3'].filter(n => SPR.crop(k, n)), T.name, T.boss ? '首领' : T.ranged ? '远程' : '近战', tier, T.boss ? '首领' : T.ranged ? '远程' : '近战', k); }
       const INFO = { gob_thief: '偷铜钱的小贼。撞到它能把铜钱抢回来。', gob_merchant: '在各张卡带之间跑生意的矮人，吝啬又油嘴滑舌。', guard: '高塔最后的守卫。', wizard: '王国的老法师，守在召唤祭坛旁。' };
       // 11/23 简介固定在面板右边，默认选中第一个
       const show = e => { const side = document.querySelector('.cxside'); if (!e || !side) return; d.querySelectorAll('.fig.sel').forEach(x => x.classList.remove('sel')); e.classList.add('sel');
-        const k = e.dataset.k, T = DATA.enemies[k], H = DATA.heroes.find(h => h.id === k), cv = e.querySelector('canvas');
+        if (e.classList.contains('lock')) { side.innerHTML = '<div class="cxbig"></div><b>？？？</b><p>还没遇到过这个敌人。</p>'; return; } const k = e.dataset.k, T = DATA.enemies[k], H = DATA.heroes.find(h => h.id === k), cv = e.querySelector('canvas');
         side.innerHTML = `<div class="cxbig"></div><b>${e.querySelector('b').textContent}</b>` + (H ? `<p>${H.desc || ''}</p><p class="g">◆ ${H.perk}</p>` : T ? `<p>${T.boss ? '首领' : T.ranged ? '远程' : '近战'} · ${T.dtype === 'magic' ? '魔法' : '物理'}伤害</p><div class="st"><span>生命 <i>${T.hp}</i></span><span>伤害 <i>${T.dmg}</i></span><span>移速 <i>${T.spd}</i></span><span>物防 <i>${T.pdef || 0}</i></span><span>魔防 <i>${T.mdef || 0}</i></span></div>` : `<p>${INFO[k] || ''}</p>`);
         if (cv) { const c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height; c2.style.height = Math.min(150, parseFloat(cv.style.height) * 1.5) + 'px'; side.querySelector('.cxbig').appendChild(c2); const a = anims.find(x => x.c === cv); if (a) anims.push({ c: c2, fr: a.fr, i: a.i }); } };
       d.addEventListener('click', ev => show(ev.target.closest('.fig')));
-      for (const [k, n, note] of [['gob_thief', '小咕噜', '小偷'], ['gob_merchant', '矮人商人', '商人'], ['guard', '王国卫兵', '守卫'], ['wizard', '大法师', '王国']]) add(null, [], n, note, 'gold', note, k);   // 11/23 NPC 也进图鉴
+      for (const [k, n, note] of [['gob_thief', '小咕噜', '小偷'], ['gob_merchant', '矮人商人', '商人'], ['guard', '王国卫兵', '守卫'], ['wizard', '大法师', '王国'], ['minister', '大臣', '王国']]) add(null, [], n, note, 'blue', note, k);   // 11/24 底座：勇者金、NPC 蓝、怪物灰   // 11/23 NPC 也进图鉴
       { // 11/23 阵营分类：页签 + 「全部」里分组小标题
-        const G = [['hum', '人类阵营'], ['gob', '哥布林'], ['wild', '野兽·亡灵'], ['neu', '中立']], gOf = k => ['m', 'f', 'p', 'guard', 'wizard'].includes(k) ? 'hum' : k === 'gob_merchant' || k === 'gob_thief' ? 'neu' : ['wolf_free', 'skeleton'].includes(k) ? 'wild' : 'gob';
-        const figs = [...d.querySelectorAll('.fig')]; figs.forEach(e => e.dataset.g = gOf(e.dataset.k)); d.innerHTML = '';
+        const G = [['hum', '人类阵营'], ['gob', '哥布林'], ['wild', '野兽·亡灵'], ['neu', '中立']], gOf = k => ['m', 'f', 'p', 'guard', 'wizard', 'minister'].includes(k) ? 'hum' : k === 'gob_merchant' || k === 'gob_thief' ? 'neu' : ['wolf_free', 'skeleton'].includes(k) ? 'wild' : 'gob';
+        const figs = [...d.querySelectorAll('.fig')]; figs.forEach(e => { e.dataset.g = gOf(e.dataset.k); if (DATA.enemies[e.dataset.k] && !SEEN.has('e:' + e.dataset.k)) { e.classList.add('lock'); e.querySelector('b').textContent = '？？？'; e.querySelector('small').textContent = '还没遇到'; } }); d.innerHTML = '';   // 11/24 收集：没遇到的怪显示黑影
         for (const [g, n] of G) { const L = figs.filter(e => e.dataset.g === g); if (!L.length) continue; const h = document.createElement('div'); h.className = 'cxh'; h.dataset.g = g; h.textContent = `— ${n} —`; d.appendChild(h); L.forEach(e => d.appendChild(e)); }
         const bar = document.createElement('div'); bar.className = 'cxtabs'; let cur = 'all';
         for (const [g, n] of [['all', '全部'], ...G]) { const b = document.createElement('button'); b.textContent = n; b.className = g === cur ? 'on' : ''; b.onclick = () => { if (g === cur) return; setTimeout(() => show([...d.querySelectorAll('.fig')].find(x => x.style.display !== 'none'))); const ks = ['all', ...G.map(x => x[0])], dir = ks.indexOf(g) > ks.indexOf(cur) ? 'slideR' : 'slideL'; cur = g; bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
           d.querySelectorAll('.fig, .cxh').forEach(e => e.style.display = g === 'all' || e.dataset.g === g ? '' : 'none'); d.querySelectorAll('.cxh').forEach(e => { if (g !== 'all') e.style.display = 'none'; }); d.classList.remove('slideL', 'slideR'); void d.offsetWidth; d.classList.add(dir); $('tpBody').scrollTop = 0; }; bar.appendChild(b); }
         setTimeout(() => { const tb = $('tpBody'); tb.parentNode.querySelectorAll('.cxtabs').forEach(x => x.remove()); tb.parentNode.insertBefore(bar, tb);
           let row = tb.parentNode.classList.contains('cxrow') ? tb.parentNode : null; if (!row) { row = document.createElement('div'); row.className = 'cxrow'; tb.parentNode.insertBefore(row, tb); row.appendChild(tb); const sd = document.createElement('div'); sd.className = 'cxside'; row.appendChild(sd); }
-          row.insertAdjacentElement('beforebegin', bar); show(d.querySelector('.fig')); }); }
+          row.insertAdjacentElement('beforebegin', bar); codexTop(row, bar, 'char'); show(d.querySelector('.fig')); }); }
       { const pend = Object.values(FIG).flat().filter(x => !x.c.complete); if (pend.length) Promise.all(pend.map(x => new Promise(r => { x.c.addEventListener('load', r); x.c.addEventListener('error', r); }))).then(() => { if (d.isConnected) document.querySelector('[data-panel="codex"]').click(); }); }
       anims.forEach((a, i) => { a.i = i; draw(a); }); const tm = setInterval(() => { if (!d.isConnected) return clearInterval(tm); anims.forEach(a => { a.i++; draw(a); }); }, 400);   // 11/23 原地小幅待机（铃兰式）
       return d; }],
     set: ['设置', () => { const d = document.createElement('div'); const b = document.createElement('button'); b.className = 'btn'; const lab = () => b.textContent = '音效：' + (SFX.on ? '开' : '关'); lab(); b.onclick = () => { SFX.on = !SFX.on; lab(); if (SFX.on) SFX.play('pick'); }; d.appendChild(b); return d; }],   // 11/24 音效开关
-    help: ['帮助', () => { const d = document.createElement('div'); d.innerHTML = `<p>· 深夜两点，你被吸进了游戏机。打倒首领才能回去。</p>
-      <p>· 移动：${touch ? '按住屏幕拖动' : 'WASD 或方向键'}；翻滚：${touch ? '右下角按钮' : '空格'}（翻滚时不会受伤）。</p>
-      <p>· 技能按技能栏的顺序轮流自动放出，你只管走位。</p>
-      <p>· 备战页：选起手兵器、加属性点、选一个现实习惯和一件开局宝物。</p>
-      <p>· 暂停：${touch ? '右上角 II' : 'P 或 Esc'}。</p>`; return d; }],
+    help: ['帮助', () => { const d = document.createElement('div'); d.className = 'help';   // 11/24 帮助：游戏规则分页
+      const H = [['基础', `深夜两点，你被吸进了一盘 999 合 1 的卡带。打倒哥布林王，才能回到屏幕这一边。<br>· 移动：${touch ? '按住屏幕拖动' : 'WASD 或方向键'}。<br>· 攻击是自动的：技能栏里的技能书按顺序轮流放出，你只管走位。<br>· 打怪拿经验升级，升级、宝箱、商店都能拿到新的技能书和宝物。<br>· 暂停：${touch ? '右上角 II' : 'P 或 Esc'}。`],
+        ['翻滚和身法', `· 翻滚：${touch ? '右下角按钮' : '空格'}。翻滚时无敌，可以穿过敌人的攻击。<br>· 翻滚有 2 格，用掉后每格 1.5 秒回一格；按钮满格时会发光。<br>· 身法印记会给翻滚加效果。只有<b>满格时那一滚</b>才会触发效果，纯数值的（翻滚距离、回格速度）一直有效。<br>· 暗影步：在敌人出招前一刻翻滚，会化成黑影。`],
+        ['流派羁绊', `技能书分剑、枪、弓、法杖四系。技能栏里同一系凑够 2 本、4 本，就会触发加成：<br>· 剑：生命 + 伤害<br>· 枪：生命 + 物防<br>· 弓：出手更快 + 射程更远<br>· 法杖：法术伤害 + 魔防<br>书的说明里会写「剑系羁绊 1/2」，营地技能页最上面能看到全部羁绊。`],
+        ['精英和首领', `· 头上发光的是精英，招式比普通哥布林多。<br>· 敌人放大招前，地上会出现<b>红色提示</b>：红圈要砸下来，红线要冲过来。看到就翻滚躲开。<br>· 敌人出招后会停一下，这是反击的好机会。`],
+        ['生命和续关', `· 每局有 2 条命（宫殿里可以多买）。<br>· 倒下时如果还有命：「游戏还没完！！！」→ 回到宫殿 → 走进时空门，回到这一站的开头接着打，身上的东西都还在。<br>· 命用完了才算真正结束，局内的书、宝物、铜钱都会清零。<br>· 中途关掉游戏，下次进来会回到这一站的开头。`],
+        ['水晶和宫殿', `· 水晶是永久保留的货币，死了也不会丢。<br>· 哪里有：打小怪偶尔掉、精英常掉、首领必掉，每过一站给一些，商人那里能用铜钱换，奇遇和赌局也有。<br>· 在宫殿里花水晶买永久强化：<br>　公主：续命、生命、复活回血<br>　大法师：技能相关　士兵：翻滚、闪避　大臣：铜钱、折扣、兑换<br>· 出发前找公主「出发准备」，可以换起手技能书和称号。`],
+        ['称号', `· 打出某种成绩就会解锁称号，永久保留。<br>· 每个称号都有加有减，比如「伤害 +8%，受到伤害 +5%」，看这局想怎么打来选。<br>· 一次只能佩戴 1 个，在宫殿找公主更换。<br>· 图鉴的「称号」页能看到获得条件。`],
+        ['铜钱和奇遇', `· 铜钱是局内货币，掉在地上要走过去捡。放太久会被小咕噜偷走——撞到它能抢回来。<br>· 站与站之间能逛商店：买技能书、宝物、印记，还能换水晶。<br>· 路上会遇到奇遇：坏掉的街机、小咕噜的赌局、精灵、旅商……有赚有赔。`]];
+      const bar = document.createElement('div'); bar.className = 'cxtop'; const box = document.createElement('div'); box.className = 'hbox';
+      H.forEach(([t, h], i) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => { bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); box.innerHTML = `<h3>${t}</h3><p>${h}</p>`; }; bar.appendChild(b); if (!i) setTimeout(() => b.click()); });
+      d.appendChild(bar); d.appendChild(box); return d; }],
   };
-  for (const b of document.querySelectorAll('[data-panel]')) b.onclick = () => { const [t, fn] = PANELS[b.dataset.panel]; $('tpTitle').textContent = t; const body = $('tpBody'); document.querySelectorAll('.cxtabs, .cxpop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } body.innerHTML = ''; body.appendChild(fn()); overlay('tpanel', true); };
-  $('tpX').onclick = () => $('tpClose').click(); $('tpClose').onclick = () => { overlay('tpanel', false); document.querySelectorAll('.cxtabs, .cxpop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } };
+  for (const b of document.querySelectorAll('[data-panel]')) b.onclick = () => { const [t, fn] = PANELS[b.dataset.panel]; $('tpTitle').textContent = t; const body = $('tpBody'); document.querySelectorAll('.cxtabs, .cxpop, .cxtop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } body.innerHTML = ''; body.appendChild(fn()); overlay('tpanel', true); };
+  $('tpX').onclick = () => $('tpClose').click(); $('tpClose').onclick = () => { overlay('tpanel', false); document.querySelectorAll('.cxtabs, .cxpop, .cxtop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } };
 
   // ================= 备战页 =================
   const P = { hero: 'm', weapon: 'sword', free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };

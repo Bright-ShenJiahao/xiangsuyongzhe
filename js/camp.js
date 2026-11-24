@@ -21,7 +21,7 @@
   }
   function iconEl(t) { const s = document.createElement('span'); s.className = 'ic' + (t.tier ? ' tr t' + t.tier : ''); if (t.icon) s.appendChild(t.icon); else s.textContent = t.emoji; return s; }
   // 学会一本书：已经有这一招就升一级，否则放进背包
-  function learn(o, quiet) { if (o && ['book', 'item', 'oath'].includes(o.kind)) { const r0 = R(); (r0.got = r0.got || []).push({ kind: o.kind, id: o.id }); }
+  function learn(o, quiet) { if (o && ['book', 'item', 'oath'].includes(o.kind)) { const r0 = R(); (r0.got = r0.got || []).push({ kind: o.kind, id: o.id }); } try { if (o && o.id) SEEN.add({ book: 's:', item: 'i:', oath: 'o:' }[o.kind] + o.id); } catch (e) {}
     const r = R(); const toast = quiet ? () => {} : toast0;
     if (o.kind === 'book') {
       const has = r.slots.find(s => s && s.id === o.id) || r.bag.find(b => b && b.kind === 'book' && b.id === o.id);

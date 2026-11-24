@@ -39,6 +39,7 @@
     cam.snap = true; hero = { gap: 0, rollBuf: 0, x: MAPW / 2, y: (g.y0 + g.y1) / 2, hp: 0, maxHp: 0, f: 1, t: 0, roll: 0, rollCd: 0, inv: 0, hurtT: 0, atkT: 0, moving: false, cd: .6, dead: false,
       m: { dmg: 1, spd: 1, area: 1, move: 1 }, critP: .01, critM: .01, critMulP: 1.5, critMulM: 1.5, eva: 0, pIn: 1, mIn: 1, xpMul: 1, fx: {}, A: {} };
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
+    try { SEEN.add('s:' + (b.weapon || 'sword')); } catch (e) {}
     RUN = { title: b.title || null, hero: b.hero || 'm', weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0,   /* 11/22 属性加点删除，只靠修炼 */ alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
       bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: [null], coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
     RUN.slots[0] = { id: b.weapon, lv: 1, xp: 0 }; if (b.item) RUN.gear[0] = { kind: 'item', id: b.item };
@@ -127,6 +128,7 @@
     const y = R(g.y0, g.y1), [l, r] = ground(y); return { x: Math.abs(l - hero.x) > Math.abs(r - hero.x) ? l + 8 * K : r - 8 * K, y };
   }
   function spawn(type, at, tier) {
+    try { SEEN.add('e:' + type); } catch (e) {}
     const T = DATA.enemies[type], TT = tier ? DATA.tiers[tier] : null, p = at || spawnPos();
     const hp = Math.ceil(T.hp * (T.boss ? 1 : (DATA.stations[G.st - 1] || {}).hp || 1) * (TT ? TT.hp : 1));
     const z = { type, T, tier, x: p.x, y: p.y, hp, maxHp: hp, f: 1, t: R(0, 1), st: 'run', cd: R(.3, 1), flash: 0, kbx: 0, kby: 0, kbT: 0,

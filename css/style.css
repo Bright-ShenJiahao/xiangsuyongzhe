@@ -1269,3 +1269,20 @@ body.tvbg { background: #000; }
 .sbtn, .sbtn.gold { border: 8px solid transparent !important; border-width: 8px 8px 11px 8px !important; border-image: url(../art/ui2/save/btn.png) 26 26 36 26 fill / 8px 8px 11px 8px stretch !important; background: none !important; box-shadow: none !important; padding: 0 10px !important; margin: 0 !important; animation: none !important; }
 .sbtn:active { border-width: 8px !important; border-image: url(../art/ui2/save/btn_dn.png) 26 fill / 8px stretch !important; transform: translateY(3px) !important; }
 .sbtn.gold { color: #ffd77a !important; }
+/* 11/24 图鉴：收集式 + 大分类 */
+.cxtop { display: flex; gap: 6px; justify-content: center; margin: 0 0 8px; flex: none; } .cxtop button { font: inherit; font-size: 15px; padding: 5px 14px; background: #3a2814; color: #c8b890; border: 2px solid #6b4a2b; cursor: pointer; } .cxtop button.on { color: #ffd77a; border-color: #ffd77a; background: #5a3e1e; }
+#tpBody .fig.lock canvas { filter: brightness(0) opacity(.55); }
+.cxlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.cxlist .cxh, .cxlist .cxcount { grid-column: 1 / -1; text-align: center; color: #c8a15a; margin: 4px 0; } .cxlist .cxcount { color: #ffd77a; }
+.cxi { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; background: rgba(255,246,220,.08); border: 1px solid #6b4a2b; } .cxi .ic { flex: none; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; } .cxi .ic > * { max-width: 48px; max-height: 48px; }
+.cxi b { color: #ffd77a; } .cxi small { display: block; color: #a89878; font-size: 12px; } .cxi p { margin: 4px 0 0; font-size: 13px; color: #e8dcc0; line-height: 1.5; } .cxi .lv { color: #9fd0ff; font-size: 12px; }
+.cxi.lock .ic { filter: brightness(0) opacity(.5); } .cxi.lock b, .cxi.lock p { color: #7a6a50; }
+.cxi .ic.tt { font-size: 22px; color: #ffd77a; border: 2px solid #c9a15a; }
+.help .cxtop { flex-wrap: wrap; } .hbox h3 { color: #ffd77a; margin: 6px 0; } .hbox p { line-height: 1.9; color: #e8dcc0; } .hbox b { color: #ffb86a; }
+/* 11/24 卡带插进游戏机：外层只露出卡槽线以上，卡带从上落下、下半截没进去 */
+.slotClip { position: absolute; left: 0; width: 100%; bottom: 69%; height: 320%; overflow: hidden; pointer-events: none; z-index: 2; }
+.slotClip img { position: absolute; left: 27%; width: 46%; bottom: 0; transform: translateY(-260%); transition: transform .45s cubic-bezier(.55,0,.9,.45); filter: drop-shadow(0 4px 4px rgba(0,0,0,.5)); }
+.slotClip img.in { transform: translateY(42%); }
+.conWrap.bump { animation: cbump .16s; } @keyframes cbump { 50% { transform: translateY(3px); } }
+.slotHint { margin: 0; text-align: center; color: #3f8a52; font-size: 13px; }
+.slotRow { margin-bottom: 26px; }
