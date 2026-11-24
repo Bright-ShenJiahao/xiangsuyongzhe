@@ -4,9 +4,9 @@
 <style>
 html,body{margin:0;height:100%;background:#1a120a;overflow:hidden}
 #prep{display:flex !important;position:fixed;inset:0}
-.stage{position:relative;flex:1 1 auto;min-height:150px;max-height:260px;border:2px solid #b8965c;border-radius:12px;overflow:hidden;background:#3a2a18}
+.stage{position:relative;flex:1 1 auto;min-height:150px;max-height:260px;border:2px solid #b8965c;border-radius:12px;overflow:hidden;background:#fff}
 #prep .stage canvas{position:absolute !important;left:0 !important;top:0 !important;width:100% !important;height:100% !important;max-width:none !important;image-rendering:pixelated}
-.stage .lab{position:absolute;left:10px;top:6px;z-index:2;font:14px WenKai,serif;color:#fff3d0;text-shadow:1px 1px 0 #000}
+.stage .lab,.stage .act{display:none}.stage .lab{position:absolute;left:10px;top:6px;z-index:2;font:14px WenKai,serif;color:#fff3d0;text-shadow:1px 1px 0 #000}
 .stage .act{position:absolute;right:10px;top:6px;z-index:2;font:14px WenKai,serif;color:#ffd860;text-shadow:1px 1px 0 #000}
 .pnSec.st{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .pnSec.st h4{flex:none}
@@ -22,36 +22,31 @@ html,body{margin:0;height:100%;background:#1a120a;overflow:hidden}
   <div class="pnSec st"><h4>战斗演示</h4><div class="stage"><canvas id="cv"></canvas><span class="lab" id="lab"></span><span class="act" id="act"></span></div></div>
   <div class="pnFoot"><button class="btn">返回</button><button class="btn gold">出发！</button></div>
  </div></div></div>
-<div id="note">局外演示：右下新增「战斗演示」——游戏里的小人循环 待机→跑→翻滚→出手，跟着所选兵器变</div>
+
 <script src="js/data.js"></script><script src="js/sprites.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 let hero='m',wp='sword',sk=0;
-const NM={m:'阿远',f:'小凛'},BK={sword:'bk_sword',spear:'bk_spear',bow:'bk_bow',staff:'bk_staff'};
-const SK2={sword:['半月斩','身前大扇面横扫','旋风斩','原地转一圈'],spear:['疾风刺','朝前方长直线突刺','横扫','枪杆横扫一片'],bow:['疾矢','远程直线箭','扇形箭','扇形连射'],staff:['火球术','砸向远处敌群，落地炸开','新星','向四周扩散魔法波']};
+const BK={sword:'bk_sword',spear:'bk_spear',bow:'bk_bow',staff:'bk_wand'},NM={m:'阿远',f:'小凛'},SK2={sword:'whirl',spear:'sweep',bow:'fan',staff:'nova'};
 function render(){
  $('pPort').src='art/portrait/'+hero+'.webp';
  const cs=$('cSel');cs.innerHTML='';
  for(const h of ['m','f']){const b=document.createElement('button');b.className=h===hero?'on':'';const cr=SPR.crop(SPR.heroSet(h,wp),wp+'.idle',0);if(cr)b.appendChild(cr.c);b.insertAdjacentHTML('beforeend','<span>'+NM[h]+'</span>');b.onclick=()=>{hero=h;render()};cs.appendChild(b)}
  const ws=$('wSel');ws.innerHTML='';
  for(const [id,w] of Object.entries(DATA.weapons)){const b=document.createElement('button');b.className=id===wp?'on':'';b.innerHTML='<img class="bkI" src="art/ui2/'+BK[id]+'.png"><span>'+w.name+'</span>';b.onclick=()=>{wp=id;sk=0;t0=performance.now();render()};ws.appendChild(b)}
- const s=SK2[wp];
- $('wDesc').innerHTML=[0,1].map(k=>`<div class="skI${sk===k?' on':''}" data-k="${k}"><div class="skIb"><div class="skIt"><b>${s[k*2]}</b><em>物理</em></div><p>${s[k*2+1]}</p></div></div>`).join('');
+ $('wDesc').innerHTML=[wp,SK2[wp]].map((id,k)=>{const S=DATA.skills[id]||{};return `<div class="skI${sk===k?' on':''}" data-k="${k}"><div class="skIc"><img class="skic" src="art/ui2/sk/${id}.png" alt=""></div><div class="skIb"><div class="skIt"><b>${S.name||id}</b><em>${S.dt==='magic'?'魔法':'物理'}</em></div><p>${S.desc||''}</p></div></div>`}).join('');
  for(const e of $('wDesc').children)e.onclick=()=>{sk=+e.dataset.k;render()};
 }
 let bg=new Image();bg.src='art/map/forest3.webp';let t0=performance.now();
-const SEQ=[['idle',1.3,'待机'],['run',1.3,'跑动'],['roll',.6,'翻滚'],['atk',.9,'出手']];
+const SEQ=[['idle',1.4,''],['atk',.8,''],['idle',1.0,''],['atk',.8,'']];
 function frame(){
  const c=$('cv'),r=c.getBoundingClientRect();if(r.width&&(c.width!==Math.round(r.width)||c.height!==Math.round(r.height))){c.width=Math.round(r.width);c.height=Math.round(r.height)}
  const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);
- if(bg.complete&&bg.naturalWidth){const ar=bg.naturalWidth/bg.naturalHeight,h=c.width/ar;g.drawImage(bg,0,bg.naturalHeight*.42,bg.naturalWidth,bg.naturalHeight*.4,0,0,c.width,c.height)}
  const T=SEQ.reduce((a,x)=>a+x[1],0),t=((performance.now()-t0)/1000)%T;let a=0,k=0;for(;k<SEQ.length;k++){if(t<a+SEQ[k][1])break;a+=SEQ[k][1]}k=Math.min(k,SEQ.length-1);
  const [n,d,lab]=SEQ[k],p=(t-a)/d,hs=SPR.heroSet(hero,wp),cnt=Math.max(1,SPR.count(hs,wp+'.'+n)||SPR.count(hs,n)),fi=n==='idle'||n==='run'?Math.floor(t*(n==='run'?8:3))%cnt:Math.min(cnt-1,Math.floor(p*cnt));
- const u=Math.max(2,Math.floor(c.height/60)),X0=c.width*.28,X1=c.width*.62;let x=X0,fl=false;
- if(n==='run')x=X0+(X1-X0)*p*.6;else if(n==='roll')x=X0+(X1-X0)*(.6+.4*p);else if(n==='atk')x=X1;else x=X0;
- g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(x,c.height*.8,u*9,u*3,0,0,7);g.fill();
- try{SPR.drawHero(g,n,fi,x,c.height*.8,fl,u,{w:wp,c:hero})}catch(e){}
- if(n==='atk'){g.save();g.globalAlpha=.55*(1-p);g.strokeStyle='#fff6c0';g.lineWidth=u*2;g.beginPath();g.arc(x+u*4,c.height*.8-u*18,u*(14+10*p),-1.2,1.2);g.stroke();g.restore()}
+ const u=Math.max(2,Math.floor(c.height/48)),X0=c.width*.5;let x=X0,fl=false;
+ g.fillStyle='rgba(0,0,0,.12)';g.beginPath();g.ellipse(x,c.height*.82,u*9,u*3,0,0,7);g.fill();
+ try{SPR.drawHero(g,n,fi,x,c.height*.82,fl,u,{w:wp,c:hero})}catch(e){}
  $('lab').textContent=NM[hero]+' · '+(wp==='sword'?'剑':wp==='spear'?'枪':wp==='bow'?'弓':'法杖');$('act').textContent=lab;
  requestAnimationFrame(frame);}
 Promise.resolve(SPR.load()).then(()=>{render();frame()});
