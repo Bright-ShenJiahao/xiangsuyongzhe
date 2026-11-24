@@ -478,11 +478,15 @@
     }, true); }
   window.UI = { slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
+  /* 11/25 加载完：只剩发光的 logo，玩家点一下（浏览器规定点过才能放 BGM）→ 「进入游戏」冒出来 */
+  function titleGate() { const t = $('title'); if (t.dataset.gated) return; t.dataset.gated = 1; t.classList.add('gate');
+    const open = e => { if (e && e.target && e.target.closest && e.target.closest('.ttop')) { if (e.type === 'pointerdown') return; } if (!t.classList.contains('gate')) return; t.classList.remove('gate'); t.classList.add('gateIn'); setTimeout(() => t.classList.remove('gateIn'), 900); try { SFX.play('pick'); } catch (x) {} removeEventListener('pointerdown', open, true); removeEventListener('keydown', open, true); };
+    addEventListener('pointerdown', open, true); addEventListener('keydown', open, true); }
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
   // 界面图（旧地图底、框件）在加载页里一起载完，进了页面就不会晚一拍才出来
   const UIPRE = ['map.webp', 'panel.png', 'card.png', 'q0.png', 'q1.png', 'q2.png', 'q3.png', 'slot.png', 'slot_sel.png', 'slot_lock.png', 'cell.png', 'btn.png', 'btn_gold.png', 'tab.png', 'tab_on.png', 'bar.png', 'pause.png', 'divider.png']
     .concat(Object.keys(window.UIART || {}).filter(k => (window.UIART[k][0] || 0) < 60).map(k => k + '.png'));
   const preUI = () => Promise.all([...new Set(UIPRE)].map(f => new Promise(ok => { const im = new Image(); im.onload = im.onerror = ok; im.src = 'art/ui2/' + f; (window.__ui = window.__ui || []).push(im); })));
-  Promise.all([SPR.load(), preUI(), document.fonts ? document.fonts.load('20px WenKai').catch(() => {}) : 0, ...['m', 'f', 'p'].map(k => new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = 'art/portrait/' + k + '.webp'; }))]).then(() => { prog(1); document.getElementById('tload').classList.add('done'); $('bStart').disabled = false; contShow(); show('title'); requestAnimationFrame(loop); })
+  Promise.all([SPR.load(), preUI(), document.fonts ? document.fonts.load('20px WenKai').catch(() => {}) : 0, ...['m', 'f', 'p'].map(k => new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = 'art/portrait/' + k + '.webp'; }))]).then(() => { prog(1); document.getElementById('tload').classList.add('done'); $('bStart').disabled = false; contShow(); show('title'); requestAnimationFrame(loop); titleGate(); })
     .catch(e => { console.error(e); document.getElementById('ttx').textContent = '载入失败，请刷新'; });
 })();

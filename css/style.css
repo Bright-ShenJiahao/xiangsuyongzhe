@@ -1340,3 +1340,13 @@ button:focus-visible { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,215
 .tf.t2 { border-color: #5aa8ff; background: linear-gradient(#27405e, #1a2536); } .tf.t3 { border-color: #c07aff; background: linear-gradient(#41285e, #281a36); } .tf.t4 { border-color: #ffb347; background: linear-gradient(#5e4220, #36260f); box-shadow: 0 0 8px #ffb34799; }
 .cxi.t1 .ic, .cxi.t2 .ic, .cxi.t3 .ic, .cxi.t4 .ic { outline: none !important; box-shadow: none; border-radius: 6px; border: 2px solid #9a9080; background: linear-gradient(#3a342c, #25211b); }
 .cxi.t2 .ic { border-color: #5aa8ff; background: linear-gradient(#27405e, #1a2536); } .cxi.t3 .ic { border-color: #c07aff; background: linear-gradient(#41285e, #281a36); } .cxi.t4 .ic { border-color: #ffb347; background: linear-gradient(#5e4220, #36260f); box-shadow: 0 0 8px #ffb34799; }
+
+/* 11/25 主界面入口：加载完只剩发光的 logo + 一行小字，点一下后「进入游戏」才冒出来（同时解锁 BGM） */
+.tgate { display: none; margin-top: 18px; font-size: 15px; letter-spacing: .3em; color: #ffe9a8; text-shadow: 0 1px 3px #000; opacity: 0; }
+#title.gate .tgate { display: block; animation: tgIn 1s 1.6s forwards, tgBlink 1.8s 2.6s ease-in-out infinite; }
+#title.gate .tenter, #title.gate .sub, #title.gate .en { visibility: hidden; }
+#title.gate .logo .lg2 { animation: lgGlow 2s ease-in-out infinite; cursor: pointer; }
+#title.gateIn .tenter { animation: tentIn .6s both; } #title.gateIn .tenter + .tenter { animation-delay: .1s; }
+@keyframes lgGlow { 0%, 100% { filter: drop-shadow(0 4px 10px #000a) drop-shadow(0 0 6px #ffd86a66); transform: scale(1); } 50% { filter: drop-shadow(0 4px 10px #000a) drop-shadow(0 0 26px #ffe9a8) drop-shadow(0 0 48px #ffb84a88); transform: scale(1.025); } }
+@keyframes tgIn { to { opacity: 1; } } @keyframes tgBlink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes tentIn { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
