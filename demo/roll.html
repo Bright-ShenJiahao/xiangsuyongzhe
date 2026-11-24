@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>翻滚按钮 · 转圈倒计时（局外）</title>
+<style>@font-face{font-family:WenKai;src:url(art/font/kai.woff2?v=6) format("woff2");font-display:block}</style>
+<style>
+html,body{margin:0;height:100%;background:#1a120c;color:#f1e3c4;font-family:WenKai,"Songti SC",serif;overflow:hidden}
+#field{position:fixed;inset:0;background:url(art/map/forest3.webp) center/cover,#7a5a34;filter:brightness(.75)}
+#ui{position:fixed;left:12px;top:12px;z-index:5;background:rgba(20,12,6,.8);border:2px solid #c89a52;padding:10px 14px;font-size:14px;max-width:min(92vw,420px)}
+#ui button{font:inherit;color:#f4ecd8;background:#3a2416;border:1px solid #c89a52;padding:4px 10px;margin:3px 4px 0 0;cursor:pointer}
+#ui button.on{background:#c89a52;color:#2a160a}
+#ui p{margin:6px 0 0;font-size:13px;opacity:.85;line-height:1.6}
+.rb{position:fixed;right:28px;bottom:28px;width:84px;height:84px;cursor:pointer;user-select:none;z-index:5}
+body.pc .rb{width:64px;height:64px;right:36px;bottom:36px}
+.rb .fr{position:absolute;inset:0;background:#3b3128;border:3px solid #7a6a55;clip-path:polygon(18% 0,82% 0,100% 18%,100% 82%,82% 100%,18% 100%,0 82%,0 18%);box-sizing:border-box}
+.rb .pie{position:absolute;inset:7%;border-radius:50%}
+.rb svg{position:absolute;inset:0;width:100%;height:100%}
+.rb .lab{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#f1e3c4;font-size:16px;letter-spacing:1px;pointer-events:none}
+body.pc .rb .lab{font-size:13px}
+.rb .pips{font-size:11px;color:#ffd860;letter-spacing:3px;margin-top:2px}
+.rb .sec{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:22px/1 monospace;color:#fff3d0;text-shadow:1px 1px 0 #000;pointer-events:none}
+body.pc .rb .sec{font-size:17px}
+.rb.cd .lab span:first-child{opacity:.25}
+.rb.full .fr{box-shadow:0 0 12px 3px rgba(255,216,96,.75)}
+.hide{display:none}
+</style></head><body class="phone">
+<div id="field"></div>
+<div id="ui">
+<b>翻滚按钮 · 转圈倒计时</b>（局外演示，游戏里还没改）<br>
+方案：<button id="vA" class="on">A 像时钟扫过</button><button id="vB">B 金色圆环</button><br>
+设备：<button id="dP" class="on">手机</button><button id="dC">电脑</button>
+<p>点右下角按钮（或按空格）翻滚。共 2 次，每次回满 1.5 秒。● 剩余次数，○ 已用掉。</p></div>
+<div class="rb full" id="rb"><div class="fr"></div><div class="pie" id="pie"></div>
+<svg viewBox="0 0 100 100" id="ringSvg" class="hide"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="6"/><circle id="ring" cx="50" cy="50" r="40" fill="none" stroke="#ffd860" stroke-width="6" stroke-dasharray="251.3" stroke-dashoffset="0" transform="rotate(-90 50 50)"/></svg>
+<div class="lab"><span>翻滚</span><span class="pips" id="pips"></span></div><div class="sec" id="sec"></div></div>
+<script>
+const N=2,T=1.5;let n=N,t=0,last=performance.now(),V='A';
+const rb=document.getElementById('rb');
+const go=()=>{if(n>0)n--};rb.onclick=go;addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();go()}});
+const sv=(v)=>{V=v;vA.classList.toggle('on',v==='A');vB.classList.toggle('on',v==='B');pie.classList.toggle('hide',v!=='A');ringSvg.classList.toggle('hide',v!=='B')};
+vA.onclick=()=>sv('A');vB.onclick=()=>sv('B');
+const dv=p=>{document.body.className=p?'phone':'pc';dP.classList.toggle('on',p);dC.classList.toggle('on',!p)};dP.onclick=()=>dv(1);dC.onclick=()=>dv(0);
+function tick(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(n<N){t+=dt;if(t>=T){t=0;n++}}else t=0;
+ const p=n<N?t/T:0;
+ pie.style.background=(V==='A'&&n<N)?`conic-gradient(rgba(255,255,255,0) ${p*360}deg, rgba(0,0,0,.62) 0)`:'transparent';
+ if(V==='A'&&n<N){pie.style.boxShadow=`inset 0 0 0 2px rgba(255,216,96,.5)`}else pie.style.boxShadow='none';
+ document.getElementById('ring').setAttribute('stroke-dashoffset',(251.3*(1-(n<N?p:1))).toFixed(1));
+ pips.textContent='●'.repeat(n)+'○'.repeat(N-n);
+ sec.textContent=n<1?(T-t).toFixed(1):'';
+ rb.classList.toggle('cd',n<1);rb.classList.toggle('full',n===N);
+ requestAnimationFrame(tick)}
+requestAnimationFrame(tick);
+</script></body></html>

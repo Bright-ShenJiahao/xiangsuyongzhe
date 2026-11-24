@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>装备页（局外）</title>
+<style>@font-face{font-family:WenKai;src:url(art/font/kai.woff2?v=6) format("woff2");font-display:block}</style>
+<style>
+html,body{margin:0;min-height:100%;background:#2a1c10;font-family:WenKai,"Songti SC",serif;color:#4a2e12;overflow:auto}
+#wrap{width:min(1100px,96vw);margin:12px auto;background:#f2e8ce;border:6px solid #6a4422;box-shadow:0 0 0 3px #1a0e06;padding:14px 18px 18px}
+h2{margin:0 0 4px;font-size:22px;font-weight:400;color:#5a3a18}
+.note{font-size:13px;color:#7a5a30;margin:0 0 12px}
+.cols{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.pnl{background:rgba(255,255,255,.35);border:1px solid rgba(150,105,45,.35);border-radius:10px;padding:12px}
+.hd{font-size:15px;color:#5a3a18;margin:0 0 8px}
+.doll{display:grid;grid-template-columns:96px 1fr 96px;gap:10px;align-items:center}
+.col{display:flex;flex-direction:column;gap:10px}
+.sl{position:relative;width:96px;height:96px;margin:0 auto;border:2px solid #b8965c;border-radius:10px;background:radial-gradient(#fff6dc,#e8d2a0);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;text-align:center;font-size:12px;color:#8a6a3a;padding:2px}
+.sl img{width:70%;height:auto;image-rendering:pixelated;max-height:46px;object-fit:contain}
+.sl .g{width:38px;height:38px;border-radius:8px;background:#a8743a;color:#fff3d8;display:flex;align-items:center;justify-content:center;font-size:20px;text-shadow:1px 1px 0 #3a2410}
+.sl b{font-weight:400;font-size:12px;color:#4a2e12;margin-top:2px}
+.sl.on{border-color:#e8a820;background:radial-gradient(#fff2c0,#f0c060);box-shadow:0 0 10px 2px rgba(240,180,50,.5)}
+.sl.dim{opacity:.45}
+.sl i{position:absolute;left:4px;top:2px;font-style:normal;font-size:10px;color:#8a6a3a}
+.mid{display:flex;flex-direction:column;align-items:center;gap:6px}
+#hero{width:100%;max-width:160px;image-rendering:pixelated;background:radial-gradient(ellipse at 50% 85%,rgba(232,184,74,.3),transparent 62%)}
+.wp{display:grid;grid-template-columns:96px 96px;gap:14px;justify-content:center}
+
+.bag{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.it{position:relative;border:2px solid #b8965c;border-radius:10px;background:rgba(255,255,255,.55);padding:6px 4px;text-align:center;cursor:pointer;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.it img{height:38px;width:auto;image-rendering:pixelated;object-fit:contain}.it .g{width:38px;height:38px;border-radius:8px;background:#a8743a;color:#fff3d8;display:flex;align-items:center;justify-content:center;font-size:20px;text-shadow:1px 1px 0 #3a2410}
+.it small{font-size:11px;padding:0 8px;border-radius:9px;background:#e8d6ae;color:#6a4818}.it.worn{opacity:.4}.it:hover{border-color:#e8a820}
+#msg{font-size:14px;margin:10px 0 0;min-height:1.6em;color:#6a4818}
+</style></head><body>
+<div id="wrap">
+<h2>装备</h2>
+<p class="note">局外演示（还没接进游戏）。点背包里的东西装备，点装备格卸下。起手只有剑，其余都是空的；属性数值待定。</p>
+<div class="cols">
+<div class="pnl"><p class="hd">装备栏</p>
+<div class="doll">
+<div class="col"><div class="sl" data-s="helm"></div><div class="sl" data-s="armor"></div><div class="sl" data-s="belt"></div></div>
+<div class="mid"><canvas id="hero" width="150" height="200"></canvas></div>
+<div class="col"><div class="sl" data-s="acc"></div><div class="sl" data-s="boots"></div></div>
+</div>
+<p class="hd" style="margin-top:14px">武器（2 格）</p>
+<div class="wp"><div class="sl" data-s="main"></div><div class="sl" data-s="off"></div></div>
+</div>
+<div class="pnl"><p class="hd">背包</p><div class="bag" id="bag"></div><p id="msg">起手只有一把剑，其余格子都空着。</p></div>
+</div></div>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+const ITEMS=[
+ {id:'sword',n:'铁剑',slot:'hand1',t:'单手',img:'art/ui2/bk_sword.png'},
+ {id:'shield',n:'木盾',slot:'off',t:'副手',g:'盾'},
+ {id:'spear',n:'长枪',slot:'two',t:'双格',img:'art/ui2/bk_spear.png'},
+ {id:'staff',n:'法杖',slot:'two',t:'双格',img:'art/ui2/bk_wand.png'},
+ {id:'bow',n:'短弓',slot:'two',t:'双格',img:'art/ui2/bk_bow.png'},
+ {id:'helm',n:'皮盔',slot:'helm',t:'头盔',g:'盔'},
+ {id:'armor',n:'皮甲',slot:'armor',t:'铠甲',img:'art/ui2/heavy_armor.png'},
+ {id:'belt',n:'皮带',slot:'belt',t:'腰带',g:'带'},
+ {id:'boots',n:'皮靴',slot:'boots',t:'鞋子',img:'art/ui2/boots.png'},
+ {id:'acc',n:'铜戒',slot:'acc',t:'配饰',g:'戒'}];
+const NAME={helm:'头盔',armor:'铠甲',belt:'腰带',boots:'鞋子',acc:'配饰',main:'主手',off:'副手'};
+const E={helm:null,armor:null,belt:null,boots:null,acc:null,main:'sword',off:null};
+const $=id=>document.getElementById(id),by=id=>ITEMS.find(i=>i.id===id);
+const say=t=>$('msg').textContent=t;
+const icon=i=>i.img?`<img src="${i.img}" alt="">`:`<div class="g">${i.g}</div>`;
+const two=()=>E.main&&by(E.main).slot==='two';
+function equip(it){
+ if(it.slot==='two'){E.main=it.id;E.off=null;say(it.n+'占满两个武器格，副手用不了。');}
+ else if(it.slot==='hand1'){E.main=it.id;say(it.n+'装在主手，副手可以放盾。');}
+ else if(it.slot==='off'){if(two()){say('现在拿的是双格武器，先换成单手剑才能拿盾。');return}E.off=it.id;say('盾放在副手。');}
+ else{E[it.slot]=it.id;say(it.n+'已装备。');}
+ draw();}
+function unequip(s){if(s==='off'&&two())s='main';E[s]=null;if(s==='main'&&!E.main){}say('已卸下，回到背包。');draw();}
+function draw(){
+ for(const el of document.querySelectorAll('.sl')){const s=el.dataset.s;let v=E[s],cls='sl',h;
+  if(s==='off'&&two()){const m=by(E.main);cls+=' on dim';h=icon(m)+'<b>'+m.n+'</b><span>双格占用</span>';v='__';}
+  else if(v){const i=by(v);cls+=' on';h=icon(i)+'<b>'+i.n+'</b>';}
+  else h='<span>'+NAME[s]+'</span><span>空</span>';
+  el.className=cls;el.innerHTML='<i>'+NAME[s]+'</i>'+h;el.onclick=()=>{if(v)unequip(s)};}
+ const bag=$('bag');bag.innerHTML='';const worn=new Set(Object.values(E));
+ for(const it of ITEMS){const w=worn.has(it.id),d=document.createElement('div');d.className='it'+(w?' worn':'');d.innerHTML=icon(it)+'<span>'+it.n+'</span><small>'+(w?'已装备':it.t)+'</small>';if(!w)d.onclick=()=>equip(it);bag.appendChild(d);}
+ heroDraw();}
+let T0=performance.now();
+function heroDraw(){try{const c=$('hero'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);
+ const w=E.main&&by(E.main)?({sword:'sword',spear:'spear',staff:'staff',bow:'bow'})[E.main]||'sword':'sword';
+ SPR.drawHero(g,'idle',Math.floor((performance.now()-T0)/330)%Math.max(1,SPR.count(SPR.heroSet('m',w),'idle')),75,170,false,3,{w,c:'m'});}catch(e){}}
+draw();Promise.resolve(SPR.load&&SPR.load()).then(()=>{setInterval(heroDraw,160);heroDraw()}).catch(()=>{});
+</script></body></html>
