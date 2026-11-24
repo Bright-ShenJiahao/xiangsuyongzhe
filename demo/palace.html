@@ -49,7 +49,7 @@ const PORT = { p: IM('art/portrait/p.webp'), mage: IM('art/npc/mage_face.png'), 
 const RUN_ON = (() => { try { return new URLSearchParams(location.search).has('game') && !!localStorage.getItem('pxyz.save1'); } catch (e) { return false; } })(), QS = new URLSearchParams(location.search), GAME = QS.has('game'), HS = QS.get('h') === 'f' ? 'f' : 'm';
 const LS = { get: k => { try { return localStorage.getItem('xsyz-' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('xsyz-' + k, v); } catch (e) {} } };
 let crystal = GAME ? +LS.get('crystal') || 0 : 120, owned = GAME ? (() => { try { return JSON.parse(LS.get('meta') || '{}'); } catch (e) { return {}; } })() : {};
-const SOON = new Set(['step']);   // 这几项效果还没接进游戏
+const SOON = new Set([]);   // 这几项效果还没接进游戏
 const UP = {
   p: [['life', '续命', '每局多 1 条命（基础 2 条）', [60, 140]], ['hp', '生命', '最大生命 +5%', [20, 35, 55, 80, 110]], ['rev', '复活', '用命复活时多回 20% 生命', [50]],
     ['shield', '护盾', '开局带护盾，吸收最大生命 8% 的伤害', [40, 70, 110]], ['iron', '铁壁', '受到伤害 −3%', [40, 60, 90, 130]], ['aid', '战地急救', '每打完一站，回复最大生命 4%', [40, 70, 100]], ['grit', '韧性', '被打中后的无敌时间 +0.1 秒', [40, 70, 110]],
@@ -142,7 +142,7 @@ function prep() { const L = $('pl'); $('pt').textContent = `出发准备　（�
   $('panel').style.display = 'flex'; }
 function updAct() { $('act').style.display = 'none'; return; const a = $('act'); a.innerHTML = ''; if (!near) { a.style.display = 'none'; return; } a.style.display = 'flex';
   const mk = (t, k) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => act(near, k); a.appendChild(b); };
-  if (near === PORTAL) mk('进入时空门 ▶', 0); else { mk('对话', 0); if (near.up) mk('强化', 1); if (near.id === 'p' && GAME && !RUN_ON) mk('出发准备', 2); } }
+  if (near === PORTAL) mk('进入时空门 ▶', 0); else { mk('对话', 0); if (near.up) mk('强化', 1); if (near.id === 'p' && GAME) mk('出发准备', 2); } }
 function fr(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
 function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s0 = 2.2;
   if (n.kind === 'guard' || n.kind === 'captain' || n.kind === 'mage' || n.kind === 'minister') { const im = NI[(n.kind === 'guard' ? 'guard_idle' : n.kind === 'captain' ? 'captain_idle' : n.kind === 'minister' ? 'minister_idle' : 'mage_idle') + tick]; if (im.complete) { g.save(); if (n.x > 500) { g.translate(n.x * 2, 0); g.scale(-1, 1); } const s = Math.min(s0, 100 / im.height) * (n.kind === 'captain' ? 1.2 : 1); g.drawImage(im, n.x - im.width * s / 2, n.y - im.height * s, im.width * s, im.height * s);   /* 11/24 人物统一高度（大臣原图偏高） */ g.restore(); } }
@@ -175,27 +175,69 @@ function catDraw() { const c = CAT; let k;
   if (c.st === 'walk') k = 'walk' + (Math.floor(c.at * 6) % 4); else if (c.st === 'run') k = 'run' + (Math.floor(c.at * 12) % 3); else if (c.st === 'shock') k = 'shock';
   else if (c.st === 'lick') { const q = Math.floor(c.at * 3); k = 'lick' + (q < 1 ? 0 : [1, 2, 3, 2][(q - 1) % 4]); } else if (c.st === 'rub') { k = 'lick' + (Math.floor(c.at * 4) % 2 ? 2 : 3); } else if (c.st === 'idle') k = 'idle' + ((Math.floor(c.at * 1.2) % 5) === 4 ? 1 : 0); else return;
   const im = CF[k]; if (!im || !im.complete || !im.naturalWidth) return; g.save(); if (c.d < 0) { g.translate(c.x * 2, 0); g.scale(-1, 1); } g.drawImage(im, Math.round(c.x - im.width / 2), Math.round(c.y - im.height)); g.restore(); }
+
+/* 11/25 法阵（传送阵）+ 誓约石：站上去转满一圈（2 秒）触发。传送阵 → 高塔；誓约石 → 热度面板（先花 100 水晶解锁） */
+const MI = f => IM('art/meta/' + f + '.png'), CIR = [0, 1, 2, 3, 4].map(k => MI('circle' + k)), STN = [0, 1, 2, 3].map(k => MI('stone' + k));
+const SPOT = [{ id: 'tp', x: 320, y: 495, r: 60, ring: 0, done: 0 }, { id: 'oath', x: 820, y: 520, r: 60, ring: 0, done: 0 }];
+const heat = () => { try { return Object.assign({ mob: 0, dmg: 0, life: 0 }, JSON.parse(LS.get('heat') || '{}')); } catch (e) { return { mob: 0, dmg: 0, life: 0 }; } };
+function flashTo(cb) { let f = document.getElementById('wf'); if (!f) { f = document.createElement('div'); f.id = 'wf'; f.style.cssText = 'position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:50;transition:opacity .45s'; document.body.appendChild(f); } f.style.opacity = 1; setTimeout(cb, 520); }
+function oathPanel() { $('pt').textContent = `誓约石　（水晶 ${crystal}）`; const L = $('pl'); L.innerHTML = '';
+  const p0 = document.createElement('p'); p0.className = 'note'; p0.style.cssText = 'color:#c8b890;margin:4px 0 8px'; L.appendChild(p0);
+  if (!owned.oath) { p0.textContent = '一块刻着誓约的古石。唤醒它，就能给自己加上「热度」——挑战更难，水晶和掉落也更多。'; const b = document.createElement('button'); b.className = 'btn'; b.textContent = '💎 100 唤醒'; b.disabled = crystal < 100; b.onclick = () => { spend(100); owned.oath = 1; if (GAME) LS.set('meta', JSON.stringify(owned)); oathPanel(); }; L.appendChild(b); $('panel').style.display = 'flex'; return; }
+  const H = heat(), lock = RUN_ON, tot = H.mob + H.dmg + H.life; p0.textContent = lock ? '这一局还没打完，热度不能改。' : `热度越高，水晶掉落 +12% / 点，掉落率 +4% / 点。　现在：${tot} / 9 点　水晶 +${12 * tot}%　掉落率 +${4 * tot}%`;
+  for (const [k, name, desc] of [['mob', '怪物数量', '每级：怪物数量 +15%'], ['dmg', '怪物伤害', '每级：怪物伤害 +15%'], ['life', '自身生命', '每级：自己的最大生命 −10%']]) { const d = document.createElement('div'); d.className = 'up'; d.innerHTML = `<img class="upi" src="art/meta/heat${k}.png" onerror="this.style.display='none'" alt=""><div><b>${name}</b> ${'●'.repeat(H[k])}${'○'.repeat(3 - H[k])}<small>${desc}</small></div>`;
+    const w = document.createElement('span'); w.style.cssText = 'display:flex;gap:6px'; for (const dl of [-1, 1]) { const b = document.createElement('button'); b.textContent = dl < 0 ? '−' : '＋'; b.disabled = lock || (dl < 0 ? H[k] <= 0 : H[k] >= 3); b.onclick = () => { H[k] += dl; LS.set('heat', JSON.stringify(H)); oathPanel(); }; w.appendChild(b); } d.appendChild(w); L.appendChild(d); }
+  $('panel').style.display = 'flex'; }
+function spotStep(dt) { const open = $('panel').style.display === 'flex';
+  for (const o of SPOT) { const d = Math.hypot(hero.x - o.x, (hero.y - o.y) * 1.6), inn = d < o.r && !open && !tpGo && !EDIT;
+    if (!inn) { o.ring = 0; o.done = 0; o.glow = Math.max(0, (o.glow || 0) - dt * 2); continue; } o.glow = Math.min(1, (o.glow || 0) + dt * 3); if (hero.mv && o.id === 'tp' && false) continue;
+    if (!o.done) { o.ring += dt / 2; if (o.ring >= 1) { o.done = 1; o.ring = 0; if (o.id === 'oath') oathPanel(); else if (GAME) { tpGo = 1; flashTo(() => parent.postMessage('toTower', '*')); } else { msg = '传送阵：站 2 秒会传送到高塔（demo 里不动）'; msgT = 2.5; o.done = 0; } } } } }
+let tpGo = 0;
+function spotDraw(o) { const t = T; if (o.id === 'tp') { const f = o.glow > .5 ? (Math.floor(t * 4) % 2 ? 2 : 3) : (o.glow > 0 ? 1 : 0), im = CIR[f]; if (im && im.complete && im.naturalWidth) { const w = 170; g.drawImage(im, o.x - w / 2, o.y + 30 - w * im.naturalHeight / im.naturalWidth * .62, w, w * im.naturalHeight / im.naturalWidth); } if (o.ring > 0) ringAt(o.x, o.y + 6, 80, 26, o.ring); if (o.done && o.glow > .9) { const im4 = CIR[4]; if (im4 && im4.complete) { const w = 170; g.drawImage(im4, o.x - w / 2, o.y + 30 - w * im4.naturalHeight / im4.naturalWidth * .62, w, w * im4.naturalHeight / im4.naturalWidth); } } }
+  else { const H = heat(), tot = H.mob + H.dmg + H.life, f = !owned.oath ? 0 : tot === 0 ? 1 : (Math.floor(t * 2) % 2 && tot > 4 ? 3 : 2), im = STN[f]; if (im && im.complete && im.naturalWidth) { const w = 150, h = w * im.naturalHeight / im.naturalWidth; g.drawImage(im, o.x - w / 2, o.y + 8 - h, w, h); } if (o.ring > 0) ringAt(o.x, o.y + 10, 60, 20, o.ring); } }
+function ringAt(x, y, rx, ry, p) { g.save(); g.lineWidth = 5; g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, 7); g.stroke(); g.strokeStyle = '#ffd77a'; g.shadowColor = '#ffd77a'; g.shadowBlur = 10; g.beginPath(); g.ellipse(x, y, rx, ry, 0, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); g.stroke(); g.restore(); }
+
+/* 11/25 摆放调试页（palace.html?edit）：拖人物 / 传送阵 / 誓约石 / 时空门 / 勇者出生点；松手自动存到本机，正常进宫殿会用这个布局。空白处拖动 = 平移画面 */
+const EDIT = QS.has('edit');
+const DRAG = () => [...NPC.map(n => ({ k: n.id, o: n, l: n.name })), ...SPOT.map(o => ({ k: o.id, o, l: o.id === 'tp' ? '传送阵' : '誓约石' })), { k: 'portal', o: PORTAL, l: '时空门' }, { k: 'hero', o: hero, l: '勇者出生点' }];
+try { const Ly = JSON.parse(LS.get('layout') || '{}'); for (const it of DRAG()) if (Ly[it.k]) { it.o.x = Ly[it.k][0]; it.o.y = Ly[it.k][1]; } if (Ly.hero) { cam.x = hero.x; cam.y = hero.y; } } catch (e) {}
+const layoutNow = () => { const r = {}; for (const it of DRAG()) r[it.k] = [Math.round(it.o.x), Math.round(it.o.y)]; return r; };
+let EP = null, EBOX = null;
+if (EDIT) { cam.x = 561; cam.y = 700;
+  const bx = document.createElement('div'); bx.style.cssText = 'position:fixed;right:8px;top:8px;z-index:60;width:230px;background:#1b130dEE;border:2px solid #c9a24a;border-radius:8px;padding:8px;color:#f3e4c0;font:12px sans-serif'; bx.innerHTML = '<b>宫殿摆放调试</b><div style="margin:4px 0;color:#c8b890">拖动人物 / 法阵 / 石头 / 时空门 / 勇者出生点；松手自动保存到本机。空白处拖动 = 平移。</div><textarea id="eo" readonly style="width:100%;height:150px;background:#0e0a07;color:#9fe0a0;border:1px solid #4a3322;font:11px monospace"></textarea><div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button id="ecp">复制</button><button id="ers">恢复默认</button><button id="egm">进游戏看看</button><button id="elb">标签 开/关</button></div>'; document.body.appendChild(bx); EBOX = bx; let lab = 1;
+  const refresh = () => { document.getElementById('eo').value = JSON.stringify(layoutNow()); }; refresh(); EP = { refresh, lab: () => lab };
+  document.getElementById('ecp').onclick = () => { const t = document.getElementById('eo'); t.select(); try { navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand('copy'); } };
+  document.getElementById('ers').onclick = () => { LS.set('layout', '{}'); location.reload(); }; document.getElementById('egm').onclick = () => { LS.set('layout', JSON.stringify(layoutNow())); open('palace.html?h=' + HS, '_blank'); }; document.getElementById('elb').onclick = () => { lab = lab ? 0 : 1; EP.lab = () => lab; };
+  let dr = null; const wpos = e => { const d = devicePixelRatio || 1; return { x: (e.clientX * d - VW / 2) / Z + cam.x, y: (e.clientY * d - VH / 2) / Z + cam.y }; };
+  const stop = e => { if (e.target === cv) { e.stopPropagation(); e.preventDefault(); } };
+  addEventListener('pointerdown', e => { if (e.target !== cv) return; stop(e); const w = wpos(e); let best = null, bd = 60; for (const it of DRAG()) { const d = Math.min(Math.hypot(it.o.x - w.x, it.o.y - w.y), Math.hypot(it.o.x - w.x, it.o.y - 40 - w.y)); if (d < bd) { bd = d; best = it; } }
+    dr = best ? { it: best, dx: best.o.x - w.x, dy: best.o.y - w.y } : { pan: 1, sx: e.clientX, sy: e.clientY, cx: cam.x, cy: cam.y }; cv.setPointerCapture && cv.setPointerCapture(e.pointerId); }, true);
+  addEventListener('pointermove', e => { if (!dr) return; stop(e); if (dr.pan) { const d = devicePixelRatio || 1; cam.x = dr.cx - (e.clientX - dr.sx) * d / Z; cam.y = dr.cy - (e.clientY - dr.sy) * d / Z; return; } const w = wpos(e); dr.it.o.x = Math.round(w.x + dr.dx); dr.it.o.y = Math.round(w.y + dr.dy); EP.drag = dr.it; EP.refresh(); }, true);
+  const up = e => { if (!dr) return; stop(e); if (dr.it) LS.set('layout', JSON.stringify(layoutNow())); dr = null; EP.drag = null; }; addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true);
+  addEventListener('touchstart', e => { if (e.target === cv) e.stopPropagation(); }, true); }
+function editDraw() { if (!EDIT) return; g.save(); g.font = '15px sans-serif'; g.textAlign = 'center'; for (const it of DRAG()) { const o = it.o, on = EP && EP.drag === it; g.strokeStyle = on ? '#ffe36a' : 'rgba(120,255,160,.9)'; g.lineWidth = on ? 3 : 2; g.beginPath(); g.moveTo(o.x - 14, o.y); g.lineTo(o.x + 14, o.y); g.moveTo(o.x, o.y - 14); g.lineTo(o.x, o.y + 14); g.stroke(); g.beginPath(); g.ellipse(o.x, o.y, 22, 8, 0, 0, 7); g.stroke();
+    if (EP && EP.lab()) { const t = `${it.l} ${Math.round(o.x)},${Math.round(o.y)}`, w = g.measureText(t).width + 10; g.fillStyle = 'rgba(0,0,0,.7)'; g.fillRect(o.x - w / 2, o.y + 12, w, 20); g.fillStyle = on ? '#ffe36a' : '#bfffd0'; g.fillText(t, o.x, o.y + 27); } } g.restore(); }
 function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; T += dt; requestAnimationFrame(loop);
   let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0); if (joy && Math.hypot(joy.dx, joy.dy) > 8) { x = joy.dx; y = joy.dy; }
-  const l = Math.hypot(x, y); hero.mv = l > 0; if (l && $('panel').style.display !== 'flex') { x /= l; y /= l; const sp = 300 * dt; if (x) hero.f = x > 0 ? 1 : -1; if (walk(hero.x + x * sp, hero.y)) hero.x += x * sp; if (walk(hero.x, hero.y + y * sp)) hero.y += y * sp; }
+  const l = EDIT ? 0 : Math.hypot(x, y); hero.mv = l > 0; if (l && $('panel').style.display !== 'flex') { x /= l; y /= l; const sp = 300 * dt; if (x) hero.f = x > 0 ? 1 : -1; if (walk(hero.x + x * sp, hero.y)) hero.x += x * sp; if (walk(hero.x, hero.y + y * sp)) hero.y += y * sp; }
   if (hero.y > 1180 && Math.abs(hero.x - 561) < 120 && !msgT) { msg = '大门紧闭……门缝外全是乱码。'; msgT = 2.5; } if (msgT > 0) msgT -= dt;
   if (GAME && Math.hypot(hero.x - PORTAL.x, (hero.y - PORTAL.y) * 1.4) < 40 && !go1) { go1 = 1; parent.postMessage('introDone', '*'); }
   // 11/24 靠近 NPC：自动说一句；站在旁边转满一圈（2 秒）自动打开功能界面；离开再回来才会再开
-  { const open = $('panel').style.display === 'flex'; let nb = null, bd = 120; for (const o of NPC) { const d = Math.hypot(o.x - hero.x, (o.y - hero.y) * 1.4); if (d < bd) { bd = d; nb = o; } }
+  { const open = $('panel').style.display === 'flex'; let nb = null, bd = EDIT ? 0 : 120; for (const o of NPC) { const d = Math.hypot(o.x - hero.x, (o.y - hero.y) * 1.4); if (d < bd) { bd = d; nb = o; } }
     if (nb !== near) { if (near) { near.ring = 0; near.done = 0; } near = nb; if (nb && T - (nb.spT || -99) > 7) { nb.spT = T; nb.li = ((nb.li == null ? -1 : nb.li) + 1) % nb.lines.length; say(nb, nb.lines[nb.li]); } }
     if (near && !open && !near.done && (near.up || near.id === 'p')) { near.ring = (near.ring || 0) + dt / 2; if (near.ring >= 1) { near.done = 1; near.ring = 0; if (near.id === 'p' && GAME) prep(); else if (near.up) panel(near); } } }
-  eggStep(dt);
-  cam.x += (Math.max(Math.min(hero.x, W - VW / Z / 2), VW / Z / 2) - cam.x) * .1; if (VW / Z >= W) cam.x = W / 2; cam.y += (Math.max(Math.min(hero.y - 60, H - VH / Z / 2), VH / Z / 2) - cam.y) * .1;
+  eggStep(dt); spotStep(dt);
+  if (!EDIT) cam.x += (Math.max(Math.min(hero.x, W - VW / Z / 2), VW / Z / 2) - cam.x) * .1; if (VW / Z >= W) cam.x = W / 2; if (!EDIT) cam.y += (Math.max(Math.min(hero.y - 60, H - VH / Z / 2), VH / Z / 2) - cam.y) * .1;
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0c0908'; g.fillRect(0, 0, VW, VH); g.setTransform(Z, 0, 0, Z, Math.round(VW / 2 - cam.x * Z), Math.round(VH / 2 - cam.y * Z));
   if (BG.complete && BG.naturalWidth) { g.imageSmoothingEnabled = Z < 1; g.imageSmoothingQuality = 'high'; g.drawImage(BG, 0, 0); g.imageSmoothingEnabled = false;   /* 11/24 不放大，只缩小（高质量），人物一律最近邻 */ } else { g.fillStyle = '#5a4c42'; g.fillRect(0, 0, W, H); }
   // 时空门：和塔顶同一个红色裂缝（js/portal.js）
   if (typeof gamePortal === 'function') { g.save(); g.translate(PORTAL.x, PORTAL.y + 10); g.scale(1.5, 1.5); gamePortal(g, 0, 0, T, 1, RUN_ON || CONT ? ['继续上次挑战', '哥布林森林'] : null); g.restore(); g.imageSmoothingEnabled = false; }
-  const L = NPC.map(n => ({ y: n.y, n })).concat([{ y: hero.y, h: 1 }]).sort((a, b) => a.y - b.y);
-  for (const e of L) { if (e.n) { const n = e.n; if (n === near && n.ring > 0) { g.save(); g.lineWidth = 5; g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, 0, 7); g.stroke(); g.strokeStyle = '#ffd77a'; g.shadowColor = '#ffd77a'; g.shadowBlur = 10; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * n.ring); g.stroke(); g.restore(); } drawNPC(n); } else { const W0 = LS.get('weapon') || 'sword', run = hero.mv, n0 = run ? 'run' : 'idle', c0 = Math.max(1, (SPR.count && SPR.count(SPR.heroSet(HS, W0), n0)) || (run ? 4 : 1));   // 11/24 宫殿里也有跑步帧
+  const L = NPC.map(n => ({ y: n.y, n })).concat(SPOT.map(o => ({ y: o.id === 'tp' ? o.y - 400 : o.y, sp: o })), [{ y: hero.y, h: 1 }]).sort((a, b) => a.y - b.y);
+  for (const e of L) { if (e.sp) { spotDraw(e.sp); continue; } if (e.n) { const n = e.n; if (n === near && n.ring > 0) { g.save(); g.lineWidth = 5; g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, 0, 7); g.stroke(); g.strokeStyle = '#ffd77a'; g.shadowColor = '#ffd77a'; g.shadowBlur = 10; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * n.ring); g.stroke(); g.restore(); } drawNPC(n); } else { const W0 = LS.get('weapon') || 'sword', run = hero.mv, n0 = run ? 'run' : 'idle', c0 = Math.max(1, (SPR.count && SPR.count(SPR.heroSet(HS, W0), n0)) || (run ? 4 : 1));   // 11/24 宫殿里也有跑步帧
     g.save(); if (hero.y > 1110) g.globalAlpha = .45;   /* 11/24 走到下面的墙后面：半透明 */
     try { SPR.drawHero(g, n0, Math.floor(T * (run ? 10 : 2)) % c0, hero.x, hero.y, hero.f < 0, 2, { w: W0, c: HS }); } catch (e) { g.fillStyle = '#fff'; g.fillRect(hero.x - 10, hero.y - 50, 20, 50); } g.restore(); } }
   catStep(dt); catDraw();   /* 11/24 门外的布偶猫彩蛋 */
-  drawBub();
+  drawBub(); editDraw();
   if (OV) { OV.t += 1 / 60; const d = devicePixelRatio || 1, t = OV.t; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = `rgba(0,0,0,${Math.min(.85, 3.2 - t)})`; g.fillRect(0, 0, VW, VH); g.textAlign = 'center';   // 11/24 还有命：GAME OVER 被划掉 → 游戏还没完！！！
     if (t < 1.1) { g.font = `bold ${44 * d}px sans-serif`; g.fillStyle = '#e84a4a'; g.fillText('GAME OVER', VW / 2, VH * .45); if (t > .55) { const k = Math.min(1, (t - .55) / .25), w = g.measureText('GAME OVER').width; g.fillStyle = '#ffe9a8'; g.fillRect(VW / 2 - w / 2 - 10, VH * .45 - 16 * d, (w + 20) * k, 6 * d); } }
     else if (t < 3.2) { const k = Math.min(1, (t - 1.1) / .15), sc = 1 + (1 - k) * .6; g.save(); g.translate(VW / 2, VH * .45); g.scale(sc, sc); g.font = `bold ${46 * d}px sans-serif`; g.fillStyle = '#ffd77a'; g.fillText('游戏还没完！！！', (Math.random() - .5) * 4 * (1 - k), 0); g.restore(); g.font = `${20 * d}px sans-serif`; g.fillStyle = '#fff'; g.fillText(`还剩 ${CONT} 条命`, VW / 2, VH * .45 + 50 * d); }

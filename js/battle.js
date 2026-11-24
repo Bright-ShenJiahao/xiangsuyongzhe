@@ -44,6 +44,8 @@
       bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: [null], coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
     RUN.slots[0] = { id: (b.book1 && DATA.skills[b.book1]) ? b.book1 : b.weapon, lv: 1, xp: 0 };   // 11/24 公主出发准备：第 1 格可放书库的书
     if (b.book2 && DATA.skills[b.book2] && ML('slot2') && b.book2 !== RUN.slots[0].id) RUN.slots[1] = { id: b.book2, lv: 1, xp: 0 };   /* 解锁了第 2 格就多带一本 */ if (b.item) RUN.gear[0] = { kind: 'item', id: b.item };
+    RUN.heat = HEATLS(); if (!ML('oath')) RUN.heat = {}; RUN.hpCut = .1 * (RUN.heat.life || 0);   /* 誓约石热度（要先解锁） */
+    if (ML('step')) { const L = Object.keys(DATA.oaths).filter(k => DATA.oaths[k].mv), id = L[Math.random() * L.length | 0]; RUN.mv[0] = { kind: 'oath', id, lv: 1, mv: true }; try { SEEN.add('o:' + id); } catch (e) {} }   /* 11/25 局外「身法」：开局随机带 1 个身法 */
     recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0) + 20 * ML('coin') + (+localStorage.getItem('xsyz-bonusCoin') || 0); localStorage.removeItem('xsyz-bonusCoin');   /* 11/25 彩蛋铜钱：下一局开局带上，一次性 */ RUN.lives = 2 + ML('life'); RUN.livesUsed = 0;
     foes = []; shots = []; fx = []; parts = []; nums = []; tele = []; burns = []; pend = []; warns.length = 0;
     if (!SK) SK = SKILLS(API); SK.reset(); hero.cs = null;
@@ -66,8 +68,8 @@
   const OB = id => (hero.ob && hero.ob[id]) || 0;
   // 11/24 局外：水晶（永久）+ 宫殿强化等级（xsyz-meta）
   const TT = () => { const t = DATA.titles.find(x => x.id === RUN.title); return (t && t.fx) || {}; };   // 11/24 佩戴的称号
-  const META = () => { try { return JSON.parse(localStorage.getItem('xsyz-meta') || '{}'); } catch (e) { return {}; } }, ML = id => META()[id] || 0;
-  function addCrystal(n, x, y) { if (!n) return; try { localStorage.setItem('xsyz-crystal', (+localStorage.getItem('xsyz-crystal') || 0) + n); } catch (e) {} RUN.cry = (RUN.cry || 0) + n; nums.push({ x, y: y - 60 * K, txt: '+' + n + ' 水晶', t: 0, col: '#9fe6ff' }); }
+  const META = () => { try { return JSON.parse(localStorage.getItem('xsyz-meta') || '{}'); } catch (e) { return {}; } }, ML = id => META()[id] || 0, HEATLS = () => { try { return JSON.parse(localStorage.getItem('xsyz-heat') || '{}'); } catch (e) { return {}; } }, HT = k => (RUN && RUN.heat && RUN.heat[k]) || 0, HH = () => HT('mob') + HT('dmg') + HT('life');   /* 11/25 誓约热度：怪物数量 / 怪物伤害 / 自身生命 */
+  function addCrystal(n, x, y) { if (!n) return; if (HH()) n = Math.max(n, Math.round(n * (1 + .12 * HH()))); try { localStorage.setItem('xsyz-crystal', (+localStorage.getItem('xsyz-crystal') || 0) + n); } catch (e) {} RUN.cry = (RUN.cry || 0) + n; nums.push({ x, y: y - 60 * K, txt: '+' + n + ' 水晶', t: 0, col: '#9fe6ff' }); }
   function recompute() {
     const items = RUN.gear.filter(x => x && x.kind === 'item').map(x => ({ id: x.id, lv: x.lv || 1 }));   // 11/23 只有左边宝物格里的宝物生效
     const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit }), m = hero.m;
@@ -140,9 +142,10 @@
     const hp = Math.ceil(T.hp * (T.boss ? 1 : (DATA.stations[G.st - 1] || {}).hp || 1) * (TT ? TT.hp : 1));
     const z = { type, T, tier, x: p.x, y: p.y, hp, maxHp: hp, f: 1, t: R(0, 1), st: 'run', cd: R(.3, 1), flash: 0, kbx: 0, kby: 0, kbT: 0,
       v: T.boss ? 0 : Math.random() * 3 | 0, k: T.boss ? 1 : (TT ? TT.size : R(.94, 1.06)) * (T.k || 1), shieldHp: T.shield || 0, sumT: 3, as: R(.85, 1.15), sp: T.spd * R(.9, 1.1),
-      dmgMul: TT ? TT.dmg : 1, reachMul: TT && TT.reach || 1, windAdd: TT && TT.wind || 0 };
+      dmgMul: (TT ? TT.dmg : 1) * (1 + .15 * HT('dmg')), reachMul: TT && TT.reach || 1, windAdd: TT && TT.wind || 0 };
     z.sp0 = z.sp;
-    clampG(z); foes.push(z); return z;
+    clampG(z); foes.push(z);
+    return z;
   }
   // ---------- 怪身上的状态 ----------
   // 缓滞：每层减速 15%，最多 4 层，叠满冻结 1 秒；硬控（眩晕 / 定身 / 浮空 / 冻结）之后 3 秒内不再被硬控；精英时间减半，小头目和首领免疫
@@ -195,8 +198,8 @@
   }
   function kill(z) {
     z.dead = true; z.deadT = 0; z.st = 'dead'; G.kills++; if (z.tier === 'elite') RUN.elites = (RUN.elites || 0) + 1; G.wk++; G.combo = (G.combo || 0) + 1; G.comboT = 3; G.maxCombo = Math.max(G.maxCombo || 0, G.combo); G.bestCombo = Math.max(G.bestCombo || 0, G.combo); if (G.combo >= 30 && OB('lianzhan')) hero.lzT = 6; if (OB('pozhu') && Math.random() < .04 * OB('pozhu')) hero.instant = 1; if (z.tier === 'elite' && OB('tulong')) healHero(hero.maxHp * .05 * OB('tulong'));
-    { const c = z.T.boss ? 15 : z.tier === 'elite' ? (Math.random() < .6 ? 3 : 0) : z.tier === 'mini' ? (Math.random() < .3 ? 2 : 0) : Math.random() < .02 * (1 + .03 * ML('drop')) ? 1 : 0; addCrystal(c, z.x, z.y); }   // 11/24 水晶：小怪随机、精英大概率、首领必掉
-    { const E = DATA.econ, v = z.tier === 'elite' ? E.elite : z.tier === 'mini' ? E.mini : Math.random() < (1 + .05 * (RUN.luck || 0)) * (1 + .03 * ML('drop')) / E.perKills ? 1 : 0;   // 11/23 铜钱掉在地上，要走过去捡
+    { const c = z.T.boss ? 15 : z.tier === 'elite' ? (Math.random() < .6 ? 3 : 0) : z.tier === 'mini' ? (Math.random() < .3 ? 2 : 0) : Math.random() < .02 * (1 + .03 * ML('drop') + .04 * HH()) ? 1 : 0; addCrystal(c, z.x, z.y); }   // 11/24 水晶：小怪随机、精英大概率、首领必掉
+    { const E = DATA.econ, v = z.tier === 'elite' ? E.elite : z.tier === 'mini' ? E.mini : Math.random() < (1 + .05 * (RUN.luck || 0)) * (1 + .03 * ML('drop') + .04 * HH()) / E.perKills ? 1 : 0;   // 11/23 铜钱掉在地上，要走过去捡
       if (v && !z.T.boss) G.gc.push({ x: z.x, y: z.y, v, t: 0, h: 0, vh: 90, vx: R(-20, 20) * K }); }
     if (z.tier === 'elite') { G.wElite++; G.gi.push({ kind: 'book', x: z.x, y: z.y, t: 0 }); }   // 固定精英掉书，路线精英掉宝物
     if (z.tier === 'mini') { G.wMini++; G.gi.push({ kind: 'item', x: z.x, y: z.y, t: 0 }); }
@@ -457,7 +460,7 @@
   const warns = [];
   function warnSpawn(o) { const p = spawnPos(); warns.push(Object.assign({ x: p.x, y: p.y, t: 0 }, o)); }
   function warnTick(dt) {
-    for (let i = warns.length - 1; i >= 0; i--) { const w = warns[i]; w.t += dt; if (w.t >= .55) { warns.splice(i, 1); const z = spawn(w.type, w, w.tier); if (w.routeElite) z.routeElite = true; } }
+    for (let i = warns.length - 1; i >= 0; i--) { const w = warns[i]; w.t += dt; if (w.t >= .55) { warns.splice(i, 1); const z = spawn(w.type, w, w.tier); if (w.routeElite) z.routeElite = true; if (!w.tier && !DATA.enemies[w.type].boss && Math.random() < .15 * HT('mob')) spawn(w.type);   /* 热度：怪物数量 +15%/级 */ } }
   }
   // 一波结算：铜钱、经验、回血、战利品（固定书、精英 / 小头目掉落）
   function waveEnd() {

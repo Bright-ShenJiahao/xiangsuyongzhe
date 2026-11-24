@@ -412,13 +412,17 @@
     return { n, st: r.st, boss: r.boss, win: r.win, wins: wins + (r.win ? 1 : 0), killer: r.killer, killerElite: r.killerElite, weapon: r.weapon, quick: !r.win && r.time < 60, stolen: r.stolen }; }
   // 11/24 从 iframe（塔顶 / 宫殿）回来：把键盘焦点拿回主页面，不然方向键没反应
   function refocus() { try { document.activeElement && document.activeElement.blur(); } catch (e) {} try { window.focus(); document.body.tabIndex = -1; document.body.focus({ preventScroll: true }); } catch (e) {} }
+  /* 11/25 传送阵：宫殿 ⇄ 高塔（同一个 iframe 换页面）；introDone 才是真正出发 */
+  function hubMsgs(f, go) { const on = e => { if (e.data === 'toTower') { f.src = 'demo/intro.html?game&visit&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); return; }
+      if (e.data === 'toPalace') { f.src = f.dataset.pal + '&v=' + Date.now(); return; }
+      if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
   function openHub(qs, go) { const f = $('introF'); f.src = 'demo/palace.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + qs + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
-    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
+    f.dataset.pal = f.src.replace(/&v=\d+$/, ''); hubMsgs(f, go); }
   function playTower(r, go) { let seen; try { seen = new Set(JSON.parse(store.get('linesSeen') || '[]')); } catch (e) { seen = new Set(); }
     const L = pickLines(towerCtx(r), seen); for (const l of L) if (!l.rep) seen.add(l.id); store.set('linesSeen', JSON.stringify([...seen]));
     const say = [].concat(...L.map(l => l.say)), f = $('introF');
     f.src = 'demo/palace.html?game&cry=' + (r.cry || 0) + '&cont=' + (r.cont || 0) + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&L=' + encodeURIComponent(JSON.stringify(say)) + '&v=' + Date.now();   /* 11/24 死后回宫殿（塔顶开场只在第一次） */ f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
-    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
+    f.dataset.pal = f.src.replace(/&v=\d+$/, ''); hubMsgs(f, go); }
   $('rAgain').onclick = () => { BATTLE.stop(); overlay('result', false); const r = lastRes || {};
     if (!r.cont) return playTower(r, () => { openPrep(true); startBattle(build()); });   // 11/24 这局结束：回宫殿（男女已经跟着存档定了）
     playTower(r, () => { const s = r.cont && BATTLE.loadSave(); if (s) mapFall(() => { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, cont: 1, drop: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); }); else startBattle(lastBuild); }); };   // 11/24 有命：续关回本站开头；没命：新的一局
