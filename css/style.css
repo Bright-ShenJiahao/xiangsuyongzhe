@@ -1216,9 +1216,9 @@ body.tvbg { background: #000; }
 .cart img { width: 100%; display: block; }
 .cart:hover:not([disabled]), .cart.sel { transform: translateY(-8px); }
 .cart[disabled] { cursor: default; filter: brightness(.55) drop-shadow(0 6px 6px rgba(0,0,0,.55)); }
-.cart .lab { position: absolute; left: 13.5%; top: 12.5%; width: 73%; height: 40%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1px; text-align: center; line-height: 1.25; overflow: hidden; }
-.cart .lab .ph { display: flex; align-items: center; gap: 6px; } .cart .lab img.av { width: clamp(20px, 3.4vw, 32px); height: clamp(20px, 3.4vw, 32px); object-fit: cover; object-position: top; border: 2px solid #3a2814; image-rendering: pixelated; }
-.cart .lab b { font-size: clamp(12px, 1.8vw, 16px); color: #3a2814; } .cart .lab span { font-size: clamp(9px, 1.3vw, 12px); color: #5a4030; } .cart .lab .no { font-size: clamp(11px, 1.6vw, 14px); color: #8a7a60; }
+:is(.cart, .slotClip, .dragGhost) .lab { position: absolute; left: 13.5%; top: 12.5%; width: 73%; height: 40%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1px; text-align: center; line-height: 1.25; overflow: hidden; }
+:is(.cart, .slotClip, .dragGhost) .lab .ph { display: flex; align-items: center; gap: 6px; } :is(.cart, .slotClip, .dragGhost) .lab img.av { width: clamp(20px, 3.4vw, 32px); height: clamp(20px, 3.4vw, 32px); object-fit: cover; object-position: top; border: 2px solid #3a2814; image-rendering: pixelated; }
+:is(.cart, .slotClip, .dragGhost) .lab b { font-size: clamp(12px, 1.8vw, 16px); color: #3a2814; } :is(.cart, .slotClip, .dragGhost) .lab span { font-size: clamp(9px, 1.3vw, 12px); color: #5a4030; } :is(.cart, .slotClip, .dragGhost) .lab .no { font-size: clamp(11px, 1.6vw, 14px); color: #8a7a60; }
 .cart .rled { position: absolute; right: 9%; top: 5%; width: 9px; height: 9px; background: #ff4a3a; box-shadow: 0 0 8px #ff4a3a; animation: rled 1s steps(2) infinite; } @keyframes rled { 50% { opacity: .3; } }
 .cart .tag { display: block; margin-top: 4px; font-size: 13px; color: #ffe9a8; text-shadow: 0 1px 2px #000; }
 .conWrap { position: relative; width: clamp(240px, 46vw, 400px); filter: drop-shadow(0 8px 10px rgba(0,0,0,.6)); } .console { width: 100%; display: block; }
@@ -1251,14 +1251,14 @@ body.tvbg { background: #000; }
 .sbtn:active { transform: translate(2px, 2px); }
 .sbtn.gold { color: #ffd77a; background: #2a200a; box-shadow: 0 -2px 0 0 #ffd77a, 0 2px 0 0 #ffd77a, -2px 0 0 0 #ffd77a, 2px 0 0 0 #ffd77a; }
 .slotErr { font-size: 14px; color: #ff7a5a; }
-.cart .lab canvas.av { width: clamp(28px, 4.4vw, 42px); height: clamp(28px, 4.4vw, 42px); border: 0; background: none; image-rendering: pixelated; }   /* 11/24 存档：小人 */
+:is(.cart, .slotClip, .dragGhost) .lab canvas.av { width: clamp(28px, 4.4vw, 42px); height: clamp(28px, 4.4vw, 42px); border: 0; background: none; image-rendering: pixelated; }   /* 11/24 存档：小人 */
 /* 11/24 存档标签重排：小人 + 名字/称号；数字挪到卡带下面；全部像素字 */
 #slotScr .cart, #slotScr .cart * { font-family: FPixel, monospace !important; -webkit-font-smoothing: none; }
-.cart .lab { flex-direction: row !important; gap: 4px !important; padding: 0 4px; box-sizing: border-box; }
-.cart .lab canvas.av { flex: none; width: clamp(30px, 4.8vw, 46px) !important; height: clamp(30px, 4.8vw, 46px) !important; }
-.cart .lab .lt { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; gap: 2px; }
-.cart .lab .lt b { font-size: clamp(11px, 1.6vw, 15px) !important; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cart .lab .lt span { font-size: clamp(9px, 1.15vw, 11px) !important; color: #7a5a30 !important; white-space: nowrap; }
+:is(.cart, .slotClip, .dragGhost) .lab { flex-direction: row !important; gap: 4px !important; padding: 0 4px; box-sizing: border-box; }
+:is(.cart, .slotClip, .dragGhost) .lab canvas.av { flex: none; width: clamp(30px, 4.8vw, 46px) !important; height: clamp(30px, 4.8vw, 46px) !important; }
+:is(.cart, .slotClip, .dragGhost) .lab .lt { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; gap: 2px; }
+:is(.cart, .slotClip, .dragGhost) .lab .lt b { font-size: clamp(11px, 1.6vw, 15px) !important; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:is(.cart, .slotClip, .dragGhost) .lab .lt span { font-size: clamp(9px, 1.15vw, 11px) !important; color: #7a5a30 !important; white-space: nowrap; }
 .cart .tag { font-size: clamp(10px, 1.3vw, 12px) !important; white-space: nowrap; } .cart .tag.run { color: #ff9a7a; margin-top: 0; }
 .slotRow { align-items: flex-start; }
 /* 11/24 存档输入屏：换成像素美术九宫格（电视外框 / 输入框 / 按钮） */
@@ -1310,3 +1310,15 @@ button:focus-visible { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,215
 #feed div::before { content: '▸ '; color: #e8c070; }
 @keyframes fdIn2 { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
 @media (orientation: portrait), (max-width: 760px) { #feed { bottom: 190px !important; max-width: 70vw !important; } #feed div { font-size: 12px !important; padding: 3px 8px !important; } }
+/* 11/24 卡带：标签内容竖排居中；插入时整盘（含标签）一起落下；拖动的影子 */
+.cart .cbody { position: relative; } .cart .cbody img { width: 100%; display: block; }
+:is(.cart, .slotClip, .dragGhost) .lab { left: 13.7% !important; top: 13.4% !important; width: 73% !important; height: 42% !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; gap: 0 !important; padding: 0 !important; }
+:is(.cart, .slotClip, .dragGhost) .lab canvas.av { width: clamp(24px, 3.6vw, 36px) !important; height: clamp(24px, 3.6vw, 36px) !important; }
+:is(.cart, .slotClip, .dragGhost) .lab b { font-size: clamp(10px, 1.45vw, 14px) !important; max-width: 92%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #3a2814; }
+:is(.cart, .slotClip, .dragGhost) .lab > span:not(.no) { font-size: clamp(8px, 1.05vw, 10px) !important; color: #7a5a30 !important; white-space: nowrap; }
+.slotClip .cbody { position: absolute; left: 27%; bottom: 0; transform: translateY(-260%); transition: transform .45s cubic-bezier(.55,0,.9,.45); filter: drop-shadow(0 4px 4px rgba(0,0,0,.5)); }
+.slotClip .cbody.in { transform: translateY(42%); } .slotClip .cbody .rled { display: none; }
+.dragGhost { position: fixed; z-index: 70; pointer-events: none; filter: drop-shadow(0 10px 10px rgba(0,0,0,.6)); }
+.slotErr.ok { color: #9fffb0 !important; }
+.cart { touch-action: none; }
+.slotClip .cbody img { position: static !important; width: 100% !important; transform: none !important; transition: none !important; filter: none !important; left: auto !important; }
