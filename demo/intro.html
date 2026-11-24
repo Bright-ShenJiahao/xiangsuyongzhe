@@ -189,9 +189,17 @@ function gamePortal(ctx, x, footY, T, open) { const [r0, g0, b0] = [255, 90, 50]
 let walk = null; const KEY = {}; let touchP = null, wLast = 0;
 addEventListener('keydown', e => KEY[e.code] = 1); addEventListener('keyup', e => KEY[e.code] = 0);
 $('px').addEventListener('pointerdown', e => touchP = e); addEventListener('pointermove', e => { if (touchP) touchP = e; }); addEventListener('pointerup', () => touchP = null);
+// 11/24 塔顶走动时：NPC 挡路（只挡脚下），碰一下就冒一句话（同一人 2 秒内不重复）
+const S1 = CW / 1672, BUMP = [{ who: '露米娜', x: 835 * S1, y: 430 * S1, L: ['拜托了，勇者大人。', '传送门就在前面。', '……请一定要回来。'] },
+  { who: '大法师', x: 1270 * S1, y: 425 * S1, L: ['别碰祭坛，那是召唤你用的。', '哥布林怕火，大概吧。', '年轻人，走路看路。'] },
+  { who: '士兵甲', x: 505 * S1, y: 418 * S1, L: ['勇者大人！……您看起来好普通。', '森林那边，我们已经三天没睡了。', '别挤，我在站岗。'] },
+  { who: '士兵乙', x: 1165 * S1, y: 418 * S1, L: ['门在下面，不在我身上。', '我也想去，可是队长不让。', '您的剑……是玩具吗？'] }];
+const hitNPC = (x, y) => BUMP.find(o => Math.hypot((x - o.x) / 14, (y - o.y) / 7) < 1);
+function bumpSay(o) { const n = performance.now(); if (n - (o.t || -9e9) < 2000) return; o.t = n; o.i = ((o.i == null ? -1 : o.i) + 1) % o.L.length;
+  const b = $('bub'), c = $('pc').getBoundingClientRect(); b.textContent = o.L[o.i]; b.style.left = c.left + o.x / CW * c.width + 'px'; b.style.top = c.top + (o.y - 62) / CH * c.height + 'px'; b.style.display = 'block'; clearTimeout(bumpSay.tm); bumpSay.tm = setTimeout(() => b.style.display = 'none', 1800); }
 function stepWalk() { const n = performance.now(), dt = Math.min(.05, (n - (wLast || n)) / 1000); wLast = n; let dx = (KEY.KeyD || KEY.ArrowRight ? 1 : 0) - (KEY.KeyA || KEY.ArrowLeft ? 1 : 0), dy = (KEY.KeyS || KEY.ArrowDown ? 1 : 0) - (KEY.KeyW || KEY.ArrowUp ? 1 : 0);
   if (touchP) { const c = $('pc').getBoundingClientRect(), tx = (touchP.clientX - c.left) / c.width * CW, ty = (touchP.clientY - c.top) / c.height * CH; dx = tx - walk.x; dy = ty - walk.y; }
-  const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv) { walk.x += dx / l * 110 * dt; walk.y += dy / l * 110 * dt; }
+  const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv) { const nx = walk.x + dx / l * 110 * dt, ny = walk.y + dy / l * 110 * dt; let o = hitNPC(nx, walk.y); if (!o) walk.x = nx; else bumpSay(o); o = hitNPC(walk.x, ny); if (!o) walk.y = ny; else bumpSay(o); }
   walk.x = Math.max(40 * Z, Math.min(600 * Z, walk.x)); walk.y = Math.max(105 * Z, Math.min(300 * Z, walk.y));
   if (Math.hypot(walk.x - 835 * CW / 1672, (walk.y - 735 * CW / 1672) * 1.4) < 18 && !walk.done) { walk.done = 1; $('cap').textContent = ''; $('white').style.transition = 'opacity .5s'; $('white').style.opacity = 1; setTimeout(done, 550); } }
 </script></body></html>
