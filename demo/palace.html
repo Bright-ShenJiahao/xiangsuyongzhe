@@ -73,7 +73,6 @@ $('pc').onclick = () => $('panel').style.display = 'none';
 // 11/24 出发准备（公主）：换起手技能书、称号；一局没打完时不能换
 
 function prep() { const L = $('pl'); $('pt').textContent = '出发准备'; L.innerHTML = ''; const sec = (t) => { const h = document.createElement('div'); h.style.cssText = 'margin:8px 0 4px;color:#ffd77a'; h.textContent = t; L.appendChild(h); const r = document.createElement('div'); r.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px'; L.appendChild(r); return r; };
-  if (RUN_ON) { L.innerHTML = '<p>这一局还没打完，起手技能书和称号要等这局结束才能换。</p>'; $('panel').style.display = 'flex'; return; }
   const W = LS.get('weapon') || 'sword', r1 = sec('起手技能书'); for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.textContent = (id === W ? '✔ ' : '') + w.name + '·' + w.skill; b.onclick = () => { LS.set('weapon', id); prep(); }; r1.appendChild(b); }
   let own = []; try { own = JSON.parse(LS.get('titles') || '[]'); } catch (e) {} const T = LS.get('title') || '', r2 = sec('称号（佩戴 1 个）');
   const tb = (id, name, lock) => { const b = document.createElement('button'); b.textContent = (id === T ? '✔ ' : '') + (lock ? '？？？' : name); b.disabled = lock; b.onclick = () => { LS.set('title', id); prep(); }; r2.appendChild(b); };
@@ -82,7 +81,7 @@ function prep() { const L = $('pl'); $('pt').textContent = '出发准备'; L.inn
   $('panel').style.display = 'flex'; }
 function updAct() { const a = $('act'); a.innerHTML = ''; if (!near) { a.style.display = 'none'; return; } a.style.display = 'flex';
   const mk = (t, k) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => act(near, k); a.appendChild(b); };
-  if (near === PORTAL) mk('进入时空门 ▶', 0); else { mk('对话', 0); if (near.up) mk('强化', 1); if (near.id === 'p' && GAME) mk('出发准备', 2); } }
+  if (near === PORTAL) mk('进入时空门 ▶', 0); else { mk('对话', 0); if (near.up) mk('强化', 1); if (near.id === 'p' && GAME && !RUN_ON) mk('出发准备', 2); } }
 function fr(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
 function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s = 2.2;
   if (n.kind === 'guard' || n.kind === 'mage' || n.kind === 'minister') { const im = NI[(n.kind === 'guard' ? 'guard_idle' : n.kind === 'minister' ? 'minister_idle' : 'mage_idle') + tick]; if (im.complete) { g.save(); if (n.x > 500) { g.translate(n.x * 2, 0); g.scale(-1, 1); } g.drawImage(im, n.x - im.width * s / 2, n.y - im.height * s, im.width * s, im.height * s); g.restore(); } }
@@ -109,7 +108,7 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
     else if (t < 3.2) { const k = Math.min(1, (t - 1.1) / .15), sc = 1 + (1 - k) * .6; g.save(); g.translate(VW / 2, VH * .45); g.scale(sc, sc); g.font = `bold ${46 * d}px sans-serif`; g.fillStyle = '#ffd77a'; g.fillText('游戏还没完！！！', (Math.random() - .5) * 4 * (1 - k), 0); g.restore(); g.font = `${20 * d}px sans-serif`; g.fillStyle = '#fff'; g.fillText(`还剩 ${CONT} 条命`, VW / 2, VH * .45 + 50 * d); }
     g.textAlign = 'left'; }
   if (msgT > 0) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(0, VH * .4 - 30 * devicePixelRatio, VW, 50 * devicePixelRatio); g.fillStyle = '#ffe9a8'; g.font = `${20 * devicePixelRatio}px sans-serif`; g.fillText(msg, VW / 2 - g.measureText(msg).width / 2, VH * .4); }
-  $('hud').innerHTML = GAME ? `💎 水晶 ${crystal}${CONT ? `　❤ 还剩 ${CONT} 条命` : ''}<br><small>${RUN_ON ? '还有一局没打完：走进时空门接着打' : `本次出发：${(DATA.weapons[LS.get('weapon') || 'sword'] || {}).skill || ''} · ${(DATA.titles.find(t => t.id === LS.get('title')) || { name: '无称号' }).name}　（找公主「出发准备」更换）`}</small>` : `宫殿据点（正式美术，一张图，镜头上下跟随）<br>💎 水晶 ${crystal}（demo 送的）<br>WASD 走 · 靠近人按 E 对话 / 点按钮`; }
+  $('hud').innerHTML = GAME ? `💎 水晶 ${crystal}${CONT ? `　❤ 还剩 ${CONT} 条命` : ''}<br><small>${RUN_ON ? '还有一局没打完：走进时空门接着打' : `本次出发：${(DATA.weapons[LS.get('weapon') || 'sword'] || {}).skill || ''} · ${(DATA.titles.find(t => t.id === LS.get('title')) || { name: '无称号' }).name}　（找公主换）`}</small>` : `宫殿据点（正式美术，一张图，镜头上下跟随）<br>💎 水晶 ${crystal}（demo 送的）<br>WASD 走 · 靠近人按 E 对话 / 点按钮`; }
 const CONT = +QS.get('cont') || 0, CRY = +QS.get('cry') || 0;
 if (GAME) { let L = []; try { L = JSON.parse(QS.get('L') || '[]'); } catch (e) {} (async () => { const w = t => new Promise(r => setTimeout(r, t)); await w(600); if (CONT) { OV = { t: 0 }; await w(3200); OV = null; } if (CRY) { msg = `带回 ${CRY} 水晶`; msgT = 2; await w(1800); }
   for (const [who, txt] of L) { const n = NPC.find(o => o.name === who) || (who === '露米娜' ? NPC[0] : NPC[3]); say(n, txt); await w(Math.max(2200, txt.length * 160)); } })(); }
