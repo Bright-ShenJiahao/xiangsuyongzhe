@@ -239,6 +239,7 @@ window.DATA = {
     { id: 'gambler', name: '赌徒', how: '街机拉出 777', fx: { crit: .05, eva: -.03 }, d: '暴击率 +5%<br><span class="bad">闪避 −3%</span>', need: (R, r) => !!r.s777 },
     { id: 'gollum', name: '小咕噜之友', how: '一局里抓到小咕噜 5 次', fx: { coin: .05, take: .05 }, d: '铜钱获得 +5%<br><span class="bad">受到伤害 +5%</span>', need: (R, r) => (r.thief || 0) >= 5 },
     { id: 'elitehunter', name: '精英猎人', how: '累计击败 50 只哥布林精英', fx: { elite: .12, mob: -.05 }, d: '对精英伤害 +12%<br><span class="bad">对小怪伤害 −5%</span>', need: (R) => (R.elites || 0) >= 50 },
+    { id: 'curious', name: '好奇宝宝', how: '找齐高塔和宫殿里 5 个隐藏的小发现', fx: { coin: .08, hp: -.04 }, d: '铜钱获得 +8%<br><span class="bad">生命上限 −4%</span>', need: () => !!(window.EGG && EGG.count() >= 5) },
     { id: 'kingbane', name: '哥布林王的克星', how: '打倒哥布林王', fx: { boss: .10, hp: -.05 }, d: '对首领伤害 +10%<br><span class="bad">生命上限 −5%</span>', need: (R) => (R.wins || 0) >= 1 },
   ],
   // 11/24 流派羁绊：技能栏里同一系 2 本 / 4 本触发（剑 生命+伤害，枪 生命+物防，弓 出手快+射程，法杖 法术伤害+魔防）

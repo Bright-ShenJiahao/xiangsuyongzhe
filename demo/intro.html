@@ -32,7 +32,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 <div id="px"><canvas id="pc" width="856" height="482"></canvas></div>
 <div id="bub"></div><div id="dlg"><img id="dav"><div><b id="dn"></b><span id="dt"></span></div></div>
 <div id="skip"><svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="8" fill="none" stroke="#5a4028" stroke-width="3"/><circle id="skc" cx="10" cy="10" r="8" fill="none" stroke="#ffd890" stroke-width="3" stroke-dasharray="50.3" stroke-dashoffset="50.3" transform="rotate(-90 10 10)"/></svg><span id="skt">长按空格跳过</span></div><label id="first"><input type="checkbox" id="fst"> 模拟第一次玩（不能跳过）</label><button id="play">▶ 播放开场</button>
-<script src="../js/portal.js"></script>
+<script src="../js/slot.js"></script><script src="../js/eggs.js"></script><script src="../js/portal.js"></script>
 <script>
 const $ = s => document.getElementById(s), wait = ms => new Promise(r => setTimeout(r, ms));
 let RUN = 0;
@@ -52,7 +52,8 @@ const FR = { idle: [0, 0, 36, 40, 13.6, 39], hurt: [442, 0, 45, 39, 18.5, 39], d
 const CW = 856, CH = 482, Z = CW / 640;
 let HF = null; fetch('../art/' + HDIR + '/atlas.json').then(r => r.json()).then(j => { const g = k => j.f['hero:' + HW + '.' + k] || j.f['hero:sword.' + k]; HF = { idle: g('idle'), run: g('run') }; }).catch(() => {});
 let pxState = 'off', pxT0 = 0, portalT = 0; const NPC = {}; for (const k of ['guard_idle0', 'guard_idle1', 'guard_shock', 'mage_idle0', 'mage_idle1', 'mage_cast0', 'mage_cast1']) NPC[k] = Object.assign(new Image(), { src: '../art/npc/' + k + '.png' });
-function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled = false; const t = Math.max(0, (n - pxT0) / 1000), S = CW / 1672;
+let HD = null;
+function pxDraw(n) { HD = null; const g = $('pc').getContext('2d'); g.imageSmoothingEnabled = false; const t = Math.max(0, (n - pxT0) / 1000), S = CW / 1672;
   if (BG.complete) g.drawImage(BG, 0, 0, CW, CH);
   TFX(g, t, S);
   let ax = 835 * S, ay = 292 * S;   // 图里自带的祭坛正前方（平台前沿）
@@ -62,6 +63,7 @@ function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled
   let fr = HF ? (walk && walk.mv ? HF.run[Math.floor(t * 10) % HF.run.length] : HF.idle[Math.floor(t * 2) % HF.idle.length]) : FR.idle; if (AT.complete && t > .6) { const k = Math.min(1, (t - .6) / 1.2); let off; const GS = (() => { try { return parent !== window && parent.SPR; } catch (e) { return null; } })();
     if (GS) { const run = walk && walk.mv, set = GS.heroSet(HSEX, HW), nm = (GS.sets[set].f[HW + '.' + (run ? 'run' : 'idle')] ? HW + '.' : '') + (run ? 'run' : 'idle'), cnt = Math.max(1, GS.count(set, nm)); off = window.HOFF || (window.HOFF = Object.assign(document.createElement('canvas'), { width: 72, height: 64 })); const og = off.getContext('2d'); og.clearRect(0, 0, 72, 64); og.imageSmoothingEnabled = false; GS.drawHero(og, run ? 'run' : 'idle', Math.floor(t * (run ? 10 : 2)) % cnt, 36, 62, false, 1, { c: HSEX, w: HW }); fr = [0, 0, 72, 64, 36, 62]; }
     else { off = document.createElement('canvas'); off.width = fr[2]; off.height = fr[3]; off.getContext('2d').drawImage(AT, fr[0], fr[1], fr[2], fr[3], 0, 0, fr[2], fr[3]); }
+    HD = k >= 1 ? () => { g.save(); if (walk && walk.f < 0) { g.translate(ax * 2, 0); g.scale(-1, 1); } g.drawImage(off, 0, 0, fr[2], fr[3], ax - fr[4], ay - fr[5], fr[2], fr[3]); g.restore(); } : null;   /* 11/25 留着，主角在 NPC 前面时再画一次 */
     g.save(); if (walk && walk.f < 0) { g.translate(ax * 2, 0); g.scale(-1, 1); } if (k >= 1) g.drawImage(off, 0, 0, fr[2], fr[3], ax - fr[4], ay - fr[5], fr[2], fr[3]); else for (let y = 0; y < fr[3]; y += 3) for (let x = 0; x < fr[2]; x += 3) { const d = 1 - Math.min(1, Math.max(0, (k * 2 - (fr[3] - y) / fr[3] * .4 - ((x * 7 + y * 13) % 10) / 25))); if (d >= 1) continue; g.globalAlpha = 1 - d; g.drawImage(off, x, y, 3, 3, ax - fr[4] + x, ay - fr[5] + y - d * 30, 3, 3); } g.globalAlpha = 1; g.restore();
      }
   if (t > 2.4 && t < 3.3 && Math.floor(t * 6) % 2) { g.fillStyle = '#fff'; g.fillRect(ax + 10, ay - 52, 3, 7); g.fillRect(ax + 10, ay - 43, 3, 3); }
@@ -79,6 +81,10 @@ function pxDraw(n) { const g = $('pc').getContext('2d'); g.imageSmoothingEnabled
     if (ph > 1.25) gamePortal(g, ex, 735 * S, n / 1000, Math.min(1, (ph - 1.25) / .6)); }
   // 公主：站在台阶下
   const px = 835 * S, py = 430 * S, pf = portalT && (n - portalT) < 1600 ? [749, 185, 48, 37, 19.6, 37] : PI[Math.floor(t * 2) % 2]; if (PR.complete) { g.drawImage(PR, pf[0], pf[1], pf[2], pf[3], px - pf[4], py - pf[5], pf[2], pf[3]); }
+  /* 11/25 主角在 NPC 前面：再画一次盖住；主角在火盆/树/柱子/祭坛/下栏杆后面：物体半透明盖回来 */
+  if (walk && HD) { for (const o of BUMP.concat([{ x: px, y: py }])) if (o.y < ay && ay - o.y < 46 && Math.abs(o.x - ax) < 34) { HD(); break; } }
+  if (walk) { if (!LAY) mkLay(); const hb = { x1: ax - 20, x2: ax + 20, y1: ay - 44, y2: ay }; for (const o of LAY) if (ay < o.base - 1 && hb.x2 > o.x1 && hb.x1 < o.x2 && hb.y2 > o.y1 && hb.y1 < o.y2) { g.globalAlpha = .5; g.drawImage(o.l, 0, 0); g.globalAlpha = 1; }
+    if (walk.ring) EGG.ring(g, walk.ring.x, walk.ring.y, walk.ring.p); }
   if (pxState === 'on') requestAnimationFrame(pxDraw); }
 async function say(id, who, av, s) { const b = $('bub'), c = $('pc').getBoundingClientRect(), S0 = CW / 1672, POS = { '大法师': [1270 * S0, 425 * S0 - 70 * Z], '士兵甲': [505 * S0, 418 * S0 - 70 * Z], '士兵乙': [1165 * S0, 418 * S0 - 70 * Z] }, ps = POS[who], hx = ps ? ps[0] : CW / 2, hy = ps ? ps[1] : who === '勇者' ? 66 * Z + 14 : 120 * Z + 10; b.style.left = c.left + hx / CW * c.width + 'px'; b.style.top = c.top + hy / CH * c.height + 'px'; b.style.display = 'block'; await type(b, s, id, 60); await wait(1400); b.style.display = 'none'; }
 async function play() { const id = ++RUN; $('play').style.display = 'none'; reset(); setSkip(true);
@@ -179,9 +185,19 @@ const S1 = CW / 1672, BUMP = [{ who: '露米娜', x: 835 * S1, y: 430 * S1, L: [
 const hitNPC = (x, y) => BUMP.find(o => Math.hypot((x - o.x) / 14, (y - o.y) / 7) < 1);
 function bumpSay(o) { const n = performance.now(); if (n - (o.t || -9e9) < 3500) return; o.t = n; o.i = ((o.i == null ? -1 : o.i) + 1) % o.L.length;
   const b = $('bub'), c = $('pc').getBoundingClientRect(); b.textContent = o.L[o.i]; b.style.left = c.left + o.x / CW * c.width + 'px'; b.style.top = c.top + (o.y - 62) / CH * c.height + 'px'; b.style.display = 'block'; clearTimeout(bumpSay.tm); bumpSay.tm = setTimeout(() => b.style.display = 'none', 3500); }
+/* 11/25 塔顶：挡路物体、可走区域、前景遮挡、彩蛋（同 demo/tower_walk.html） */
+const mir = p => p.map(([x, y]) => [1672 - x, y]), TL = [[108, 640], [125, 600], [170, 580], [215, 585], [250, 615], [250, 650], [235, 670], [215, 690], [240, 700], [238, 735], [215, 762], [150, 762], [125, 735], [120, 705], [150, 690], [170, 680], [130, 660]], PL = [[580, 45], [660, 45], [665, 215], [655, 248], [595, 248], [598, 200], [585, 150]];
+const OCC = [{ p: [[215, 325], [280, 325], [280, 447], [215, 447]], base: 447 }, { p: [[1392, 325], [1457, 325], [1457, 447], [1392, 447]], base: 447 }, { p: TL, base: 765 }, { p: mir(TL), base: 765 }, { p: PL, base: 248 }, { p: mir(PL), base: 248 }, { p: [[775, 168], [900, 168], [900, 236], [775, 236]], base: 236 }, { p: [[58, 748], [1614, 748], [1614, 852], [58, 852]], base: 9999 }];
+const BLK = [[215, 420, 280, 450], [1392, 420, 1457, 450], [140, 700, 230, 768], [1442, 700, 1532, 768], [592, 205, 657, 250], [1015, 205, 1080, 250], [775, 205, 900, 238]], WALKR = [[95, 420, 1580, 770], [205, 388, 500, 425], [1172, 388, 1467, 425], [535, 292, 1140, 425], [565, 165, 1107, 295], [700, 138, 972, 165]];
+const inR = (x, y, r) => x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3], okW = (x, y) => { const X = x / S1, Y = y / S1; return WALKR.some(r => inR(X, Y, r)) && !BLK.some(r => inR(X, Y, r)); };
+let LAY = null; function mkLay() { LAY = OCC.map(o => { const l = document.createElement('canvas'); l.width = CW; l.height = CH; const q = l.getContext('2d'); q.imageSmoothingEnabled = false; q.beginPath(); o.p.forEach(([x, y], i) => i ? q.lineTo(x * S1, y * S1) : q.moveTo(x * S1, y * S1)); q.closePath(); q.clip(); q.drawImage(BG, 0, 0, CW, CH); const xs = o.p.map(p => p[0] * S1), ys = o.p.map(p => p[1] * S1); return { l, x1: Math.min(...xs), x2: Math.max(...xs), y1: Math.min(...ys), y2: Math.max(...ys), base: o.base * S1 }; }); }
+const SPOTS = [{ id: 'diary', t: (X, Y) => Math.abs(X - 836) < 70 && Y > 138 && Y < 200 }, { id: 'tree', t: (X, Y) => Y > 660 && Y < 705 && (Math.abs(X - 185) < 60 || Math.abs(X - 1487) < 60) }, { id: 'rail', t: (X, Y) => Y >= 752 && X > 300 && X < 1370 }];
+function eggSay(s) { const b = $('bub'), c = $('pc').getBoundingClientRect(); b.textContent = s; b.style.left = c.left + walk.x / CW * c.width + 'px'; b.style.top = c.top + (walk.y - 52) / CH * c.height + 'px'; b.style.display = 'block'; clearTimeout(bumpSay.tm); bumpSay.tm = setTimeout(() => b.style.display = 'none', 3800); }
+function eggStep(dt) { walk.ring = null; if (walk.mv) { walk.sp = null; walk.sp0 = 0; return; } const X = walk.x / S1, Y = walk.y / S1, sp = SPOTS.find(o => !EGG.has(o.id) && o.t(X, Y)); if (!sp) { walk.sp = null; walk.sp0 = 0; return; } if (walk.sp !== sp.id) { walk.sp = sp.id; walk.sp0 = 0; } walk.sp0 += dt / 2; walk.ring = { x: walk.x, y: walk.y + 2, p: Math.min(1, walk.sp0) }; if (walk.sp0 >= 1) { const e = EGG.find(sp.id); walk.sp0 = 0; if (e) eggSay(e.say); } }
 function stepWalk() { const n = performance.now(), dt = Math.min(.05, (n - (wLast || n)) / 1000); wLast = n; let dx = (KEY.KeyD || KEY.ArrowRight ? 1 : 0) - (KEY.KeyA || KEY.ArrowLeft ? 1 : 0), dy = (KEY.KeyS || KEY.ArrowDown ? 1 : 0) - (KEY.KeyW || KEY.ArrowUp ? 1 : 0);
   if (touchP) { const c = $('pc').getBoundingClientRect(), tx = (touchP.clientX - c.left) / c.width * CW, ty = (touchP.clientY - c.top) / c.height * CH; dx = tx - walk.x; dy = ty - walk.y; }
-  const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv) { const nx = walk.x + dx / l * 110 * dt, ny = walk.y + dy / l * 110 * dt; let o = hitNPC(nx, walk.y); if (!o) walk.x = nx; else bumpSay(o); o = hitNPC(walk.x, ny); if (!o) walk.y = ny; else bumpSay(o); }
+  const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv) { const nx = walk.x + dx / l * 110 * dt, ny = walk.y + dy / l * 110 * dt; let o = hitNPC(nx, walk.y); if (!o) { if (okW(nx, walk.y)) walk.x = nx; } else bumpSay(o); o = hitNPC(walk.x, ny); if (!o) { if (okW(walk.x, ny)) walk.y = ny; } else bumpSay(o); }
+  if (window.EGG && GAME) eggStep(dt);
   walk.x = Math.max(40 * Z, Math.min(600 * Z, walk.x)); walk.y = Math.max(105 * Z, Math.min(300 * Z, walk.y));
   if (Math.hypot(walk.x - 835 * CW / 1672, (walk.y - 735 * CW / 1672) * 1.4) < 18 && !walk.done) { walk.done = 1; $('cap').textContent = ''; $('white').style.transition = 'opacity .5s'; $('white').style.opacity = 1; setTimeout(done, 550); } }
 </script></body></html>

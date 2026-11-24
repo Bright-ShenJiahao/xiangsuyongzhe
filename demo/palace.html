@@ -36,7 +36,7 @@ canvas{display:block}
 <div id="act"></div><div id="bub"></div>
 
 <div id="panel"><div><h3 id="pt" style="margin:0 0 6px"></h3><div id="pl"></div><div style="text-align:right;margin-top:10px"><button id="pc">关闭</button></div></div></div>
-<script src="js/slot.js"></script><script src="js/portal.js"></script><script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script src="js/slot.js"></script><script src="js/eggs.js"></script><script src="js/portal.js"></script><script src="js/data.js"></script><script src="js/sprites.js"></script>
 <script>
 // 11/24 宫殿据点灰盒（一张图）：最上空王座，公主站旁边、身边是时空门；中间大臣（钱+记录）和大法师；下面两排士兵；最下面大门走不出去。
 // 地面、柱子、红毯都是代码画的灰盒，只验证路线、距离、按钮。正式美术出一整张图替换。
@@ -142,7 +142,16 @@ function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s0 = 2.2;
 const CF = {}; ['walk0','walk1','walk2','walk3','lick0','lick1','lick2','lick3','idle0','idle1','run0','run1','run2','shock'].forEach(k => CF[k] = IM('art/npc/cat/' + k + '.png'));
 const CAT = { x: 640, y: 1397, d: 1, st: 'walk', t: 5, tx: 760, at: 0 };
 function catGo(st, t) { CAT.st = st; CAT.t = t; CAT.at = 0; }
+/* 11/25 彩蛋：王座（连续靠近 3 次）+ 猫（站在大门前不动 3 秒，猫来蹭门缝，推进来一袋铜钱） */
+let thr = { n: 0, in: 0 }, gateT = 0, sackT = 0;
+function eggStep(dt) { if (!window.EGG || !GAME) return; const d = Math.hypot(hero.x - 561, (hero.y - 440) * 1.4), inn = d < 120;
+  if (inn && !thr.in) { thr.n++; if (EGG.has('throne')) say({ id: 'th', x: 561, y: 300 }, '那是国王的位置，别坐。'); else if (thr.n >= 3) { const e = EGG.find('throne'); if (e) say({ id: 'th', x: 561, y: 300 }, e.say); } else say({ id: 'th', x: 561, y: 300 }, thr.n === 1 ? '那是国王的位置，别坐。' : '……我说了，别坐。'); } thr.in = inn;
+  if (sackT > 0) sackT -= dt; }
 function catStep(dt) { const c = CAT; c.at += dt; c.t -= dt;
+  if (window.EGG && GAME && !EGG.has('cat')) { const at = hero.y > 1180 && Math.abs(hero.x - 561) < 130 && !hero.mv; gateT = at ? gateT + dt : 0;
+    if (c.visit) { if (!at && (hero.y < 1130 || Math.abs(hero.x - 561) > 200 || hero.mv)) { c.visit = 0; } else if (c.st === 'rub') { if (c.t <= 0) { c.visit = 0; const e = EGG.find('cat'); if (e) { sackT = 4; say({ id: 'ct', x: 561, y: 1250 }, e.say); } c.tx = 280 + Math.random() * 560; catGo('walk', 99); } return; } else { c.d = 561 > c.x ? 1 : -1; c.x += c.d * 40 * dt; if (Math.abs(561 - c.x) < 6) catGo('rub', 2.2); return; } }
+    else if (gateT > 3 && c.st !== 'gone' && c.st !== 'run' && c.st !== 'shock') { c.visit = 1; catGo('walk', 99); } }
+
   const dh = Math.hypot(c.x - hero.x, (c.y - hero.y) * 1.2), vis = c.x > -60 && c.x < W + 60;
   if (c.st !== 'shock' && c.st !== 'run' && c.st !== 'gone' && dh < 190) { c.d = c.x >= hero.x ? 1 : -1; catGo('shock', .45); return; }
   if (c.st === 'shock') { if (c.t <= 0) catGo('run', 99); return; }
@@ -151,8 +160,9 @@ function catStep(dt) { const c = CAT; c.at += dt; c.t -= dt;
   if (c.st === 'walk') { c.d = c.tx > c.x ? 1 : -1; c.x += c.d * 26 * dt; if (Math.abs(c.tx - c.x) < 4) { const r = Math.random(); if (r < .6) catGo('lick', 4 + Math.random() * 4); else if (r < .85) catGo('idle', 2 + Math.random() * 3); else { c.tx = 280 + Math.random() * 560; catGo('walk', 99); } } return; }
   if (c.t <= 0) { c.tx = 280 + Math.random() * 560; catGo('walk', 99); } }
 function catDraw() { const c = CAT; let k;
+  if (sackT > 0) { g.save(); g.fillStyle = '#7a4a22'; g.beginPath(); g.ellipse(561, 1322, 14, 10, 0, 0, 7); g.fill(); g.fillStyle = '#e8c070'; g.fillRect(556, 1308, 10, 4); g.restore(); }
   if (c.st === 'walk') k = 'walk' + (Math.floor(c.at * 6) % 4); else if (c.st === 'run') k = 'run' + (Math.floor(c.at * 12) % 3); else if (c.st === 'shock') k = 'shock';
-  else if (c.st === 'lick') { const q = Math.floor(c.at * 3); k = 'lick' + (q < 1 ? 0 : [1, 2, 3, 2][(q - 1) % 4]); } else if (c.st === 'idle') k = 'idle' + ((Math.floor(c.at * 1.2) % 5) === 4 ? 1 : 0); else return;
+  else if (c.st === 'lick') { const q = Math.floor(c.at * 3); k = 'lick' + (q < 1 ? 0 : [1, 2, 3, 2][(q - 1) % 4]); } else if (c.st === 'rub') { k = 'lick' + (Math.floor(c.at * 4) % 2 ? 2 : 3); } else if (c.st === 'idle') k = 'idle' + ((Math.floor(c.at * 1.2) % 5) === 4 ? 1 : 0); else return;
   const im = CF[k]; if (!im || !im.complete || !im.naturalWidth) return; g.save(); if (c.d < 0) { g.translate(c.x * 2, 0); g.scale(-1, 1); } g.drawImage(im, Math.round(c.x - im.width / 2), Math.round(c.y - im.height)); g.restore(); }
 function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; T += dt; requestAnimationFrame(loop);
   let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0); if (joy && Math.hypot(joy.dx, joy.dy) > 8) { x = joy.dx; y = joy.dy; }
@@ -163,6 +173,7 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
   { const open = $('panel').style.display === 'flex'; let nb = null, bd = 120; for (const o of NPC) { const d = Math.hypot(o.x - hero.x, (o.y - hero.y) * 1.4); if (d < bd) { bd = d; nb = o; } }
     if (nb !== near) { if (near) { near.ring = 0; near.done = 0; } near = nb; if (nb && T - (nb.spT || -99) > 7) { nb.spT = T; nb.li = ((nb.li == null ? -1 : nb.li) + 1) % nb.lines.length; say(nb, nb.lines[nb.li]); } }
     if (near && !open && !near.done && (near.up || near.id === 'p')) { near.ring = (near.ring || 0) + dt / 2; if (near.ring >= 1) { near.done = 1; near.ring = 0; if (near.id === 'p' && GAME) prep(); else if (near.up) panel(near); } } }
+  eggStep(dt);
   cam.x += (Math.max(Math.min(hero.x, W - VW / Z / 2), VW / Z / 2) - cam.x) * .1; if (VW / Z >= W) cam.x = W / 2; cam.y += (Math.max(Math.min(hero.y - 60, H - VH / Z / 2), VH / Z / 2) - cam.y) * .1;
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0c0908'; g.fillRect(0, 0, VW, VH); g.setTransform(Z, 0, 0, Z, Math.round(VW / 2 - cam.x * Z), Math.round(VH / 2 - cam.y * Z));
   if (BG.complete && BG.naturalWidth) { g.imageSmoothingEnabled = Z < 1; g.imageSmoothingQuality = 'high'; g.drawImage(BG, 0, 0); g.imageSmoothingEnabled = false;   /* 11/24 不放大，只缩小（高质量），人物一律最近邻 */ } else { g.fillStyle = '#5a4c42'; g.fillRect(0, 0, W, H); }

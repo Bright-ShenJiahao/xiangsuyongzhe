@@ -1320,3 +1320,9 @@ button:focus-visible { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,215
 .cart { touch-action: none; }
 .slotClip .cbody img { position: static !important; width: 100% !important; transform: none !important; transition: none !important; filter: none !important; left: auto !important; }
 .dragGhost { box-sizing: border-box; margin: 0; padding: 0; transform-origin: 50% 30%; }
+
+/* 11/25 战斗中称号播报（左下角，金色）+ 结算页称号横幅 */
+#feed div.t { color: #ffd77a; border-left-color: #ffb83a; background: linear-gradient(90deg, rgba(90,56,10,.85), rgba(20,12,6,.62)); box-shadow: 0 0 12px #ffb83a66; }
+#rTtl .ttBan { margin: 12px auto 4px; padding: 10px 10px; border: 3px solid #e8c070; background: linear-gradient(90deg, #4a3010, #7a5418, #4a3010); box-shadow: 0 0 16px #ffb83a66; text-align: center; animation: ttPop .4s cubic-bezier(.2,1.5,.4,1); }
+#rTtl .ttBan small { display: block; color: #f2dca4; letter-spacing: .3em; font-size: 13px; } #rTtl .ttBan b { font-size: 28px; color: #fff1b8; letter-spacing: .14em; text-shadow: 0 2px 0 #000, 0 0 14px #ffb83a; }
+@keyframes ttPop { from { opacity: 0; transform: scale(1.5); } }

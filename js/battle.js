@@ -44,7 +44,7 @@
       bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: [null], coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
     RUN.slots[0] = { id: (b.book1 && DATA.skills[b.book1]) ? b.book1 : b.weapon, lv: 1, xp: 0 };   // 11/24 公主出发准备：第 1 格可放书库的书
     if (b.book2 && DATA.skills[b.book2] && ML('slot2') && b.book2 !== RUN.slots[0].id) RUN.slots[1] = { id: b.book2, lv: 1, xp: 0 };   // 解锁了第 2 格就多带一本 if (b.item) RUN.gear[0] = { kind: 'item', id: b.item };
-    recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0) + 20 * ML('coin'); RUN.lives = 2 + ML('life'); RUN.livesUsed = 0;
+    recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0) + 20 * ML('coin') + (+localStorage.getItem('xsyz-bonusCoin') || 0); localStorage.removeItem('xsyz-bonusCoin');   /* 11/25 彩蛋铜钱：下一局开局带上，一次性 */ RUN.lives = 2 + ML('life'); RUN.livesUsed = 0;
     foes = []; shots = []; fx = []; parts = []; nums = []; tele = []; burns = []; pend = []; warns.length = 0;
     if (!SK) SK = SKILLS(API); SK.reset(); hero.cs = null;
     if (!ESK) ESK = ESKILL({ K, YS, hero: () => hero, spawn: (t, at) => spawn(t, at), clamp: o => clampG(o), hurt: (d, src) => { damageHero.src = src || null; damageHero(d, 'phys'); }, foes: () => foes,
@@ -200,7 +200,7 @@
     if (z.tier === 'mini') { G.wMini++; G.gi.push({ kind: 'item', x: z.x, y: z.y, t: 0 }); }
     { const da = Math.atan2(z.y - hero.y, z.x - hero.x); for (let i = 0; i < 14; i++) parts.push({ x: z.x + R(-8, 8) * K, y: z.y - R(4, 30) * K, vx: (Math.cos(da) * R(30, 120) + R(-40, 40)) * K, vy: R(-160, -40) * K, t: 0, T: R(.5, 1), col: ['#8fd14a', '#5a8a2a', '#e8e0c8', '#c49a5c', '#3a2410'][i % 5], g: 360 * K, sz: i < 6 ? 3 : 2 }); }   // 11/24 像素碎块
     z.flash = .12; SFX.play('die');
-    if (z.T.boss) { G.shake = .6; G.hitStop = .8; banner('击败 哥布林王！', 3); G.winT = 2.2; G.lock = true; for (const o of foes) if (!o.dead && o !== z) kill(o); return; }
+    if (z.T.boss) { G.shake = .6; G.hitStop = .8; banner('击败 哥布林王！', 3); G.winT = 2.2; liveTitles(); G.lock = true; for (const o of foes) if (!o.dead && o !== z) kill(o); return; }
   }
   // 升级不弹框：自动加一点生命和伤害，攒一次「修炼」机会（波间结算的修炼页用）
   // 升到下一级要的经验：(14 + 4 × (等级 − 1)) × 1.3（用户：升级慢一些），最高 Lv12
@@ -880,6 +880,9 @@
     teleTick(dt); shotTick(dt);
     for (const a of [fx, parts, nums, burns]) for (let i = a.length - 1; i >= 0; i--) { const o = a[i]; o.t += dt; if (o.vx != null) { o.x += o.vx * dt; o.y += o.vy * dt; o.vy += (o.g || 0) * dt; } if (o.t >= (o.T || (o.txt ? 1.4 : .75))) a.splice(i, 1); }
   }
+  /* 11/25 战斗中也检查称号：每站结算 / 击败首领时（累计战绩 + 本局进度），达成就在左下角报一次 */
+  function liveTitles() { try { const R0 = JSON.parse(localStorage.getItem('xsyz-rec') || '{}'); R0.kills = (R0.kills || 0) + Math.max(0, G.kills - (RUN.recK || 0)); R0.elites = (R0.elites || 0) + (RUN.elites || 0); if (G.winT != null) R0.wins = (R0.wins || 0) + 1;
+      const own = JSON.parse(localStorage.getItem('xsyz-titles') || '[]'); let n = 0; for (const t of DATA.titles) if (!own.includes(t.id) && t.need(R0, RUN)) { own.push(t.id); (RUN.newT = RUN.newT || []).push(t.name); UI.feed('★ 获得称号：' + t.name, 't'); try { EGG.chime(); } catch (e) {} n++; } if (n) localStorage.setItem('xsyz-titles', JSON.stringify(own)); } catch (e) {} }
   function vicStats() { const sk = RUN.slots.filter(Boolean).map(k => ({ id: k.id, name: DATA.skills[k.id].name, L: profL(k), p: (() => { const nx = DATA.prof[profL(k)]; return nx ? Math.min(1, (k.xp || 0) / nx) : 1; })() }));
     return { time: G.t, kills: G.kills, combo: G.bestCombo || G.maxCombo || 0, coins: Math.round(G.earned || 0), taken: Math.round(G.taken || 0), lv: G.lv, xp: G.xp / need(), dmg: RUN.dmgAll || {}, sk, got: RUN.got || [] }; }
   function end() {
@@ -1068,7 +1071,7 @@
     debug: { rest(k) { if (G.fe) fieldRest(k); }, ev(id) { const f = G.fe; if (!f) return; RUN.evUsed = DATA.events.map(e => e.id).filter(x => x !== id); f.doors = []; fieldRest('event'); }, oath(id) { const ks = Object.keys(DATA.oaths); CAMP.learn({ kind: 'oath', id: id || ks[Math.random() * ks.length | 0] }); }, tp(fx, fy) { hero.x = MAPW * fx; hero.y = MAPH * fy; cam.snap = true; }, book() { G.gi.push({ kind: 'book', x: hero.x + 30 * K, y: hero.y, t: 0 }, { kind: 'item', x: hero.x + 9 * K, y: hero.y, t: 0 }); }, coin() { for (let i = 0; i < 6; i++) G.gc.push({ x: hero.x + R(60, 120) * K, y: hero.y + R(-20, 20) * K, v: 2, t: 11, h: 0, vh: 0, vx: 0 }); },   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）
       // 本段胜利：清场，进下一段（第 1 站第 2 段之后会触发公主）；已经是最后一段就结算这一站
       wave: () => { if (!G || G.endT != null || !G.waveOn || G.pr) return; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z));
-        if (G.wi < STN().waves.length - 1 && !STN().waves[G.wi + 1].boss) { G.wt = G.T; return; } G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; },
+        if (G.wi < STN().waves.length - 1 && !STN().waves[G.wi + 1].boss) { G.wt = G.T; return; } G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; liveTitles(); },
       rest: k => G && G.fe && fieldRest(k),
       station: () => { if (!G || G.endT != null || !G.waveOn) return; const n = STN().waves.length; G.wi = STN().waves[n - 1].boss ? n - 2 : n - 1; G.q = []; warns.length = 0; foes.forEach(z => !z.dead && !z.T.boss && kill(z)); G.cleared = true; G.timeout = false; banner('本站胜利', 1); G.endT = .6; },
       boss: () => G && (foes.forEach(z => !z.dead && kill(z)), G.st = DATA.stations.length, G.wi = 1, nextWave()), god: () => G && (G.god = !G.god), clear: () => G && (G.q = [], warns.length = 0, foes.forEach(z => !z.T.boss && !z.dead && kill(z)), G.wt = Math.max(G.wt, G.T - .1)), skip: () => G && G.W && (G.wt = G.T), st: n => G && (G.st = n, G.wi = -1), lvl: () => G && addXp(need() / (hero.xpMul || 1) - G.xp + .01), win: () => G && (G.boss ? kill(G.boss) : (G.st = DATA.stations.length, G.wi = 1, nextWave(), bossIn(), kill(G.boss))), heal: () => hero && (hero.hp = hero.maxHp), route: () => G && (G.paused = true, showRoute()), spawn: (t, tier) => G && spawn(t, { x: hero.x + R(60, 120) * K * (Math.random() < .5 ? -1 : 1), y: hero.y + R(-20, 20) * K }, tier), state: () => ({ G, hero, foes, RUN, u, s, W, H }) },

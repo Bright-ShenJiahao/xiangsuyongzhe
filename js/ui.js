@@ -86,7 +86,7 @@
 
   // 11/24 图鉴大分类：角色 / 技能书 / 宝物 / 印记 / 称号（收集式，没拿到的显示？？？）
   function codexTop(row, bar, cur) { const P0 = row.parentNode; P0.querySelectorAll('.cxtop').forEach(x => x.remove()); const top = document.createElement('div'); top.className = 'cxtop';
-    for (const [k, n] of [['char', '角色'], ['book', '技能书'], ['item', '宝物'], ['oath', '印记'], ['title', '称号']]) { const b = document.createElement('button'); b.textContent = n; b.className = k === cur ? 'on' : '';
+    for (const [k, n] of [['char', '角色'], ['book', '技能书'], ['item', '宝物'], ['oath', '印记'], ['title', '称号'], ['find', '发现']]) { const b = document.createElement('button'); b.textContent = n; b.className = k === cur ? 'on' : '';
       b.onclick = () => { if (k === cur) return; if (k === 'char') return document.querySelector('[data-panel="codex"]').click(); cur = k; top.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); bar.style.display = 'none'; const sd = row.querySelector('.cxside'); if (sd) sd.style.display = 'none'; codexList(k); }; top.appendChild(b); }
     (bar.style.display === 'none' ? row : bar).insertAdjacentElement('beforebegin', top); }
   function codexList(k) { const body = $('tpBody'), g = document.createElement('div'); g.className = 'cxlist'; let got = 0, tot = 0;
@@ -95,6 +95,7 @@
     if (k === 'book') for (const sys of ['剑', '枪', '弓', '法杖']) { g.insertAdjacentHTML('beforeend', `<div class="cxh">— ${sys} —</div>`); for (const [id, S] of Object.entries(DATA.skills)) if (S.sys === sys) card(SEEN.has('s:' + id), skIcon(id), S.name, `${S.sys} · ${DATA.tierName[S.tier]} · ${S.dt === 'magic' ? '魔法' : '物理'}`, `${S.desc}${['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<br><span class="lv">Lv${x.slice(1)}：${S[x]}</span>`).join('')}`); }
     if (k === 'item') for (const it of DATA.startItems) card(SEEN.has('i:' + it.id), pi(it.id), it.name, '宝物', typeof it.d === 'function' ? it.d(1) : (it.desc || ''));
     if (k === 'oath') for (const [id, O] of Object.entries(DATA.oaths)) { const ic = pi('oath/' + id); ic.classList.add('oimg'); card(SEEN.has('o:' + id), ic, O.name, O.mv ? '身法印记' : '誓约印记', O.d(DATA.oathLv[4]) + '<br><span class="lv">（满级效果）</span>'); }
+    if (k === 'find') for (const e of EGG.LIST) { const has = EGG.has(e.id) || SEEN.all(), el = document.createElement('div'); tot++; if (has) got++; el.className = 'cxi' + (has ? '' : ' lock'); el.innerHTML = `<div class="ic tt">?</div><div><b>${has ? e.name : '？？？'}</b><small>${e.where}的小发现</small><p>${has ? e.text : '还没发现'}</p></div>`; g.appendChild(el); }
     if (k === 'title') { let own = []; try { own = JSON.parse(store.get('titles') || '[]'); } catch (e) {} for (const t of DATA.titles) { const has = own.includes(t.id) || SEEN.all(); tot++; if (has) got++; const e = document.createElement('div'); e.className = 'cxi' + (has ? '' : ' lock'); e.innerHTML = `<div class="ic tt">称</div><div><b>${has ? t.name : '？？？'}</b><small>获得条件：${t.how}</small><p>${has ? t.d : '还没获得'}</p></div>`; g.appendChild(e); } }
     g.insertAdjacentHTML('afterbegin', `<div class="cxcount">已收集 ${got} / ${tot}</div>`); body.innerHTML = ''; body.appendChild(g); body.scrollTop = 0; }
   const PANELS = {
@@ -347,7 +348,7 @@
     box.appendChild(d); overlay('route', true);
   }
   // 11/23 左下角播报：一条条往上滚，4.5 秒后淡出
-  function feed(t) { const box = $('feed'); if (!box) return; const e = document.createElement('div'); e.textContent = t; box.appendChild(e); while (box.children.length > 5) box.firstChild.remove(); setTimeout(() => e.classList.add('out'), 4000); setTimeout(() => e.remove(), 4600); }
+  function feed(t, cls) { const box = $('feed'); if (!box) return; const e = document.createElement('div'); e.textContent = t; if (cls) e.className = cls; box.appendChild(e); while (box.children.length > 5) box.firstChild.remove(); setTimeout(() => e.classList.add('out'), cls ? 7000 : 4000); setTimeout(() => e.remove(), cls ? 7600 : 4600); }
   // 11/23 像素数字（5×7 方块字 + 硬边深褐描边 + 右下投影），用于时间和击倒 / 连击
   const PXG = { 0: '01110100011001110101110011000101110', 1: '00100011000010000100001000010001110', 2: '01110100010000100010001000100011111', 3: '11110000010000101110000010000111110', 4: '00010001100101010010111110001000010', 5: '11111100001111000001000011000101110', 6: '00110010001000011110100011000101110', 7: '11111000010001000100010000100001000', 8: '01110100011000101110100011000101110', 9: '01110100011000101111000010001001100', ':': '00000001000010000000001000010000000' };
   function pxNum(str, fg, ol) { str = String(str); let o = '', f = '', d = ''; const W = str.length * 7 + 2;
@@ -395,7 +396,7 @@
   $('rAgain').textContent = '再来一局 ▶';
     if (r.win && !r.mapShown) return worldMap(() => result(Object.assign({}, r, { mapShown: true })));
     $('rTitle').textContent = r.win ? '胜利！' : '败北……';
-    setTimeout(() => { if (r.cry) $('rMsg').textContent += `　这一局带回 ${r.cry} 水晶。`; if (r.newT && r.newT.length) $('rMsg').textContent += `　获得新称号：${r.newT.join('、')}！`; }, 0);
+    setTimeout(() => { if (r.cry) $('rMsg').textContent += `　这一局带回 ${r.cry} 水晶。`; if (r.newT && r.newT.length) { $('rMsg').textContent += `　获得新称号：${r.newT.join('、')}！`; try { let b = $('rTtl'); if (!b) { b = document.createElement('div'); b.id = 'rTtl'; $('rMsg').insertAdjacentElement('afterend', b); } b.innerHTML = r.newT.map(n => `<div class="ttBan"><small>获 得 新 称 号</small><b>${n}</b></div>`).join(''); EGG.chime(); } catch (e) {} } else { const b = $('rTtl'); if (b) b.innerHTML = ''; } }, 0);
     $('rMsg').textContent = r.win ? '哥布林王倒下了，屏幕那头好像传来了「下一关」的音乐。' : '眼前一黑……再按一次开始键吧。';
     const best = Object.entries(r.dmg || {}).sort((a, b) => b[1] - a[1])[0];
     $('rStats').innerHTML = `<span>打到</span><b>${r.win ? '通关' : r.boss ? '首领战' : `第 ${r.st} 站 第 ${Math.max(0, r.wi) + 1} 波`}</b><span>用时</span><b>${mmss(r.time)}</b><span>击倒</span><b>${r.kills}</b><span>等级</span><b>Lv ${r.lv}</b>${best ? `<span>主力</span><b>${DATA.skills[best[0]].name}</b>` : ''}`;
