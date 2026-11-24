@@ -4,11 +4,11 @@
 <style>
 html,body{margin:0;height:100%;background:#1a120a;overflow:hidden}
 #prep{display:flex !important;position:fixed;inset:0}
-.stage{position:relative;flex:1 1 auto;min-height:150px;max-height:260px;border:2px solid #b8965c;border-radius:12px;overflow:hidden;background:#fff}
+.stage{position:relative;flex:none;height:120px;min-height:90px;max-height:130px;border:0;overflow:hidden;background:none}
 #prep .stage canvas{position:absolute !important;left:0 !important;top:0 !important;width:100% !important;height:100% !important;max-width:none !important;image-rendering:pixelated}
 .stage .lab,.stage .act{display:none}.stage .lab{position:absolute;left:10px;top:6px;z-index:2;font:14px WenKai,serif;color:#fff3d0;text-shadow:1px 1px 0 #000}
 .stage .act{position:absolute;right:10px;top:6px;z-index:2;font:14px WenKai,serif;color:#ffd860;text-shadow:1px 1px 0 #000}
-.pnSec.st{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
+.pnSec.st{flex:0 0 auto;display:flex;flex-direction:column;min-height:0}
 .pnSec.st h4{flex:none}
 #note{position:fixed;right:8px;top:6px;max-width:46vw;z-index:9;font:12px sans-serif;color:#fff;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:6px}
 .pnWep button{cursor:pointer}
@@ -44,7 +44,7 @@ function frame(){
  const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);
  const T=SEQ.reduce((a,x)=>a+x[1],0),t=((performance.now()-t0)/1000)%T;let a=0,k=0;for(;k<SEQ.length;k++){if(t<a+SEQ[k][1])break;a+=SEQ[k][1]}k=Math.min(k,SEQ.length-1);
  const [n,d,lab]=SEQ[k],p=(t-a)/d,hs=SPR.heroSet(hero,wp),cnt=Math.max(1,SPR.count(hs,wp+'.'+n)||SPR.count(hs,n)),fi=n==='idle'||n==='run'?Math.floor(t*(n==='run'?8:3))%cnt:Math.min(cnt-1,Math.floor(p*cnt));
- const u=Math.max(2,Math.floor(c.height/48)),X0=c.width*.5;let x=X0,fl=false;
+ const u=Math.max(2,Math.floor(c.height/52)),X0=c.width*.5;let x=X0,fl=false;
  g.fillStyle='rgba(0,0,0,.12)';g.beginPath();g.ellipse(x,c.height*.82,u*9,u*3,0,0,7);g.fill();
  try{SPR.drawHero(g,n,fi,x,c.height*.82,fl,u,{w:wp,c:hero})}catch(e){}
  $('lab').textContent=NM[hero]+' · '+(wp==='sword'?'剑':wp==='spear'?'枪':wp==='bow'?'弓':'法杖');$('act').textContent=lab;

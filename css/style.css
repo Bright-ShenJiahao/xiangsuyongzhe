@@ -1375,20 +1375,12 @@ button:focus-visible { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,215
 #bRoll .pips { position: absolute; left: 0; right: 0; bottom: 5px; z-index: 3; text-align: center; font: 11px/1 Pix, monospace; color: #ffd860; letter-spacing: 3px; text-shadow: 1px 1px 0 #000; pointer-events: none; }
 body:not(.touch) #bRoll .pips { font-size: 9px; bottom: 3px; letter-spacing: 2px; }
 
-.eqCols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
-@media (max-width: 760px), (orientation: portrait) { .eqCols { grid-template-columns: 1fr; } }
-.eqP { background: rgba(255,255,255,.35); border: 1px solid rgba(150,105,45,.35); border-radius: 10px; padding: 12px; }
-.eqP h4 { margin: 0 0 8px; font: 18px WenKai, serif; color: #5a3a18; } .eqP h4 + .eqG { margin-bottom: 14px; }
-.eqG { display: grid; grid-template-columns: repeat(auto-fill, 92px); gap: 10px; justify-content: start; }
-.eqS { position: relative; width: 92px; height: 92px; border: 2px solid #b8965c; border-radius: 10px; background: radial-gradient(#fff6dc, #e8d2a0); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; font: 12px WenKai, serif; color: #8a6a3a; text-align: center; }
-.eqS > i { position: absolute; left: 5px; top: 2px; font-style: normal; font-size: 11px; color: #8a6a3a; }
-.eqS b { font-weight: 400; font-size: 13px; color: #4a2e12; } .eqS.on { border-color: #e8a820; background: radial-gradient(#fff2c0, #f0c060); } .eqS.dim { opacity: .5; cursor: default; }
-.eqS canvas, .eqS img { width: 44px; height: 44px; image-rendering: pixelated; object-fit: contain; } .eqS .gl, .eqI .gl { width: 40px; height: 40px; border-radius: 8px; background: #a8743a; color: #fff3d8; display: flex; align-items: center; justify-content: center; font: 20px WenKai, serif; text-shadow: 1px 1px 0 #3a2410; }
-.eqB { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
-.eqI { border: 2px solid #b8965c; border-radius: 10px; background: rgba(255,255,255,.55); padding: 6px 4px; text-align: center; cursor: pointer; font: 13px WenKai, serif; color: #4a2e12; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.eqI img { height: 40px; width: auto; image-rendering: pixelated; } .eqI small { font-size: 11px; padding: 0 8px; border-radius: 9px; background: #e8d6ae; color: #6a4818; }
-.eqMsg { font: 14px WenKai, serif; color: #6a4818; margin: 10px 0 0; min-height: 1.5em; }
-
+/* 11/25 装备页（暂停页第三页）：沿用技能页的 .lo / .slot / .bag；装备格按暗黑式摆法 */
+.eqD { display: grid; grid-template-columns: repeat(3, 84px); grid-auto-rows: 84px; gap: 8px; grid-template-areas: "m h o" "m a o" "c a b" ". e ."; justify-content: center; margin: 4px 0 8px; }
+.eqD .slot { aspect-ratio: auto; width: auto; cursor: pointer; } .eqD .slot canvas { width: 54%; } .slot.eqdim, .bag > div.eqdim { opacity: .55; }
+.gl { display: flex; align-items: center; justify-content: center; width: 52%; aspect-ratio: 1; border-radius: 6px; background: #a8743a; color: #fff3d8; font: 20px WenKai, serif; text-shadow: 1px 1px 0 #3a2410; }
+.eqMsg { margin: 6px 0 0; font-size: 13px; color: #c8b890; text-align: center; min-height: 1.5em; }
+@media (max-width: 760px), (orientation: portrait) { .eqD { grid-template-columns: repeat(3, 72px); grid-auto-rows: 72px; } }
 /* 11/25 选人界面：恢复立绘（不用像素小人） */
 .pnL img { display: block !important; } .pnL #heroCv { display: none !important; }
 .pnL { overflow: visible !important; clip-path: inset(0 -80% 0 0) !important; }
