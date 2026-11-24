@@ -26,8 +26,8 @@ canvas{display:block}
 // 11/24 宫殿据点灰盒（一张图）：最上空王座，公主站旁边、身边是时空门；中间大臣（钱+记录）和大法师；下面两排士兵；最下面大门走不出去。
 // 地面、柱子、红毯都是代码画的灰盒，只验证路线、距离、按钮。正式美术出一整张图替换。
 const cv = document.getElementById('c'), g = cv.getContext('2d'); let VW, VH, Z;
-function fit() { const d = devicePixelRatio || 1; cv.width = innerWidth * d; cv.height = innerHeight * d; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; VW = cv.width; VH = cv.height; Z = Math.min(1.3, VW / 1050); } addEventListener('resize', fit); fit();
-const W = 1000, H = 1750, IM = s => Object.assign(new Image(), { src: s }), NI = {}; ['guard_idle0', 'guard_idle1', 'mage_idle0', 'mage_idle1'].forEach(k => NI[k] = IM('art/npc/' + k + '.png'));
+function fit() { const d = devicePixelRatio || 1; cv.width = innerWidth * d; cv.height = innerHeight * d; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; VW = cv.width; VH = cv.height; Z = Math.min(VW / 948, VH / 950); /* 手机宽度铺满，电脑按高度约一屏 */ } addEventListener('resize', fit); fit();
+const W = 948, H = 1659, BG = Object.assign(new Image(), { src: 'art/hub/palace.webp' }), IM = s => Object.assign(new Image(), { src: s }), NI = {}; ['guard_idle0', 'guard_idle1', 'mage_idle0', 'mage_idle1'].forEach(k => NI[k] = IM('art/npc/' + k + '.png'));
 const PORT = { p: IM('art/portrait/p.webp'), mage: IM('art/npc/mage_face.png'), guard: IM('art/npc/guard_face.png') };
 let crystal = 120, owned = {};
 const UP = {
@@ -37,17 +37,17 @@ const UP = {
   c: [['coin', '开局铜钱', '开局铜钱 +20', [20, 40, 60]], ['disc', '折扣', '局内商店价格 −5%', [50]], ['ex', '兑换', '局内商人用铜钱换水晶的汇率更好', [40]]],
 };
 const NPC = [
-  { id: 'p', name: '露米娜', x: 640, y: 300, kind: 'princess', av: PORT.p, lines: ['你回来了。时空门就在我身边，准备好了就出发吧。', '王座……父王走后，一直空着。'], up: 'p', upName: '公主的祝福' },
-  { id: 'm', name: '大法师', x: 680, y: 760, kind: 'mage', av: PORT.mage, lines: ['你带回来的那些技能书，我研究过了。', '水晶给我，我能让你的法术更快成形。'], up: 'm', upName: '大法师的研究' },
-  { id: 'c', name: '大臣', x: 320, y: 760, kind: 'minister', av: PORT.mage, lines: ['国库和账本都归老臣管。', '您的战绩，老臣都记着呢。'], up: 'c', upName: '国库', rec: 1 },
-  { id: 's', name: '士兵甲', x: 300, y: 1150, kind: 'guard', av: PORT.guard, lines: ['他又回来了。', '要不要去训练场转转？——哦，我们没有训练场。'], up: 's', upName: '士兵的训练' },
-  { id: 's2', name: '士兵乙', x: 700, y: 1150, kind: 'guard', av: PORT.guard, lines: ['墙不够刻了。'], },
+  { id: 'p', name: '露米娜', x: 680, y: 330, kind: 'princess', av: PORT.p, lines: ['你回来了。时空门就在我身边，准备好了就出发吧。', '王座……父王走后，一直空着。'], up: 'p', upName: '公主的祝福' },
+  { id: 'm', name: '大法师', x: 640, y: 760, kind: 'mage', av: PORT.mage, lines: ['你带回来的那些技能书，我研究过了。', '水晶给我，我能让你的法术更快成形。'], up: 'm', upName: '大法师的研究' },
+  { id: 'c', name: '大臣', x: 300, y: 760, kind: 'minister', av: PORT.mage, lines: ['国库和账本都归老臣管。', '您的战绩，老臣都记着呢。'], up: 'c', upName: '国库', rec: 1 },
+  { id: 's', name: '士兵甲', x: 300, y: 1020, kind: 'guard', av: PORT.guard, lines: ['他又回来了。', '要不要去训练场转转？——哦，我们没有训练场。'], up: 's', upName: '士兵的训练' },
+  { id: 's2', name: '士兵乙', x: 640, y: 1020, kind: 'guard', av: PORT.guard, lines: ['墙不够刻了。'], },
   { id: 's3', name: '士兵丙', x: 300, y: 1330, kind: 'guard', av: PORT.guard, lines: ['站岗好无聊。'] },
-  { id: 's4', name: '士兵丁', x: 700, y: 1330, kind: 'guard', av: PORT.guard, lines: ['屏幕那一边，大概没有哥布林吧。'] },
+  { id: 's4', name: '士兵丁', x: 640, y: 1330, kind: 'guard', av: PORT.guard, lines: ['屏幕那一边，大概没有哥布林吧。'] },
 ];
-const PORTAL = { x: 820, y: 290 }, DOOR = { x: 500, y: 1690 }, THRONE = { x: 500, y: 190 };
-const hero = { x: 500, y: 1580, f: 1, mv: 0 }, K = {}; let joy = null, near = null, cam = { x: 500, y: 1580 }, T = 0, last = 0, msg = '', msgT = 0;
-const walk = (x, y) => x > 110 && x < 890 && y > 250 && y < 1640 && !(Math.abs(x - 500) < 150 && y < 330) && !NPC.some(n => Math.hypot(n.x - x, (n.y - y) * 1.6) < 34);
+const PORTAL = { x: 755, y: 275 }, DOOR = { x: 474, y: 1450 }, THRONE = { x: 474, y: 230 };
+const hero = { x: 474, y: 1400, f: 1, mv: 0 }, K = {}; let joy = null, near = null, cam = { x: 474, y: 1400 }, T = 0, last = 0, msg = '', msgT = 0;
+const walk = (x, y) => x > 112 && x < 836 && y > 235 && y < 1440 && !(x > 270 && x < 678 && y < 392) && !((x < 225 || x > 725) && ((y > 545 && y < 765) || (y > 1075 && y < 1295))) && !NPC.some(n => Math.hypot(n.x - x, (n.y - y) * 1.6) < 34);
 addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'KeyE' && near) act(near, 0); }); addEventListener('keyup', e => K[e.code] = 0);
 addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (t.target === cv && t.clientX < innerWidth * .6) joy = { id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0 }; }, { passive: true });
 addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy && t.identifier === joy.id) { joy.dx = t.clientX - joy.x; joy.dy = t.clientY - joy.y; } }, { passive: true });
@@ -66,32 +66,24 @@ function updAct() { const a = $('act'); a.innerHTML = ''; if (!near) { a.style.d
   const mk = (t, k) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => act(near, k); a.appendChild(b); };
   if (near === PORTAL) mk('进入时空门 ▶', 0); else { mk('对话', 0); if (near.up) mk('强化', 1); } }
 function fr(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
-function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s = 3;
+function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s = 2.2;
   if (n.kind === 'guard' || n.kind === 'mage' || n.kind === 'minister') { const im = NI[(n.kind === 'guard' ? 'guard_idle' : 'mage_idle') + tick]; if (im.complete) { g.save(); if (n.kind === 'minister') g.filter = 'hue-rotate(160deg) saturate(.7)'; if (n.x > 500) { g.translate(n.x * 2, 0); g.scale(-1, 1); } g.drawImage(im, n.x - im.width * s / 2, n.y - im.height * s, im.width * s, im.height * s); g.restore(); } }
   else { g.fillStyle = '#f3b8d0'; g.beginPath(); g.moveTo(n.x - 34, n.y); g.lineTo(n.x + 34, n.y); g.lineTo(n.x + 14, n.y - 90); g.lineTo(n.x - 14, n.y - 90); g.fill(); g.fillStyle = '#f6dcc0'; g.beginPath(); g.arc(n.x, n.y - 108, 20, 0, 7); g.fill(); g.fillStyle = '#f2d16a'; g.fillRect(n.x - 22, n.y - 132, 44, 18); g.fillStyle = '#ffd77a'; g.fillRect(n.x - 12, n.y - 140, 24, 8); }
-  g.fillStyle = near === n ? '#ffe9a8' : 'rgba(255,240,210,.75)'; g.font = 'bold 22px sans-serif'; const w = g.measureText(n.name).width; g.fillText(n.name, n.x - w / 2, n.y - (n.kind === 'princess' ? 150 : 165)); }
+  g.fillStyle = near === n ? '#ffe9a8' : 'rgba(255,240,210,.75)'; g.font = 'bold 22px sans-serif'; const w = g.measureText(n.name).width; g.fillText(n.name, n.x - w / 2, n.y - (n.kind === 'princess' ? 150 : 128)); }
 function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; T += dt; requestAnimationFrame(loop);
   let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0); if (joy && Math.hypot(joy.dx, joy.dy) > 8) { x = joy.dx; y = joy.dy; }
   const l = Math.hypot(x, y); hero.mv = l > 0; if (l && $('panel').style.display !== 'flex') { x /= l; y /= l; const sp = 300 * dt; if (x) hero.f = x > 0 ? 1 : -1; if (walk(hero.x + x * sp, hero.y)) hero.x += x * sp; if (walk(hero.x, hero.y + y * sp)) hero.y += y * sp; }
-  if (hero.y > 1600 && !msgT) { msg = '大门紧闭……门缝外全是乱码。'; msgT = 2.5; } if (msgT > 0) msgT -= dt;
+  if (hero.y > 1425 && Math.abs(hero.x - 474) < 110 && !msgT) { msg = '大门紧闭……门缝外全是乱码。'; msgT = 2.5; } if (msgT > 0) msgT -= dt;
   let nb = null, bd = 150; for (const o of [...NPC, PORTAL]) { const d = Math.hypot(o.x - hero.x, (o.y - hero.y) * 1.4); if (d < bd) { bd = d; nb = o; } } if (nb !== near) { near = nb; updAct(); }
   cam.x += (Math.max(Math.min(hero.x, W - VW / Z / 2), VW / Z / 2) - cam.x) * .1; if (VW / Z >= W) cam.x = W / 2; cam.y += (Math.max(Math.min(hero.y - 60, H - VH / Z / 2), VH / Z / 2) - cam.y) * .1;
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0c0908'; g.fillRect(0, 0, VW, VH); g.setTransform(Z, 0, 0, Z, Math.round(VW / 2 - cam.x * Z), Math.round(VH / 2 - cam.y * Z));
-  // 灰盒：墙、地面、红毯、柱子、台阶
-  g.fillStyle = '#2b2320'; g.fillRect(0, 0, W, H); g.fillStyle = '#5a4c42'; g.fillRect(100, 120, 800, 1560);
-  for (let yy = 120; yy < 1680; yy += 60) for (let xx = 100; xx < 900; xx += 80) { g.fillStyle = ((xx + yy) / 20) % 2 ? '#625347' : '#574a40'; g.fillRect(xx + 1, yy + 1, 78, 58); }
-  g.fillStyle = '#8a2a2a'; g.fillRect(430, 300, 140, 1400); g.fillStyle = '#c9a15a'; g.fillRect(430, 300, 6, 1400); g.fillRect(564, 300, 6, 1400);
-  g.fillStyle = '#6b5a4c'; g.fillRect(320, 120, 360, 220); g.fillStyle = '#7a6858'; for (let i = 0; i < 3; i++) g.fillRect(340 + i * 10, 300 + i * 12, 320 - i * 20, 12);   // 王座台阶
-  g.fillStyle = '#3a2814'; g.fillRect(450, 130, 100, 120); g.fillStyle = '#c9a15a'; g.fillRect(440, 120, 120, 20); g.fillRect(450, 210, 100, 40); g.fillStyle = '#8a2a2a'; g.fillRect(462, 150, 76, 60);   // 空王座
-  g.fillStyle = 'rgba(255,240,210,.6)'; g.font = '20px sans-serif'; g.fillText('（空着的王座）', 430, 105);
-  for (const yy of [450, 650, 900, 1100, 1300, 1500]) for (const xx of [150, 850]) { g.fillStyle = '#3e332c'; g.fillRect(xx - 24, yy - 140, 48, 150); g.fillStyle = '#4e4138'; g.fillRect(xx - 30, yy, 60, 14); const k = .7 + .3 * Math.sin(T * 9 + yy); g.fillStyle = `rgba(255,170,60,${.8 * k})`; g.beginPath(); g.arc(xx, yy - 160, 9 * k, 0, 7); g.fill(); }
-  g.fillStyle = '#3a2814'; g.fillRect(380, 1640, 240, 60); g.fillStyle = '#5a3c20'; g.fillRect(390, 1645, 105, 55); g.fillRect(505, 1645, 105, 55); g.fillStyle = '#c9a15a'; g.fillRect(488, 1665, 8, 14); g.fillRect(504, 1665, 8, 14);   // 大门
+  if (BG.complete && BG.naturalWidth) { g.imageSmoothingEnabled = Z * (devicePixelRatio || 1) < 1; g.drawImage(BG, 0, 0); } else { g.fillStyle = '#5a4c42'; g.fillRect(0, 0, W, H); }
   // 时空门
-  { const k = .7 + .3 * Math.sin(T * 3); g.save(); g.translate(PORTAL.x, PORTAL.y - 70); g.strokeStyle = `rgba(160,210,255,${k})`; g.lineWidth = 8; g.beginPath(); g.ellipse(0, 0, 55, 85, 0, 0, 7); g.stroke(); g.fillStyle = `rgba(90,140,230,${.35 * k})`; g.fill();
-    for (let i = 0; i < 6; i++) { const a = T * 2 + i; g.fillStyle = '#cfe8ff'; g.fillRect(Math.cos(a) * 40 - 2, Math.sin(a * 1.3) * 60 - 2, 4, 4); } g.restore(); g.fillStyle = '#cfe8ff'; g.font = 'bold 22px sans-serif'; g.fillText('时空门', PORTAL.x - 33, PORTAL.y - 170); }
+  { const k = .7 + .3 * Math.sin(T * 3); g.save(); g.translate(PORTAL.x, PORTAL.y - 75); g.strokeStyle = `rgba(160,210,255,${k})`; g.lineWidth = 6; g.beginPath(); g.ellipse(0, 0, 42, 72, 0, 0, 7); g.stroke(); g.fillStyle = `rgba(90,140,230,${.35 * k})`; g.fill();
+    for (let i = 0; i < 6; i++) { const a = T * 2 + i; g.fillStyle = '#cfe8ff'; g.fillRect(Math.cos(a) * 40 - 2, Math.sin(a * 1.3) * 60 - 2, 4, 4); } g.restore(); g.fillStyle = '#cfe8ff'; g.font = 'bold 22px sans-serif'; g.fillText('时空门', PORTAL.x - 33, PORTAL.y - 160); }
   const L = NPC.map(n => ({ y: n.y, n })).concat([{ y: hero.y, h: 1 }]).sort((a, b) => a.y - b.y);
-  for (const e of L) { if (e.n) drawNPC(e.n); else { const hs = SPR.heroSet && SPR.heroSet('m'), nm = hs && (hero.mv ? fr(hs, 'run', 12) || fr(hs, 'walk', 10) : fr(hs, 'idle', 2)); if (nm) SPR.drawHero(g, nm, 0, hero.x, hero.y, hero.f < 0, 2.4); else { g.fillStyle = '#fff'; g.fillRect(hero.x - 10, hero.y - 50, 20, 50); } } }
+  for (const e of L) { if (e.n) drawNPC(e.n); else { const hs = SPR.heroSet && SPR.heroSet('m'), nm = hs && (hero.mv ? fr(hs, 'run', 12) || fr(hs, 'walk', 10) : fr(hs, 'idle', 2)); if (nm) SPR.drawHero(g, nm, 0, hero.x, hero.y, hero.f < 0, 2); else { g.fillStyle = '#fff'; g.fillRect(hero.x - 10, hero.y - 50, 20, 50); } } }
   if (msgT > 0) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(0, VH * .4 - 30 * devicePixelRatio, VW, 50 * devicePixelRatio); g.fillStyle = '#ffe9a8'; g.font = `${20 * devicePixelRatio}px sans-serif`; g.fillText(msg, VW / 2 - g.measureText(msg).width / 2, VH * .4); }
-  $('hud').innerHTML = `宫殿据点 · 灰盒（一张图，镜头上下跟随）<br>💎 水晶 ${crystal}（demo 送的）<br>WASD 走 · 靠近人按 E 对话 / 点按钮`; }
+  $('hud').innerHTML = `宫殿据点（正式美术，一张图，镜头上下跟随）<br>💎 水晶 ${crystal}（demo 送的）<br>WASD 走 · 靠近人按 E 对话 / 点按钮`; }
 Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
 </script></body></html>
