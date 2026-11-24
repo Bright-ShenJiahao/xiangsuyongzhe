@@ -1375,14 +1375,6 @@ button:focus-visible { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,215
 #bRoll .pips { position: absolute; left: 0; right: 0; bottom: 5px; z-index: 3; text-align: center; font: 11px/1 Pix, monospace; color: #ffd860; letter-spacing: 3px; text-shadow: 1px 1px 0 #000; pointer-events: none; }
 body:not(.touch) #bRoll .pips { font-size: 9px; bottom: 3px; letter-spacing: 2px; }
 
-/* 11/25 备战页分页：出发 / 装备 */
-.pnTabs { display: flex; gap: 8px; flex: none; }
-.pnTabs button { flex: 1; padding: 8px 0; font: 18px WenKai, serif; color: #6a4818; background: rgba(255,255,255,.35); border: 2px solid #b8965c; border-radius: 10px; cursor: pointer; }
-.pnTabs button.on { background: linear-gradient(#fff2c0, #f0c060); border-color: #e8a820; color: #4a2e12; }
-#prep[data-t=e] .pnL, #prep:not([data-t=e]) #pgEq { display: none; }
-#prep[data-t=e] .pnew { grid-template-columns: 1fr; } #prep[data-t=e] .pnR { padding-left: 34px; }
-#pgGo { display: contents; } #prep[data-t=e] #pgGo { display: none; }
-@media (orientation: portrait), (max-width: 760px) { #prep[data-t=e] .pnew { grid-template-rows: auto; } #prep[data-t=e] .pnR { padding-left: 14px; } }
 .eqCols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 760px), (orientation: portrait) { .eqCols { grid-template-columns: 1fr; } }
 .eqP { background: rgba(255,255,255,.35); border: 1px solid rgba(150,105,45,.35); border-radius: 10px; padding: 12px; }
@@ -1396,3 +1388,7 @@ body:not(.touch) #bRoll .pips { font-size: 9px; bottom: 3px; letter-spacing: 2px
 .eqI { border: 2px solid #b8965c; border-radius: 10px; background: rgba(255,255,255,.55); padding: 6px 4px; text-align: center; cursor: pointer; font: 13px WenKai, serif; color: #4a2e12; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .eqI img { height: 40px; width: auto; image-rendering: pixelated; } .eqI small { font-size: 11px; padding: 0 8px; border-radius: 9px; background: #e8d6ae; color: #6a4818; }
 .eqMsg { font: 14px WenKai, serif; color: #6a4818; margin: 10px 0 0; min-height: 1.5em; }
+
+/* 11/25 选人界面：恢复立绘（不用像素小人） */
+.pnL img { display: block !important; } .pnL #heroCv { display: none !important; }
+.pnL { overflow: visible !important; clip-path: inset(0 -80% 0 0) !important; }

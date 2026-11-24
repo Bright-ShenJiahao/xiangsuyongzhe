@@ -285,15 +285,35 @@
     $('camp').classList.remove('on'); document.body.classList.remove('shopOn'); if (rep.after) rep.after(); else B().nextWave();
   };
 
+  // ---------- 装备页（暂停页里的一页，11/25）：主手＝本局兵器；副手可放盾；长枪/弓/法杖占两格 ----------
+  const gearLoad = () => { let g = {}; try { g = JSON.parse(localStorage.getItem('xsyz-gear') || '{}'); } catch (e) {} g.bag = Array.isArray(g.bag) ? g.bag.filter(i => DATA.gear[i]) : []; g.eq = g.eq || {}; return g; };
+  const gearSave = g => localStorage.setItem('xsyz-gear', JSON.stringify(g));
+  let eqMsg = '起手只有一把兵器，其余格子都空着。';
+  const gearIcon = it => it.img ? `<img src="${it.img}" alt="">` : `<div class="gl">${it.g}</div>`;
+  function equipPanel(box) {
+    const G = gearLoad(), wp = R().weapon || 'sword', W = DATA.weapons[wp], two = wp !== 'sword', worn = new Set(Object.values(G.eq)), it = id => DATA.gear[id];
+    if (two) G.eq.off = null;
+    const slot = (key, label, inner, on, dim) => `<div class="eqS${on ? ' on' : ''}${dim ? ' dim' : ''}" data-s="${key}"><i>${label}</i>${inner}</div>`, empty = l => `<span>${l}</span><span>空</span>`;
+    box.innerHTML = `<div class="eqCols"><div class="eqP"><h4>武器（2 格）</h4><div class="eqG">` +
+      slot('main', '主手', `<span data-ic="${wp}"></span><b>${W.name}</b>`, true) +
+      (two ? slot('off', '副手', `<span data-ic="${wp}"></span><b>${W.name}</b><span>双格占用</span>`, true, true) : G.eq.off ? slot('off', '副手', gearIcon(it(G.eq.off)) + `<b>${it(G.eq.off).name}</b>`, true) : slot('off', '副手', empty('副手'))) +
+      `</div><h4>防具与饰品</h4><div class="eqG">` + Object.entries(DATA.gearSlots).map(([k, n]) => G.eq[k] ? slot(k, n, gearIcon(it(G.eq[k])) + `<b>${it(G.eq[k]).name}</b>`, true) : slot(k, n, empty(n))).join('') +
+      `</div></div><div class="eqP"><h4>背包</h4>` + (G.bag.length ? `<div class="eqB">${G.bag.map(id => { const w = worn.has(id); return `<div class="eqI" data-i="${id}" style="${w ? 'opacity:.4' : ''}">${gearIcon(it(id))}<span>${it(id).name}</span><small>${w ? '已装备' : it(id).tag}</small></div>`; }).join('')}</div>` : '<p class="eqMsg">背包里还没有装备。</p>') + `<p class="eqMsg">${eqMsg}</p></div></div>`;
+    for (const e of box.querySelectorAll('[data-ic]')) e.replaceWith(UI.icon(e.dataset.ic));
+    const redo = m => { eqMsg = m; equipPanel(box); };
+    for (const e of box.querySelectorAll('.eqS')) e.onclick = () => { const k = e.dataset.s; if (k === 'main') return redo('主手就是本局的兵器，局内不能换。'); if (k === 'off' && two) return redo('双格武器占着副手，只有拿剑才能放盾。'); if (!G.eq[k]) return; G.eq[k] = null; gearSave(G); redo('已卸下，回到背包。'); };
+    for (const e of box.querySelectorAll('.eqI')) e.onclick = () => { const id = e.dataset.i, d = DATA.gear[id]; if (worn.has(id)) return; if (d.slot === 'off' && two) return redo('现在拿的是双格武器，副手用不了盾。'); G.eq[d.slot] = id; gearSave(G); redo(d.name + '已装备。'); };
+  }
+  function giveGear() { const g = gearLoad(); g.bag = Object.keys(DATA.gear); gearSave(g); if ($('pause').classList.contains('on') && ptab === 'zhuang') pauseRender(); }
   // ---------- 暂停页 = 备战 ----------
   let ptab = 'ji';
   function pauseRender() {
     const tb = $('pTabs'); tb.innerHTML = '';
-    for (const [k, n] of [['ji', '技能'], ['shu', '属性']]) { const b = document.createElement('button'); b.className = k === ptab ? 'on' : ''; const dn = k === 'shu' ? R().pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : '');
-      b.onclick = () => { if (k === ptab) return; const d = k === 'shu' ? 'slideR' : 'slideL'; if (ptab === 'shu' && k !== 'shu') commit(); ptab = k; sel = null; pauseRender(); const pb = $('pBody'); pb.classList.remove('slideL', 'slideR'); void pb.offsetWidth; pb.classList.add(d); }; tb.appendChild(b); }
-    refreshCoin(); if (ptab === 'ji') loadout($('pBody')); else attrPanel($('pBody'));
+    for (const [k, n] of [['ji', '技能'], ['shu', '属性'], ['zhuang', '装备']]) { const b = document.createElement('button'); b.className = k === ptab ? 'on' : ''; const dn = k === 'shu' ? R().pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : '');
+      b.onclick = () => { if (k === ptab) return; const d = ['ji', 'shu', 'zhuang'].indexOf(k) > ['ji', 'shu', 'zhuang'].indexOf(ptab) ? 'slideR' : 'slideL'; if (ptab === 'shu' && k !== 'shu') commit(); ptab = k; sel = null; pauseRender(); const pb = $('pBody'); pb.classList.remove('slideL', 'slideR'); void pb.offsetWidth; pb.classList.add(d); }; tb.appendChild(b); }
+    refreshCoin(); if (ptab === 'ji') loadout($('pBody')); else if (ptab === 'zhuang') equipPanel($('pBody')); else attrPanel($('pBody'));
   }
   function pauseOpen() { prevFill = null; UI.newDot(false); sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); }
 
-  window.CAMP = { learn, rollXiu, open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
+  window.CAMP = { giveGear, learn, rollXiu, open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
 })();

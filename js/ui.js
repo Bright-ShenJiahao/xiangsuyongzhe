@@ -166,13 +166,11 @@
   $('tpX').onclick = () => $('tpClose').click(); $('tpClose').onclick = () => { overlay('tpanel', false); document.querySelectorAll('.cxtabs, .cxpop, .cxtop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } };
 
   // ================= 备战页 =================
-  let UI_GEAR_GIVE = null;
   const SK2 = { sword: 'whirl', spear: 'sweep', bow: 'fan', staff: 'nova' }, P = { hero: 'm', weapon: 'sword', sk: 0, free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
   const attrsOf = () => { const o = {}; for (const a of DATA.attrs) o[a.id] = DATA.attrBase + (P.free[a.id] || 0); return o; };
   const used = () => Object.values(P.free).reduce((s, v) => s + v, 0);
   const build = () => ({ book1: store.get('book1') || null, book2: store.get('book2') || null, title: store.get('title') || null, hero: P.hero, weapon: P.weapon, skill: P.sk ? SK2[P.weapon] : P.weapon, attrs: attrsOf(), item: store.get('item') || P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
   function openPrep(fresh) {
-    if (fresh) P.tab = 'w';
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
       const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.sk = store.get('wsk') === '1' ? 1 : 0; P.hero = store.get('hero') === 'f' ? 'f' : 'm';
       P.free = {}; P.habitOpts = shuffle(DATA.habits).slice(0, 3).map(h => h.id); P.itemOpts = shuffle(DATA.startItems).slice(0, 3).map(i => i.id);
@@ -181,7 +179,7 @@
     }
     renderPrep(); setTab(P.tab); show('prep');
   }
-  function setTab(t) { P.tab = t; $('prep').dataset.t = t; for (const b of $('ptabs').children) b.classList.toggle('on', b.dataset.t === t); for (const c of document.querySelectorAll('#prep .pc')) c.classList.toggle('on', c.dataset.t === t); for (const b of document.querySelectorAll('.pnTabs button')) b.classList.toggle('on', b.dataset.pt === t); if (t === 'e') renderEq(); }
+  function setTab(t) { P.tab = t; $('prep').dataset.t = t; for (const b of $('ptabs').children) b.classList.toggle('on', b.dataset.t === t); for (const c of document.querySelectorAll('#prep .pc')) c.classList.toggle('on', c.dataset.t === t); }
   for (const b of $('ptabs').children) b.onclick = () => setTab(b.dataset.t);
   const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
   function renderPrep() {
@@ -232,30 +230,6 @@
     $('pTip').textContent = '空技能格要在路上拿技能书来填；第 4、5 格以后靠奖励打开。';
   }
 
-  // ================= 备战页 · 装备页（11/25）：主手＝起手兵器，副手可放盾；长枪/弓/法杖占两格 =================
-  const GEAR_LOAD = () => { let g = {}; try { g = JSON.parse(store.get('gear') || '{}'); } catch (e) {} g.bag = Array.isArray(g.bag) ? g.bag.filter(i => DATA.gear[i]) : []; g.eq = g.eq || {}; return g; };
-  const GEAR_SAVE = g => store.set('gear', JSON.stringify(g));
-  const twoH = () => P.weapon !== 'sword';
-  let eqMsg = '起手只有一把兵器，其余格子都空着。';
-  const gearIcon = it => it.img ? `<img src="${it.img}" alt="">` : `<div class="gl">${it.g}</div>`;
-  function renderEq() {
-    const G = GEAR_LOAD(), box = $('pgEq'), W = DATA.weapons[P.weapon], worn = new Set(Object.values(G.eq));
-    if (twoH()) G.eq.off = null;
-    const slot = (key, label, inner, on, dim) => `<div class="eqS${on ? ' on' : ''}${dim ? ' dim' : ''}" data-s="${key}"><i>${label}</i>${inner}</div>`;
-    const empty = l => `<span>${l}</span><span>空</span>`, it = id => DATA.gear[id];
-    let s = `<div class="eqP"><h4>武器（2 格）</h4><div class="eqG">` +
-      slot('main', '主手', `<span data-ic="${P.weapon}"></span><b>${W.name}</b>`, true) +
-      (twoH() ? slot('off', '副手', `<span data-ic="${P.weapon}"></span><b>${W.name}</b><span>双格占用</span>`, true, true) : G.eq.off ? slot('off', '副手', gearIcon(it(G.eq.off)) + `<b>${it(G.eq.off).name}</b>`, true) : slot('off', '副手', empty('副手'))) +
-      `</div><h4>防具与饰品</h4><div class="eqG">` +
-      Object.entries(DATA.gearSlots).map(([k, n]) => G.eq[k] ? slot(k, n, gearIcon(it(G.eq[k])) + `<b>${it(G.eq[k]).name}</b>`, true) : slot(k, n, empty(n))).join('') +
-      `</div></div><div class="eqP"><h4>背包</h4>` + (G.bag.length ? `<div class="eqB">${G.bag.map(id => { const w = worn.has(id); return `<div class="eqI" data-i="${id}" style="${w ? 'opacity:.4' : ''}">${gearIcon(it(id))}<span>${it(id).name}</span><small>${w ? '已装备' : it(id).tag}</small></div>`; }).join('')}</div>` : '<p class="eqMsg">背包里还没有装备。</p>') + `<p class="eqMsg" id="eqMsg">${eqMsg}</p></div>`;
-    box.innerHTML = `<div class="eqCols">${s}</div>`;
-    for (const e of box.querySelectorAll('[data-ic]')) e.replaceWith(iconCanvas(e.dataset.ic));
-    for (const e of box.querySelectorAll('.eqS')) e.onclick = () => { const k = e.dataset.s; if (k === 'main') { eqMsg = '主手就是起手兵器，到「出发」页换。'; return renderEq(); } if (k === 'off' && twoH()) { eqMsg = '双格武器占着副手，到「出发」页换成剑才能拿盾。'; return renderEq(); } if (!G.eq[k]) return; G.eq[k] = null; GEAR_SAVE(G); eqMsg = '已卸下，回到背包。'; renderEq(); };
-    for (const e of box.querySelectorAll('.eqI')) e.onclick = () => { const id = e.dataset.i, d = DATA.gear[id]; if (worn.has(id)) return; if (d.slot === 'off' && twoH()) { eqMsg = '现在拿的是双格武器，副手用不了盾。'; return renderEq(); } G.eq[d.slot] = id; GEAR_SAVE(G); eqMsg = d.name + '已装备。'; renderEq(); };
-  }
-  for (const b of document.querySelectorAll('.pnTabs button')) b.onclick = () => { P.tab = b.dataset.pt; setTab(P.tab); };
-  UI_GEAR_GIVE = () => { const g = GEAR_LOAD(); g.bag = Object.keys(DATA.gear); GEAR_SAVE(g); renderEq(); };
   $('aReset').onclick = () => { P.free = {}; renderPrep(); };
   $('pBack').onclick = () => show('title');
   const introSeen = () => store.get('introSeen') === '1';
@@ -516,7 +490,7 @@
       if ((e.key === 'Enter' || e.key === ' ') && a && L.contains(a) && !a.matches('button, input')) { e.preventDefault(); e.stopImmediatePropagation(); a.click(); }
     }, true); }
   try { document.querySelector('#hud .hp').appendChild($('coins')); } catch (e) {}   /* 11/25 铜钱挪到血条下面、等级右边，和等级同一种框 */
-  window.UI = { giveGear: () => UI_GEAR_GIVE && UI_GEAR_GIVE(), openPrep, slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
+  window.UI = { openPrep, slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   /* 11/25 加载完：只剩发光的 logo，玩家点一下（浏览器规定点过才能放 BGM）→ 「进入游戏」冒出来 */
   function titleGate() { const t = $('title'); if (t.dataset.gated) return; t.dataset.gated = 1; t.classList.add('gate');
