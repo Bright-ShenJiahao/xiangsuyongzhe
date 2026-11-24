@@ -4,7 +4,7 @@
   const IW = 1672, IH = 941;
   const P = { moon: [663, 124, 150], torch: [[140, 167], [383, 222]], gem: [351, 355], crystal: [639, 264] };
   const flies = Array.from({ length: 10 }, () => ({ x: Math.random() * IW * .62, y: 560 + Math.random() * 360, p: Math.random() * 7, s: .4 + Math.random() * .8, r: 1 + Math.random() * 1.6 }));
-  const FL = Object.assign(new Image(), { src: 'art/fx/map/torch.webp' }), FLP = [[140, 182, 64], [385, 243, 50]];   // 11/23 火把：8 帧火焰序列盖在原画的火上（底边 x, y, 高）
+  const FL = Object.assign(new Image(), { src: 'art/fx/map/torch.webp' }), FLP = [[140, 184, 78], [385, 246, 62]];   // 11/23 火把：8 帧火焰序列盖在原画的火上（底边 x, y, 高）
   let cv, g, run = false, t0 = 0; const bgImg = new Image(); bgImg.onload = () => { t0 = performance.now(); }; bgImg.src = 'art/title/art13.webp';   // 11/22 主图先出来，光影等主图加载完再 1 秒淡入
   function rect() {   // 背景图在屏幕上的位置和缩放
     const el = cv.parentElement, W = el.clientWidth, H = el.clientHeight, cs = getComputedStyle(el), sz = cs.backgroundSize, [bx, by] = cs.backgroundPosition.split(' ').map(v => parseFloat(v) / 100);

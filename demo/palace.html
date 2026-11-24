@@ -27,6 +27,8 @@ canvas{display:block}
 #panel{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6)}
 #panel>div{background:#2a1d14;border:3px solid #c9a15a;padding:14px;width:min(92vw,460px);max-height:80vh;overflow:auto;border-radius:8px}
 .up{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #4a3322}
+.upi{width:40px;height:40px;object-fit:contain;flex:none;image-rendering:auto}
+.up>div{flex:1}
 .up small{display:block;color:#c8b890}
 .up button{padding:6px 10px!important;white-space:nowrap}
 .up button[disabled]{opacity:.4}
@@ -87,7 +89,7 @@ function act(n, k) { if (k === 2) return prep(); if (n === PORTAL) { if (GAME) {
 function panel(n) { $('pt').textContent = n.upName + `　（水晶 ${crystal}）`; const L = $('pl'); L.innerHTML = '';
   if (n.rec) { const d = document.createElement('div'); d.className = 'up'; let R = {}; try { R = JSON.parse(LS.get('rec') || '{}'); } catch (e) {} d.innerHTML = `<div><b>战绩</b><small>最远：${R.best >= 99 ? '通关' : R.best ? '第 ' + R.best + ' 站' : '—'} · 击杀 ${(R.kills || 0).toLocaleString()} · 倒下 ${R.deaths || 0} 次 · 通关 ${R.wins || 0} 次</small></div>`; L.appendChild(d); }
   for (const [id, name, desc, cost] of UP[n.up]) { const lv = owned[id] || 0, max = cost.length, c = cost[lv], d = document.createElement('div'); d.className = 'up';
-    d.innerHTML = `<div><b>${name}</b> ${'●'.repeat(lv)}${'○'.repeat(max - lv)}<small>${desc}</small></div>`; const b = document.createElement('button'); b.textContent = lv >= max ? '已满' : `💎 ${c}`; b.disabled = lv >= max || crystal < c;
+    d.innerHTML = `<img class="upi" src="art/meta/${id}.png" onerror="this.style.display='none'" alt=""><div><b>${name}</b> ${'●'.repeat(lv)}${'○'.repeat(max - lv)}<small>${desc}</small></div>`; const b = document.createElement('button'); b.textContent = lv >= max ? '已满' : `💎 ${c}`; b.disabled = lv >= max || crystal < c;
     if (SOON.has(id)) { b.textContent = '即将开放'; b.disabled = true; } b.onclick = () => { crystal -= c; owned[id] = lv + 1; if (GAME) { LS.set('crystal', crystal); LS.set('meta', JSON.stringify(owned)); } panel(n); }; d.appendChild(b); L.appendChild(d); }
   if (n.id === 'm') mageShop(L, n);
   $('panel').style.display = 'flex'; }
