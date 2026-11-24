@@ -240,7 +240,7 @@
     const F = $('pfF') || document.getElementById('pfF'), C = document.getElementById('pfC'), M = document.getElementById('pfM'), t0 = performance.now(), D = 1100; pr.style.zIndex = 95; pr.style.filter = 'url(#pixelate)';
     const step = n => { const k = Math.min(1, (n - t0) / D), s = Math.max(2, Math.round(2 + 46 * k * k)); F.setAttribute('x', s / 2); F.setAttribute('y', s / 2); F.setAttribute('width', 1); F.setAttribute('height', 1); C.setAttribute('width', s); C.setAttribute('height', s); M.setAttribute('radius', s / 2); pr.style.opacity = k < .55 ? 1 : Math.max(0, 1 - (k - .55) / .45);
       if (k < 1) requestAnimationFrame(step); else { pr.style.filter = ''; pr.style.opacity = ''; pr.style.zIndex = ''; done(); } }; requestAnimationFrame(step); }
-  function playSummon(go) { const f = $('introF'); f.src = 'demo/intro.html?game&tw&first&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); f.style.display = 'block'; $('prep').style.zIndex = 95; let ready = false, started = false;
+  function playSummon(go) { const f = $('introF'); try { BGM.play(null, 150); } catch (e) {}   /* 首次召唤：圣咏戛然而止，安静地上战场 */ f.src = 'demo/intro.html?game&tw&first&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); f.style.display = 'block'; $('prep').style.zIndex = 95; let ready = false, started = false;
     const kick = () => { if (started || !ready) return; started = true; pixelOut(() => { try { f.contentWindow.postMessage('summon', '*'); } catch (e) {} }); };
     f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} ready = true; setTimeout(kick, 400); };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
@@ -428,11 +428,11 @@
   function hubMsgs(f, go) { const on = e => { if (e.data === 'toTower') { f.src = 'demo/intro.html?game&visit&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); return; }
       if (e.data === 'toPalace') { f.src = f.dataset.pal + '&v=' + Date.now(); return; }
       if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
-  function openHub(qs, go) { const f = $('introF'); f.src = 'demo/palace.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + qs + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+  function openHub(qs, go) { const f = $('introF'); try { BGM.play('k1'); } catch (e) {} f.src = 'demo/palace.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + qs + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     f.dataset.pal = f.src.replace(/&v=\d+$/, ''); hubMsgs(f, go); }
   function playTower(r, go) { let seen; try { seen = new Set(JSON.parse(store.get('linesSeen') || '[]')); } catch (e) { seen = new Set(); }
     const L = pickLines(towerCtx(r), seen); for (const l of L) if (!l.rep) seen.add(l.id); store.set('linesSeen', JSON.stringify([...seen]));
-    const say = [].concat(...L.map(l => l.say)), f = $('introF');
+    const say = [].concat(...L.map(l => l.say)), f = $('introF'); try { BGM.play('k1'); } catch (e) {}
     f.src = 'demo/palace.html?game&cry=' + (r.cry || 0) + '&cont=' + (r.cont || 0) + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&L=' + encodeURIComponent(JSON.stringify(say)) + '&v=' + Date.now();   /* 11/24 死后回宫殿（塔顶开场只在第一次） */ f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     f.dataset.pal = f.src.replace(/&v=\d+$/, ''); hubMsgs(f, go); }
   $('rAgain').onclick = () => { BATTLE.stop(); overlay('result', false); const r = lastRes || {};
