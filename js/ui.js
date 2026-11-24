@@ -95,7 +95,7 @@
       { const pend = Object.values(FIG).flat().filter(x => !x.c.complete); if (pend.length) Promise.all(pend.map(x => new Promise(r => { x.c.addEventListener('load', r); x.c.addEventListener('error', r); }))).then(() => { if (d.isConnected) document.querySelector('[data-panel="codex"]').click(); }); }
       anims.forEach((a, i) => { a.i = i; draw(a); }); const tm = setInterval(() => { if (!d.isConnected) return clearInterval(tm); anims.forEach(a => { a.i++; draw(a); }); }, 400);   // 11/23 原地小幅待机（铃兰式）
       return d; }],
-    set: ['设置', () => { const d = document.createElement('div'); d.innerHTML = '<p style="color:#a89878">音量等设置以后加。</p>'; return d; }],
+    set: ['设置', () => { const d = document.createElement('div'); const b = document.createElement('button'); b.className = 'btn'; const lab = () => b.textContent = '音效：' + (SFX.on ? '开' : '关'); lab(); b.onclick = () => { SFX.on = !SFX.on; lab(); if (SFX.on) SFX.play('pick'); }; d.appendChild(b); return d; }],   // 11/24 音效开关
     help: ['帮助', () => { const d = document.createElement('div'); d.innerHTML = `<p>· 深夜两点，你被吸进了游戏机。打倒首领才能回去。</p>
       <p>· 移动：${touch ? '按住屏幕拖动' : 'WASD 或方向键'}；翻滚：${touch ? '右下角按钮' : '空格'}（翻滚时不会受伤）。</p>
       <p>· 技能按技能栏的顺序轮流自动放出，你只管走位。</p>
