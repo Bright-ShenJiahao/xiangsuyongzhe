@@ -1386,3 +1386,7 @@ body:not(.touch) #bRoll .pips { font-size: 9px; bottom: 3px; letter-spacing: 2px
 .pnL { overflow: visible !important; clip-path: inset(0 -80% 0 0) !important; }
 
 .eqD .slot .sil { width: 74%; max-height: 78%; image-rendering: pixelated; opacity: .42; }
+
+.eqD .slot.eqghost { cursor: default; }
+
+.eqD .slot canvas.ghost, .eqD .slot img.ghost { opacity: .35 !important; filter: grayscale(.5); }

@@ -311,7 +311,7 @@
     const cellOf = (key, label, area) => {   // 装备格：用技能栏同款 .slot
       let inner = `<canvas class="sil" data-sil="${key}" width="16" height="16"></canvas>`, cls = 'slot', dim = false;
       if (key === 'main') { cls += ' has full'; inner = '<span data-ic="' + wp + '"></span><span>' + W.name + '</span>'; }
-      else if (key === 'off' && two) { cls += ' has full'; dim = true; inner = '<span data-ic="' + wp + '"></span><span>双格占用</span>'; }
+      else if (key === 'off' && two) { cls += ' eqghost'; inner = '<span class="ghost" data-ic="' + wp + '"></span>'; }
       else if (G.eq[key]) { cls += ' has full'; inner = gearIcon(it(G.eq[key])) + '<span>' + it(G.eq[key]).name + '</span>'; }
       return `<div class="${cls}${dim ? ' eqdim' : ''}" data-s="${key}" style="grid-area:${area}"><u>${label}</u>${inner}</div>`;
     };
@@ -320,7 +320,7 @@
       cellOf('main', '主手', 'm') + cellOf('helm', '头盔', 'h') + cellOf('off', '副手', 'o') + cellOf('armor', '铠甲', 'a') + cellOf('acc', '配饰', 'c') + cellOf('boots', '鞋子', 'b') + cellOf('belt', '腰带', 'e') +
       `</div><p class="eqMsg">${eqMsg}</p></div><div class="lor"><h4>物品栏 <small>点一下装备</small></h4><div class="bag">` +
       Array.from({ length: cells }, (_, i) => { const id = G.bag[i]; if (!id) return '<div></div>'; const w = worn.has(id); return `<div class="has full eqI${w ? ' eqdim' : ''}" data-i="${id}" title="${it(id).name}（${it(id).tag}）">${gearIcon(it(id))}<i style="color:#ffd860">${w ? '已装' : ''}</i><em class="bk" style="font-style:normal;font-size:10px;color:#fff3d0;position:absolute;left:3px;bottom:0">${it(id).name}</em></div>`; }).join('') + `</div></div></div>`;
-    for (const e of box.querySelectorAll('[data-ic]')) e.replaceWith(UI.icon(e.dataset.ic));
+    for (const e of box.querySelectorAll('[data-ic]')) { const n = UI.icon(e.dataset.ic); if (e.classList.contains('ghost')) n.classList.add('ghost'); e.replaceWith(n); }
     drawSil(box);
     const redo = m => { eqMsg = m; equipPanel(box); };
     for (const e of box.querySelectorAll('.eqD .slot')) e.onclick = () => { const k = e.dataset.s; if (k === 'main') return redo('主手就是本局的兵器，局内不能换。'); if (k === 'off' && two) return redo('双格武器占着副手，只有拿剑才能放盾。'); if (!G.eq[k]) return; G.eq[k] = null; gearSave(G); redo('已卸下，回到物品栏。'); };
