@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>老电视 开机 / 关机 对比</title>
+<style>html,body{margin:0;height:100%;background:#111;font-family:sans-serif;color:#fff}#bg{position:fixed;inset:0;background:url(../art/hub/palace.webp) center/cover;}#b2{position:fixed;inset:0;background:#2a1d4a url(../art/title/title.webp) center/cover;display:none}
+#bar{position:fixed;left:0;right:0;bottom:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;z-index:100000}button{font:16px sans-serif;padding:10px 16px;border:2px solid #ffd77a;background:#2b2013;color:#ffe9a8;border-radius:6px}#h{position:fixed;top:10px;left:0;right:0;text-align:center;text-shadow:0 1px 3px #000;z-index:5}</style>
+<div id="bg"></div><div id="h">A 开机：进入游戏用　B 关机：退回主界面用　（有声音，先点一下页面）</div>
+<div id="bar"><button id="a">开机 ▶</button><button id="b">关机 ■</button><button id="c">关机 → 开机（退回主界面）</button></div>
+<script src="../js/tv.js"></script><script>
+const $=i=>document.getElementById(i),bg=$('bg');
+$('a').onclick=()=>{bg.style.visibility='hidden';TV.on(()=>{bg.style.visibility='visible'});};
+$('b').onclick=()=>{bg.style.visibility='visible';TV.off(()=>setTimeout(()=>{TV.clear();bg.style.visibility='visible'},700));};
+$('c').onclick=()=>{bg.style.visibility='visible';TV.off(()=>{bg.style.visibility='hidden';TV.on(()=>{bg.style.visibility='visible'})});};
+if(location.hash==='#auto')setTimeout(()=>$('a').click(),100);
+</script>
