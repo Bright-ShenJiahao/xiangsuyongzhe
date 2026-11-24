@@ -11,7 +11,7 @@
   const touch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window; if (touch) document.body.classList.add('touch');
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-  function show(id) { screen = id; try { BGM.scene(id); } catch (e) {} if (id === 'title') setTimeout(() => { try { contShow(); } catch (e) {} }); for (const e of document.querySelectorAll('.scr')) if (!e.classList.contains('over')) e.classList.toggle('on', e.id === id || (id === 'battle' && e.id === 'hud')); }
+  function show(id) { screen = id; try { BGM.scene(id); if (id === 'prep' && store.get('introSeen') !== '1') BGM.play('h1'); } catch (e) {} if (id === 'title') setTimeout(() => { try { contShow(); } catch (e) {} }); for (const e of document.querySelectorAll('.scr')) if (!e.classList.contains('over')) e.classList.toggle('on', e.id === id || (id === 'battle' && e.id === 'hud')); }
   const overlay = (id, on) => $(id).classList.toggle('on', on);
 
   // ================= 像素小图标（16×16） =================

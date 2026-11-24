@@ -93,7 +93,7 @@ async function play() { const id = ++RUN; $('play').style.display = 'none'; rese
              ['g2', 'scale(1.16) translate(2%, 2%)', 'scale(1.05)', ['直到有一天，这盘卡带被拿去违规烧录——', '别的游戏里的怪物，被硬塞了进来。']],
              ['g2b', 'scale(1.0)', 'scale(1.1) translate(-1%, 0)', ['数据裂开的地方，哥布林占了森林，', '吸血鬼占了古城，', '兽人霸占了草原……']],
              ['g3', 'scale(1.06) translate(0, 3%)', 'scale(1.14) translate(0, -3%)', ['公主露米娜在最后的神殿里发出呼唤——', '呼唤顺着卡带，传到了屏幕的另一边。']]];
-  for (const [pg, a, b, lines] of P) { if (id !== RUN) return; const el = $(pg); el.classList.add('on'); if (GAME) { try { parent.BGM.play(pg === 'g1' ? 't1' : 'u1'); } catch (e) {} }  /* 剧情配乐：第1张轻快，2~4张不安（第4张的圣歌到货后换） */ kb(el.querySelector('.ill'), a, b, lines.length * 3200 + 1500); await wait(900);
+  for (const [pg, a, b, lines] of P) { if (id !== RUN) return; const el = $(pg); el.classList.add('on'); if (GAME) { try { parent.BGM.play(pg === 'g1' ? 't1' : pg === 'g3' ? 'h1' : 'u1'); } catch (e) {} }  /* 剧情配乐：第1张轻快，2~4张不安（第4张的圣歌到货后换） */ kb(el.querySelector('.ill'), a, b, lines.length * 3200 + 1500); await wait(900);
     for (let li = 0; li < lines.length; li++) { const l = lines[li]; if (id !== RUN) return; if (pg === 'g2b') MK.go(li); await type($('cap'), l, id); await wait(1500); } if (pg === 'g2b') { MK.go(3); await wait(900); } $('cap').textContent = ''; if (pg !== 'g3') { el.classList.remove('on'); await wait(700); } }
   if (id !== RUN) return; if (QS.has('hub')) { const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); return done(); } tower(id); }   // 11/24 不是第一次：剧情播完白光 → 宫殿
 // 塔顶：白光淡入 → 对话 → 开门 → 走进门（11/24 长按跳过：故事书跳到这里；这里再长按 = 跳过对话直接开门）
