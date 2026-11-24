@@ -58,16 +58,16 @@ const NPC = [
   { id: 'p', name: '露米娜', x: 235, y: 330, kind: 'princess', av: PORT.p, lines: ['你回来了。时空门就在我身边，准备好了就出发吧。', '王座……父王走后，一直空着。'], up: 'p', upName: '公主的祝福' },
   { id: 'm', name: '大法师', x: 800, y: 650, kind: 'mage', av: PORT.mage, lines: ['你带回来的那些技能书，我研究过了。', '水晶给我，我能让你的法术更快成形。'], up: 'm', upName: '大法师的研究' },
   { id: 'c', name: '大臣', x: 320, y: 650, kind: 'minister', av: PORT.mage, lines: ['老臣是王国的大臣，国库和账本都归我管。', '勇者大人的战绩，老臣一笔一笔都记着呢。', '国库空了……水晶给老臣，老臣替您打点。'], up: 'c', upName: '国库', rec: 1 },
-  { id: 's', name: '卫队长', x: 380, y: 1080, kind: 'captain', av: PORT.guard, lines: ['我是卫队长。想学翻滚和闪避，站过来。', '他们几个只会站岗，真本事得找我。', '又回来了？来，再练一遍。'], up: 's', upName: '卫队长的训练' },   // 11/24 金披风、个头大一点：教技能的人
+  { id: 's', name: '卫队长', x: 380, y: 800, kind: 'captain', av: PORT.guard, lines: ['我是卫队长。想学翻滚和闪避，站过来。', '他们几个只会站岗，真本事得找我。', '又回来了？来，再练一遍。'], up: 's', upName: '卫队长的训练' },   // 11/24 金披风、个头大一点：教技能的人
   { id: 's2', name: '士兵乙', x: 740, y: 1080, kind: 'guard', av: PORT.guard, lines: ['墙不够刻了。', '队长今天心情不错。'] },
   { id: 's3', name: '士兵丙', x: 380, y: 940, kind: 'guard', av: PORT.guard, lines: ['他又回来了。', '站岗好无聊。'] },
   { id: 's4', name: '士兵丁', x: 740, y: 940, kind: 'guard', av: PORT.guard, lines: ['屏幕那一边，大概没有哥布林吧。', '要不要给他刻个名字在墙上？'] },
-  { id: 's5', name: '士兵戊', x: 380, y: 800, kind: 'guard', av: PORT.guard, lines: ['别看我，看前面。', '公主殿下在上面等您。'] },
+  { id: 's5', name: '士兵戊', x: 380, y: 1080, kind: 'guard', av: PORT.guard, lines: ['别看我，看前面。', '公主殿下在上面等您。'] },
   { id: 's6', name: '士兵己', x: 740, y: 800, kind: 'guard', av: PORT.guard, lines: ['您的剑……真的能用吗？', '我也想去森林，可是队长不让。'] },
 ];
 const PORTAL = { x: 878, y: 300 }, DOOR = { x: 561, y: 1330 }, THRONE = { x: 561, y: 260 };
 const hero = { x: 561, y: 1085, f: 1, mv: 0 }, K = {}; let go1 = 0, joy = null, near = null, cam = { x: 561, y: 1085 }, T = 0, last = 0, msg = '', msgT = 0;
-const walk = (x, y) => y > 240 && (y < 900 ? x > 118 && x < 1004 : x > 25 && x < 1097) && y < 1100 && !(x > 340 && x < 780 && y < 430) &&   /* 11/24 新宫殿（4:5）：两侧柱子、王座高台、下方门洞 */ !NPC.some(n => Math.hypot(n.x - x, (n.y - y) * 1.6) < 34);
+const walk = (x, y) => y > 240 && (y < 900 ? x > 118 && x < 1004 : x > 25 && x < 1097) && y < 1300 && !(x > 340 && x < 780 && y < 430) &&   /* 11/24 新宫殿（4:5）：两侧柱子、王座高台、下方门洞 */ !NPC.some(n => Math.hypot(n.x - x, (n.y - y) * 1.6) < 34);
 addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'KeyE' && near) { near.ring = 1; } }); addEventListener('keyup', e => K[e.code] = 0);
 addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (t.target === cv && t.clientX < innerWidth * .6) joy = { id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0 }; }, { passive: true });
 addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy && t.identifier === joy.id) { joy.dx = t.clientX - joy.x; joy.dy = t.clientY - joy.y; } }, { passive: true });
@@ -141,7 +141,7 @@ function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s0 = 2.2;
 function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; T += dt; requestAnimationFrame(loop);
   let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0); if (joy && Math.hypot(joy.dx, joy.dy) > 8) { x = joy.dx; y = joy.dy; }
   const l = Math.hypot(x, y); hero.mv = l > 0; if (l && $('panel').style.display !== 'flex') { x /= l; y /= l; const sp = 300 * dt; if (x) hero.f = x > 0 ? 1 : -1; if (walk(hero.x + x * sp, hero.y)) hero.x += x * sp; if (walk(hero.x, hero.y + y * sp)) hero.y += y * sp; }
-  if (hero.y > 1095 && Math.abs(hero.x - 561) < 110 && !msgT) { msg = '大门紧闭……门缝外全是乱码。'; msgT = 2.5; } if (msgT > 0) msgT -= dt;
+  if (hero.y > 1180 && Math.abs(hero.x - 561) < 120 && !msgT) { msg = '大门紧闭……门缝外全是乱码。'; msgT = 2.5; } if (msgT > 0) msgT -= dt;
   if (GAME && Math.hypot(hero.x - PORTAL.x, (hero.y - PORTAL.y) * 1.4) < 40 && !go1) { go1 = 1; parent.postMessage('introDone', '*'); }
   // 11/24 靠近 NPC：自动说一句；站在旁边转满一圈（2 秒）自动打开功能界面；离开再回来才会再开
   { const open = $('panel').style.display === 'flex'; let nb = null, bd = 120; for (const o of NPC) { const d = Math.hypot(o.x - hero.x, (o.y - hero.y) * 1.4); if (d < bd) { bd = d; nb = o; } }
@@ -154,7 +154,8 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
   if (typeof gamePortal === 'function') { g.save(); g.translate(PORTAL.x, PORTAL.y + 10); g.scale(1.5, 1.5); gamePortal(g, 0, 0, T, 1, RUN_ON || CONT ? ['继续上次挑战', '哥布林森林'] : null); g.restore(); g.imageSmoothingEnabled = false; }
   const L = NPC.map(n => ({ y: n.y, n })).concat([{ y: hero.y, h: 1 }]).sort((a, b) => a.y - b.y);
   for (const e of L) { if (e.n) { const n = e.n; if (n === near && n.ring > 0) { g.save(); g.lineWidth = 5; g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, 0, 7); g.stroke(); g.strokeStyle = '#ffd77a'; g.shadowColor = '#ffd77a'; g.shadowBlur = 10; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * n.ring); g.stroke(); g.restore(); } drawNPC(n); } else { const W0 = LS.get('weapon') || 'sword', run = hero.mv, n0 = run ? 'run' : 'idle', c0 = Math.max(1, (SPR.count && SPR.count(SPR.heroSet(HS, W0), n0)) || (run ? 4 : 1));   // 11/24 宫殿里也有跑步帧
-    try { SPR.drawHero(g, n0, Math.floor(T * (run ? 10 : 2)) % c0, hero.x, hero.y, hero.f < 0, 2, { w: W0, c: HS }); } catch (e) { g.fillStyle = '#fff'; g.fillRect(hero.x - 10, hero.y - 50, 20, 50); } } }
+    g.save(); if (hero.y > 1110) g.globalAlpha = .45;   /* 11/24 走到下面的墙后面：半透明 */
+    try { SPR.drawHero(g, n0, Math.floor(T * (run ? 10 : 2)) % c0, hero.x, hero.y, hero.f < 0, 2, { w: W0, c: HS }); } catch (e) { g.fillStyle = '#fff'; g.fillRect(hero.x - 10, hero.y - 50, 20, 50); } g.restore(); } }
   drawBub();
   if (OV) { OV.t += 1 / 60; const d = devicePixelRatio || 1, t = OV.t; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = `rgba(0,0,0,${Math.min(.85, 3.2 - t)})`; g.fillRect(0, 0, VW, VH); g.textAlign = 'center';   // 11/24 还有命：GAME OVER 被划掉 → 游戏还没完！！！
     if (t < 1.1) { g.font = `bold ${44 * d}px sans-serif`; g.fillStyle = '#e84a4a'; g.fillText('GAME OVER', VW / 2, VH * .45); if (t > .55) { const k = Math.min(1, (t - .55) / .25), w = g.measureText('GAME OVER').width; g.fillStyle = '#ffe9a8'; g.fillRect(VW / 2 - w / 2 - 10, VH * .45 - 16 * d, (w + 20) * k, 6 * d); } }
