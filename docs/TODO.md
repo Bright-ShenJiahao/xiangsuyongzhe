@@ -83,3 +83,8 @@
 - 局外强化（先做公主+大法师 6 项）：续命、生命、复活回血 / 开局技能书、升级经验 −5%、老虎机免费重转。士兵/商人组以后。
 - 据点改成宫殿（城堡内部），塔顶保留为出发点。先设计宫殿布局，再出图。
 - 地图：每站一张手绘整图（1.5–2 屏），每张 1–2 个地形特点（巨石、溪流两桥、环形树丛、打谷场草垛、营地通道、王座板块房）。
+
+## 字体子集（11/24 记）
+- kai.woff2 / fpixel.woff2 都是子集字体：改了界面或台词文字后必须重跑，否则新字会显示成别的字体。
+- 楷体：npm pack lxgw-wenkai-screen-webfont 解压到 /tmp/wk → python3 tools/kai_subset.py /tmp/wk/files
+- 像素字：从 tools/fonts/FusionPixel12-SC.woff 按 js/ demo/ css/ index.html 抽字写 art/font/fpixel.woff2；改完把引用的 ?v= 加 1。

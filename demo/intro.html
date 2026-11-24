@@ -2,7 +2,7 @@
 <html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>像素勇者 · 开场演示</title>
 <style>
-@font-face { font-family: WenKai; src: url(../art/font/kai.woff2?v=3); }
+@font-face { font-family: WenKai; src: url(../art/font/kai.woff2?v=4); }
 html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: WenKai, serif; }
 #st { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
 .pg { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s; overflow: hidden; }
@@ -177,8 +177,8 @@ const S1 = CW / 1672, BUMP = [{ who: '露米娜', x: 835 * S1, y: 430 * S1, L: [
   { who: '士兵甲', x: 505 * S1, y: 418 * S1, L: ['勇者大人！……您看起来好普通。', '森林那边，我们已经三天没睡了。', '别挤，我在站岗。'] },
   { who: '士兵乙', x: 1165 * S1, y: 418 * S1, L: ['门在下面，不在我身上。', '我也想去，可是队长不让。', '您的剑……是玩具吗？'] }];
 const hitNPC = (x, y) => BUMP.find(o => Math.hypot((x - o.x) / 14, (y - o.y) / 7) < 1);
-function bumpSay(o) { const n = performance.now(); if (n - (o.t || -9e9) < 2000) return; o.t = n; o.i = ((o.i == null ? -1 : o.i) + 1) % o.L.length;
-  const b = $('bub'), c = $('pc').getBoundingClientRect(); b.textContent = o.L[o.i]; b.style.left = c.left + o.x / CW * c.width + 'px'; b.style.top = c.top + (o.y - 62) / CH * c.height + 'px'; b.style.display = 'block'; clearTimeout(bumpSay.tm); bumpSay.tm = setTimeout(() => b.style.display = 'none', 1800); }
+function bumpSay(o) { const n = performance.now(); if (n - (o.t || -9e9) < 3500) return; o.t = n; o.i = ((o.i == null ? -1 : o.i) + 1) % o.L.length;
+  const b = $('bub'), c = $('pc').getBoundingClientRect(); b.textContent = o.L[o.i]; b.style.left = c.left + o.x / CW * c.width + 'px'; b.style.top = c.top + (o.y - 62) / CH * c.height + 'px'; b.style.display = 'block'; clearTimeout(bumpSay.tm); bumpSay.tm = setTimeout(() => b.style.display = 'none', 3500); }
 function stepWalk() { const n = performance.now(), dt = Math.min(.05, (n - (wLast || n)) / 1000); wLast = n; let dx = (KEY.KeyD || KEY.ArrowRight ? 1 : 0) - (KEY.KeyA || KEY.ArrowLeft ? 1 : 0), dy = (KEY.KeyS || KEY.ArrowDown ? 1 : 0) - (KEY.KeyW || KEY.ArrowUp ? 1 : 0);
   if (touchP) { const c = $('pc').getBoundingClientRect(), tx = (touchP.clientX - c.left) / c.width * CW, ty = (touchP.clientY - c.top) / c.height * CH; dx = tx - walk.x; dy = ty - walk.y; }
   const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv) { const nx = walk.x + dx / l * 110 * dt, ny = walk.y + dy / l * 110 * dt; let o = hitNPC(nx, walk.y); if (!o) walk.x = nx; else bumpSay(o); o = hitNPC(walk.x, ny); if (!o) walk.y = ny; else bumpSay(o); }

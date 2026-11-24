@@ -2,7 +2,7 @@
 <html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>局外 · 宫殿据点灰盒</title>
 <style>
-@font-face { font-family: WenKai; src: url(art/font/kai.woff2?v=3); }
+@font-face { font-family: WenKai; src: url(art/font/kai.woff2?v=4); }
 #bub { position: fixed; z-index: 7; display: none; transform: translate(-50%, -100%); background: rgba(250,244,230,.96); border: 3px solid #3a2814; color: #3a2814; font: clamp(15px, 2vw, 22px) WenKai, serif; padding: 4px 12px; white-space: nowrap; pointer-events: none; }
 #bub::after { content: ''; position: absolute; left: 50%; top: 100%; width: 10px; height: 8px; margin-left: -5px; background: #3a2814; }
 #panel, #panel * { font-family: WenKai, serif; }
@@ -59,7 +59,7 @@ addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy &
 addEventListener('touchend', () => joy = null);
 const $ = id => document.getElementById(id);
 // 11/24 对话 = 说话人头上冒气泡（和塔顶一样），不用头像框
-let BUB = null, OV = null; function say(n, s) { const o = NPC.find(q => q.id === n.id) || n; BUB = { n: o, txt: s, t: 0, T: Math.max(2.4, s.length * .18) }; }   // 11/24 气泡：和塔顶一样的样式和楷体字，跟着人物
+let BUB = null, OV = null; function say(n, s) { const o = NPC.find(q => q.id === n.id) || n; BUB = { n: o, txt: s, t: 0, T: Math.max(4.5, 1.5 + s.length * .25) }; }   // 11/24 气泡：和塔顶一样的样式和楷体字，跟着人物
 function drawBub() { const b = $('bub'); if (!BUB) { b.style.display = 'none'; return; } BUB.t += 1 / 60; if (BUB.t > BUB.T) { BUB = null; b.style.display = 'none'; return; } const n = BUB.n, d = devicePixelRatio || 1;
   b.textContent = BUB.txt.slice(0, Math.ceil(BUB.t * 16)); b.style.left = (n.x * Z + VW / 2 - cam.x * Z) / d + 'px'; b.style.top = ((n.y - (n.kind === 'princess' ? 95 : 108)) * Z + VH / 2 - cam.y * Z) / d + 'px'; b.style.display = 'block'; }
 function act(n, k) { if (k === 2) return prep(); if (n === PORTAL) { if (GAME) { parent.postMessage('introDone', '*'); return; } msg = '走进时空门 → 出发（demo 到此为止）'; msgT = 2.5; return; } if (k === 1 && n.up) return panel(n); n.li = ((n.li || 0) + 1) % n.lines.length; say(n, n.lines[n.li]); }
@@ -96,7 +96,7 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
   if (GAME && Math.hypot(hero.x - PORTAL.x, (hero.y - PORTAL.y) * 1.4) < 40 && !go1) { go1 = 1; parent.postMessage('introDone', '*'); }
   // 11/24 靠近 NPC：自动说一句；站在旁边转满一圈（2 秒）自动打开功能界面；离开再回来才会再开
   { const open = $('panel').style.display === 'flex'; let nb = null, bd = 120; for (const o of NPC) { const d = Math.hypot(o.x - hero.x, (o.y - hero.y) * 1.4); if (d < bd) { bd = d; nb = o; } }
-    if (nb !== near) { if (near) { near.ring = 0; near.done = 0; } near = nb; if (nb && T - (nb.spT || -99) > 5) { nb.spT = T; nb.li = ((nb.li == null ? -1 : nb.li) + 1) % nb.lines.length; say(nb, nb.lines[nb.li]); } }
+    if (nb !== near) { if (near) { near.ring = 0; near.done = 0; } near = nb; if (nb && T - (nb.spT || -99) > 7) { nb.spT = T; nb.li = ((nb.li == null ? -1 : nb.li) + 1) % nb.lines.length; say(nb, nb.lines[nb.li]); } }
     if (near && !open && !near.done && (near.up || near.id === 'p')) { near.ring = (near.ring || 0) + dt / 2; if (near.ring >= 1) { near.done = 1; near.ring = 0; if (near.id === 'p' && GAME && !RUN_ON) prep(); else if (near.up) panel(near); } } }
   cam.x += (Math.max(Math.min(hero.x, W - VW / Z / 2), VW / Z / 2) - cam.x) * .1; if (VW / Z >= W) cam.x = W / 2; cam.y += (Math.max(Math.min(hero.y - 60, H - VH / Z / 2), VH / Z / 2) - cam.y) * .1;
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0c0908'; g.fillRect(0, 0, VW, VH); g.setTransform(Z, 0, 0, Z, Math.round(VW / 2 - cam.x * Z), Math.round(VH / 2 - cam.y * Z));
