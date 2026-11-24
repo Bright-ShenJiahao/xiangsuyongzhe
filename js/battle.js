@@ -73,10 +73,11 @@
     hero.critP = c.critP; hero.critM = c.critM; hero.critMulP = c.critMulP; hero.critMulM = c.critMulM; hero.eva = c.eva; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.2 : 1.5; hero.rollN0 = 2 + (OB('erduan') ? 1 : 0); if (hero.rollN == null || hero.rollN > hero.rollN0) hero.rollN = hero.rollN0; /* 11/24 翻滚 2 格（二段滚 3 格），每格 1.5 秒回 */ hero.A = c.A; hero.fx = c.fx;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20%（11/23 修：hero.A / hero.fx 之前被注释吞掉了）
     hero.ob = {}; for (const o of [...(RUN.oath || []), ...(RUN.mv || [])]) if (o && DATA.oaths[o.id]) hero.ob[o.id] = DATA.oathLv[Math.min(5, o.lv || 1) - 1];
     m.spd *= 1 + .08 * OB('jifeng'); hero.rollMax *= 1 - .08 * OB('qingyu'); hero.rollMul = 1 + .15 * OB('youlong');
-    { const bk = RUN.slots.filter(x => x && DATA.skills[x.id]), nM = bk.filter(x => DATA.meleeBooks.includes(x.id)).length, nR = bk.filter(x => !DATA.meleeBooks.includes(x.id) && (DATA.skills[x.id].rg || 0) >= 130).length;   // 11/24 近战书越多越耐打，远程书越多越快
-      hero.nM = nM; const pd = (c.pdef || 0) + 6 * nM; hero.pIn = 1 - Math.min(.5, pd / (pd + 100)); m.move *= 1 + .03 * nR; }
+    { const st = DATA.setOf(RUN.slots), F = {}; for (const t of Object.values(st.on)) for (const [k, v] of Object.entries(t[1])) F[k] = (F[k] || 0) + v; hero.setF = F;   // 11/24 流派羁绊
+      if (F.dmg) m.dmg *= 1 + F.dmg; if (hero.fx) for (const k of ['sspd_bow', 'srng_bow', 'sdmg_staff']) if (F[k]) hero.fx[k] = (hero.fx[k] || 0) + F[k];
+      const pd = (c.pdef || 0) + (F.pdef || 0), md = (c.mdef || 0) + (F.mdef || 0); hero.pIn = 1 - Math.min(.5, pd / (pd + 100)); hero.mIn = 1 - Math.min(.5, md / (md + 100)); }
     hero.rollN0 = 2 + (OB('erduan') ? 1 : 0) + (ML('roll3') ? 1 : 0); if (hero.rollN == null || hero.rollN > hero.rollN0) hero.rollN = hero.rollN0; hero.eva += .01 * ML('eva') + (TT().eva || 0); hero.critP += TT().crit || 0; hero.critM += TT().crit || 0; m.move *= 1 + (TT().move || 0); if (hero.fx) hero.fx.coinMul = (hero.fx.coinMul || 0) + (TT().coin || 0); if (TT().take) { hero.pIn *= 1 + TT().take; hero.mIn *= 1 + TT().take; } if (hero.fx && ML('disc')) hero.fx.shop = (hero.fx.shop || 0) - .05 * ML('disc');   // 局外：三格翻滚、闪避
-    const max = Math.round((c.hp + 3 * (G.lv - 1)) * (1 - (RUN.hpCut || 0)) * (1 + .05 * ML('hp')) * (1 + .06 * (hero.nM || 0)) * (1 + (TT().hp || 0))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
+    const max = Math.round((c.hp + 3 * (G.lv - 1)) * (1 - (RUN.hpCut || 0)) * (1 + .05 * ML('hp')) * (1 + ((hero.setF || {}).hp || 0)) * (1 + (TT().hp || 0))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
     return c;
   }
   const banner = (t, T) => { G.banner = { t, T, left: T }; };

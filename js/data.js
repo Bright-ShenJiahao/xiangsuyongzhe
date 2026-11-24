@@ -241,7 +241,13 @@ window.DATA = {
     { id: 'elitehunter', name: '精英猎人', how: '累计击败 50 只哥布林精英', fx: { elite: .12, mob: -.05 }, d: '对精英伤害 +12%<br><span class="bad">对小怪伤害 −5%</span>', need: (R) => (R.elites || 0) >= 50 },
     { id: 'kingbane', name: '哥布林王的克星', how: '打倒哥布林王', fx: { boss: .10, hp: -.05 }, d: '对首领伤害 +10%<br><span class="bad">生命上限 −5%</span>', need: (R) => (R.wins || 0) >= 1 },
   ],
-  // 11/24 近战书：带一本 生命 +6% 物防 +6；远程书：带一本 移速 +3%
+  // 11/24 流派羁绊：技能栏里同一系 2 本 / 4 本触发（剑 生命+伤害，枪 生命+物防，弓 出手快+射程，法杖 法术伤害+魔防）
+  sets: {
+    '剑': [[2, { hp: .08, dmg: .06 }, '生命 +8%，伤害 +6%'], [4, { hp: .18, dmg: .15 }, '生命 +18%，伤害 +15%']],
+    '枪': [[2, { hp: .08, pdef: 10 }, '生命 +8%，物防 +10'], [4, { hp: .18, pdef: 25 }, '生命 +18%，物防 +25']],
+    '弓': [[2, { sspd_bow: .08, srng_bow: .15 }, '弓系出手快 8%，射程 +15%'], [4, { sspd_bow: .18, srng_bow: .30 }, '弓系出手快 18%，射程 +30%']],
+    '法杖': [[2, { sdmg_staff: .08, mdef: 10 }, '法杖伤害 +8%，魔防 +10'], [4, { sdmg_staff: .18, mdef: 25 }, '法杖伤害 +18%，魔防 +25']],
+  },
   meleeBooks: ['sword', 'whirl', 'spear', 'sweep', 'storm', 'leap', 'rising', 'hundred', 'flash'],
   // 地图：第一版只开打谷场
   maps: [
@@ -305,6 +311,7 @@ window.DATA.calc = function (b) {
   return out;
 };
 // 能掉 / 能买的书：还没拿到的；第一章初阶、中阶一直有，高阶第 4 站起（精英、小头目随时可能掉），宗师第一章不出
+window.DATA.setOf = function (slots) { const n = {}; for (const x of slots || []) { const S = x && window.DATA.skills[x.id]; if (S) n[S.sys] = (n[S.sys] || 0) + 1; } const on = {}; for (const [sys, L] of Object.entries(window.DATA.sets)) { let t = null; for (const tier of L) if ((n[sys] || 0) >= tier[0]) t = tier; if (t) on[sys] = t; } return { n, on }; };   // 11/24 羁绊统计
 window.DATA.SYSK = { '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff' };
 // 能掉 / 能卖的宝物：武器专属的只在带了这一系技能时出
 window.DATA.itemPool = function (run) { const S = window.DATA.skills, has = new Set([...run.slots, ...run.bag].filter(x => x && (x.kind === 'book' || !x.kind) && S[x.id]).map(x => window.DATA.SYSK[S[x.id].sys])); return window.DATA.startItems.filter(i => i.id !== 'purse' && (!i.w || has.has(i.w))); };

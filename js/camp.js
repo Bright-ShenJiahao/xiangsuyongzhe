@@ -12,7 +12,7 @@
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
     // 出售：书半价（22 / 34 / 52 → 11 / 17 / 26），宝物拿基价的 35%
-    if (o.kind === 'book') { const S = SK[o.id]; return { tier: S.tier, icon: UI.bookOf(o.id), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc, brief: S.brief, sell: Math.round(DATA.tierPrice[S.tier] * .5) }; }   // 11/22：书卖掉 = 半价（不管用没用过）
+    if (o.kind === 'book') { const S = SK[o.id], st = DATA.setOf(R().slots), n = st.n[S.sys] || 0, L = DATA.sets[S.sys], nx = L && L.find(t => t[0] > n); return { tier: S.tier, icon: UI.bookOf(o.id), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc + (L ? `<br><small class="${st.on[S.sys] ? 'on' : 'off'}">${S.sys}系羁绊 ${n}/${nx ? nx[0] : 4}${nx ? '：' + nx[2] : '（已满）'}</small>` : ''), brief: S.brief, sell: Math.round(DATA.tierPrice[S.tier] * .5) }; }   // 11/22：书卖掉 = 半价（不管用没用过）
     if (o.kind === 'oup') return { icon: UI.pi('reroll'), name: '印记升级 +1', sub: '裂缝里的符文', desc: '随机让一个已装备、未满级的誓约印记升 1 级', sell: 0 };
     if (o.kind === 'oath') { const O = DATA.oaths[o.id], L = Math.min(5, o.lv || 1), ic = UI.pi('oath/' + o.id); ic.classList.add('oimg');
       return { icon: ic, name: O.name, sub: `${O.mv ? '身法印记' : '誓约印记'} · Lv${L}`, desc: O.d(DATA.oathLv[L - 1]) + (L < 5 ? `<br><small class="off">下一级：${O.d(DATA.oathLv[L])}</small>` : '<br><small class="on">已满级</small>'), sell: 10 + 6 * L }; }
@@ -56,6 +56,7 @@
   function loadout(box) {
     const r = R(), h = B().hero(); box.innerHTML = '';
     document.querySelectorAll('.loinfo.pop').forEach(e => e.remove()); const wrap = document.createElement('div'); wrap.className = 'lo gearlo'; box.appendChild(wrap);
+    { const st = DATA.setOf(r.slots), bar = document.createElement('div'); bar.className = 'setbar'; bar.innerHTML = Object.keys(DATA.sets).map(sys => { const n = st.n[sys] || 0, t = st.on[sys], nx = DATA.sets[sys].find(x => x[0] > n); return n ? `<span class="${t ? 'on' : ''}"><b>${sys} ${n}/${nx ? nx[0] : 4}</b> ${t ? t[2] : '再 ' + (nx[0] - n) + ' 本：' + nx[2]}</span>` : ''; }).join(''); if (bar.innerHTML) wrap.before(bar); }   // 11/24 羁绊一览
     const L = document.createElement('div'), Rt = document.createElement('div'); L.className = 'lol'; Rt.className = 'lor'; wrap.append(L, Rt);
     let cyc = 0; r.slots.slice(0, r.open).forEach(s => { if (s) cyc += B().skillInfo(s).cd; });
     L.insertAdjacentHTML('beforeend', `<h4>技能栏 <small>按 1→2→3 顺序轮流自动出手 · 一轮约 ${cyc.toFixed(1)} 秒</small></h4>`);
