@@ -129,6 +129,7 @@
     const r = R(), h = B().hero(); box.innerHTML = '';
     const items = r.gear.filter(x => x && x.kind === 'item').map(x => ({ id: x.id, lv: x.lv || 1 })), c = DATA.calc({ weapon: r.weapon, attrs: r.attrs, train: B().trainAll(), items, habit: r.habit });
     const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
+    { const T = DATA.titles.find(t => t.id === r.title), d = document.createElement('div'); d.className = 'ttlbar'; d.innerHTML = T ? `<b>称号：${T.name}</b>　${T.d.replace(/<br>/g, '　')}` : '<b>称号：未佩戴</b>　<small>（宫殿里找公主「出发准备」更换）</small>'; if (r.newT && r.newT.length) d.innerHTML += `<br><span class="new">这局新获得：${r.newT.join('、')}（下一局起可佩戴）</span>`; box.appendChild(d); }   // 11/24 称号
     const wrap = document.createElement('div'); wrap.className = 'lo attrlo'; box.appendChild(wrap);
     const L = document.createElement('div'), Rt = document.createElement('div'); L.className = 'lol'; Rt.className = 'lor'; wrap.append(L, Rt);
     L.innerHTML = `<h4>属性 <small>Lv${B().lv()} · 修炼来自公主的光球</small></h4>`;

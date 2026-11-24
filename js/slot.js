@@ -2,7 +2,7 @@
 (function () {
   const PER = ['xsyz-crystal', 'xsyz-meta', 'xsyz-titles', 'xsyz-title', 'xsyz-rec', 'xsyz-linesSeen', 'xsyz-returns', 'xsyz-wins', 'xsyz-hero', 'xsyz-weapon', 'xsyz-introSeen', 'pxyz.save1'];
   const P = Storage.prototype, g0 = P.getItem, s0 = P.setItem, r0 = P.removeItem;
-  let cur = +(g0.call(localStorage, 'xsyz-slot') || 0) || 0;
+  let cur = +(g0.call(localStorage, 'xsyz-slot') || 0) || 1;   // 没选过就当存档 1（调试「直接开打」也记进存档 1）
   const map = k => cur && PER.includes(k) ? 'xsyz-s' + cur + '-' + k.replace(/^xsyz-|^pxyz\./, '') : k;
   P.getItem = function (k) { return g0.call(this, this === localStorage ? map(k) : k); };
   P.setItem = function (k, v) { return s0.call(this, this === localStorage ? map(k) : k, v); };
