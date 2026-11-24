@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>局外 · 哥布林王 板块首领房</title>
+<style>
+html,body{margin:0;height:100%;background:#07060a;overflow:hidden;touch-action:none;color:#eee;font:13px system-ui,sans-serif;user-select:none}
+canvas{display:block}
+#hud{position:fixed;left:8px;top:8px;pointer-events:none;text-shadow:0 1px 2px #000;line-height:1.5;max-width:60vw}
+#bar{position:fixed;left:50%;top:10px;transform:translateX(-50%);width:min(70vw,520px);pointer-events:none;text-align:center;font-weight:bold;color:#ffd77a;text-shadow:0 1px 2px #000}
+#bar div{height:10px;background:#300;border:2px solid #000;margin-top:3px}#bar i{display:block;height:100%;background:#d33}
+#roll{position:fixed;right:24px;bottom:30px;width:84px;height:84px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.4);color:#fff;font-size:15px}
+#roll.full{box-shadow:0 0 10px 3px rgba(255,220,120,.85)}
+#again{position:fixed;right:8px;top:8px;padding:6px 12px;background:#3a2814;border:2px solid #c9a15a;color:#ffe9a8;border-radius:6px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="bar">哥布林王<div><i id="bhp"></i></div></div>
+<div id="hud"></div><button id="roll">翻滚</button><button id="again">重来</button>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+// 11/24 哥布林王首领房（板块版）：中间一大块王座台，左右各一块小台用木桥相连，四周深渊。
+// 勇者自动攻击；空格 / 按钮翻滚（2 格，满格发光）。王的招：砸地（红圈）、冲锋（红线，冲过头会掉下深渊硬直）、
+// 震地波（把勇者往外推——被推下台：掉 10% 血，回到台中间）、召唤（小台上冒出哥布林，过桥来）。半血后二阶段：招更快、冲锋连两次。
+const cv = document.getElementById('c'), g = cv.getContext('2d'); let VW, VH, Z;
+function fit() { const d = devicePixelRatio || 1; cv.width = innerWidth * d; cv.height = innerHeight * d; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; VW = cv.width; VH = cv.height; Z = Math.min(1.2, Math.max(.55, VW / 1500)); } addEventListener('resize', fit); fit();
+const IMG = s => Object.assign(new Image(), { src: s }), F1 = IMG('art/map/forest.webp'), F2 = IMG('art/map/forest2.webp');
+const R = (a, b) => a + Math.random() * (b - a), D = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * 1.3);
+let isl, bridges, hero, king, mobs, fx, nums, tele, T = 0, over = 0, shake = 0, slow = 0;
+function shape(w, h, rr) { const P = []; for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2, c = Math.cos(a), s = Math.sin(a), e = .3, k = Math.pow(Math.pow(Math.abs(c), 2 / e) + Math.pow(Math.abs(s), 2 / e), -e / 2), r = 1 - rr() * .05; P.push([w / 2 + c * k * w / 2 * r, h / 2 + s * k * h / 2 * r]); } return P; }
+function mkIsl(img, sx, sy, w, h, x, y) { let sd = 3; const rr = () => (sd = sd * 16807 % 2147483647) / 2147483647, I = { img, sx, sy, w, h, x, y, P: shape(w, h, rr) };
+  I.path = new Path2D(); I.P.forEach(([px, py], k) => k ? I.path.lineTo(x + px, y + py) : I.path.moveTo(x + px, y + py)); I.path.closePath();
+  const CL = 80, c = document.createElement('canvas'); c.width = w; c.height = h + CL; const q = c.getContext('2d'), P = new Path2D(); I.P.forEach(([px, py], k) => k ? P.lineTo(px, py) : P.moveTo(px, py)); P.closePath();
+  for (let d = CL; d > 0; d -= 2) { q.save(); q.translate(0, d); q.fillStyle = `rgb(${62 - d * .45 | 0},${46 - d * .35 | 0},${32 - d * .25 | 0})`; q.fill(P); q.restore(); }
+  q.save(); q.clip(P); q.drawImage(img, sx, sy, w, h, 0, 0, w, h); q.restore(); q.strokeStyle = 'rgba(20,14,8,.9)'; q.lineWidth = 3; q.stroke(P); I.tex = c; return I; }
+const HT = document.createElement('canvas').getContext('2d');
+function onGround(p) { for (const I of isl) if (HT.isPointInPath(I.path, p.x, p.y)) return true; for (const b of bridges) if (p.x > b.x0 && p.x < b.x1 && Math.abs(p.y - b.y) < 32) return true; return false; }
+function reset() { const M = mkIsl(F1, 120, 250, 1430, 660, 0, 0), L = mkIsl(F2, 300, 380, 420, 300, -640, 180), Rr = mkIsl(F2, 960, 380, 420, 300, 1650, 180);
+  isl = [M, L, Rr]; bridges = [{ x0: -240, x1: 40, y: 330 }, { x0: 1390, x1: 1670, y: 330 }];
+  hero = { x: 715, y: 520, hp: 120, max: 120, f: 1, mv: 0, inv: 0, rollN: 2, rollCd: 0, roll: 0, atk: 0, swing: 0, fallT: 0 };
+  king = { x: 715, y: 240, hp: 900, max: 900, st: 'walk', t: 1.5, f: 1, hit: 0, ph: 1, cnt: 0 }; mobs = []; fx = []; nums = []; tele = []; over = 0; }
+// ---------- 输入 ----------
+const K = {}; let joy = null;
+addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'Space') { e.preventDefault(); roll(); } }); addEventListener('keyup', e => K[e.code] = 0);
+document.getElementById('roll').addEventListener('pointerdown', e => { e.stopPropagation(); roll(); }); document.getElementById('again').onclick = reset;
+addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (t.clientX < innerWidth / 2) joy = { id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0 }; }, { passive: false });
+addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy && t.identifier === joy.id) { joy.dx = t.clientX - joy.x; joy.dy = t.clientY - joy.y; } e.preventDefault(); }, { passive: false });
+addEventListener('touchend', () => joy = null);
+function mv() { let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0); if (joy && Math.hypot(joy.dx, joy.dy) > 8) { x = joy.dx; y = joy.dy; } const l = Math.hypot(x, y); return l ? [x / l, y / l] : [0, 0]; }
+function roll() { const h = hero; if (over || h.roll > 0 || h.rollN < 1 || h.fallT > 0) return; const [x, y] = mv(); h.rvx = x || h.f; h.rvy = y; if (h.rollN === 2) h.rollCd = 1.5; h.rollN--; h.roll = .3; h.inv = Math.max(h.inv, .3); }
+// ---------- 伤害 ----------
+function hurtHero(d) { const h = hero; if (h.inv > 0 || over) return; h.hp -= d; h.inv = .5; shake = 10; nums.push({ x: h.x, y: h.y - 60, v: '-' + d, t: 0, c: '#f55' }); if (h.hp <= 0) { h.hp = 0; over = 'lose'; } }
+function fall(o) { if (o === hero) { if (hero.fallT > 0) return; hero.fallT = 1; hero.hp -= Math.round(hero.max * .1); nums.push({ x: hero.x, y: hero.y - 60, v: '掉下深渊！', t: 0, c: '#ff8' }); if (hero.hp <= 0) { hero.hp = 0; over = 'lose'; } } }
+function hitKing(d, c) { king.hp -= d; king.hit = .1; nums.push({ x: king.x + R(-20, 20), y: king.y - 150, v: Math.round(d), t: 0, c: c || '#fff' }); if (king.hp <= 0) { king.hp = 0; over = 'win'; slow = 1; }
+  if (king.ph === 1 && king.hp < king.max / 2) { king.ph = 2; nums.push({ x: king.x, y: king.y - 190, v: '王怒了！', t: 0, c: '#f84' }); summon(4); } }
+function summon(n) { for (let i = 0; i < n; i++) { const s = i % 2 ? isl[1] : isl[2]; mobs.push({ x: s.x + s.w * R(.3, .7), y: s.y + s.h * R(.35, .7), hp: 40, s: i % 3 ? 'goblin' : 'gob_blade', hit: 0, cd: 1 }); } nums.push({ x: king.x, y: king.y - 170, v: '小的们，上！', t: 0, c: '#ffcf6a' }); }
+// ---------- 王的 AI ----------
+function kingAI(dt) { const k = king, h = hero, sp = k.ph === 2 ? .7 : 1; k.t -= dt; k.f = h.x < k.x ? -1 : 1;
+  if (k.st === 'walk') { const dx = h.x - k.x, dy = h.y - k.y, d = Math.hypot(dx, dy) || 1; if (d > 120) { k.x += dx / d * 60 * dt; k.y += dy / d * 60 * dt; }
+    if (k.t <= 0) { const r = Math.random(), far = D(k, h) > 260; k.mv = k.cnt % 5 === 4 ? 'summon' : far && r < .55 ? 'charge' : r < .5 ? 'slam' : 'wave'; k.cnt++; k.st = 'wind';
+      if (k.mv === 'slam') { k.t = .95 * sp; k.tx = h.x; k.ty = h.y; tele.push({ k: 'c', x: h.x, y: h.y, r: 110, t: 0, T: k.t }); }
+      if (k.mv === 'charge') { k.t = .9 * sp; k.a = Math.atan2(h.y - k.y, h.x - k.x); k.left = k.ph === 2 ? 2 : 1; tele.push({ k: 'l', x: k.x, y: k.y, a: k.a, len: 700, w: 90, t: 0, T: k.t }); }
+      if (k.mv === 'wave') { k.t = 1 * sp; tele.push({ k: 'c', x: k.x, y: k.y, r: 300, t: 0, T: k.t, ring: 1 }); }
+      if (k.mv === 'summon') { k.t = .8; } } }
+  else if (k.st === 'wind' && k.t <= 0) { k.st = 'act';
+    if (k.mv === 'slam') { k.t = .35; shake = 16; fx.push({ k: 'ring', x: k.tx, y: k.ty, r: 110, t: 0 }); if (D(h, { x: k.tx, y: k.ty }) < 115) hurtHero(18); }
+    if (k.mv === 'charge') { k.t = .55; }
+    if (k.mv === 'wave') { k.t = .4; shake = 12; fx.push({ k: 'ring', x: k.x, y: k.y, r: 300, t: 0, c: '#fc6' }); if (D(h, k) < 300 && h.inv <= 0) { const a = Math.atan2(h.y - k.y, h.x - k.x); h.kx = Math.cos(a) * 900; h.ky = Math.sin(a) * 700; hurtHero(8); } }
+    if (k.mv === 'summon') { summon(k.ph === 2 ? 4 : 3); k.t = .3; } }
+  else if (k.st === 'act') { if (k.mv === 'charge') { k.x += Math.cos(k.a) * 620 * dt; k.y += Math.sin(k.a) * 620 * dt; if (D(k, h) < 70) hurtHero(20);
+      if (!onGround(k)) { k.x -= Math.cos(k.a) * 620 * dt * 4; k.y -= Math.sin(k.a) * 620 * dt * 4; k.st = 'stun'; k.t = 2.2; nums.push({ x: k.x, y: k.y - 170, v: '冲过头了！眩晕', t: 0, c: '#7cf' }); shake = 14; return; } }   // 冲出台边：撞悬崖眩晕，输出机会
+    if (k.t <= 0) { if (k.mv === 'charge' && --k.left > 0) { k.st = 'wind'; k.t = .45; k.a = Math.atan2(h.y - k.y, h.x - k.x); tele.push({ k: 'l', x: k.x, y: k.y, a: k.a, len: 700, w: 90, t: 0, T: .45 }); } else { k.st = 'rec'; k.t = .9 * sp; } } }
+  else if ((k.st === 'rec' || k.st === 'stun') && k.t <= 0) { k.st = 'walk'; k.t = R(1, 1.8) * sp; } }
+// ---------- 主循环 ----------
+let last = 0; function loop(n) { let dt = Math.min(.033, (n - last) / 1000 || 0); last = n; requestAnimationFrame(loop); if (!isl) return; if (slow > 0) { slow -= dt; dt *= .3; } T += dt; if (!over) step(dt); draw(); }
+function step(dt) { const h = hero; h.inv -= dt; h.atk -= dt; h.swing -= dt;
+  if (h.rollN < 2) { h.rollCd -= dt; if (h.rollCd <= 0) { h.rollN++; h.rollCd = h.rollN < 2 ? 1.5 : 0; } }
+  if (h.fallT > 0) { h.fallT -= dt; if (h.fallT <= 0) { h.x = 715; h.y = 520; h.inv = 1; } return; }
+  const [x, y] = mv(); h.mv = !!(x || y); if (x) h.f = x > 0 ? 1 : -1;
+  let vx = x * 240, vy = y * 200; if (h.roll > 0) { h.roll -= dt; vx = h.rvx * 760; vy = h.rvy * 600; } if (h.kx) { vx += h.kx; vy += h.ky; h.kx *= .86; h.ky *= .86; if (Math.abs(h.kx) + Math.abs(h.ky) < 20) h.kx = h.ky = 0; }
+  const nx = h.x + vx * dt, ny = h.y + vy * dt;
+  if (h.kx || h.roll > 0 && false) { h.x = nx; h.y = ny; if (!onGround(h)) fall(h); }           // 被震飞：可能掉下去
+  else { if (onGround({ x: nx, y: h.y })) h.x = nx; if (onGround({ x: h.x, y: ny })) h.y = ny; }   // 自己走/滚：走不出台边
+  // 自动攻击最近的目标
+  if (h.atk <= 0) { const tg = [king, ...mobs].filter(o => o.hp > 0 && D(o, h) < (o === king ? 190 : 140)).sort((a, b) => D(a, h) - D(b, h))[0];
+    if (tg) { h.atk = .55; h.swing = .15; h.sa = Math.atan2(tg.y - h.y, tg.x - h.x); h.f = tg.x < h.x ? -1 : 1; if (tg === king) hitKing(R(22, 30) * (king.st === 'stun' ? 2 : 1), king.st === 'stun' ? '#ff6' : 0); else { tg.hp -= 30; tg.hit = .1; } } }
+  kingAI(dt);
+  for (const m of mobs) { m.hit -= dt; if (m.hp <= 0) continue; let tx = h.x, ty = h.y; const onSide = m.x < 60 ? 0 : m.x > 1380 ? 1 : -1; if (onSide >= 0 && Math.abs(m.y - 330) > 20) { tx = onSide ? 1650 : -200; ty = 330; } const dx = tx - m.x, dy = ty - m.y, d = Math.hypot(dx, dy) || 1;   // 先走到桥头再过桥
+    if (D(m, h) > 50) { m.x += dx / d * 90 * dt; m.y += dy / d * 90 * dt; } m.cd -= dt; if (D(m, h) < 55 && m.cd <= 0) { m.cd = 1.2; hurtHero(5); } }
+  mobs = mobs.filter(m => m.hp > 0);
+  for (const q of tele) q.t += dt; tele = tele.filter(q => q.t < q.T); for (const e of fx) e.t += dt; fx = fx.filter(e => e.t < .45); for (const m of nums) m.t += dt; nums = nums.filter(m => m.t < .9); shake *= .85; king.hit -= dt; }
+function fr(set, names) { const S = SPR.sets[set]; if (!S || !S.f) return null; for (const n of names) if (S.f[n]) return n; return S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
+function cyc(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : fr(set, ['idle0']); }
+let cam = { x: 715, y: 400 }; const PT = []; for (let i = 0; i < 90; i++) PT.push({ x: Math.random(), y: Math.random(), z: .2 + Math.random() * .8 });
+function draw() { const h = hero, k = king; cam.x += ((h.x + k.x) / 2 * .4 + h.x * .6 - cam.x) * .08; cam.y += ((h.y + k.y) / 2 * .4 + h.y * .6 - cam.y) * .08;
+  g.setTransform(1, 0, 0, 1, 0, 0); const bg = g.createRadialGradient(VW / 2, VH * .7, 0, VW / 2, VH * .7, VW); bg.addColorStop(0, k.ph === 2 ? '#2a0a0a' : '#1c0c10'); bg.addColorStop(1, '#050407'); g.fillStyle = bg; g.fillRect(0, 0, VW, VH);
+  for (const p of PT) { const px = ((p.x * VW - cam.x * Z * p.z * .3) % VW + VW) % VW, py = ((p.y * VH - cam.y * Z * p.z * .3 - T * 14 * p.z) % VH + VH) % VH; g.fillStyle = `rgba(255,120,80,${.15 + .3 * p.z})`; g.fillRect(px, py, 2 * p.z + 1, 2 * p.z + 1); }
+  const sx = (Math.random() - .5) * shake, sy = (Math.random() - .5) * shake; g.setTransform(Z, 0, 0, Z, Math.round(VW / 2 - cam.x * Z + sx), Math.round(VH / 2 - cam.y * Z + sy)); g.imageSmoothingEnabled = Z < 1;
+  for (const b of bridges) { g.fillStyle = '#1a120a'; g.fillRect(b.x0, b.y - 32, b.x1 - b.x0, 66); for (let x = b.x0; x < b.x1; x += 14) { g.fillStyle = ((x - b.x0) / 14 | 0) % 2 ? '#7a5634' : '#8a6238'; g.fillRect(x, b.y - 30, 12, 60); } g.fillStyle = '#4a321b'; g.fillRect(b.x0, b.y - 34, b.x1 - b.x0, 4); g.fillRect(b.x0, b.y + 30, b.x1 - b.x0, 4); }
+  if (h.fallT > 0) { g.globalAlpha = h.fallT; } for (const I of isl) g.drawImage(I.tex, I.x, I.y); g.globalAlpha = 1;
+  for (const q of tele) { const kk = q.t / q.T; g.fillStyle = 'rgba(255,40,40,.28)'; g.strokeStyle = 'rgba(255,60,60,.9)'; g.lineWidth = 3;
+    if (q.k === 'c') { g.beginPath(); g.ellipse(q.x, q.y, q.r * (q.ring ? 1 : kk), q.r * (q.ring ? 1 : kk) / 1.3, 0, 0, 7); q.ring ? g.stroke() : g.fill(); if (q.ring) { g.beginPath(); g.ellipse(q.x, q.y, q.r * kk, q.r * kk / 1.3, 0, 0, 7); g.stroke(); } else { g.beginPath(); g.ellipse(q.x, q.y, q.r, q.r / 1.3, 0, 0, 7); g.stroke(); } }
+    else { g.save(); g.translate(q.x, q.y); g.rotate(q.a); g.fillRect(0, -q.w / 2 * kk, q.len, q.w * kk); g.strokeRect(0, -q.w / 2, q.len, q.w); g.restore(); } }
+  for (const e of fx) { g.strokeStyle = e.c || '#f84'; g.globalAlpha = 1 - e.t / .45; g.lineWidth = 6; g.beginPath(); g.ellipse(e.x, e.y, e.r * (.7 + .3 * e.t / .45), e.r * (.7 + .3 * e.t / .45) / 1.3, 0, 0, 7); g.stroke(); g.globalAlpha = 1; }
+  const L = [{ y: k.y, k: 1 }, { y: h.y, h: 1 }, ...mobs.map(m => ({ y: m.y, m }))].sort((a, b) => a.y - b.y);
+  for (const e of L) {
+    if (e.k) { const nm = k.st === 'wind' ? fr('gob_king', ['windup']) : k.st === 'act' ? fr('gob_king', ['strike']) : k.st === 'stun' ? fr('gob_king', ['down', 'hurt']) : k.hit > 0 ? fr('gob_king', ['hurt']) : cyc('gob_king', 'walk', 8);
+      if (nm) SPR.draw(g, 'gob_king', nm, 0, k.x, k.y, k.f < 0, 2.6, { white: k.hit > 0 ? .6 : k.st === 'wind' && (T * 12 | 0) % 2 ? .25 : 0 }); if (k.st === 'stun') { g.fillStyle = '#ff6'; g.font = 'bold 26px sans-serif'; g.fillText('★ ★', k.x - 30, k.y - 200); } }
+    else if (e.m) { const m = e.m, nm = cyc(m.s, 'walk', 9); if (nm) SPR.draw(g, m.s, nm, 0, m.x, m.y, h.x < m.x, 2.4, { white: m.hit > 0 ? .6 : 0 }); }
+    else if (h.fallT <= 0) { const hs = SPR.heroSet && SPR.heroSet('m'), nm = hs && (h.swing > 0 ? fr(hs, ['atk1', 'atk0']) : h.mv ? cyc(hs, 'run', 12) || cyc(hs, 'walk', 10) : cyc(hs, 'idle', 2)); g.globalAlpha = h.inv > 0 && (T * 20 | 0) % 2 ? .45 : 1; if (nm) SPR.drawHero(g, nm, 0, h.x, h.y, h.f < 0, 2.4, { white: h.roll > 0 ? .4 : 0 }); g.globalAlpha = 1;
+      if (h.swing > 0) { g.fillStyle = 'rgba(255,255,255,.45)'; g.beginPath(); g.moveTo(h.x, h.y - 40); g.arc(h.x, h.y - 40, 130, h.sa - .8, h.sa + .8); g.fill(); } } }
+  g.font = 'bold 26px sans-serif'; for (const m of nums) { g.globalAlpha = 1 - m.t / .9; g.fillStyle = m.c; g.fillText(m.v, m.x - 20, m.y - m.t * 50); } g.globalAlpha = 1;
+  g.setTransform(1, 0, 0, 1, 0, 0); if (over) { g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, 0, VW, VH); g.fillStyle = over === 'win' ? '#ffd77a' : '#e84a4a'; g.font = `bold ${40 * devicePixelRatio}px sans-serif`; const t = over === 'win' ? '击败 哥布林王！' : 'GAME OVER'; g.fillText(t, VW / 2 - g.measureText(t).width / 2, VH / 2); }
+  document.getElementById('bhp').style.width = (k.hp / k.max * 100) + '%';
+  document.getElementById('hud').innerHTML = `生命 ${Math.ceil(h.hp)}/${h.max}　翻滚 ×${h.rollN}${h.rollN < 2 ? '（' + h.rollCd.toFixed(1) + 's）' : ''}<br>自动攻击；空格 / 按钮翻滚<br>小技巧：引王冲锋冲出台边会眩晕（伤害×2）；别被震地波推下深渊`;
+  document.getElementById('roll').className = h.rollN >= 2 ? 'full' : ''; }
+let ready = 0; const one = () => { if (++ready === 2) reset(); }; [F1, F2].forEach(i => i.complete && i.naturalWidth ? one() : i.onload = one);
+Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
+</script></body></html>
