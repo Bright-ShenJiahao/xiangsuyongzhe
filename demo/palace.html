@@ -97,7 +97,7 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
   if (msgT > 0) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(0, VH * .4 - 30 * devicePixelRatio, VW, 50 * devicePixelRatio); g.fillStyle = '#ffe9a8'; g.font = `${20 * devicePixelRatio}px sans-serif`; g.fillText(msg, VW / 2 - g.measureText(msg).width / 2, VH * .4); }
   $('hud').innerHTML = GAME ? `💎 水晶 ${crystal}${CONT ? `　❤ 还剩 ${CONT} 条命` : ''}<br><small>走进公主身边的时空门出发</small>` : `宫殿据点（正式美术，一张图，镜头上下跟随）<br>💎 水晶 ${crystal}（demo 送的）<br>WASD 走 · 靠近人按 E 对话 / 点按钮`; }
 const CONT = +QS.get('cont') || 0, CRY = +QS.get('cry') || 0;
-if (GAME) { let L = []; try { L = JSON.parse(QS.get('L') || '[]'); } catch (e) {} (async () => { const w = t => new Promise(r => setTimeout(r, t)); await w(600); if (CRY) { msg = `带回 ${CRY} 水晶`; msgT = 2; await w(1800); }
+if (GAME) { let L = []; try { L = JSON.parse(QS.get('L') || '[]'); } catch (e) {} (async () => { const w = t => new Promise(r => setTimeout(r, t)); await w(600); if (CONT) { msg = 'GAME OVER'; msgT = 1.3; await w(1300); msg = `CONTINUE ?　（还剩 ${CONT} 条命）`; msgT = 1.6; await w(1700); } if (CRY) { msg = `带回 ${CRY} 水晶`; msgT = 2; await w(1800); }
   for (const [who, txt] of L) { const n = NPC.find(o => o.name === who) || (who === '露米娜' ? NPC[0] : NPC[3]); say(n, txt); await w(Math.max(2200, txt.length * 160)); } })(); }
 Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
 </script></body></html>

@@ -171,7 +171,6 @@
   $('aReset').onclick = () => { P.free = {}; renderPrep(); };
   $('pBack').onclick = () => show('title');
   const introSeen = () => store.get('introSeen') === '1';
-  { const c = $('introSkip'), saved = store.get('introSkip'); c.checked = saved === '1'; c.onchange = () => store.set('introSkip', c.checked ? '1' : '0'); }
   function playIntro(go) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
   $('pGo').onclick = () => { const b = build(); if (!introSeen()) playIntro(() => startBattle(b)); else openHub('', () => startBattle(b)); };   // 11/24 第一次：塔顶开场；之后：从宫殿出发
@@ -327,7 +326,8 @@
   }
   function nextChapter() { const w = document.createElement('div'); w.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:95;opacity:0;transition:opacity .4s'; document.body.appendChild(w); requestAnimationFrame(() => w.style.opacity = 1);
     setTimeout(() => { worldMap(() => { BATTLE.stop(); overlay('wmap', false); show('title'); }, true); w.style.opacity = 0; setTimeout(() => w.remove(), 450); }, 450); }
-  function result(r) { lastRes = r; $('rAgain').textContent = r.cont ? `回到宫殿，续关（还剩 ${r.cont} 条命） ▶` : r.win ? '回到宫殿 ▶' : '回到宫殿，重新开始 ▶';
+  function result(r) { lastRes = r; if (r.cont && !r.win) { BATTLE.stop(); return $('rAgain').onclick(); }   // 11/24 还有命：不出结算页，直接回宫殿续关
+  $('rAgain').textContent = r.cont ? `回到宫殿，续关（还剩 ${r.cont} 条命） ▶` : r.win ? '回到宫殿 ▶' : '回到宫殿，重新开始 ▶';
     if (r.win && !r.mapShown) return worldMap(() => result(Object.assign({}, r, { mapShown: true })));
     $('rTitle').textContent = r.win ? '胜利！' : '败北……';
     setTimeout(() => { if (r.cry) $('rMsg').textContent += `　这一局带回 ${r.cry} 水晶。`; }, 0);
