@@ -268,7 +268,7 @@
     const wm = document.querySelector('#wmap .wm'), sc = $('wmScroll'); sc.scrollLeft = Math.max(0, c.x * sc.scrollWidth - sc.clientWidth / 2);
     const cv = document.createElement('canvas'); cv.className = 'wmFall'; cv.width = cv.height = 96; cv.style.left = c.x * 100 + '%'; cv.style.top = c.y * 100 + '%'; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
     try { SPR.drawHero(g, 'idle', 0, 48, 88, false, 2, { w: store.get('weapon') || 'sword', c: store.get('hero') === 'f' ? 'f' : 'm' }); } catch (e) {} wm.appendChild(cv);
-    setTimeout(() => { const p = document.createElement('div'); p.className = 'wmPuff'; p.style.left = cv.style.left; p.style.top = cv.style.top; wm.appendChild(p); try { SFX.play('pick'); } catch (e) {} }, 1500);
+    setTimeout(() => { const p = document.createElement('div'); p.className = 'wmPuff'; p.style.left = cv.style.left; p.style.top = cv.style.top; wm.appendChild(p); try { SFX.play('thud'); } catch (e) {} }, 1500); setTimeout(() => { try { SFX.play('fall'); } catch (e) {} }, 250);   /* 坠落带回声，1.5 秒落地闷响 */
     setTimeout(() => { cv.remove(); wm.querySelectorAll('.wmPuff').forEach(x => x.remove()); $('wmap').classList.remove('fall'); overlay('wmap', false); go(); }, 2300); }
   function startBattle(b, noFall) { if (!noFall && !(window.location.search.includes('nofall'))) return mapFall(() => startBattle(b, true));
     lastBuild = b || lastBuild || build(); HC = {};
