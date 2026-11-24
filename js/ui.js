@@ -174,7 +174,7 @@
   { const c = $('introSkip'), saved = store.get('introSkip'); c.checked = saved === '1'; c.onchange = () => store.set('introSkip', c.checked ? '1' : '0'); }
   function playIntro(go) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
-  $('pGo').onclick = () => { const b = build(); if (!introSeen() || !$('introSkip').checked) playIntro(() => startBattle(b)); else startBattle(b); };
+  $('pGo').onclick = () => { const b = build(); if (!introSeen()) playIntro(() => startBattle(b)); else openHub('', () => startBattle(b)); };   // 11/24 第一次：塔顶开场；之后：从宫殿出发
   let heroSwing = 0;
   function drawHeroPreview(t, dt) {
     const c = $('heroCv'), r = c.getBoundingClientRect(); if (!r.width || !r.height) return;
@@ -344,6 +344,8 @@
   let lastRes = null;
   function towerCtx(r) { const n = (+store.get('returns') || 0) + 1, wins = (+store.get('wins') || 0); store.set('returns', n); if (r.win) store.set('wins', wins + 1);
     return { n, st: r.st, boss: r.boss, win: r.win, wins: wins + (r.win ? 1 : 0), killer: r.killer, killerElite: r.killerElite, weapon: r.weapon, quick: !r.win && r.time < 60, stolen: r.stolen }; }
+  function openHub(qs, go) { const f = $('introF'); f.src = 'demo/palace.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + qs + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
   function playTower(r, go) { let seen; try { seen = new Set(JSON.parse(store.get('linesSeen') || '[]')); } catch (e) { seen = new Set(); }
     const L = pickLines(towerCtx(r), seen); for (const l of L) if (!l.rep) seen.add(l.id); store.set('linesSeen', JSON.stringify([...seen]));
     const say = [].concat(...L.map(l => l.say)), f = $('introF');

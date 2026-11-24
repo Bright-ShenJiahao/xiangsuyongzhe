@@ -240,10 +240,10 @@
       const fx = B().hero().fx, pm = (1 + (fx.shop || 0)) * (1 + DATA.price.stUp * (rep.st - 1)) * (rep.disc || 1) * (1 - .03 * (r.luck || 0)) * (rep.rift ? 1 : 1);   // 每站涨 7%
       if (!r.shop) r.shop = rollShop();
       const g = document.createElement('div'); g.className = 'cards' + (rep.field ? ' shelf' : ''); body.appendChild(g);
-      r.shop.forEach((o, i) => { const d = o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开第 ${r.open + 1} 格</b><small>技能栏多开一格</small><p>有铜钱随时能买</p>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
+      r.shop.forEach((o, i) => { const d = o.kind === 'cry' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic" style="font-size:34px">💎</span><b>水晶 ×${o.n}</b><small>局外货币，带回宫殿用</small><p>死了也不会丢</p>`; return e; })() : o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开第 ${r.open + 1} 格</b><small>技能栏多开一格</small><p>有铜钱随时能买</p>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
         if (o.sold) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已买</p>'); }
         else if (o.kind === 'slot' && o.n !== r.open + 1) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已开</p>'); }
-        else btnTo(d, rep.field ? `<span class="pc"></span>${UI.pxNum(price, '#3a2410', 0)}` : `买 ${UI.piH('coin', 1)}${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; r.coins -= price; o.sold = true; render(); }, true);
+        else btnTo(d, rep.field ? `<span class="pc"></span>${UI.pxNum(price, '#3a2410', 0)}` : `买 ${UI.piH('coin', 1)}${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'cry') { B().addCrystal(o.n); toast(`水晶 +${o.n}`); } else if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; r.coins -= price; o.sold = true; render(); }, true);
         g.appendChild(d); });
       // 刷新：4 + 2 ×（站 − 1）+ 3 × 已刷次数，每次结算最多刷 4 次
       const [c0, c1, c2] = DATA.price.refresh, cost = (fx.freeRoll && !r.rr) ? 0 : Math.round((c0 + c1 * (rep.st - 1) + c2 * r.rr) * (1 + (fx.reroll || 0))), left = DATA.price.refreshMax - r.rr;
@@ -272,6 +272,7 @@
       return [pk0(), pk0(), { kind: 'oup', id: 'oup', price: 52 }, ...costI]; }
     const L = items.concat(books), ok = Object.keys(DATA.oaths), pk = () => ({ kind: 'oath', id: ok[Math.random() * ok.length | 0], price: 38 });
     if (rep.disc) { L.splice(0, 2, pk(), pk()); } else if (Math.random() < .3) L.splice(2, 1, pk());
+    { let ml = 0; try { ml = JSON.parse(localStorage.getItem('xsyz-meta') || '{}').ex || 0; } catch (e) {} L.push({ kind: 'cry', id: 'cry', n: 4 + 2 * ml, price: 30 }); }   // 11/24 商人：铜钱换水晶（大臣「兑换」每级 +2）
     return L;
   }
   $('cGo').onclick = () => {

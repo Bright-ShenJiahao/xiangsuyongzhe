@@ -502,7 +502,7 @@
       case 'fCoin': RUN.coins -= 20; healHero(hero.maxHp * .4); return '回复了 40% 生命。';
       case 'kHeal': hero.hp = Math.max(1, hero.hp - hero.maxHp * .15); CAMP.learn({ kind: 'oath', id: rOath() }, true); return '骑士把胸前的誓约印记交给了你。';
       case 'kTake': { const W = ITEMS().filter(i => i.w), it = pick(W.length ? W : ITEMS()); give({ kind: 'item', id: it.id }); RUN.luck = Math.max(-5, (RUN.luck || 0) - 1); return '你拿走了他的宝物……幸运 −1。'; }
-      case 'cup': RUN.coins -= 20; if (Math.random() < 1 / 3) { const id = randBook(); if (id) { give({ kind: 'book', id }); return '猜中了！咕噜不情愿地递来一本书。'; } give({ kind: 'item', id: pick(ITEMS()).id }); return '猜中了！得到一件宝物。'; } return '没猜中。咕噜把 20 铜钱揣进了兜里。';
+      case 'cup': RUN.coins -= 20; if (Math.random() < 1 / 3) { addCrystal(3, hero.x, hero.y); const id = randBook(); if (id) { give({ kind: 'book', id }); return '猜中了！咕噜不情愿地递来一本书。'; } give({ kind: 'item', id: pick(ITEMS()).id }); return '猜中了！得到一件宝物。'; } return '没猜中。咕噜把 20 铜钱揣进了兜里。';
       case 'rHand': if (Math.random() < .5) { const id = randBook(3); if (id) { give({ kind: 'book', id }); return '摸出一本技能书！'; } } hero.hp = Math.max(1, hero.hp - hero.maxHp * .2); return '被乱码咬了一口，掉了 20% 生命。';
       case 'rBook': take(pick(bagB)); CAMP.learn({ kind: 'oath', id: rOath() }, true); return '技能书被裂缝吞掉，吐出一个誓约印记。';
       case 'rOath': { const L = [...RUN.bag.filter(x => x && x.kind === 'oath'), ...[...RUN.oath, ...RUN.mv].filter(Boolean)]; take(L[0]); recompute(); const id = randBook(); if (id) give({ kind: 'book', id }); else RUN.coins += 30; return '誓约印记被吞掉，裂缝里掉出一本书。'; }
@@ -529,9 +529,9 @@
       switch (res) {
         case 'coin': RUN.coins += price * 3; msg = `三个铜钱！吐出 ${price * 3} 铜钱。`; break;
         case 'book': { const id = randBook(2) || randBook(); if (id) give({ kind: 'book', id }); else RUN.coins += 40; msg = '三本书！掉出一本技能书。'; break; }
-        case 'chest': give({ kind: 'item', id: ITEMS()[Math.random() * ITEMS().length | 0].id }); msg = '三个宝箱！掉出一件宝物。'; break;
+        case 'chest': give({ kind: 'item', id: ITEMS()[Math.random() * ITEMS().length | 0].id }); addCrystal(2, hero.x, hero.y); msg = '三个宝箱！掉出一件宝物和 2 水晶。'; break;
         case 'oath': { const L = Object.keys(DATA.oaths); CAMP.learn({ kind: 'oath', id: L[Math.random() * L.length | 0] }, true); msg = '三个印记！得到一个誓约印记。'; break; }
-        case 'seven': { const id = randBook(3) || randBook(); if (id) give({ kind: 'book', id }); give({ kind: 'item', id: ITEMS()[Math.random() * ITEMS().length | 0].id }); msg = '大奖！高阶书 + 宝物！'; break; }
+        case 'seven': { const id = randBook(3) || randBook(); if (id) give({ kind: 'book', id }); give({ kind: 'item', id: ITEMS()[Math.random() * ITEMS().length | 0].id }); addCrystal(8, hero.x, hero.y); msg = '大奖！高阶书 + 宝物 + 8 水晶！'; break; }
         case 'skull': hero.hp = Math.max(1, hero.hp - hero.maxHp * .15); o.broke = 1; G.shake = .3; msg = '三个骷髅……街机炸了，掉了 15% 生命。'; break;
         case 'pair': RUN.coins += Math.round(price / 2); msg = `两个一样，退回 ${Math.round(price / 2)} 铜钱。`; break;
         default: msg = '什么都没中。';
@@ -728,7 +728,7 @@
       case 'book2': { const id = randBook(2); if (id) { give({ kind: 'book', id }); return '得到一本技能书。'; } RUN.coins += 30; return '没有新书了，换成 30 铜钱。'; }
       case 'prof': { const L = RUN.slots.filter(Boolean); if (!L.length) return '技能栏是空的……'; const sk = L[Math.random() * L.length | 0], lv = profL(sk); if (lv >= 7) return `「${DATA.skills[sk.id].name}」已经练满了。`; sk.xp = DATA.prof[lv]; return `「${DATA.skills[sk.id].name}」熟练度 +1 格。`; }
       case 'rift': if (r < .5) { const id = randBook(3); if (id) { give({ kind: 'book', id }); return '摸出一本技能书！'; } } hero.hp = Math.max(1, hero.hp - hero.maxHp * .2); return '被乱码咬了一口，掉了 20% 生命。';
-      case 'gamble': if (RUN.coins < 20) return '铜钱不够，咕噜把杯子收了回去。'; RUN.coins -= 20; if (r < .5) { const it = ITEMS()[Math.random() * ITEMS().length | 0]; give({ kind: 'item', id: it.id }); return '猜中了！得到一件宝物。'; } return '没猜中。咕噜笑得很开心。';
+      case 'gamble': if (RUN.coins < 20) return '铜钱不够，咕噜把杯子收了回去。'; RUN.coins -= 20; if (r < .5) { addCrystal(3, hero.x, hero.y); const it = ITEMS()[Math.random() * ITEMS().length | 0]; give({ kind: 'item', id: it.id }); return '猜中了！得到一件宝物。'; } return '没猜中。咕噜笑得很开心。';
       case 'kid': RUN.coinBoost = 1; return '小哥布林跑了。下一站铜钱 +50%。';
       case 'save': RUN.save = true; return '已存档。第一次倒下时会满血复活。';
       case 'full': heal(1); return '生命回满了。';
@@ -864,6 +864,7 @@
     return { time: G.t, kills: G.kills, combo: G.bestCombo || G.maxCombo || 0, coins: Math.round(G.earned || 0), taken: Math.round(G.taken || 0), lv: G.lv, xp: G.xp / need(), dmg: RUN.dmgAll || {}, sk, got: RUN.got || [] }; }
   function end() {
     let cont = 0; if (G.over !== 'win') { const S = loadSave(), used = (RUN.livesUsed || 0) + 1, lives = RUN.lives || 2; if (S && used < lives) { S.RUN.livesUsed = used; S.RUN.lives = lives; try { localStorage.setItem(SAVE, JSON.stringify(S)); } catch (e) {} cont = lives - used; } }   // 11/24 续命：还有命就留着本站存档
+    try { const R0 = JSON.parse(localStorage.getItem('xsyz-rec') || '{}'); R0.best = Math.max(R0.best || 0, G.over === 'win' ? 99 : G.st); R0.kills = (R0.kills || 0) + G.kills; if (G.over === 'win') R0.wins = (R0.wins || 0) + 1; else R0.deaths = (R0.deaths || 0) + 1; R0.runs = (R0.runs || 0) + (cont ? 0 : 1); localStorage.setItem('xsyz-rec', JSON.stringify(R0)); } catch (e) {}   // 11/24 大臣的战绩
     if (!cont) clearSave(); UI.result({ cont, cry: RUN.cry || 0, win: G.over === 'win', kills: G.kills, time: G.t, lv: G.lv, weapon: RUN.weapon, st: G.st, wi: G.wi, boss: !!(G.W && G.W.boss), dmg: RUN.dmgAll, killer: G.killer, killerElite: G.killerElite, stolen: G.stolen });
   }
 
@@ -1037,7 +1038,7 @@
     init, start, frame, fit, roll,
     spawnDbg(t, tier) { const z = spawn(t, { x: hero.x + R(-160, 160) * K, y: hero.y + R(-60, 60) * K }, tier); clampG(z); return !!z; },   // 调试：在勇者旁边放一只
     pause(v) { if (G && !G.over) G.paused = v; }, get paused() { return !!(G && G.paused); }, active: () => !!G && !G.over,
-    stop() { G = null; }, g: () => G, loadSave, clearSave,
+    stop() { G = null; }, g: () => G, loadSave, clearSave, addCrystal: n => G && addCrystal(n, hero.x, hero.y),
     run: () => RUN, recompute: () => G && recompute(), trainAll: () => trainAll(), nextWave: () => G && nextWave(), hero: () => hero, lv: () => G ? G.lv : 1, xpFrac: () => G ? Math.min(1, G.xp / need()) : 0, xpTxt: () => G ? `${Math.floor(G.xp)} / ${need()}` : '', st: () => G ? G.st : 1,
     skillInfo: sk => { const S = DATA.skills[sk.id], L = profL(sk), T = G ? skillT(S, sk) : { wu: S.wu, rc: S.rc }; return { dmg: G ? skillDmg(S, sk) : S.dmg, wu: T.wu, rc: T.rc, cd: T.wu + T.rc + (S.hold || 0), L, xp: sk.xp || 0, next: DATA.prof[L] || null }; }, profL,
     debug: { rest(k) { if (G.fe) fieldRest(k); }, ev(id) { const f = G.fe; if (!f) return; RUN.evUsed = DATA.events.map(e => e.id).filter(x => x !== id); f.doors = []; fieldRest('event'); }, oath(id) { const ks = Object.keys(DATA.oaths); CAMP.learn({ kind: 'oath', id: id || ks[Math.random() * ks.length | 0] }); }, tp(fx, fy) { hero.x = MAPW * fx; hero.y = MAPH * fy; cam.snap = true; }, book() { G.gi.push({ kind: 'book', x: hero.x + 30 * K, y: hero.y, t: 0 }, { kind: 'item', x: hero.x + 9 * K, y: hero.y, t: 0 }); }, coin() { for (let i = 0; i < 6; i++) G.gc.push({ x: hero.x + R(60, 120) * K, y: hero.y + R(-20, 20) * K, v: 2, t: 11, h: 0, vh: 0, vx: 0 }); },   // 11/22 本波胜利：清场 + 算通关结算；本站胜利：直接当最后一波打完（结算后出路线卡）
