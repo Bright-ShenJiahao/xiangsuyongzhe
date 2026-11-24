@@ -1292,3 +1292,6 @@ body.tvbg { background: #000; }
 @keyframes wmfall { 0% { transform: translate(-50%, -420%) scale(3.2) rotate(0deg); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(-50%, -85%) scale(.7) rotate(1440deg); } }
 .wmPuff { position: absolute; width: 140px; height: 140px; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none; z-index: 4; background: radial-gradient(circle, rgba(255,240,200,.9), rgba(255,200,120,.4) 40%, transparent 70%); animation: wmpuff .8s ease-out forwards; }
 @keyframes wmpuff { from { transform: translate(-50%, -50%) scale(.2); opacity: 1; } to { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
+/* 11/24 键盘操作：当前选中的按钮 / 卡片 */
+:focus-visible { outline: 3px solid #ffd77a !important; outline-offset: 2px; }
+.card:focus-visible, .cart:focus-visible, .fig:focus-visible { box-shadow: 0 0 0 3px #ffd77a, 0 0 12px rgba(255,215,122,.6) !important; outline: none !important; }

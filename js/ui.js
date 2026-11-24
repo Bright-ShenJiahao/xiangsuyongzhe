@@ -440,6 +440,23 @@
       if (n >= stopAt[stopAt.length - 1]) return end(); tm = setTimeout(tick, 35 + n * n * .15); };
     M.onclick = end; tick();
   }
+  // 11/24 全界面键盘操作：方向键在按钮 / 卡片之间移动，Enter / 空格确认，Esc 关闭或返回；界面一打开就自动选中主按钮
+  { const FOC = 'button:not([disabled]), input, .card, .cart:not([disabled]), .fig, .cxi, .scard', CLOSE = '#tpX, #slotX, #cfNo, #pBack';
+    const vis = e => e && e.offsetParent !== null && getComputedStyle(e).visibility !== 'hidden';
+    const layer = () => { if (vis($('introF'))) return null; let best = null, bz = -1; for (const e of document.querySelectorAll('.scr.on')) { if (!vis(e) && getComputedStyle(e).display === 'none') continue; const z = +getComputedStyle(e).zIndex || 0; if (z >= bz) { bz = z; best = e; } } return best; };
+    const items = L => [...L.querySelectorAll(FOC)].filter(vis);
+    const pick = L => { const I = items(L); return I.find(e => e.matches('.gold, #bStart, #sName')) || I.find(e => e.tagName === 'BUTTON' && !e.matches(CLOSE)) || I[0]; };
+    let lastL = null; const auto = () => { const L = layer(); if (!L || L.id === 'battle') { lastL = L; return; } if (L === lastL && L.contains(document.activeElement)) return; lastL = L; const e = pick(L); if (e) { if (!e.matches('button, input')) e.tabIndex = 0; try { e.focus({ preventScroll: true }); } catch (x) {} } };
+    new MutationObserver(() => setTimeout(auto, 30)).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
+    addEventListener('keydown', e => { const L = layer(); if (!L || L.id === 'battle') return; const a = document.activeElement, inp = a && a.tagName === 'INPUT';
+      if (e.key === 'Escape') { if (L.id === 'pause') return; const c = [...L.querySelectorAll(CLOSE)].find(vis); if (c) { e.preventDefault(); e.stopImmediatePropagation(); c.click(); } return; }
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) { if (inp && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
+        const I = items(L); if (!I.length) return; e.preventDefault(); e.stopImmediatePropagation(); if (!L.contains(a) || !I.includes(a)) { const p = pick(L); p.tabIndex = p.tabIndex < 0 ? 0 : p.tabIndex; return p.focus(); }
+        const r0 = a.getBoundingClientRect(), cx = r0.left + r0.width / 2, cy = r0.top + r0.height / 2, dx = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0, dy = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0; let best = null, bd = 1e9;
+        for (const o of I) { if (o === a) continue; const r = o.getBoundingClientRect(), ox = r.left + r.width / 2 - cx, oy = r.top + r.height / 2 - cy, along = ox * dx + oy * dy; if (along <= 4) continue; const side = Math.abs(ox * dy) + Math.abs(oy * dx), d = along + side * 2.5; if (d < bd) { bd = d; best = o; } }
+        if (best) { if (!best.matches('button, input')) best.tabIndex = 0; best.focus(); best.scrollIntoView({ block: 'nearest' }); } return; }
+      if ((e.key === 'Enter' || e.key === ' ') && a && L.contains(a) && !a.matches('button, input')) { e.preventDefault(); e.stopImmediatePropagation(); a.click(); }
+    }, true); }
   window.UI = { slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   const prog = v => { const b = document.getElementById('tbar'); if (b) b.style.width = Math.round(v * 100) + '%'; }; prog(.3);   // 11/22：不要加载页，主界面上直接载入
