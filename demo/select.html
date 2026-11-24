@@ -4,15 +4,16 @@
 <style>
 html,body{margin:0;height:100%;background:#1a120a;overflow:hidden}
 #prep{display:flex !important;position:fixed;inset:0}
-.stage{position:relative;flex:none;height:210px;min-height:90px;max-height:130px;border:0;overflow:hidden;background:none}
+.stage{position:relative;flex:1 1 auto;min-height:150px;border:0;overflow:hidden;background:none}
 #prep .stage canvas{position:absolute !important;left:0 !important;top:0 !important;width:100% !important;height:100% !important;max-width:none !important;image-rendering:pixelated}
 .stage .lab,.stage .act{display:none}.stage .lab{position:absolute;left:10px;top:6px;z-index:2;font:14px WenKai,serif;color:#fff3d0;text-shadow:1px 1px 0 #000}
 .stage .act{position:absolute;right:10px;top:6px;z-index:2;font:14px WenKai,serif;color:#ffd860;text-shadow:1px 1px 0 #000}
-.pnSec.st{flex:0 0 auto;display:flex;flex-direction:column;min-height:0}
+.pnSec.st{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .pnSec.st h4{flex:none}
 #note{position:fixed;right:8px;top:6px;max-width:46vw;z-index:9;font:12px sans-serif;color:#fff;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:6px}
 .pnWep button{cursor:pointer}
 .bkI{width:48px;height:48px;image-rendering:pixelated}
+@media (orientation:portrait){#prep .pnew{grid-template-rows:26vh auto !important}.stage{min-height:130px}}
 </style></head><body>
 <div id="prep" class="scr menu on"><div class="pnew">
  <div class="pnL"><img id="pPort" alt=""></div>
@@ -61,8 +62,8 @@ function drawFx(g,u,dt){
   else if(o.k==='boom'){const r=o.r*u*(.5+p*.7);for(let a=0;a<PI*2;a+=.06){if(Math.floor(a*10+o.t*30)%3===0)continue;g.fillStyle=p<.4?'#fff2a0':p<.7?'#ff9a30':'#a03a18';g.fillRect(o.x+rd(Math.cos(a)*r),o.y+rd(Math.sin(a)*r/YS),2*u,2*u)}if(p<.3){g.fillStyle='rgba(255,230,140,.35)';g.beginPath();g.ellipse(o.x,o.y,r*.8,r*.8/YS,0,0,7);g.fill()}}}
  fx=fx.filter(o=>o.t<o.T);
  for(const o of shots){o.t+=dt;
-  if(o.k==='arrow'){o.x+=o.vx*dt;o.y+=o.vy*dt;const f=SPR.frame('gob_archer','arrow');if(f){g.save();g.translate(o.x,o.y);g.rotate(Math.atan2(o.vy,o.vx));const q=u*(SPR.sets.gob_archer.sk||1);g.drawImage(SPR.sets.gob_archer.base,f.x,f.y,f.w,f.h,-f.w*q/2,-f.h*q/2,f.w*q,f.h*q);g.restore()}else{g.fillStyle='#8a5a2a';g.fillRect(o.x,o.y,6*u,u)}}
-  else if(o.k==='fire'){const p=o.t/o.T,hy=(1-p)*120;for(let j=0;j<5;j++){g.fillStyle=['#fff6c0','#ffd060','#ff8a30','#e04a20','#902a10'][j];const q=(5-j)*u;g.fillRect(o.x-q/2-rd(j*3*u*(1-p)),o.y-rd((hy+j*7)*u)-q/2,q,q)}if(o.t>=o.T&&o.boom){o.boom=0;fx.push({k:'boom',x:o.x,y:o.y,t:0,T:.35,r:o.r})}}}
+  if(o.k==='arrow'){o.x+=o.vx*dt;o.y+=o.vy*dt;const f=SPR.frame('gob_archer','arrow');if(f){g.save();g.translate(o.x,o.y);g.rotate(Math.atan2(o.vy,o.vx));const q=u*.5*(SPR.sets.gob_archer.sk||1);g.drawImage(SPR.sets.gob_archer.base,f.x,f.y,f.w,f.h,-f.w*q/2,-f.h*q/2,f.w*q,f.h*q);g.restore()}else{g.fillStyle='#8a5a2a';g.fillRect(o.x,o.y,6*u,u)}}
+  else if(o.k==='fire'){const p=o.t/o.T,hy=(1-p)*Math.min(120,o.y/u-12);for(let j=0;j<5;j++){g.fillStyle=['#fff6c0','#ffd060','#ff8a30','#e04a20','#902a10'][j];const q=(5-j)*u;g.fillRect(o.x-q/2-rd(j*3*u*(1-p)),o.y-rd((hy+j*7)*u)-q/2,q,q)}if(o.t>=o.T&&o.boom){o.boom=0;fx.push({k:'boom',x:o.x,y:o.y,t:0,T:.35,r:o.r})}}}
  shots=shots.filter(o=>o.t<o.T&&o.x<9999);
 }
 let tPrev=performance.now(),tClock=0,casted=0;
@@ -70,7 +71,7 @@ function frame(){
  const c=$('cv');sizeUp(c);const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);
  const now=performance.now(),dt=Math.min(.05,(now-tPrev)/1000);tPrev=now;tClock+=dt;
  const id=sk?SK2[wp]:wp;castId=id;
- const u=c.width<420?2:3,hx=Math.max(70,c.width*.18),hy=c.height*.72,F=SKF.get(id),T=tClock%CAST;
+ const u=Math.max(2,Math.min(3,Math.floor(c.height/78))),hx=Math.max(70,c.width*.18),hy=c.height*.8,F=SKF.get(id),T=tClock%CAST;
  let n,i;
  if(T<.25){const r=SKF.pick(F,'wu',T);if(r){n=r[0];i=r[1]}}
  else if(T<.25+F.hitT){if(!casted){casted=1;startCast(c,u,hx,hy)}const r=SKF.pick(F,'hit',T-.25);if(r){n=r[0];i=r[1]}}
