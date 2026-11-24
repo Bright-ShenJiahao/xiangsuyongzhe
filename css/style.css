@@ -1251,3 +1251,4 @@ body.tvbg { background: #000; }
 .sbtn:active { transform: translate(2px, 2px); }
 .sbtn.gold { color: #ffd77a; background: #2a200a; box-shadow: 0 -2px 0 0 #ffd77a, 0 2px 0 0 #ffd77a, -2px 0 0 0 #ffd77a, 2px 0 0 0 #ffd77a; }
 .slotErr { font-size: 14px; color: #ff7a5a; }
+.cart .lab canvas.av { width: clamp(28px, 4.4vw, 42px); height: clamp(28px, 4.4vw, 42px); border: 0; background: none; image-rendering: pixelated; }   /* 11/24 存档：小人 */

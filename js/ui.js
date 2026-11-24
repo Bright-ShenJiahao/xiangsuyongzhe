@@ -42,11 +42,13 @@
   // 11/24 存档位：继续游戏 = 选存档 → 宫殿；新的游戏 = 选空位 → 选人 → 塔顶开场
   function slotPick(mode) { $('slotT').textContent = '选择存档'; $('slotForm').hidden = true; $('sCon').parentNode.classList.remove('on'); const row = $('slotRow'); row.innerHTML = '';
     for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'cart'; b.dataset.n = n;
-      b.innerHTML = `<img src="art/ui2/save/${has ? 'cart_gold' : 'cart'}.png" alt=""><div class="lab">${has ? `<div class="ph"><img class="av" src="art/portrait/${I.hero}.webp" alt=""><b>${I.name.replace(/[<>&]/g, '')}</b></div><span>💎 ${I.cry} · ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}</span><span>通关 ${I.wins} · 倒下 ${I.deaths}</span>` : '<span class="no">空存档</span>'}</div>${has && I.run ? '<i class="rled" title="有一局没打完"></i>' : ''}<span class="tag">存档 ${n}${has && I.run ? ' · 没打完' : ''}</span>${has ? '<span class="del">删除</span>' : ''}`;
+      b.innerHTML = `<img src="art/ui2/save/${has ? 'cart_gold' : 'cart'}.png" alt=""><div class="lab">${has ? `<div class="ph"><canvas class="av" data-h="${I.hero}" data-w="${I.weapon}"></canvas><b>${I.name.replace(/[<>&]/g, '')}</b></div><span>💎 ${I.cry} · ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}</span><span>通关 ${I.wins} · 倒下 ${I.deaths}</span>` : '<span class="no">空存档</span>'}</div>${has && I.run ? '<i class="rled" title="有一局没打完"></i>' : ''}<span class="tag">存档 ${n}${has && I.run ? ' · 没打完' : ''}</span>${has ? '<span class="del">删除</span>' : ''}`;
       if (has) b.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`删除存档 ${n}「${I.name}」？水晶、强化、称号都会清空，不能恢复。`)) { SLOT.wipe(n); slotPick(); } };
       b.onclick = () => { row.querySelectorAll('.cart').forEach(c => c.classList.toggle('sel', c === b)); insertCart(b, () => slotForm(n, has)); };
       row.appendChild(b); }
-    overlay('slotScr', true); }
+    overlay('slotScr', true);
+    for (const c of row.querySelectorAll('canvas.av')) { const d = Math.min(3, devicePixelRatio || 1), S = Math.round(c.getBoundingClientRect().width * d) || 64; c.width = c.height = S; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;   // 11/24 存档上画游戏里的小人
+      try { const u = Math.max(1, Math.floor(S * .85 / 48)); SPR.drawHero(g, 'idle', 0, S / 2, S * .95, false, u, { w: c.dataset.w, c: c.dataset.h }); } catch (e) {} } }
   // 选中的卡带飞进游戏机卡槽，电源灯亮
   function insertCart(b, done) { const r = b.getBoundingClientRect(), c = $('sCon').getBoundingClientRect(), f = b.querySelector('img').cloneNode(); f.className = 'flyCart'; Object.assign(f.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px' }); document.body.appendChild(f);
     const tx = c.left + c.width * .5 - (r.left + r.width / 2), ty = c.top + c.height * .28 - (r.top + r.height * .85), sc = (c.width * .46) / r.width;

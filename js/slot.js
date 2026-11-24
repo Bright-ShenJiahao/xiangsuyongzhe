@@ -14,7 +14,7 @@
     N: 3, get cur() { return cur; },
     use(n) { cur = n; s0.call(localStorage, 'xsyz-slot', String(n)); },
     has(n) { return raw(n, 'xsyz-introSeen') === '1'; },   // 看完塔顶开场才算建好存档
-    info(n) { let R = {}; try { R = JSON.parse(raw(n, 'xsyz-rec') || '{}'); } catch (e) {} return { name: raw(n, 'xsyz-name') || '无名勇者', hero: raw(n, 'xsyz-hero') === 'f' ? 'f' : 'm', cry: +raw(n, 'xsyz-crystal') || 0, best: R.best || 0, wins: R.wins || 0, deaths: R.deaths || 0, run: !!raw(n, 'pxyz.save1') }; },
+    info(n) { let R = {}; try { R = JSON.parse(raw(n, 'xsyz-rec') || '{}'); } catch (e) {} return { weapon: raw(n, 'xsyz-weapon') || 'sword', name: raw(n, 'xsyz-name') || '无名勇者', hero: raw(n, 'xsyz-hero') === 'f' ? 'f' : 'm', cry: +raw(n, 'xsyz-crystal') || 0, best: R.best || 0, wins: R.wins || 0, deaths: R.deaths || 0, run: !!raw(n, 'pxyz.save1') }; },
     wipe(n) { for (const k of PER) r0.call(localStorage, 'xsyz-s' + n + '-' + k.replace(/^xsyz-|^pxyz\./, '')); },
   };
 })();
