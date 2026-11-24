@@ -4,7 +4,7 @@
   const IW = 1672, IH = 941;
   const P = { moon: [663, 124, 150], torch: [[140, 167], [383, 222]], gem: [351, 355], crystal: [639, 264] };
   const flies = Array.from({ length: 10 }, () => ({ x: Math.random() * IW * .62, y: 560 + Math.random() * 360, p: Math.random() * 7, s: .4 + Math.random() * .8, r: 1 + Math.random() * 1.6 }));
-  const FL = Object.assign(new Image(), { src: 'art/fx/map/torch.webp' }), FLP = [[140, 184, 78], [385, 246, 62]];   // 11/23 火把：8 帧火焰序列盖在原画的火上（底边 x, y, 高）
+  const FL = Object.assign(new Image(), { src: 'art/fx/map/torch.webp' }), FLP = [[140, 182, 70], [385, 243, 56]];   // 11/23 火把：8 帧火焰序列盖在原画的火上（底边 x, y, 高）
   let cv, g, run = false, t0 = 0; const bgImg = new Image(); bgImg.onload = () => { t0 = performance.now(); }; bgImg.src = 'art/title/art13.webp';   // 11/22 主图先出来，光影等主图加载完再 1 秒淡入
   function rect() {   // 背景图在屏幕上的位置和缩放
     const el = cv.parentElement, W = el.clientWidth, H = el.clientHeight, cs = getComputedStyle(el), sz = cs.backgroundSize, [bx, by] = cs.backgroundPosition.split(' ').map(v => parseFloat(v) / 100);
@@ -17,7 +17,7 @@
     const dpr = Math.min(2, devicePixelRatio || 1), R = rect(); if (cv.width !== Math.round(R.W * dpr)) { cv.width = Math.round(R.W * dpr); cv.height = Math.round(R.H * dpr); }
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, R.W, R.H); if (!t0) return; g.globalAlpha = Math.min(1, (performance.now() - t0) / 1000 - .3);  if (g.globalAlpha <= 0) return; g.globalCompositeOperation = 'lighter'; t /= 1000;
     const X = x => R.ox + x * R.s, Y = y => R.oy + y * R.s, S = v => v * R.s, [mx, my, mr] = P.moon;
-    if (FL.complete && FL.naturalWidth) { g.globalCompositeOperation = 'source-over'; const fw = FL.naturalWidth / 8; FLP.forEach(([x, y, h], i) => { const f = Math.floor(t * 12 + i * 3) % 8, hh = S(h), ww = hh * fw / FL.naturalHeight; g.drawImage(FL, f * fw, 0, fw, FL.naturalHeight, X(x) - ww / 2, Y(y) - hh, ww, hh); }); g.globalCompositeOperation = 'lighter'; }
+    if (FL.complete && FL.naturalWidth) { g.globalCompositeOperation = 'source-over'; const fw = FL.naturalWidth / 8; FLP.forEach(([x, y, h], i) => { const f = Math.floor(t * 12 + i * 3) % 8, hh = S(h * (1 + .2 * (.5 + .5 * Math.sin(t * .8 + i * 2)))), ww = hh * fw / FL.naturalHeight; g.drawImage(FL, f * fw, 0, fw, FL.naturalHeight, X(x) - ww / 2, Y(y) - hh, ww, hh); }); g.globalCompositeOperation = 'lighter'; }
     glow(X(mx), Y(my), S(mr * 1.9), '170,205,255', .32 + .12 * Math.sin(t * .9));                       // ① 月光
     P.torch.forEach(([x, y], i) => { const f = .5 + .25 * Math.sin(t * 9 + i * 3) + .15 * Math.sin(t * 23 + i); glow(X(x), Y(y), S(40 + 8 * f), '255,140,50', .4 + .25 * f); });   // ③ 火把
     const gp = .5 + .5 * Math.sin(t * 2.2); glow(X(P.gem[0]), Y(P.gem[1]), S(28 + 8 * gp), '90,150,255', .5 + .35 * gp);                                          // ④ 宝珠
