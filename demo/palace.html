@@ -2,7 +2,7 @@
 <html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>局外 · 宫殿据点灰盒</title>
 <style>
-@font-face { font-family: WenKai; src: url(art/font/kai.woff2?v=5); }
+@font-face { font-family: WenKai; src: url(art/font/kai.woff2?v=6); }
 #bub { position: fixed; z-index: 7; display: none; transform: translate(-50%, -100%); background: rgba(250,244,230,.96); border: 3px solid #3a2814; color: #3a2814; font: clamp(15px, 2vw, 22px) WenKai, serif; padding: 4px 12px; white-space: nowrap; pointer-events: none; }
 #bub::after { content: ''; position: absolute; left: 50%; top: 100%; width: 10px; height: 8px; margin-left: -5px; background: #3a2814; }
 #panel, #panel * { font-family: WenKai, serif; }
@@ -42,7 +42,7 @@ canvas{display:block}
 // 地面、柱子、红毯都是代码画的灰盒，只验证路线、距离、按钮。正式美术出一整张图替换。
 const cv = document.getElementById('c'), g = cv.getContext('2d'); let VW, VH, Z;
 function fit() { const d = devicePixelRatio || 1; cv.width = innerWidth * d; cv.height = innerHeight * d; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; VW = cv.width; VH = cv.height; Z = Math.min(VW / 1122, VH / 1000, 1); /* 手机宽度铺满，电脑按高度约一屏 */ } addEventListener('resize', fit); fit();
-const PRI = Object.assign(new Image(), { src: 'art/heroP/atlas.png' }), PRF = [[878, 140, 38, 40, 16.5, 40], [918, 140, 39, 40, 17.4, 40]], W = 1122, H = 1402, BG = Object.assign(new Image(), { src: 'art/hub/palace.webp' }), IM = s => Object.assign(new Image(), { src: s }), NI = {}; ['guard_idle0', 'guard_idle1', 'mage_idle0', 'mage_idle1', 'minister_idle0', 'minister_idle1'].forEach(k => NI[k] = IM('art/npc/' + k + '.png'));
+const PRI = Object.assign(new Image(), { src: 'art/heroP/atlas.png' }), PRF = [[878, 140, 38, 40, 16.5, 40], [918, 140, 39, 40, 17.4, 40]], W = 1122, H = 1402, BG = Object.assign(new Image(), { src: 'art/hub/palace.webp' }), IM = s => Object.assign(new Image(), { src: s }), NI = {}; ['guard_idle0', 'guard_idle1', 'captain_idle0', 'captain_idle1', 'mage_idle0', 'mage_idle1', 'minister_idle0', 'minister_idle1'].forEach(k => NI[k] = IM('art/npc/' + k + '.png'));
 const PORT = { p: IM('art/portrait/p.webp'), mage: IM('art/npc/mage_face.png'), guard: IM('art/npc/guard_face.png') };
 const RUN_ON = (() => { try { return new URLSearchParams(location.search).has('game') && !!localStorage.getItem('pxyz.save1'); } catch (e) { return false; } })(), QS = new URLSearchParams(location.search), GAME = QS.has('game'), HS = QS.get('h') === 'f' ? 'f' : 'm';
 const LS = { get: k => { try { return localStorage.getItem('xsyz-' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('xsyz-' + k, v); } catch (e) {} } };
@@ -58,8 +58,12 @@ const NPC = [
   { id: 'p', name: '露米娜', x: 235, y: 330, kind: 'princess', av: PORT.p, lines: ['你回来了。时空门就在我身边，准备好了就出发吧。', '王座……父王走后，一直空着。'], up: 'p', upName: '公主的祝福' },
   { id: 'm', name: '大法师', x: 800, y: 650, kind: 'mage', av: PORT.mage, lines: ['你带回来的那些技能书，我研究过了。', '水晶给我，我能让你的法术更快成形。'], up: 'm', upName: '大法师的研究' },
   { id: 'c', name: '大臣', x: 320, y: 650, kind: 'minister', av: PORT.mage, lines: ['老臣是王国的大臣，国库和账本都归我管。', '勇者大人的战绩，老臣一笔一笔都记着呢。', '国库空了……水晶给老臣，老臣替您打点。'], up: 'c', upName: '国库', rec: 1 },
-  { id: 's', name: '士兵甲', x: 395, y: 1085, kind: 'guard', av: PORT.guard, lines: ['他又回来了。', '要不要去训练场转转？——哦，我们没有训练场。'], up: 's', upName: '士兵的训练' },
-  { id: 's2', name: '士兵乙', x: 728, y: 1085, kind: 'guard', av: PORT.guard, lines: ['墙不够刻了。'], },
+  { id: 's', name: '卫队长', x: 380, y: 1080, kind: 'captain', av: PORT.guard, lines: ['我是卫队长。想学翻滚和闪避，站过来。', '他们几个只会站岗，真本事得找我。', '又回来了？来，再练一遍。'], up: 's', upName: '卫队长的训练' },   // 11/24 金披风、个头大一点：教技能的人
+  { id: 's2', name: '士兵乙', x: 740, y: 1080, kind: 'guard', av: PORT.guard, lines: ['墙不够刻了。', '队长今天心情不错。'] },
+  { id: 's3', name: '士兵丙', x: 380, y: 940, kind: 'guard', av: PORT.guard, lines: ['他又回来了。', '站岗好无聊。'] },
+  { id: 's4', name: '士兵丁', x: 740, y: 940, kind: 'guard', av: PORT.guard, lines: ['屏幕那一边，大概没有哥布林吧。', '要不要给他刻个名字在墙上？'] },
+  { id: 's5', name: '士兵戊', x: 380, y: 800, kind: 'guard', av: PORT.guard, lines: ['别看我，看前面。', '公主殿下在上面等您。'] },
+  { id: 's6', name: '士兵己', x: 740, y: 800, kind: 'guard', av: PORT.guard, lines: ['您的剑……真的能用吗？', '我也想去森林，可是队长不让。'] },
 ];
 const PORTAL = { x: 878, y: 300 }, DOOR = { x: 561, y: 1330 }, THRONE = { x: 561, y: 260 };
 const hero = { x: 561, y: 1085, f: 1, mv: 0 }, K = {}; let go1 = 0, joy = null, near = null, cam = { x: 561, y: 1085 }, T = 0, last = 0, msg = '', msgT = 0;
@@ -130,7 +134,7 @@ function updAct() { $('act').style.display = 'none'; return; const a = $('act');
   if (near === PORTAL) mk('进入时空门 ▶', 0); else { mk('对话', 0); if (near.up) mk('强化', 1); if (near.id === 'p' && GAME && !RUN_ON) mk('出发准备', 2); } }
 function fr(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
 function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s0 = 2.2;
-  if (n.kind === 'guard' || n.kind === 'mage' || n.kind === 'minister') { const im = NI[(n.kind === 'guard' ? 'guard_idle' : n.kind === 'minister' ? 'minister_idle' : 'mage_idle') + tick]; if (im.complete) { g.save(); if (n.x > 500) { g.translate(n.x * 2, 0); g.scale(-1, 1); } const s = Math.min(s0, 100 / im.height); g.drawImage(im, n.x - im.width * s / 2, n.y - im.height * s, im.width * s, im.height * s);   /* 11/24 人物统一高度（大臣原图偏高） */ g.restore(); } }
+  if (n.kind === 'guard' || n.kind === 'captain' || n.kind === 'mage' || n.kind === 'minister') { const im = NI[(n.kind === 'guard' ? 'guard_idle' : n.kind === 'captain' ? 'captain_idle' : n.kind === 'minister' ? 'minister_idle' : 'mage_idle') + tick]; if (im.complete) { g.save(); if (n.x > 500) { g.translate(n.x * 2, 0); g.scale(-1, 1); } const s = Math.min(s0, 100 / im.height) * (n.kind === 'captain' ? 1.2 : 1); g.drawImage(im, n.x - im.width * s / 2, n.y - im.height * s, im.width * s, im.height * s);   /* 11/24 人物统一高度（大臣原图偏高） */ g.restore(); } }
   else if (PRI.complete) { const f = PRF[Math.floor(T * 2) % 2], k = 2.2; g.drawImage(PRI, f[0], f[1], f[2], f[3], Math.round(n.x - f[4] * k), Math.round(n.y - f[5] * k), f[2] * k, f[3] * k); }   // 11/24 公主和塔顶用同一个形象
   else { g.fillStyle = '#f3b8d0'; g.beginPath(); g.moveTo(n.x - 34, n.y); g.lineTo(n.x + 34, n.y); g.lineTo(n.x + 14, n.y - 90); g.lineTo(n.x - 14, n.y - 90); g.fill(); g.fillStyle = '#f6dcc0'; g.beginPath(); g.arc(n.x, n.y - 108, 20, 0, 7); g.fill(); g.fillStyle = '#f2d16a'; g.fillRect(n.x - 22, n.y - 132, 44, 18); g.fillStyle = '#ffd77a'; g.fillRect(n.x - 12, n.y - 140, 24, 8); }
   /* 11/24 头上不再显示名字 */ }
@@ -147,7 +151,7 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0c0908'; g.fillRect(0, 0, VW, VH); g.setTransform(Z, 0, 0, Z, Math.round(VW / 2 - cam.x * Z), Math.round(VH / 2 - cam.y * Z));
   if (BG.complete && BG.naturalWidth) { g.imageSmoothingEnabled = Z < 1; g.imageSmoothingQuality = 'high'; g.drawImage(BG, 0, 0); g.imageSmoothingEnabled = false;   /* 11/24 不放大，只缩小（高质量），人物一律最近邻 */ } else { g.fillStyle = '#5a4c42'; g.fillRect(0, 0, W, H); }
   // 时空门：和塔顶同一个红色裂缝（js/portal.js）
-  if (typeof gamePortal === 'function') { g.save(); g.translate(PORTAL.x, PORTAL.y + 10); g.scale(1.5, 1.5); gamePortal(g, 0, 0, T, 1); g.restore(); g.imageSmoothingEnabled = false; }
+  if (typeof gamePortal === 'function') { g.save(); g.translate(PORTAL.x, PORTAL.y + 10); g.scale(1.5, 1.5); gamePortal(g, 0, 0, T, 1, RUN_ON || CONT ? ['继续上次挑战', '哥布林森林'] : null); g.restore(); g.imageSmoothingEnabled = false; }
   const L = NPC.map(n => ({ y: n.y, n })).concat([{ y: hero.y, h: 1 }]).sort((a, b) => a.y - b.y);
   for (const e of L) { if (e.n) { const n = e.n; if (n === near && n.ring > 0) { g.save(); g.lineWidth = 5; g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, 0, 7); g.stroke(); g.strokeStyle = '#ffd77a'; g.shadowColor = '#ffd77a'; g.shadowBlur = 10; g.beginPath(); g.ellipse(n.x, n.y + 4, 46, 16, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * n.ring); g.stroke(); g.restore(); } drawNPC(n); } else { const W0 = LS.get('weapon') || 'sword', run = hero.mv, n0 = run ? 'run' : 'idle', c0 = Math.max(1, (SPR.count && SPR.count(SPR.heroSet(HS, W0), n0)) || (run ? 4 : 1));   // 11/24 宫殿里也有跑步帧
     try { SPR.drawHero(g, n0, Math.floor(T * (run ? 10 : 2)) % c0, hero.x, hero.y, hero.f < 0, 2, { w: W0, c: HS }); } catch (e) { g.fillStyle = '#fff'; g.fillRect(hero.x - 10, hero.y - 50, 20, 50); } } }

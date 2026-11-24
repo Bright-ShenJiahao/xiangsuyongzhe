@@ -1,6 +1,6 @@
 // 11/24 时空门（塔顶和宫殿共用）：红色裂缝漩涡
 const PCV = document.createElement('canvas'); PCV.width = 40; PCV.height = 52; let ARC = { t: 0, L: [] };
-function gamePortal(ctx, x, footY, T, open) { const [r0, g0, b0] = [255, 90, 50], C = a => `rgba(${r0},${g0},${b0},${a})`, PW = 40, PH = 52, g = PCV.getContext('2d'), im = g.createImageData(PW, PH), D = im.data, t = T * 1.4, R = (a, b) => a + Math.random() * (b - a);
+function gamePortal(ctx, x, footY, T, open, label) { /* label：门上的字，默认「哥布林森林」；数组 = 多行 */ const [r0, g0, b0] = [255, 90, 50], C = a => `rgba(${r0},${g0},${b0},${a})`, PW = 40, PH = 52, g = PCV.getContext('2d'), im = g.createImageData(PW, PH), D = im.data, t = T * 1.4, R = (a, b) => a + Math.random() * (b - a);
   const hi = [Math.min(255, r0 * .4 + 160), Math.min(255, g0 * .4 + 160), Math.min(255, b0 * .4 + 170)];
   for (let py = 0; py < PH; py++) for (let px = 0; px < PW; px++) { const nx = (px + .5 - PW / 2) / (PW / 2), ny = (py + .5 - PH / 2) / (PH / 2), rr = Math.hypot(nx, ny), a = Math.atan2(ny, nx);
     const wob = .035 * Math.sin(4 * a + t * 1.3) + .025 * Math.sin(7 * a - t * 2.1) + .012 * Math.sin(13 * a + t * 3.7), hole = .6 + wob, edge = rr - hole, k = (py * PW + px) * 4;
@@ -17,4 +17,4 @@ function gamePortal(ctx, x, footY, T, open) { const [r0, g0, b0] = [255, 90, 50]
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; const lg = ctx.createRadialGradient(x, footY, 0, x, footY, 60); lg.addColorStop(0, C(.4)); lg.addColorStop(1, C(0)); ctx.fillStyle = lg; ctx.beginPath(); ctx.ellipse(x, footY, 60, 16, 0, 0, 7); ctx.fill();
   const gl = ctx.createRadialGradient(x, cy, 30, x, cy, 80); gl.addColorStop(0, C(.3)); gl.addColorStop(1, C(0)); ctx.fillStyle = gl; ctx.fillRect(x - 85, cy - 85, 170, 170); ctx.restore();
   ctx.imageSmoothingEnabled = false; ctx.drawImage(PCV, Math.round(x - w / 2), Math.round(cy - h / 2), Math.round(w), Math.round(h));
-  if (open >= 1) { ctx.font = 'bold 15px WenKai, serif'; ctx.textAlign = 'center'; const ty = cy - h / 2 - 6; ctx.fillStyle = '#1a0e06'; for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.fillText('哥布林森林', x + ox, ty + oy); ctx.fillStyle = '#ffd890'; ctx.fillText('哥布林森林', x, ty); ctx.textAlign = 'left'; } }
+  if (open >= 1) { const L = label || ['哥布林森林']; ctx.textAlign = 'center'; L.forEach((t, k) => { const last = k === L.length - 1; ctx.font = (last ? 'bold 15px' : '12px') + ' WenKai, serif'; const ty = cy - h / 2 - 6 - (L.length - 1 - k) * 16; ctx.fillStyle = '#1a0e06'; for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.fillText(t, x + ox, ty + oy); ctx.fillStyle = last ? '#ffd890' : '#ffb0a0'; ctx.fillText(t, x, ty); }); ctx.textAlign = 'left'; } }
