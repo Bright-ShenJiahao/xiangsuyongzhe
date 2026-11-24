@@ -1361,3 +1361,10 @@ button:focus-visible { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,215
 /* 11/25 卡片文字不许溢出到隔壁：「下一级」小字允许换行，长词强制断开 */
 .card p small, .card p small.on, .card p small.off, .card small.off, .card small.on { white-space: normal !important; }
 .card p, .card b, .card small { overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
+
+/* 11/25 HUD：铜钱框（等级右边，同高同框）；经验条同高；翻滚冷却改成转圈，剩余次数用圆点 */
+#hud .top .hp #lvBox, #hud .top .hp #coins { height: 23px; box-sizing: border-box; display: flex; align-items: center; }
+#hud .top .hp #coins { position: absolute; left: 62px; top: calc(100% + 8px); margin: 0; padding: 2px 8px 2px 6px; gap: 5px; background: #2a0e0a; box-shadow: 0 0 0 2px #1a0806, 0 0 0 4px #c8a060, 0 0 0 6px #1a0806; font: bold 17px FPixel, monospace; color: #ffe08a; text-shadow: 1px 1px 0 #000; line-height: 1; min-width: 56px; order: 0; }
+#hud .top .hp #coins .pi { width: 18px; height: 18px; flex: none; }
+#hud .top .hp #xpRow { left: 132px; top: calc(100% + 8px); height: 23px; }
+@media (orientation: portrait), (max-width: 760px) { #hud .top .hp #xpRow { left: 126px; } #hud .top .hp #coins { font-size: 15px; min-width: 50px; } }
