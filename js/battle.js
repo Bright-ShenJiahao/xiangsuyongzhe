@@ -939,8 +939,13 @@
       if (o.d) { o.d(); continue; }
       if (o.h) {
         shadow(hero.x, hero.y, 26);
-        if (hero.inv > 0 && hero.roll <= 0 && hero.hurtT <= 0 && !hero.dead && Math.floor(G.t * 20) % 2) continue;
-        const [n, i, st, lg] = heroFrame(), bob = 0, lunge = st === 'strike' ? hero.f * (lg || 0) * u : st === 'hurt' ? -hero.f * 2 * u : 0;
+        if (hero.inv > 0 && hero.roll <= 0 && hero.hurtT <= 0 && !hero.dead && !(hero.shadowT > 0) && Math.floor(G.t * 20) % 2) continue;
+        const [n, i, st, lg] = heroFrame(), wp = hero.cs ? hero.cs.S.w : (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword';
+        if (G.decoy) { ctx.save(); ctx.globalAlpha = .45 + .15 * Math.sin(G.t * 10); SPR.drawHero(ctx, 'idle', 0, X(G.decoy.x), Y(G.decoy.y), hero.f < 0, u, { white: .5, w: wp, c: RUN.hero }); ctx.restore(); }   // 暗影步假身
+        if (hero.shadowT > 0) { ctx.save(); ctx.globalAlpha = .55; ctx.filter = 'brightness(.15) sepia(1) hue-rotate(220deg) saturate(3)'; SPR.drawHero(ctx, n, i, X(hero.x), Y(hero.y), hero.f < 0, u, { w: wp, c: RUN.hero }); ctx.restore();
+          if (Math.random() < .6) parts.push({ x: hero.x + R(-12, 12) * K, y: hero.y - R(0, 40) * K, vx: 0, vy: -20 * K, t: 0, T: .5, col: '#6a4aa8', g: 0 }); continue; }   // 暗影步：黑影
+        if (hero.rShield) { const r = 22 * u, a0 = G.t * 2; ctx.fillStyle = 'rgba(159,220,255,.8)'; for (let a = 0; a < PI * 2; a += .12) ctx.fillRect(X(hero.x) + Math.cos(a + a0) * r, Y(hero.y) - 14 * u + Math.sin(a + a0) * r * .9, u * ((a * 10 | 0) % 3 ? 1 : 2), u); }   // 二段滚护盾
+        const bob = 0, lunge = st === 'strike' ? hero.f * (lg || 0) * u : st === 'hurt' ? -hero.f * 2 * u : 0;
         SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { white: hero.dead && (G.deadR || 0) < .14 ? 1 : 0, w: hero.cs ? hero.cs.S.w : (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword', c: RUN.hero });
       } else {
         if (o.z.hideT > 0) continue;

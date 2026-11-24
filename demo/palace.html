@@ -19,7 +19,7 @@ canvas{display:block}
 <canvas id="c"></canvas>
 <div id="hud"></div>
 <div id="act"></div>
-<div id="dlg"><img id="dav"><div><b id="dn"></b><div id="dt"></div></div></div>
+
 <div id="panel"><div><h3 id="pt" style="margin:0 0 6px"></h3><div id="pl"></div><div style="text-align:right;margin-top:10px"><button id="pc">关闭</button></div></div></div>
 <script src="js/data.js"></script><script src="js/sprites.js"></script>
 <script>
@@ -56,7 +56,12 @@ addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (t.targe
 addEventListener('touchmove', e => { for (const t of e.changedTouches) if (joy && t.identifier === joy.id) { joy.dx = t.clientX - joy.x; joy.dy = t.clientY - joy.y; } }, { passive: true });
 addEventListener('touchend', () => joy = null);
 const $ = id => document.getElementById(id);
-function say(n, s) { $('dav').src = n.av.src; $('dn').textContent = n.name; $('dt').textContent = s; $('dlg').style.display = 'flex'; clearTimeout(say.t); say.t = setTimeout(() => $('dlg').style.display = 'none', 3200); }
+// 11/24 对话 = 说话人头上冒气泡（和塔顶一样），不用头像框
+let BUB = null; function say(n, s) { const o = NPC.find(q => q.id === n.id) || n; BUB = { n: o, txt: s, t: 0, T: Math.max(2.4, s.length * .16) }; }
+function drawBub() { if (!BUB) return; BUB.t += 1 / 60; if (BUB.t > BUB.T) { BUB = null; return; } const n = BUB.n, show = BUB.txt.slice(0, Math.ceil(BUB.t * 18));
+  g.font = 'bold 24px sans-serif'; const w = Math.min(560, g.measureText(BUB.txt).width + 28), x = Math.max(10, Math.min(W - w - 10, n.x - w / 2)), y = n.y - (n.kind === 'princess' ? 200 : 180);
+  g.fillStyle = 'rgba(250,244,230,.97)'; g.fillRect(x, y - 34, w, 44); g.strokeStyle = '#3a2814'; g.lineWidth = 3; g.strokeRect(x, y - 34, w, 44);
+  g.fillStyle = 'rgba(250,244,230,.97)'; g.beginPath(); g.moveTo(n.x - 8, y + 9); g.lineTo(n.x + 8, y + 9); g.lineTo(n.x, y + 22); g.fill(); g.fillStyle = '#3a2814'; g.fillText(show, x + 14, y - 3); }
 function act(n, k) { if (n === PORTAL) { if (GAME) { parent.postMessage('introDone', '*'); return; } msg = '走进时空门 → 出发（demo 到此为止）'; msgT = 2.5; return; } if (k === 1 && n.up) return panel(n); n.li = ((n.li || 0) + 1) % n.lines.length; say(n, n.lines[n.li]); }
 function panel(n) { $('pt').textContent = n.upName + `　（水晶 ${crystal}）`; const L = $('pl'); L.innerHTML = '';
   if (n.rec) { const d = document.createElement('div'); d.className = 'up'; d.innerHTML = '<div><b>战绩</b><small>最远到第 4 站 · 击杀 1,284 · 死亡 7 次 · 通关 0 次（示例）</small></div>'; L.appendChild(d); }
@@ -88,10 +93,11 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
     for (let i = 0; i < 6; i++) { const a = T * 2 + i; g.fillStyle = '#cfe8ff'; g.fillRect(Math.cos(a) * 40 - 2, Math.sin(a * 1.3) * 60 - 2, 4, 4); } g.restore(); g.fillStyle = '#cfe8ff'; g.font = 'bold 22px sans-serif'; g.fillText('时空门', PORTAL.x - 33, PORTAL.y - 160); }
   const L = NPC.map(n => ({ y: n.y, n })).concat([{ y: hero.y, h: 1 }]).sort((a, b) => a.y - b.y);
   for (const e of L) { if (e.n) drawNPC(e.n); else { const hs = SPR.heroSet && SPR.heroSet(HS), nm = hs && (hero.mv ? fr(hs, 'run', 12) || fr(hs, 'walk', 10) : fr(hs, 'idle', 2)); if (nm) SPR.drawHero(g, nm, 0, hero.x, hero.y, hero.f < 0, 2); else { g.fillStyle = '#fff'; g.fillRect(hero.x - 10, hero.y - 50, 20, 50); } } }
+  drawBub();
   if (msgT > 0) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(0, VH * .4 - 30 * devicePixelRatio, VW, 50 * devicePixelRatio); g.fillStyle = '#ffe9a8'; g.font = `${20 * devicePixelRatio}px sans-serif`; g.fillText(msg, VW / 2 - g.measureText(msg).width / 2, VH * .4); }
   $('hud').innerHTML = GAME ? `💎 水晶 ${crystal}${CONT ? `　❤ 还剩 ${CONT} 条命` : ''}<br><small>走进公主身边的时空门出发</small>` : `宫殿据点（正式美术，一张图，镜头上下跟随）<br>💎 水晶 ${crystal}（demo 送的）<br>WASD 走 · 靠近人按 E 对话 / 点按钮`; }
 const CONT = +QS.get('cont') || 0, CRY = +QS.get('cry') || 0;
 if (GAME) { let L = []; try { L = JSON.parse(QS.get('L') || '[]'); } catch (e) {} (async () => { const w = t => new Promise(r => setTimeout(r, t)); await w(600); if (CRY) { msg = `带回 ${CRY} 水晶`; msgT = 2; await w(1800); }
-  for (const [who, txt] of L) { const n = NPC.find(o => o.name === who) || (who === '露米娜' ? NPC[0] : NPC[3]); say(Object.assign({}, n, { name: who }), txt); await w(Math.max(2200, txt.length * 160)); } })(); }
+  for (const [who, txt] of L) { const n = NPC.find(o => o.name === who) || (who === '露米娜' ? NPC[0] : NPC[3]); say(n, txt); await w(Math.max(2200, txt.length * 160)); } })(); }
 Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
 </script></body></html>
