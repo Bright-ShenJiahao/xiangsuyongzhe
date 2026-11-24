@@ -1234,3 +1234,20 @@ body.tvbg { background: #000; }
 /* 11/24 图鉴框固定高度，换页 / 图片加载时不再跳动 */
 #tpanel .box.wide { height: min(86vh, 760px) !important; }
 .cart .del { display: inline-block; margin-top: 2px; font-size: 12px; color: #c8b890; text-decoration: underline; cursor: pointer; } .cart .del:hover { color: #ff8a6a; }
+
+/* 11/24 存档输入屏：像素风（像素字 + 阶梯硬边 + 单色绿屏 + 扫描线 + 方块光标） */
+.slotForm { position: relative; font-family: FPixel, monospace !important; -webkit-font-smoothing: none; font-smooth: never; background: #0a1a0e; border: 0; padding: 18px 22px; box-shadow:
+  0 -4px 0 0 #3a2814, 0 4px 0 0 #3a2814, -4px 0 0 0 #3a2814, 4px 0 0 0 #3a2814,
+  0 -8px 0 0 #c9a15a, 0 8px 0 0 #c9a15a, -8px 0 0 0 #c9a15a, 8px 0 0 0 #c9a15a, -4px -4px 0 0 #c9a15a, 4px -4px 0 0 #c9a15a, -4px 4px 0 0 #c9a15a, 4px 4px 0 0 #c9a15a; margin: 8px; }
+.slotForm::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 2px, transparent 2px 4px); }
+.slotForm, .slotForm * { font-family: FPixel, monospace !important; letter-spacing: .05em; }
+.slotForm label { font-size: 16px; color: #6cff8a; text-shadow: 0 0 6px rgba(108,255,138,.45); }
+.slotForm input { font-size: 18px; color: #b8ffc8; background: #0f2a16; border: 0; padding: 6px 8px; border-radius: 0; caret-color: transparent;
+  box-shadow: 0 -2px 0 0 #6cff8a, 0 2px 0 0 #6cff8a, -2px 0 0 0 #6cff8a, 2px 0 0 0 #6cff8a; margin: 2px; }
+.slotForm input:focus { background: #14361d; }
+.slotForm input::placeholder { color: #3f8a52; }
+.slotForm .cur { display: none; }
+.sbtn { font-size: 16px; border: 0; border-radius: 0; padding: 7px 16px; color: #6cff8a; background: #0f2a16; box-shadow: 0 -2px 0 0 #6cff8a, 0 2px 0 0 #6cff8a, -2px 0 0 0 #6cff8a, 2px 0 0 0 #6cff8a; margin: 2px; }
+.sbtn:active { transform: translate(2px, 2px); }
+.sbtn.gold { color: #ffd77a; background: #2a200a; box-shadow: 0 -2px 0 0 #ffd77a, 0 2px 0 0 #ffd77a, -2px 0 0 0 #ffd77a, 2px 0 0 0 #ffd77a; }
+.slotErr { font-size: 14px; color: #ff7a5a; }
