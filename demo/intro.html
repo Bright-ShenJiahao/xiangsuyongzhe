@@ -96,8 +96,12 @@ async function play() { const id = ++RUN; $('play').style.display = 'none'; rese
     for (let li = 0; li < lines.length; li++) { const l = lines[li]; if (id !== RUN) return; if (pg === 'g2b') MK.go(li); await type($('cap'), l, id); await wait(1500); } if (pg === 'g2b') { MK.go(3); await wait(900); } $('cap').textContent = ''; if (pg !== 'g3') { el.classList.remove('on'); await wait(700); } }
   if (id !== RUN) return; if (QS.has('hub')) { const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); return done(); } tower(id); }   // 11/24 不是第一次：剧情播完白光 → 宫殿
 // 塔顶：白光淡入 → 对话 → 开门 → 走进门（11/24 长按跳过：故事书跳到这里；这里再长按 = 跳过对话直接开门）
-async function tower(id, fromSkip) { setSkip(true, 'tower'); const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); if (id !== RUN) return; $('g3').classList.remove('on');
-  $('px').style.opacity = 1; pxT0 = performance.now(); if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); } w.style.transition = 'opacity 1.4s'; w.style.opacity = 0; await wait(3600); if (id !== RUN) return;
+/* 11/25 新流程：故事书 → 选人 → 塔顶召唤。?tw = 从选人页过来：塔顶的图已经在了，等宿主说 summon（选人页像素化消散完）再召唤勇者 */
+let summonGo = null; addEventListener('message', e => { if (e.data === 'summon' && summonGo) { const f = summonGo; summonGo = null; f(); } });
+async function tower(id, fromSkip) { setSkip(true, 'tower'); const w = $('white');
+  if (QS.has('tw')) { $('g3').classList.remove('on'); $('px').style.opacity = 1; pxT0 = performance.now() + 1e7; if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); } await new Promise(r => { summonGo = r; setTimeout(r, 6000); }); if (id !== RUN) return; pxT0 = performance.now(); await wait(3600); }
+  else { w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); if (id !== RUN) return; $('g3').classList.remove('on');
+  $('px').style.opacity = 1; pxT0 = performance.now(); if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); } w.style.transition = 'opacity 1.4s'; w.style.opacity = 0; await wait(3600); } if (id !== RUN) return;
   if (id !== RUN) return; await say(id, '勇者', '../art/portrait/m.webp', '这是……我刚买的游戏里？');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '您就是回应召唤的勇者吧！');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '裂缝还在扩大……请帮帮这片大陆！');
@@ -123,7 +127,7 @@ function reset() { walk = null; portalT = 0; MK.reset(); pxState = 'off'; for (c
 $('play').onclick = play;
 const GAME = /[?&]game/.test(location.search), FIRST = /[?&]first/.test(location.search);
 const done = () => { if (GAME) parent.postMessage('introDone', '*'); };
-if (GAME) { $('play').classList.add('g'); $('first').style.display = 'none'; $('play').style.display = 'none'; $('fst').checked = FIRST; addEventListener('load', () => setTimeout(QS.has('visit') ? visitStart : QS.has('tower') ? towerBack : play, 300)); } // 长按跳过：只在故事书插图部分有效；第一次玩不显示；塔顶像素部分不能跳
+if (GAME) { $('play').classList.add('g'); $('first').style.display = 'none'; $('play').style.display = 'none'; $('fst').checked = FIRST; addEventListener('load', () => setTimeout(QS.has('tw') ? (() => { reset(); tower(++RUN); }) : QS.has('visit') ? visitStart : QS.has('tower') ? towerBack : play, 300)); } // 长按跳过：只在故事书插图部分有效；第一次玩不显示；塔顶像素部分不能跳
 let canSkip = false, hold = 0, holdT0 = 0; const HOLD = 1000;
 let skipStage = ''; function setSkip(on, st = 'story') { skipStage = on ? st : ''; canSkip = on && !$('fst').checked; $('skip').style.display = canSkip ? 'flex' : 'none'; hold = 0; $('skc').style.strokeDashoffset = 50.3; }
 function holdTick() { if (!hold) return; const k = Math.min(1, (performance.now() - holdT0) / HOLD); $('skc').style.strokeDashoffset = 50.3 * (1 - k); if (k >= 1) { hold = 0; doSkip(); } else requestAnimationFrame(holdTick); }

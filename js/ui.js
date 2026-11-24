@@ -73,7 +73,7 @@
     const h = await pinHash(name, pin);
     if (has) { const raw = k => localStorage.getItem('xsyz-s' + n + '-' + k), nm = raw('name'), ph = raw('pin') || ''; if (nm && nm !== name) return err(`存档 ${n} 的名字不对`); if (ph && ph !== h) return err('口令不对'); }
     goBusy = 1; setTimeout(() => { goBusy = 0; overlay('slotScr', false); SLOT.use(n);
-      if (!has) { SLOT.wipe(n); store.set('name', name); store.set('pin', h); return tvOff(() => openPrep(true)); }
+      if (!has) { SLOT.wipe(n); store.set('name', name); store.set('pin', h); return tvOff(() => playStory(() => openPrep(true))); }   /* 11/25 新存档：电视开机 → 剧情故事书 → 选人 → 像素化 → 塔顶召唤 */
       if (!localStorage.getItem('xsyz-s' + n + '-name')) store.set('name', name);
       tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; mapFall(() => { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, drop: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); }); } else { openPrep(true); startBattle(build()); } }); }); }, 450); }
   for (const id of ['sName', 'sPin']) $(id).onkeydown = e => { if (e.key === 'Enter') { if (slotIns) slotGo(); else { $('sErr').className = 'slotErr ok'; $('sErr').textContent = '先点一个存档，或者把它拖进游戏机'; } } };
@@ -233,7 +233,18 @@
   const introSeen = () => store.get('introSeen') === '1';
   function playIntro(go, hub) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game' + (hub ? '&hub' : '') + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
-  $('pGo').onclick = () => { const b = build(); if (!introSeen()) playIntro(() => startBattle(b)); else openHub('', () => startBattle(b)); };   // 11/24 选人只在新存档出现：塔顶开场 → 开打
+  function playStory(go) { const f = $('introF'); f.src = 'demo/intro.html?game&hub&first&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
+  /* 选人页点出发：整个界面（真的 DOM）被 SVG 滤镜越变越大的像素吃掉，塔顶已经在底下，然后勇者由像素聚拢召唤出来 */
+  function pixelOut(done) { const pr = $('prep'); let svg = document.getElementById('pixF'); if (!svg) { document.body.insertAdjacentHTML('beforeend', '<svg id="pixF" width="0" height="0" style="position:absolute"><filter id="pixelate" filterUnits="userSpaceOnUse" x="0" y="0" width="4000" height="4000" color-interpolation-filters="sRGB"><feFlood id="pfF" x="0" y="0" width="1" height="1"/><feComposite id="pfC" width="1" height="1"/><feTile result="a"/><feComposite in="SourceGraphic" in2="a" operator="in"/><feMorphology id="pfM" operator="dilate" radius="0"/></filter></svg>'); svg = document.getElementById('pixF'); }
+    const F = $('pfF') || document.getElementById('pfF'), C = document.getElementById('pfC'), M = document.getElementById('pfM'), t0 = performance.now(), D = 1100; pr.style.zIndex = 95; pr.style.filter = 'url(#pixelate)';
+    const step = n => { const k = Math.min(1, (n - t0) / D), s = Math.max(2, Math.round(2 + 46 * k * k)); F.setAttribute('x', s / 2); F.setAttribute('y', s / 2); F.setAttribute('width', 1); F.setAttribute('height', 1); C.setAttribute('width', s); C.setAttribute('height', s); M.setAttribute('radius', s / 2); pr.style.opacity = k < .55 ? 1 : Math.max(0, 1 - (k - .55) / .45);
+      if (k < 1) requestAnimationFrame(step); else { pr.style.filter = ''; pr.style.opacity = ''; pr.style.zIndex = ''; done(); } }; requestAnimationFrame(step); }
+  function playSummon(go) { const f = $('introF'); f.src = 'demo/intro.html?game&tw&first&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); f.style.display = 'block'; $('prep').style.zIndex = 95; let ready = false, started = false;
+    const kick = () => { if (started || !ready) return; started = true; pixelOut(() => { try { f.contentWindow.postMessage('summon', '*'); } catch (e) {} }); };
+    f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} ready = true; setTimeout(kick, 400); };
+    const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
+  $('pGo').onclick = () => { const b = build(); if (!introSeen()) playSummon(() => startBattle(b)); else openHub('', () => startBattle(b)); };   // 11/24 选人只在新存档出现：塔顶开场 → 开打
   let heroSwing = 0;
   function drawHeroPreview(t, dt) {
     const c = $('heroCv'), r = c.getBoundingClientRect(); if (!r.width || !r.height) return;
