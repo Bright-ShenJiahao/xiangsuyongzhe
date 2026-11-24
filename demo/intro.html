@@ -37,7 +37,8 @@ html.gm #play, html.gm #first { display: none !important; }
 <script>
 const $ = s => document.getElementById(s), wait = ms => new Promise(r => setTimeout(r, ms));
 let RUN = 0;
-async function type(el, s, id, sp = 70) { el.textContent = ''; for (let i = 1; i <= s.length; i++) { if (id !== RUN) return; el.textContent = s.slice(0, i); await wait(sp); } }
+const FS = (k) => { if (GAME && QS.has('tw')) try { parent.SFX.play(k); } catch (e) {} };   /* 11/25 只有首次召唤那一幕有音效，之后回塔顶是安静的 */
+async function type(el, s, id, sp = 70, bl) { el.textContent = ''; for (let i = 1; i <= s.length; i++) { if (id !== RUN) return; el.textContent = s.slice(0, i); if (bl && !/[，。！？…\s]/.test(s[i - 1])) FS(bl); await wait(sp); } }
 function kb(img, from, to, T) { img.animate([{ transform: `translate(-50%,-50%) ${from}` }, { transform: `translate(-50%,-50%) ${to}` }], { duration: T, easing: 'linear', fill: 'forwards' }); }
 // 第 2 页：裂缝里一闪一闪往下掉方块；第 3 页：水晶光呼吸
 function fx(cvId, mode) { const c = $(cvId), g = c.getContext('2d'); let bits = []; function f(t) { if (!c.isConnected) return; const W = c.width = c.clientWidth / 3 | 0, H = c.height = c.clientHeight / 3 | 0; g.clearRect(0, 0, W, H);
@@ -60,6 +61,7 @@ function pxDraw(n) { HD = null; const g = $('pc').getContext('2d'); g.imageSmoot
   let ax = 835 * S, ay = 292 * S;   // 图里自带的祭坛正前方（平台前沿）
   if (walk) { stepWalk(); ax = walk.x; ay = walk.y; }
   // 召唤：光柱落下 → 勇者由像素方块拼出来 → 光散去
+  if (QS.has('tw') && t > 0) { const q = pxDraw.q || (pxDraw.q = {}); if (pxT0 !== pxDraw.t0) { pxDraw.t0 = pxT0; pxDraw.q = {}; } const Q = pxDraw.q; for (const [k, tt] of [['sumRise', .05], ['sumPop', 1.5], ['excl', 1.7], ['excl2', 2.4]]) if (t > tt && !Q[k]) { Q[k] = 1; FS(k === 'excl2' ? 'excl' : k); } }
   const pil = t < 1.6 ? Math.min(1, t / .4) : Math.max(0, 1 - (t - 1.6) / .8); if (pil > 0) { const gr = g.createLinearGradient(0, 0, 0, ay); gr.addColorStop(0, 'rgba(220,200,255,0)'); gr.addColorStop(1, `rgba(230,215,255,${.85 * pil})`); g.fillStyle = gr; g.fillRect(ax - 14, 0, 28, ay + 2); g.fillStyle = `rgba(240,230,255,${.5 * pil})`; g.beginPath(); g.ellipse(ax, ay, 26, 7, 0, 0, 7); g.fill(); }
   let fr = HF ? (walk && walk.mv ? HF.run[Math.floor(t * 10) % HF.run.length] : HF.idle[Math.floor(t * 2) % HF.idle.length]) : FR.idle; if (AT.complete && t > .6) { const k = Math.min(1, (t - .6) / 1.2); let off; const GS = (() => { try { return parent !== window && parent.SPR; } catch (e) { return null; } })();
     if (GS) { const run = walk && walk.mv, set = GS.heroSet(HSEX, HW), nm = (GS.sets[set].f[HW + '.' + (run ? 'run' : 'idle')] ? HW + '.' : '') + (run ? 'run' : 'idle'), cnt = Math.max(1, GS.count(set, nm)); off = window.HOFF || (window.HOFF = Object.assign(document.createElement('canvas'), { width: 72, height: 64 })); const og = off.getContext('2d'); og.clearRect(0, 0, 72, 64); og.imageSmoothingEnabled = false; GS.drawHero(og, run ? 'run' : 'idle', Math.floor(t * (run ? 10 : 2)) % cnt, 36, 62, false, 1, { c: HSEX, w: HW }); fr = [0, 0, 72, 64, 36, 62]; }
@@ -87,7 +89,7 @@ function pxDraw(n) { HD = null; const g = $('pc').getContext('2d'); g.imageSmoot
   if (walk) { if (!LAY) mkLay(); const hb = { x1: ax - 20, x2: ax + 20, y1: ay - 44, y2: ay }; for (const o of LAY) if (ay < o.base - 1 && hb.x2 > o.x1 && hb.x1 < o.x2 && hb.y2 > o.y1 && hb.y1 < o.y2) { g.globalAlpha = .5; g.drawImage(o.l, 0, 0); g.globalAlpha = 1; }
     if (walk.ring) EGG.ring(g, walk.ring.x, walk.ring.y, walk.ring.p); }
   if (pxState === 'on') requestAnimationFrame(pxDraw); }
-async function say(id, who, av, s) { const b = $('bub'), c = $('pc').getBoundingClientRect(), S0 = CW / 1672, POS = { '大法师': [1270 * S0, 425 * S0 - 70 * Z], '士兵甲': [505 * S0, 418 * S0 - 70 * Z], '士兵乙': [1165 * S0, 418 * S0 - 70 * Z] }, ps = POS[who], hx = ps ? ps[0] : CW / 2, hy = ps ? ps[1] : who === '勇者' ? 66 * Z + 14 : 120 * Z + 10; b.style.left = c.left + hx / CW * c.width + 'px'; b.style.top = c.top + hy / CH * c.height + 'px'; b.style.display = 'block'; await type(b, s, id, 60); await wait(1400); b.style.display = 'none'; }
+async function say(id, who, av, s) { const b = $('bub'), c = $('pc').getBoundingClientRect(), S0 = CW / 1672, POS = { '大法师': [1270 * S0, 425 * S0 - 70 * Z], '士兵甲': [505 * S0, 418 * S0 - 70 * Z], '士兵乙': [1165 * S0, 418 * S0 - 70 * Z] }, ps = POS[who], hx = ps ? ps[0] : CW / 2, hy = ps ? ps[1] : who === '勇者' ? 66 * Z + 14 : 120 * Z + 10; b.style.left = c.left + hx / CW * c.width + 'px'; b.style.top = c.top + hy / CH * c.height + 'px'; b.style.display = 'block'; await type(b, s, id, 60, who === '露米娜' ? 'blipP' : who === '勇者' ? 'blipH' : 'blipN'); await wait(1400); b.style.display = 'none'; }
 async function play() { const id = ++RUN; $('play').style.display = 'none'; reset(); setSkip(true);
   const P = [['g1', 'scale(1.04)', 'scale(1.14) translate(-2%, 1%)', ['卡带世界里，有一块和平的大陆。', '每到祭典，城里的街道总是热闹非凡。']],
              ['g2', 'scale(1.16) translate(2%, 2%)', 'scale(1.05)', ['直到有一天，这盘卡带被拿去违规烧录——', '别的游戏里的怪物，被硬塞了进来。']],
@@ -106,7 +108,7 @@ async function tower(id, fromSkip) { setSkip(true, 'tower'); const w = $('white'
   if (id !== RUN) return; await say(id, '勇者', '../art/portrait/m.webp', '这是……我刚买的游戏里？');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '您就是回应召唤的勇者吧！');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '裂缝还在扩大……请帮帮这片大陆！');
-  if (id !== RUN) return; $('bub').style.display = 'none'; setSkip(false); portalT = performance.now(); await wait(1250); if (id !== RUN) return; $('pc').animate([{ transform: 'translate(-50%, -50%) translate(0, 3px)' }, { transform: 'translate(-50%, -50%)' }], 200); await wait(1200); if (id !== RUN) return; startWalk(); }
+  if (id !== RUN) return; $('bub').style.display = 'none'; setSkip(false); portalT = performance.now(); FS('door'); await wait(1250); if (id !== RUN) return; $('pc').animate([{ transform: 'translate(-50%, -50%) translate(0, 3px)' }, { transform: 'translate(-50%, -50%)' }], 200); await wait(1200); if (id !== RUN) return; startWalk(); }
 // 11/24 死后回塔顶：GAME OVER → CONTINUE? → 白光进塔顶 → 公主/法师/士兵说几句 → 开门走进去
 async function towerBack() { const id = ++RUN; reset(); let L = []; try { L = JSON.parse(QS.get('L') || '[]'); } catch (e) {}
   const c = $('cap'); c.style.color = '#e84a4a'; c.textContent = 'GAME OVER'; await wait(1300); if (id !== RUN) return; c.style.color = '#ffe9a8'; c.textContent = 'CONTINUE ?'; await wait(1100); if (id !== RUN) return; c.style.color = ''; c.textContent = '';
@@ -209,8 +211,8 @@ function eggSay(s) { const b = $('bub'), c = $('pc').getBoundingClientRect(); b.
 function eggStep(dt) { walk.ring = null; if (walk.mv) { walk.sp = null; walk.sp0 = 0; return; } const X = walk.x / S1, Y = walk.y / S1, sp = SPOTS.find(o => !EGG.has(o.id) && o.t(X, Y)); if (!sp) { walk.sp = null; walk.sp0 = 0; return; } if (walk.sp !== sp.id) { walk.sp = sp.id; walk.sp0 = 0; } walk.sp0 += dt / 2; walk.ring = { x: walk.x, y: walk.y + 2, p: Math.min(1, walk.sp0) }; if (walk.sp0 >= 1) { const e = EGG.find(sp.id); walk.sp0 = 0; if (e) eggSay(e.say); } }
 function stepWalk() { const n = performance.now(), dt = Math.min(.05, (n - (wLast || n)) / 1000); wLast = n; let dx = (KEY.KeyD || KEY.ArrowRight ? 1 : 0) - (KEY.KeyA || KEY.ArrowLeft ? 1 : 0), dy = (KEY.KeyS || KEY.ArrowDown ? 1 : 0) - (KEY.KeyW || KEY.ArrowUp ? 1 : 0);
   if (touchP) { const c = $('pc').getBoundingClientRect(), tx = (touchP.clientX - c.left) / c.width * CW, ty = (touchP.clientY - c.top) / c.height * CH; dx = tx - walk.x; dy = ty - walk.y; }
-  const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv) { const nx = walk.x + dx / l * 110 * dt, ny = walk.y + dy / l * 110 * dt; let o = hitNPC(nx, walk.y); if (!o) { if (okW(nx, walk.y)) walk.x = nx; } else bumpSay(o); o = hitNPC(walk.x, ny); if (!o) { if (okW(walk.x, ny)) walk.y = ny; } else bumpSay(o); }
+  const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv && (walk.st = (walk.st || 0) - dt) <= 0) { walk.st = .3; FS('step'); } if (walk.mv) { const nx = walk.x + dx / l * 110 * dt, ny = walk.y + dy / l * 110 * dt; let o = hitNPC(nx, walk.y); if (!o) { if (okW(nx, walk.y)) walk.x = nx; } else bumpSay(o); o = hitNPC(walk.x, ny); if (!o) { if (okW(walk.x, ny)) walk.y = ny; } else bumpSay(o); }
   if (window.EGG && GAME) eggStep(dt); tpStep(dt);
   walk.x = Math.max(95 * S1, Math.min(1580 * S1, walk.x)); walk.y = Math.max(138 * S1, Math.min(770 * S1, walk.y));   /* 11/25 夹边跟 WALKR 一致（旧夹边把祭台一带挡在外面） */
-  if (!QS.has('visit') && Math.hypot(walk.x - 835 * CW / 1672, (walk.y - 735 * CW / 1672) * 1.4) < 18 && !walk.done) { walk.done = 1; $('cap').textContent = ''; $('white').style.transition = 'opacity .5s'; $('white').style.opacity = 1; setTimeout(done, 550); } }
+  if (!QS.has('visit') && Math.hypot(walk.x - 835 * CW / 1672, (walk.y - 735 * CW / 1672) * 1.4) < 18 && !walk.done) { walk.done = 1; FS('whoosh'); $('cap').textContent = ''; $('white').style.transition = 'opacity .5s'; $('white').style.opacity = 1; setTimeout(done, 550); } }
 </script></body></html>
