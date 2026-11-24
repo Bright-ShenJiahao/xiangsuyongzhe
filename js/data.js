@@ -178,7 +178,7 @@ window.DATA = {
   // 11/22 卡带世界地图（art/ui2/map.webp 上的位置，按图宽高的比例）：打完一章在这里选下一章。只有第一章能玩，其余锁着
   // 11/22 世界势力（铃兰之剑式）：每章一块领地，地图上叠颜色 + 旗帜 + 关系。x/y 是 art/ui2/map.webp 上的比例位置，rx/ry 是领地染色范围
   chapters: [
-    { id: 1, name: '哥布林部落', land: '西部草原', c: '#9ccf3a', sym: '牙', rel: '敌对', x: .2, y: .42, rx: .14, ry: .2, boss: '哥布林老板', open: true },
+    { id: 1, name: '哥布林森林', land: '西部森林', c: '#9ccf3a', sym: '牙', rel: '敌对', x: .2, y: .42, rx: .14, ry: .2, boss: '哥布林王', open: true },
     { id: 2, name: '暗夜精灵', land: '幽林', c: '#3fae8a', sym: '月', rel: '中立', x: .44, y: .27, rx: .11, ry: .14, boss: '暗夜女祭司' },
     { id: 3, name: '矮人废坑', land: '北方雪山', c: '#d0703a', sym: '镐', rel: '敌对', x: .28, y: .12, rx: .13, ry: .12, boss: '失控熔炉魔像' },
     { id: 4, name: '吸血鬼城堡', land: '东部古堡', c: '#c8283a', sym: '血', rel: '敌对', x: .82, y: .32, rx: .12, ry: .2, boss: '吸血鬼伯爵' },

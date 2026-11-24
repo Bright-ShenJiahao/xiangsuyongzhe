@@ -55,7 +55,7 @@
         busy = 1; $('sErr').textContent = ''; b.classList.add('sel'); insertCart(b, () => setTimeout(() => { overlay('slotScr', false); SLOT.use(n);
           if (!has) { SLOT.wipe(n); store.set('name', name); store.set('pin', h); return tvOff(() => openPrep(true)); }
           if (!localStorage.getItem('xsyz-s' + n + '-name')) store.set('name', name);
-          tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); }, 650)); };
+          tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; mapFall(() => { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, drop: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); }); } else { openPrep(true); startBattle(build()); } }); }); }, 650)); };
       row.appendChild(b); }
     overlay('slotScr', true); setTimeout(() => $('sName').focus(), 80);
     for (const c of row.querySelectorAll('canvas.av')) { const d = Math.min(3, devicePixelRatio || 1), S = Math.round(c.getBoundingClientRect().width * d) || 64; c.width = c.height = S; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
@@ -405,7 +405,7 @@
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; go(); }; addEventListener('message', on); }
   $('rAgain').onclick = () => { BATTLE.stop(); overlay('result', false); const r = lastRes || {};
     if (!r.cont) return playTower(r, () => { openPrep(true); startBattle(build()); });   // 11/24 这局结束：回宫殿（男女已经跟着存档定了）
-    playTower(r, () => { const s = r.cont && BATTLE.loadSave(); if (s) { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, cont: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else startBattle(lastBuild); }); };   // 11/24 有命：续关回本站开头；没命：新的一局
+    playTower(r, () => { const s = r.cont && BATTLE.loadSave(); if (s) mapFall(() => { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, cont: 1, drop: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); }); else startBattle(lastBuild); }); };   // 11/24 有命：续关回本站开头；没命：新的一局
   $('rWep').onclick = () => { BATTLE.stop(); overlay('result', false); openPrep(false); };
   $('rHome').onclick = () => { BATTLE.stop(); overlay('result', false); show('title'); };
   // 11/22 切走自动暂停：只在正中间显示一个暂停图标（点一下 / 按任意键继续）；按 P 或点右上角才进备战页
