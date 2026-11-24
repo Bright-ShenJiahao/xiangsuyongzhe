@@ -96,7 +96,7 @@
     if (k === 'item') for (const it of DATA.startItems.slice().sort((a, b) => DATA.itemTier(a) - DATA.itemTier(b))) { const tr = DATA.itemTier(it); card(SEEN.has('i:' + it.id), pi(it.id), it.name, '宝物 · ' + DATA.tierName[DATA.itemTier(it)], typeof it.d === 'function' ? it.d(1) : (it.desc || '')); g.lastChild.classList.add('t' + tr); }
     if (k === 'oath') for (const [id, O] of Object.entries(DATA.oaths)) { const ic = pi('oath/' + id); ic.classList.add('oimg'); card(SEEN.has('o:' + id), ic, O.name, O.mv ? '身法印记' : '誓约印记', O.d(DATA.oathLv[4]) + '<br><span class="lv">（满级效果）</span>'); }
     if (k === 'find') for (const e of EGG.LIST) { const has = EGG.has(e.id) || SEEN.all(), el = document.createElement('div'); tot++; if (has) got++; el.className = 'cxi' + (has ? '' : ' lock'); el.innerHTML = `<div class="ic tt">${has ? `<img src="art/meta/egg_${e.id}.png" width="40" height="40" style="object-fit:contain" onerror="this.outerHTML='?'">` : '?'}</div><div><b>${has ? e.name : '？？？'}</b><small>${e.where}的小发现</small><p>${has ? e.text : '还没发现'}</p></div>`; g.appendChild(el); }
-    if (k === 'title') { let own = []; try { own = JSON.parse(store.get('titles') || '[]'); } catch (e) {} for (const t of DATA.titles) { const has = own.includes(t.id) || SEEN.all(); tot++; if (has) got++; const e = document.createElement('div'); e.className = 'cxi' + (has ? '' : ' lock'); e.innerHTML = `<div class="ic tt">称</div><div><b>${has ? t.name : '？？？'}</b><small>获得条件：${t.how}</small><p>${has ? t.d : '还没获得'}</p></div>`; g.appendChild(e); } }
+    if (k === 'title') { let own = []; try { own = JSON.parse(store.get('titles') || '[]'); } catch (e) {} for (const t of DATA.titles) { const has = own.includes(t.id) || SEEN.all(); tot++; if (has) got++; const e = document.createElement('div'); e.className = 'cxi' + (has ? '' : ' lock'); e.innerHTML = `<div class="ic tt">${has ? `<img src="art/meta/title_${t.id}.png" width="40" height="40" style="object-fit:contain" onerror="this.outerHTML='称'">` : '称'}</div><div><b>${has ? t.name : '？？？'}</b><small>获得条件：${t.how}</small><p>${has ? t.d : '还没获得'}</p></div>`; g.appendChild(e); } }
     g.insertAdjacentHTML('afterbegin', `<div class="cxcount">已收集 ${got} / ${tot}</div>`); body.innerHTML = ''; body.appendChild(g); body.scrollTop = 0; }
   const PANELS = {
     codex: ['图鉴', () => { const d = document.createElement('div'); d.className = 'codex';
@@ -224,7 +224,7 @@
     const is = $('iSel'); is.innerHTML = '';
     for (const id of P.itemOpts) { const it = DATA.startItems.find(x => x.id === id), d = document.createElement('div'); d.className = id === P.item ? 'on' : ''; d.innerHTML = `${piH(it.id)}<b>${it.name}</b><small>${it.desc}</small>`; d.onclick = () => { P.item = id; renderPrep(); }; is.appendChild(d); }
     const bag = $('bag'); bag.innerHTML = ''; const it = DATA.startItems.find(x => x.id === P.item);
-    for (let i = 0; i < DATA.bagSize; i++) { const d = document.createElement('div'); if (i === 0 && it) { d.className = 'has'; d.appendChild(pi(it.id)); d.title = it.name + '：' + it.desc; } bag.appendChild(d); }
+    for (let i = 0; i < DATA.bagSize; i++) { const d = document.createElement('div'); if (i === 0 && it) { d.className = 'has tf t' + DATA.itemTier(it); d.appendChild(pi(it.id)); d.title = it.name + '：' + it.desc; } bag.appendChild(d); }
     $('pTip').textContent = '空技能格要在路上拿技能书来填；第 4、5 格以后靠奖励打开。';
   }
   $('aReset').onclick = () => { P.free = {}; renderPrep(); };
