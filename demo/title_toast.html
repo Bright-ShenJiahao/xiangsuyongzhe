@@ -1,0 +1,34 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>称号播报示意（局外）</title>
+<style>
+html,body{margin:0;height:100%;background:#111;color:#f4ecd8;font-family:WenKai,"Kaiti SC",serif;overflow:hidden}
+.sc{position:fixed;inset:0;display:none}.sc.on{display:block}
+#s1{background:url(../art/hub/palace.webp) center 38%/cover}#s2{background:radial-gradient(ellipse at 50% 60%,#3d5a2d,#1d2e18 70%)}#s3{background:#1a120c url(../art/ui2/panel.webp) center/cover}
+#tabs{position:fixed;top:8px;left:8px;z-index:50;display:flex;gap:6px}#tabs button,#go button{font:14px sans-serif;padding:7px 12px;border:2px solid #c89a52;background:#2b2013;color:#ffe9a8;border-radius:5px}#tabs button.on{background:#6a4a1c}
+#go{position:fixed;bottom:12px;left:0;right:0;display:flex;justify-content:center;z-index:50}
+/* 1 上方金边木牌 */
+#plq{position:fixed;left:50%;top:0;transform:translate(-50%,-140%);z-index:40;min-width:min(420px,86vw);padding:10px 26px 12px;text-align:center;background:linear-gradient(#3a2814,#2a1c0e);border:3px solid #e8c070;border-top:0;border-radius:0 0 12px 12px;box-shadow:0 6px 18px #000a,inset 0 0 0 2px #7a5a24;transition:transform .45s cubic-bezier(.2,1.4,.4,1)}
+#plq.on{transform:translate(-50%,0)}#plq small{display:block;color:#d8c08a;font-size:13px;letter-spacing:.3em}#plq b{display:block;color:#ffd77a;font-size:28px;letter-spacing:.12em;text-shadow:0 2px 0 #000,0 0 14px #ffb83a88;margin:2px 0}#plq i{display:block;font-style:normal;color:#cdbb97;font-size:13px}
+/* 2 战斗左下角 */
+#feed{position:fixed;left:14px;bottom:80px;display:flex;flex-direction:column;gap:6px;max-width:52vw;z-index:30}#feed div{font-size:19px;color:#f4ecd8;background:rgba(20,12,6,.62);border-left:4px solid #e8c070;padding:6px 14px;text-shadow:1px 1px 0 #000;animation:fi .25s ease-out}
+#feed div.t{color:#ffd77a;border-left-color:#ffb83a;background:linear-gradient(90deg,rgba(90,56,10,.85),rgba(20,12,6,.62));box-shadow:0 0 12px #ffb83a66;font-size:20px}@keyframes fi{from{transform:translateX(-30px);opacity:0}}
+.fake{position:absolute;left:50%;top:55%;width:36px;height:46px;margin-left:-18px;background:#c8553a;border-radius:6px;box-shadow:0 0 0 3px #0006}
+/* 3 结算页横幅 */
+#res{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);background:#241810cc;border:3px solid #c89a52;padding:18px 22px;text-align:center}#res h2{margin:0 0 10px;color:#ffe9a8}#res p{margin:4px 0;color:#d8c8a8}
+#ban{margin:14px auto 4px;padding:12px 10px;border:3px solid #e8c070;background:linear-gradient(90deg,#4a3010,#7a5418,#4a3010);box-shadow:0 0 16px #ffb83a66;opacity:0;transform:scale(1.4);transition:all .35s cubic-bezier(.2,1.5,.4,1)}#ban.on{opacity:1;transform:scale(1)}#ban small{display:block;color:#f2dca4;letter-spacing:.3em;font-size:13px}#ban b{font-size:30px;color:#fff1b8;letter-spacing:.14em;text-shadow:0 2px 0 #000,0 0 14px #ffb83a}#ban i{display:block;font-style:normal;font-size:13px;color:#e8d6aa;margin-top:2px}
+</style>
+<div id="tabs"><button class="on" data-s="s1">宫殿 / 高塔</button><button data-s="s2">战斗中</button><button data-s="s3">结算页</button></div>
+<div class="sc on" id="s1"></div><div class="sc" id="s2"><div class="fake"></div><div id="feed"></div></div>
+<div class="sc" id="s3"><div id="res"><h2>胜 利</h2><p>击杀 128　用时 06:41　等级 12</p><p>这一局带回 18 水晶。</p><div id="ban"><small>获 得 新 称 号</small><b>好奇宝宝</b><i>在高塔和宫殿找齐 5 个隐藏的小发现</i></div></div></div>
+<div id="plq"><small>获得称号</small><b>好奇宝宝</b><i>在高塔和宫殿找齐 5 个隐藏的小发现</i></div>
+<div id="go"><button id="g">播放一次 ▶</button></div>
+<script>
+let AC;const ac=()=>AC||(AC=new (window.AudioContext||window.webkitAudioContext)());
+function tone(f,d,t,v){const a=ac(),o=a.createOscillator(),g=a.createGain(),s=a.currentTime+t;o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(v,s+.02);g.gain.exponentialRampToValueAtTime(.001,s+d);o.connect(g).connect(a.destination);o.start(s);o.stop(s+d+.05)}
+const chime=()=>{[784,988,1319].forEach((f,i)=>tone(f,.4,i*.09,.07));tone(2637,.5,.3,.03)};
+const $=i=>document.getElementById(i);let cur='s1';
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button,.sc').forEach(e=>e.classList.remove('on'));b.classList.add('on');cur=b.dataset.s;$(cur).classList.add('on');$('plq').classList.remove('on');$('ban').classList.remove('on');$('feed').innerHTML=''});
+$('g').onclick=()=>{chime();
+ if(cur==='s1'){$('plq').classList.add('on');setTimeout(()=>$('plq').classList.remove('on'),3600);}
+ else if(cur==='s2'){const f=$('feed'),a=document.createElement('div');a.textContent='获得一本技能书，按 B 打开背包';f.appendChild(a);const t=document.createElement('div');t.className='t';t.textContent='★ 获得称号：好奇宝宝';f.appendChild(t);setTimeout(()=>{a.remove();},3500);setTimeout(()=>t.remove(),7000);}
+ else{$('ban').classList.remove('on');setTimeout(()=>$('ban').classList.add('on'),60);}};
+</script>
