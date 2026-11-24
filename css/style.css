@@ -1200,9 +1200,6 @@ body.tvbg { background: #000; }
 .pnTit button[disabled] { opacity: .45; }
 .setbar { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; margin: 4px 0 8px; font-size: 13px; color: #a89878; }   /* 11/24 羁绊 */
 .setbar .on { color: #ffd77a; }
-.slots { display: flex; flex-direction: column; gap: 10px; min-width: min(80vw, 420px); }   /* 11/24 存档位 */
-.slots .slot { display: flex; flex-direction: column; align-items: flex-start; padding: 12px 16px; text-align: left; }
-.slots .slot span { font-size: 13px; opacity: .8; }
 .ttlbar { text-align: center; font-size: 13px; color: #c8b890; margin: 2px 0 8px; }   /* 11/24 属性页称号 */
 .ttlbar b { color: #ffd77a; } .ttlbar .new { color: #9fe6ff; }
 
