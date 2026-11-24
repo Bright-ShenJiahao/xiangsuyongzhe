@@ -29,7 +29,7 @@ const cv = document.getElementById('c'), g = cv.getContext('2d'); let VW, VH, Z;
 function fit() { const d = devicePixelRatio || 1; cv.width = innerWidth * d; cv.height = innerHeight * d; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; VW = cv.width; VH = cv.height; Z = Math.min(VW / 948, VH / 950); /* 手机宽度铺满，电脑按高度约一屏 */ } addEventListener('resize', fit); fit();
 const W = 948, H = 1659, BG = Object.assign(new Image(), { src: 'art/hub/palace.webp' }), IM = s => Object.assign(new Image(), { src: s }), NI = {}; ['guard_idle0', 'guard_idle1', 'mage_idle0', 'mage_idle1', 'minister_idle0', 'minister_idle1'].forEach(k => NI[k] = IM('art/npc/' + k + '.png'));
 const PORT = { p: IM('art/portrait/p.webp'), mage: IM('art/npc/mage_face.png'), guard: IM('art/npc/guard_face.png') };
-const QS = new URLSearchParams(location.search), GAME = QS.has('game'), HS = QS.get('h') === 'f' ? 'f' : 'm';
+const RUN_ON = (() => { try { return new URLSearchParams(location.search).has('game') && !!localStorage.getItem('pxyz.save1'); } catch (e) { return false; } })(), QS = new URLSearchParams(location.search), GAME = QS.has('game'), HS = QS.get('h') === 'f' ? 'f' : 'm';
 const LS = { get: k => { try { return localStorage.getItem('xsyz-' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('xsyz-' + k, v); } catch (e) {} } };
 let crystal = GAME ? +LS.get('crystal') || 0 : 120, owned = GAME ? (() => { try { return JSON.parse(LS.get('meta') || '{}'); } catch (e) { return {}; } })() : {};
 const SOON = new Set(['book', 'spin', 'step']);   // 这几项效果还没接进游戏
@@ -62,7 +62,7 @@ function drawBub() { if (!BUB) return; BUB.t += 1 / 60; if (BUB.t > BUB.T) { BUB
   g.font = 'bold 24px sans-serif'; const w = Math.min(560, g.measureText(BUB.txt).width + 28), x = Math.max(10, Math.min(W - w - 10, n.x - w / 2)), y = n.y - (n.kind === 'princess' ? 200 : 180);
   g.fillStyle = 'rgba(250,244,230,.97)'; g.fillRect(x, y - 34, w, 44); g.strokeStyle = '#3a2814'; g.lineWidth = 3; g.strokeRect(x, y - 34, w, 44);
   g.fillStyle = 'rgba(250,244,230,.97)'; g.beginPath(); g.moveTo(n.x - 8, y + 9); g.lineTo(n.x + 8, y + 9); g.lineTo(n.x, y + 22); g.fill(); g.fillStyle = '#3a2814'; g.fillText(show, x + 14, y - 3); }
-function act(n, k) { if (n === PORTAL) { if (GAME) { parent.postMessage('introDone', '*'); return; } msg = '走进时空门 → 出发（demo 到此为止）'; msgT = 2.5; return; } if (k === 1 && n.up) return panel(n); n.li = ((n.li || 0) + 1) % n.lines.length; say(n, n.lines[n.li]); }
+function act(n, k) { if (k === 2) return prep(); if (n === PORTAL) { if (GAME) { parent.postMessage('introDone', '*'); return; } msg = '走进时空门 → 出发（demo 到此为止）'; msgT = 2.5; return; } if (k === 1 && n.up) return panel(n); n.li = ((n.li || 0) + 1) % n.lines.length; say(n, n.lines[n.li]); }
 function panel(n) { $('pt').textContent = n.upName + `　（水晶 ${crystal}）`; const L = $('pl'); L.innerHTML = '';
   if (n.rec) { const d = document.createElement('div'); d.className = 'up'; let R = {}; try { R = JSON.parse(LS.get('rec') || '{}'); } catch (e) {} d.innerHTML = `<div><b>战绩</b><small>最远：${R.best >= 99 ? '通关' : R.best ? '第 ' + R.best + ' 站' : '—'} · 击杀 ${(R.kills || 0).toLocaleString()} · 倒下 ${R.deaths || 0} 次 · 通关 ${R.wins || 0} 次</small></div>`; L.appendChild(d); }
   for (const [id, name, desc, cost] of UP[n.up]) { const lv = owned[id] || 0, max = cost.length, c = cost[lv], d = document.createElement('div'); d.className = 'up';
@@ -70,9 +70,19 @@ function panel(n) { $('pt').textContent = n.upName + `　（水晶 ${crystal}）
     if (SOON.has(id)) { b.textContent = '即将开放'; b.disabled = true; } b.onclick = () => { crystal -= c; owned[id] = lv + 1; if (GAME) { LS.set('crystal', crystal); LS.set('meta', JSON.stringify(owned)); } panel(n); }; d.appendChild(b); L.appendChild(d); }
   $('panel').style.display = 'flex'; }
 $('pc').onclick = () => $('panel').style.display = 'none';
+// 11/24 出发准备（公主）：换起手技能书、称号；一局没打完时不能换
+
+function prep() { const L = $('pl'); $('pt').textContent = '出发准备'; L.innerHTML = ''; const sec = (t) => { const h = document.createElement('div'); h.style.cssText = 'margin:8px 0 4px;color:#ffd77a'; h.textContent = t; L.appendChild(h); const r = document.createElement('div'); r.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px'; L.appendChild(r); return r; };
+  if (RUN_ON) { L.innerHTML = '<p>这一局还没打完，起手技能书和称号要等这局结束才能换。</p>'; $('panel').style.display = 'flex'; return; }
+  const W = LS.get('weapon') || 'sword', r1 = sec('起手技能书'); for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.textContent = (id === W ? '✔ ' : '') + w.name + '·' + w.skill; b.onclick = () => { LS.set('weapon', id); prep(); }; r1.appendChild(b); }
+  let own = []; try { own = JSON.parse(LS.get('titles') || '[]'); } catch (e) {} const T = LS.get('title') || '', r2 = sec('称号（佩戴 1 个）');
+  const tb = (id, name, lock) => { const b = document.createElement('button'); b.textContent = (id === T ? '✔ ' : '') + (lock ? '？？？' : name); b.disabled = lock; b.onclick = () => { LS.set('title', id); prep(); }; r2.appendChild(b); };
+  tb('', '不佩戴'); for (const t of DATA.titles) tb(t.id, t.name, !own.includes(t.id));
+  const TT = DATA.titles.find(t => t.id === T); if (TT) { const d = document.createElement('p'); d.innerHTML = TT.d; d.style.fontSize = '13px'; L.appendChild(d); }
+  $('panel').style.display = 'flex'; }
 function updAct() { const a = $('act'); a.innerHTML = ''; if (!near) { a.style.display = 'none'; return; } a.style.display = 'flex';
   const mk = (t, k) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => act(near, k); a.appendChild(b); };
-  if (near === PORTAL) mk('进入时空门 ▶', 0); else { mk('对话', 0); if (near.up) mk('强化', 1); } }
+  if (near === PORTAL) mk('进入时空门 ▶', 0); else { mk('对话', 0); if (near.up) mk('强化', 1); if (near.id === 'p' && GAME) mk('出发准备', 2); } }
 function fr(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
 function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s = 2.2;
   if (n.kind === 'guard' || n.kind === 'mage' || n.kind === 'minister') { const im = NI[(n.kind === 'guard' ? 'guard_idle' : n.kind === 'minister' ? 'minister_idle' : 'mage_idle') + tick]; if (im.complete) { g.save(); if (n.x > 500) { g.translate(n.x * 2, 0); g.scale(-1, 1); } g.drawImage(im, n.x - im.width * s / 2, n.y - im.height * s, im.width * s, im.height * s); g.restore(); } }
@@ -99,7 +109,7 @@ function loop(n) { const dt = Math.min(.033, (n - last) / 1000 || 0); last = n; 
     else if (t < 3.2) { const k = Math.min(1, (t - 1.1) / .15), sc = 1 + (1 - k) * .6; g.save(); g.translate(VW / 2, VH * .45); g.scale(sc, sc); g.font = `bold ${46 * d}px sans-serif`; g.fillStyle = '#ffd77a'; g.fillText('游戏还没完！！！', (Math.random() - .5) * 4 * (1 - k), 0); g.restore(); g.font = `${20 * d}px sans-serif`; g.fillStyle = '#fff'; g.fillText(`还剩 ${CONT} 条命`, VW / 2, VH * .45 + 50 * d); }
     g.textAlign = 'left'; }
   if (msgT > 0) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(0, VH * .4 - 30 * devicePixelRatio, VW, 50 * devicePixelRatio); g.fillStyle = '#ffe9a8'; g.font = `${20 * devicePixelRatio}px sans-serif`; g.fillText(msg, VW / 2 - g.measureText(msg).width / 2, VH * .4); }
-  $('hud').innerHTML = GAME ? `💎 水晶 ${crystal}${CONT ? `　❤ 还剩 ${CONT} 条命` : ''}<br><small>走进公主身边的时空门出发</small>` : `宫殿据点（正式美术，一张图，镜头上下跟随）<br>💎 水晶 ${crystal}（demo 送的）<br>WASD 走 · 靠近人按 E 对话 / 点按钮`; }
+  $('hud').innerHTML = GAME ? `💎 水晶 ${crystal}${CONT ? `　❤ 还剩 ${CONT} 条命` : ''}<br><small>${RUN_ON ? '还有一局没打完：走进时空门接着打' : `本次出发：${(DATA.weapons[LS.get('weapon') || 'sword'] || {}).skill || ''} · ${(DATA.titles.find(t => t.id === LS.get('title')) || { name: '无称号' }).name}　（找公主「出发准备」更换）`}</small>` : `宫殿据点（正式美术，一张图，镜头上下跟随）<br>💎 水晶 ${crystal}（demo 送的）<br>WASD 走 · 靠近人按 E 对话 / 点按钮`; }
 const CONT = +QS.get('cont') || 0, CRY = +QS.get('cry') || 0;
 if (GAME) { let L = []; try { L = JSON.parse(QS.get('L') || '[]'); } catch (e) {} (async () => { const w = t => new Promise(r => setTimeout(r, t)); await w(600); if (CONT) { OV = { t: 0 }; await w(3200); OV = null; } if (CRY) { msg = `带回 ${CRY} 水晶`; msgT = 2; await w(1800); }
   for (const [who, txt] of L) { const n = NPC.find(o => o.name === who) || (who === '露米娜' ? NPC[0] : NPC[3]); say(n, txt); await w(Math.max(2200, txt.length * 160)); } })(); }
