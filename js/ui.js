@@ -40,21 +40,26 @@
   // ================= 主界面 =================
   const tvOff = go => { const t = $('title'); if (t.classList.contains('tvoff')) return; t.classList.add('tvoff'); document.body.classList.add('tvbg'); setTimeout(() => { t.classList.remove('tvoff'); document.body.classList.remove('tvbg'); go(); }, 560); };
   // 11/24 存档位：继续游戏 = 选存档 → 宫殿；新的游戏 = 选空位 → 选人 → 塔顶开场
-  function slotPick(mode) { $('slotT').textContent = mode === 'new' ? '新的游戏 · 选一个存档位' : '继续游戏 · 选择存档'; $('slotForm').hidden = true; const row = $('slotRow'); row.hidden = false; row.innerHTML = '';
-    for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'scard';
-      b.innerHTML = has ? `<img class="por" src="art/portrait/${I.hero}.webp" alt=""><b>${I.name.replace(/[<>&]/g, '')}</b><span class="sn">存档 ${n} · ${I.hero === 'f' ? '女勇者' : '男勇者'}</span><span class="sl">💎 ${I.cry}　最远 ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}<br>通关 ${I.wins} 次 · 倒下 ${I.deaths} 次</span>${I.run ? '<span class="run">▶ 有一局没打完</span>' : ''}`
-        : `<span class="empty">＋</span><b>空存档</b><span class="sn">存档 ${n}</span>`;
+  function slotPick(mode) { $('slotT').textContent = mode === 'new' ? '新的游戏 · 选一盘卡带' : '继续游戏 · 选一盘卡带'; $('slotForm').hidden = true; $('sCon').parentNode.classList.remove('on'); const row = $('slotRow'); row.innerHTML = '';
+    for (let n = 1; n <= SLOT.N; n++) { const has = SLOT.has(n), I = SLOT.info(n), b = document.createElement('button'); b.className = 'cart'; b.dataset.n = n;
+      b.innerHTML = `<img src="art/ui2/save/${has ? 'cart_gold' : 'cart'}.png" alt=""><div class="lab">${has ? `<div class="ph"><img class="av" src="art/portrait/${I.hero}.webp" alt=""><b>${I.name.replace(/[<>&]/g, '')}</b></div><span>💎 ${I.cry} · ${I.best >= 99 ? '通关' : I.best ? '第 ' + I.best + ' 站' : '—'}</span><span>通关 ${I.wins} · 倒下 ${I.deaths}</span>` : '<span class="no">空白卡带</span>'}</div>${has && I.run ? '<i class="rled" title="有一局没打完"></i>' : ''}<span class="tag">存档 ${n}${has && I.run ? ' · 没打完' : ''}</span>`;
       if (mode === 'cont' && !has) b.disabled = true;
-      b.onclick = () => { if (mode === 'new') { if (has && !confirm(`存档 ${n}「${I.name}」会被覆盖，确定吗？`)) return; return slotForm(n); }
-        overlay('slotScr', false); SLOT.use(n); tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); };
+      b.onclick = () => { if (mode === 'new' && has && !confirm(`存档 ${n}「${I.name}」会被覆盖，确定吗？`)) return; row.querySelectorAll('.cart').forEach(c => c.classList.toggle('sel', c === b)); insertCart(b, () => {
+          if (mode === 'new') return slotForm(n);
+          setTimeout(() => { overlay('slotScr', false); SLOT.use(n); tvOff(() => { const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); } else { openPrep(true); startBattle(build()); } }); }); }, 450); }); };
       row.appendChild(b); }
     overlay('slotScr', true); }
+  // 选中的卡带飞进游戏机卡槽，电源灯亮
+  function insertCart(b, done) { const r = b.getBoundingClientRect(), c = $('sCon').getBoundingClientRect(), f = b.querySelector('img').cloneNode(); f.className = 'flyCart'; Object.assign(f.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px' }); document.body.appendChild(f);
+    const tx = c.left + c.width * .5 - (r.left + r.width / 2), ty = c.top + c.height * .28 - (r.top + r.height * .85), sc = (c.width * .46) / r.width;
+    requestAnimationFrame(() => { f.style.transform = `translate(${tx}px, ${ty}px) scale(${sc})`; f.style.opacity = 0; });
+    setTimeout(() => { f.remove(); $('sCon').parentNode.classList.add('on'); try { SFX.play('pick'); } catch (e) {} done(); }, 460); }
   // 新存档：先起名字和口令 → 选人 → 塔顶开场
-  function slotForm(n) { $('slotRow').hidden = true; $('slotForm').hidden = false; $('slotT').textContent = `新的游戏 · 存档 ${n}`; $('sErr').textContent = ''; $('sName').value = ''; $('sPin').value = ''; setTimeout(() => $('sName').focus(), 50);
-    $('sBack').onclick = () => slotPick('new');
+  function slotForm(n) { $('slotForm').hidden = false; $('slotT').textContent = `新的游戏 · 存档 ${n}`; $('sErr').textContent = ''; $('sName').value = ''; $('sPin').value = ''; setTimeout(() => $('sName').focus(), 50);
+    $('sBack').onclick = () => slotPick('new'); $('sName').oninput = () => { const L = $('slotRow').querySelector(`.cart[data-n="${n}"] .lab`); if (L) L.innerHTML = `<b>${$('sName').value.replace(/[<>&]/g, '') || '……'}</b><span>新的勇者</span>`; };
     $('sOk').onclick = async () => { const name = $('sName').value.trim().replace(/[<>&"'`\\]/g, ''), pin = $('sPin').value.trim();
       if (!name) return $('sErr').textContent = '请输入名字';
-      if (pin.length < 4) return $('sErr').textContent = '口令至少 4 位';
+      if (pin.length < 4) return $('sErr').textContent = '密码至少 4 位';
       let h = pin; try { const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xsyz|' + name + '|' + pin)); h = [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (e) {}
       SLOT.use(n); SLOT.wipe(n); store.set('name', name); store.set('pin', h); overlay('slotScr', false); tvOff(() => openPrep(true)); };
     $('sPin').onkeydown = e => { if (e.key === 'Enter') $('sOk').click(); }; }
