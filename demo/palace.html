@@ -140,7 +140,7 @@ function drawNPC(n) { const tick = Math.floor(T * 1.6 + n.x) % 2, s0 = 2.2;
   /* 11/24 头上不再显示名字 */ }
 /* 11/24 门外的布偶猫：慢走、舔毛、发呆；主角靠近会被吓跑，过一阵再回来 */
 const CF = {}; ['walk0','walk1','walk2','walk3','lick0','lick1','lick2','lick3','idle0','idle1','run0','run1','run2','shock'].forEach(k => CF[k] = IM('art/npc/cat/' + k + '.png'));
-const CAT = { x: 640, y: 1350, d: 1, st: 'walk', t: 5, tx: 760, at: 0 };
+const CAT = { x: 640, y: 1397, d: 1, st: 'walk', t: 5, tx: 760, at: 0 };
 function catGo(st, t) { CAT.st = st; CAT.t = t; CAT.at = 0; }
 function catStep(dt) { const c = CAT; c.at += dt; c.t -= dt;
   const dh = Math.hypot(c.x - hero.x, (c.y - hero.y) * 1.2), vis = c.x > -60 && c.x < W + 60;
