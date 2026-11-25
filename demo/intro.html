@@ -118,7 +118,7 @@ async function towerBack() { const id = ++RUN; reset(); let L = []; try { L = JS
   for (const [who, txt] of L) { if (id !== RUN) return; await say(id, who, '', txt); }
   if (id !== RUN) return; $('bub').style.display = 'none'; setSkip(false); portalT = performance.now(); await wait(1250); if (id !== RUN) return; startWalk(); }
 /* 11/25 传送阵回访：从宫殿传送上来，直接站在塔顶，没有时空门；站上塔里的传送阵 2 秒回宫殿 */
-const TPI = [0, 1, 2, 3, 4].map(k => Object.assign(new Image(), { src: '../art/meta/circle' + k + '.png' })), TPX = 836, TPY = 690; let tpA = 0, tpGo = 0;
+const TPI = [0, 1, 2, 3, 4].map(k => Object.assign(new Image(), { src: '../art/meta/circle' + k + '.png' })), TPX = 836, TPY = 520;   /* 11/25 回宫殿的法阵离祭坛太远 → 上移到台阶下 */ let tpA = 0, tpGo = 0;
 function visitStart() { const id = ++RUN; reset(); const w = $('white'); w.style.transition = 'none'; w.style.opacity = 1; $('px').style.opacity = 1; pxT0 = performance.now() - 4000; pxState = 'on'; requestAnimationFrame(pxDraw);
   walk = { x: 835 * CW / 1672, y: 292 * CW / 1672 }; $('play').style.display = 'none'; $('cap').textContent = matchMedia('(pointer:coarse)').matches ? '按住屏幕拖动；站上法阵 2 秒回宫殿' : 'WASD / 方向键移动；站上法阵 2 秒回宫殿'; setTimeout(() => { w.style.transition = 'opacity .8s'; w.style.opacity = 0; }, 80); }
 function tpDraw(g, S) { const f = tpA > .5 ? (Math.floor(performance.now() / 250) % 2 ? 2 : 3) : tpA > 0 ? 1 : 0, im = TPI[f]; if (im.complete && im.naturalWidth) { const w = 210 * S * 1.1, h = w * im.naturalHeight / im.naturalWidth; g.drawImage(im, TPX * S - w / 2, TPY * S + 22 * S - h * .62, w, h); } }
@@ -214,5 +214,5 @@ function stepWalk() { const n = performance.now(), dt = Math.min(.05, (n - (wLas
   const l = Math.hypot(dx, dy); walk.mv = l > (touchP ? 2 : 0); if (Math.abs(dx) > .5) walk.f = dx < 0 ? -1 : 1; if (walk.mv && (walk.st = (walk.st || 0) - dt) <= 0) { walk.st = .3; FS('step'); } if (walk.mv) { const nx = walk.x + dx / l * 110 * dt, ny = walk.y + dy / l * 110 * dt; let o = hitNPC(nx, walk.y); if (!o) { if (okW(nx, walk.y)) walk.x = nx; } else bumpSay(o); o = hitNPC(walk.x, ny); if (!o) { if (okW(walk.x, ny)) walk.y = ny; } else bumpSay(o); }
   if (window.EGG && GAME) eggStep(dt); tpStep(dt);
   walk.x = Math.max(95 * S1, Math.min(1580 * S1, walk.x)); walk.y = Math.max(138 * S1, Math.min(770 * S1, walk.y));   /* 11/25 夹边跟 WALKR 一致（旧夹边把祭台一带挡在外面） */
-  if (!QS.has('visit') && Math.hypot(walk.x - 835 * CW / 1672, (walk.y - 735 * CW / 1672) * 1.4) < 18 && !walk.done) { walk.done = 1; FS('whoosh'); $('cap').textContent = ''; $('white').style.transition = 'opacity .5s'; $('white').style.opacity = 1; setTimeout(done, 550); } }
+  if (!QS.has('visit') && Math.hypot(walk.x - TPX * S1, (walk.y - TPY * S1) * 1.4) < 18 && !walk.done) { walk.done = 1; FS('whoosh'); $('cap').textContent = ''; $('white').style.transition = 'opacity .5s'; $('white').style.opacity = 1; setTimeout(done, 550); } }
 </script></body></html>
