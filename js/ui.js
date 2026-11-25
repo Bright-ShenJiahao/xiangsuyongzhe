@@ -92,10 +92,10 @@
   function codexList(k) { const body = $('tpBody'), g = document.createElement('div'); g.className = 'cxlist'; let got = 0, tot = 0;
     const card = (has, ic, name, sub, desc) => { tot++; if (has) got++; const e = document.createElement('div'); e.className = 'cxi' + (has ? '' : ' lock'); const i = document.createElement('div'); i.className = 'ic'; if (ic) i.appendChild(ic); e.appendChild(i);
       e.insertAdjacentHTML('beforeend', `<div><b>${has ? name : '？？？'}</b><small>${sub}</small><p>${has ? desc : '还没拿到过'}</p></div>`); g.appendChild(e); };
-    if (k === 'place') for (let n=1;n<=6;n++) {
+    if (k === 'place') for (let n=1;n<=9;n++) {
       const m=DATA.maps.find(m=>m.id===((DATA.stationMap||{})[n]||'field')), has=SEEN.has('place:'+n);
       const im=new Image(); if(has) im.src=m.img; im.style.cssText='width:100%;height:100%;object-fit:cover';
-      card(has,has?im:null,m.name,'第 '+n+' 站'+(has?' · '+m.wx:''),['阳光照亮森林外围的营地。','薄雾笼罩林间的道路。','雨水落在营地与树冠上。','黄昏照进森林深处的空地。','夜色笼罩古老的石门。','深夜的林间仍有火光。'][n-1]);
+      card(has,has?im:null,m.name,'第 '+n+' 站'+(has?' · '+m.wx:''),['阳光照亮森林外围的营地。','晨雾里，精灵旧水闸的决口淌着浅河。','午后的集散场，精灵树被一棵棵运走。','黄昏照进森林深处的空地。','精灵的圣泉被抽干，只剩泥滩。','精灵村落被烧成废墟，月光漏下来。','精灵的草场成了哥布林的驯兽场。','精灵森林里冒起了哥布林的炉烟。','精灵王宫的大殿，王座上坐着哥布林。'][n-1]);
       if(!has) g.lastChild.querySelector('.ic').textContent='？';
     }
     if (k === 'book') for (const sys of ['剑', '枪', '弓', '法杖']) { g.insertAdjacentHTML('beforeend', `<div class="cxh">— ${sys} —</div>`); for (const [id, S] of Object.entries(DATA.skills)) if (S.sys === sys) card(SEEN.has('s:' + id), skIcon(id), S.name, `${S.sys} · ${DATA.tierName[S.tier]} · ${S.dt === 'magic' ? '魔法' : '物理'}`, `${S.desc}${['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<br><span class="lv">Lv${x.slice(1)}：${S[x]}</span>`).join('')}`); }
