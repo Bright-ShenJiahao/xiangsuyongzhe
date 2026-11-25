@@ -9,35 +9,55 @@ canvas{display:block;image-rendering:pixelated}
 #tg button{background:#2a2116;color:#ffd77a;border:2px solid #d9b45a;border-radius:6px;padding:5px 9px;font-size:13px}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="hud">森林深处 · 1.3 屏：两块空地 + 中间古石台<br>WASD / 方向键移动 · 空格翻滚<br>手机：左半屏拖动移动，右半屏点一下翻滚</div>
-<div id="tg"><button id="bMask">显示可走范围</button><button id="bFoe">再来 5 只</button></div>
+<div id="hud">森林深处 · 1.3 屏：两块空地 + 中间古石台<br>WASD / 方向键移动 · 空格翻滚<br>手机：左半屏拖动移动，右半屏点一下翻滚<br>编辑时用键盘移动勇者来挪镜头</div>
+<div id="tg"><button id="bMask">显示可走范围</button><button id="bFoe">再来 5 只</button><button id="bEd">编辑可走范围</button></div>
+<div id="ed" style="display:none;position:fixed;left:8px;bottom:8px;background:rgba(20,16,10,.92);border:2px solid #d9b45a;border-radius:8px;padding:8px;font-size:13px;line-height:2">
+<b style="color:#ffd77a">编辑可走范围</b>　左键 / 手指涂抹 = 加上，按住 Shift 或选「擦掉」= 去掉<br>
+<label><input type="radio" name="em" value="1" checked> 加上</label> <label><input type="radio" name="em" value="0"> 擦掉</label>
+　笔刷 <input type="range" id="brush" min="1" max="12" value="4" style="width:90px">
+　<button id="bReset">恢复默认</button> <button id="bCopy">复制结果发给我</button> <button id="bDone">完成</button>
+<textarea id="edOut" readonly style="display:block;width:100%;height:36px;margin-top:4px;background:#000;color:#9f9;font-size:11px"></textarea></div>
 <script src="js/data.js"></script><script src="js/sprites.js"></script>
 <script>
 // 11/25 局外 demo：哈迪斯式不规则房间。整张图 1672×941（坐标 = 原图像素），只有多边形里能走；镜头跟随，视野约 1/1.5 张图
-const cv = document.getElementById('c'), g = cv.getContext('2d'), BG = new Image(); BG.src = 'art/map/deep5.webp?v=1';
+const cv = document.getElementById('c'), g = cv.getContext('2d'), BG = new Image(); BG.src = 'art/map/deep5.webp?v=2';
 const MW = 2174, MH = 941, SW = 1672, SH = 941;   // 整张约 2 屏，镜头 1 屏 = 原图大小
-const PL = [[[51, 415], [103, 505], [103, 516], [114, 522], [152, 590], [197, 644], [241, 666], [292, 681], [353, 688], [456, 675], [488, 665], [518, 646], [555, 603], [659, 426], [575, 379], [531, 379], [492, 361], [429, 360], [418, 352], [326, 354], [324, 332], [258, 332], [255, 353], [211, 352], [185, 363], [140, 363], [121, 380], [102, 380], [89, 392], [66, 399]], [[1429, 414], [1453, 459], [1456, 480], [1478, 520], [1489, 529], [1531, 614], [1579, 655], [1664, 684], [1691, 680], [1717, 656], [1744, 594], [1775, 546], [1822, 549], [1837, 567], [1858, 624], [1884, 655], [1909, 662], [1964, 644], [2004, 603], [2052, 529], [2085, 464], [2100, 452], [2105, 432], [2086, 415], [2075, 413], [2064, 398], [2042, 392], [2023, 378], [2005, 378], [1990, 366], [1823, 355], [1801, 344], [1773, 314], [1737, 291], [1677, 287], [1667, 266], [1632, 273], [1625, 332], [1589, 372], [1551, 393], [1480, 392], [1464, 402], [1444, 402]], [[784, 321], [1288, 321], [1297, 583], [784, 591]], [[591, 397], [798, 397], [798, 541], [591, 541]], [[1279, 397], [1482, 397], [1482, 541], [1279, 541]]];
+const PL = [[[126, 393], [184, 492], [185, 506], [197, 512], [249, 602], [290, 648], [305, 651], [312, 661], [395, 689], [463, 697], [577, 683], [615, 671], [649, 649], [651, 640], [664, 635], [689, 602], [805, 405], [711, 351], [661, 351], [618, 331], [549, 330], [536, 321], [434, 323], [430, 300], [359, 300], [355, 322], [302, 322], [274, 336], [227, 333], [206, 352], [185, 352], [160, 371], [146, 372]], [[1274, 414], [1295, 465], [1301, 466], [1304, 488], [1329, 534], [1340, 542], [1370, 611], [1389, 640], [1440, 683], [1535, 716], [1562, 714], [1594, 687], [1644, 581], [1660, 562], [1704, 562], [1713, 567], [1728, 587], [1750, 648], [1780, 684], [1808, 692], [1868, 673], [1915, 626], [1958, 551], [1967, 545], [2005, 471], [2021, 458], [2028, 434], [2006, 415], [1993, 412], [1983, 397], [1956, 389], [1934, 373], [1914, 373], [1898, 360], [1714, 348], [1689, 336], [1657, 302], [1622, 279], [1557, 272], [1556, 256], [1543, 256], [1542, 248], [1500, 258], [1499, 311], [1480, 339], [1428, 383], [1411, 390], [1331, 389], [1312, 401], [1289, 401]], [[751, 305], [1311, 305], [1321, 597], [751, 605]], [[536, 390], [766, 390], [766, 550], [536, 550]], [[1301, 390], [1526, 390], [1526, 550], [1301, 550]]];
 function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
-const ok = (x, y) => PL.some(p => inPoly(x, y, p));
+// 11/25 可走范围 = 8 像素一格的格子图；默认由多边形生成，可以在「编辑」模式里用画笔改
+const CS = 8, GW = Math.ceil(MW / CS), GH = Math.ceil(MH / CS); let GRID = new Uint8Array(GW * GH);
+function gridFromPoly() { for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) GRID[j * GW + i] = PL.some(p => inPoly(i * CS + 4, j * CS + 4, p)) ? 1 : 0; }
+function enc() { let o = '', c = GRID[0], n = 0; for (const v of GRID) { if (v === c) n++; else { o += n + ','; c = v; n = 1; } } return GW + 'x' + GH + ':' + GRID[0] + ':' + o + n; }
+function dec(s) { const [, f, r] = s.split(':'); let c = +f, k = 0; for (const n of r.split(',')) { GRID.fill(c, k, k + +n); k += +n; c ^= 1; } }
+try { const sv = localStorage.getItem('deep5-grid'); sv ? dec(sv) : gridFromPoly(); } catch (e) { gridFromPoly(); }
+const ok = (x, y) => { const i = x / CS | 0, j = y / CS | 0; return i >= 0 && j >= 0 && i < GW && j < GH && GRID[j * GW + i] === 1; };
 function move(o, dx, dy) { if (ok(o.x + dx, o.y + dy)) { o.x += dx; o.y += dy; return; } if (ok(o.x + dx, o.y)) o.x += dx; else if (ok(o.x, o.y + dy)) o.y += dy; }
 let VW = 1, VH = 1, SC = 1, zoom = 1.5, showMask = false;
 function fit() { cv.width = innerWidth; cv.height = innerHeight; VW = innerWidth; VH = innerHeight;
   // 视野宽 = 图宽 / zoom；手机竖屏按高度算，保证至少看到同样的高度
   SC = Math.max(VW / SW, VH / SH); }
 addEventListener('resize', fit); fit();
-const hero = { x: 300, y: 460, fx: 1, roll: 0, rcd: 0, rx: 0, ry: 0 }, foes = [];
+const hero = { x: 300, y: 500, fx: 1, roll: 0, rcd: 0, rx: 0, ry: 0 }, foes = [];
 const R = (a, b) => a + Math.random() * (b - a);
 function spawnFoes(n) { const T = ['gob_shield', 'gob_archer', 'gob_wolf']; for (let i = 0; i < n; i++) { let x, y, k = 0; do { const p = PL[Math.random() * PL.length | 0]; x = R(...[Math.min(...p.map(q => q[0])), Math.max(...p.map(q => q[0]))]); y = R(...[Math.min(...p.map(q => q[1])), Math.max(...p.map(q => q[1]))]); } while ((!ok(x, y) || Math.hypot(x - hero.x, y - hero.y) < 200) && ++k < 200); foes.push({ x, y, t: T[i % 3], sp: R(55, 85) }); } }
 spawnFoes(6);
 const K = {}; addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'Space') doRoll(); }); addEventListener('keyup', e => K[e.code] = 0);
-let joy = null; cv.addEventListener('pointerdown', e => { if (e.clientX < VW / 2) joy = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY }; else doRoll(); });
-addEventListener('pointermove', e => { if (joy && e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } }); addEventListener('pointerup', e => { if (joy && e.pointerId === joy.id) joy = null; });
+let joy = null, EDIT = false, paint = null; cv.addEventListener('pointerdown', e => { if (EDIT) { paint = e.pointerId; doPaint(e); return; } if (e.clientX < VW / 2) joy = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY }; else doRoll(); });
+addEventListener('pointermove', e => { if (EDIT && paint === e.pointerId) doPaint(e); if (joy && e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } }); addEventListener('pointerup', e => { if (e.pointerId === paint) { paint = null; save(); } if (joy && e.pointerId === joy.id) joy = null; });
 function input() { let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0);
   if (joy) { const dx = joy.x - joy.x0, dy = joy.y - joy.y0, d = Math.hypot(dx, dy); if (d > 8) { x = dx / Math.max(d, 40); y = dy / Math.max(d, 40); } }
   const d = Math.hypot(x, y); return d > 1 ? [x / d, y / d] : [x, y]; }
 function doRoll() { if (hero.rcd > 0) return; const [x, y] = input(); hero.rx = x || hero.fx; hero.ry = y; const d = Math.hypot(hero.rx, hero.ry); hero.rx /= d; hero.ry /= d; hero.roll = .28; hero.rcd = .8; }
 document.getElementById('bMask').onclick = e => { showMask = !showMask; e.target.textContent = showMask ? '隐藏可走范围' : '显示可走范围'; };
 document.getElementById('bFoe').onclick = () => spawnFoes(5);
+let camX = 0, camY = 0; const E = id => document.getElementById(id);
+function save() { try { localStorage.setItem('deep5-grid', enc()); } catch (e) {} E('edOut').value = enc(); }
+function doPaint(e) { const x = (e.clientX - VW / 2) / SC + camX, y = (e.clientY - VH / 2) / SC + camY, r = +E('brush').value, v = e.shiftKey ? 0 : +document.querySelector('input[name=em]:checked').value, ci = x / CS | 0, cj = y / CS | 0;
+  for (let j = cj - r; j <= cj + r; j++) for (let i = ci - r; i <= ci + r; i++) if (i >= 0 && j >= 0 && i < GW && j < GH && (i - ci) ** 2 + (j - cj) ** 2 <= r * r) GRID[j * GW + i] = v; }
+E('bEd').onclick = () => { EDIT = true; showMask = true; E('ed').style.display = 'block'; E('edOut').value = enc(); };
+E('bDone').onclick = () => { EDIT = false; E('ed').style.display = 'none'; save(); };
+E('bReset').onclick = () => { gridFromPoly(); save(); };
+E('bCopy').onclick = () => { E('edOut').select(); try { navigator.clipboard.writeText(E('edOut').value); } catch (e) { document.execCommand('copy'); } E('bCopy').textContent = '已复制'; };
 let cam = { x: hero.x, y: hero.y }, last = performance.now(), T = 0;
 function fr(set, names) { const S = SPR.sets[set]; if (!S || !S.f) return null; for (const n of names) if (S.f[n]) return n; return S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
 function anim(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : fr(set, [base, 'idle0']); }
@@ -50,11 +70,11 @@ function loop(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; 
   for (let i = 0; i < foes.length; i++) for (let j = i + 1; j < foes.length; j++) { const a = foes[i], b = foes[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1; if (d < 24) { const p = (24 - d) / 2; move(a, -dx / d * p, -dy / d * p); move(b, dx / d * p, dy / d * p); } }
   // 镜头：平滑跟随，夹在图内
   const hw = VW / SC / 2, hh = VH / SC / 2; cam.x += (hero.x - cam.x) * Math.min(1, dt * 6); cam.y += (hero.y - cam.y) * Math.min(1, dt * 6);
-  const cx = Math.max(hw, Math.min(MW - hw, cam.x)), cy = Math.max(hh, Math.min(MH - hh, cam.y));
+  const cx = Math.max(hw, Math.min(MW - hw, cam.x)), cy = Math.max(hh, Math.min(MH - hh, cam.y)); camX = cx; camY = cy;
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0b1014'; g.fillRect(0, 0, VW, VH);
   g.setTransform(SC, 0, 0, SC, Math.round(VW / 2 - cx * SC), Math.round(VH / 2 - cy * SC)); g.imageSmoothingEnabled = false;
   if (BG.complete && BG.naturalWidth) g.drawImage(BG, 0, 0, MW, MH);
-  if (showMask) { g.fillStyle = 'rgba(80,255,80,.28)'; g.strokeStyle = '#f33'; g.lineWidth = 2 / SC; for (const p of PL) { g.beginPath(); p.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); g.stroke(); } }
+  if (showMask) { g.fillStyle = 'rgba(80,255,80,.32)'; for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) if (GRID[j * GW + i]) g.fillRect(i * CS, j * CS, CS, CS); }
   const all = [...foes.map(f => ({ o: f, y: f.y, f: 1 })), { o: hero, y: hero.y }].sort((a, b) => a.y - b.y);
   for (const e of all) { const o = e.o; g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(o.x, o.y, 13, 5, 0, 0, 7); g.fill();
     if (e.f) { const nm = SPR.sets[o.t] && anim(o.t, 'walk', 9); if (nm) SPR.draw(g, o.t, nm, 0, o.x, o.y, hero.x < o.x, .9); else { g.fillStyle = '#7c4'; g.beginPath(); g.arc(o.x, o.y - 12, 11, 0, 7); g.fill(); } }
