@@ -6,14 +6,18 @@
   const K = 2.55, YS = 1.35; let MAPW = 1672, MAPH = 941;   // YS：俯视地面压扁，算距离时竖向放大
   const R = (a, b) => a + Math.random() * (b - a), rd = Math.round, PI = Math.PI;
   let cv, ctx, W = 0, H = 0, u = 2, s = 1, cam = { x: 0, y: 0 };
-  let MAP, MIMG, RUN, opt, G, hero, foes, shots, fx, parts, nums, tele, burns;
+  let MAP, MIMG, RUN, opt, G, hero, foes, shots, fx, parts, nums, tele, burns, MECH = null;
   const keys = {};
   const joy = { on: false, id: null, sx: 0, sy: 0, x: 0, y: 0 };
 
   // ---------- 场地 ----------
   // 可走地面：y0–y1 之间，每一行的左右边界按 pts 表插值
-  function ground(y) { const P = MAP.ground.pts; if (y <= P[0][0]) return [P[0][1], P[0][2]]; for (let i = 1; i < P.length; i++) if (y <= P[i][0]) { const a = P[i - 1], b = P[i], t = (y - a[0]) / (b[0] - a[0] || 1); return [a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; } const q = P.at(-1); return [q[1], q[2]]; }
-  function clampG(o, pad = 0) { const g = MAP.ground; o.y = Math.max(g.y0, Math.min(g.y1, o.y)); const [l, r] = ground(o.y); o.x = Math.max(l + pad, Math.min(r - pad, o.x)); }
+  function ground(y) { if (MECH && MECH.on()) return MECH.bounds(y); const P = MAP.ground.pts; if (y <= P[0][0]) return [P[0][1], P[0][2]]; for (let i = 1; i < P.length; i++) if (y <= P[i][0]) { const a = P[i - 1], b = P[i], t = (y - a[0]) / (b[0] - a[0] || 1); return [a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; } const q = P.at(-1); return [q[1], q[2]]; }
+  function clampG(o, pad = 0) {
+    if (MECH && MECH.on()) { const hh = o === hero; let ok = MECH.walk(o.x, o.y, hh) || (!hh && !o.T.boss && !o.tier && MECH.walk(o.x, o.y, true));   // 普通怪被推进坑里就掉下去
+      if (ok) { o.lx = o.x; o.ly = o.y; return; } if (o.lx != null) { if (MECH.walk(o.x, o.ly, hh)) { o.y = o.ly; o.lx = o.x; return; } if (MECH.walk(o.lx, o.y, hh)) { o.x = o.lx; o.ly = o.y; return; } o.x = o.lx; o.y = o.ly; return; }
+      const [sx, sy] = MECH.snap(o.x, o.y, hh); o.x = sx; o.y = sy; o.lx = sx; o.ly = sy; return; }
+    const g = MAP.ground; o.y = Math.max(g.y0, Math.min(g.y1, o.y)); const [l, r] = ground(o.y); o.x = Math.max(l + pad, Math.min(r - pad, o.x)); }
   const dist = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * YS) / K;   // 单位：像素格
   const ang = (a, b) => Math.atan2((b.y - a.y) * YS, b.x - a.x);
 
@@ -22,7 +26,7 @@
     const dpr = Math.min(3, window.devicePixelRatio || 1); W = Math.round(innerWidth * dpr); H = Math.round(innerHeight * dpr);
     cv.width = W; cv.height = H;
     u = Math.max(1, Math.round(H / 480));   // 11/21 镜头拉远一档（原来 H / 320）
-    while (u / K * MAPW < W || u / K * MAPH < H) u++;   // 地图一定要盖满屏幕（超宽屏会把人物放大一点）
+    const ZM = MAP && MAP.zoom || 1; while (u / K * MAPW < W * ZM || u / K * MAPH < H * ZM) u++;   // 地图一定要盖满屏幕（超宽屏会把人物放大一点）
     s = u / K; ctx.imageSmoothingEnabled = false;
   }
   const X = x => rd((x - cam.x) * s), Y = y => rd((y - cam.y) * s);
@@ -133,14 +137,15 @@
 
   // ---------- 敌人 ----------
   // 生成一只敌人：tier = 'elite' / 'mini'（精英 / 小头目）。at 给了就生在那里，否则离勇者 135–190 格的地面上
-  function edgeSpawn() { const g = MAP.ground, y = R(g.y0, g.y1), [l, r] = ground(y); return { x: Math.abs(l - hero.x) > Math.abs(r - hero.x) ? l + 4 * K : r - 4 * K, y }; }
+  function edgeSpawn() { if (MECH && MECH.on()) return spawnPos(); const g = MAP.ground, y = R(g.y0, g.y1), [l, r] = ground(y); return { x: Math.abs(l - hero.x) > Math.abs(r - hero.x) ? l + 4 * K : r - 4 * K, y }; }
   function spawnPos() {
     const g = MAP.ground; let best = null;
     for (let i = 0; i < 14; i++) {
       // 11/22 包抄：正在跑的时候 45% 的怪刷在你跑的方向前方（±55°），专治边退边射
       const fl = hero.mvT > .6 && Math.random() < .45, a = fl ? Math.atan2(hero.mvy, hero.mvx) + R(-.95, .95) : R(0, PI * 2), d = R(135, 190) * K, x = hero.x + Math.cos(a) * d, y = hero.y + Math.sin(a) * d / YS;
-      if (y < g.y0 || y > g.y1) continue; const [l, r] = ground(y); if (x < l + 6 * K || x > r - 6 * K) continue; return { x, y };
+      if (y < g.y0 || y > g.y1) continue; if (MECH && MECH.on()) { if (!MECH.walk(x, y, false)) continue; return { x, y }; } const [l, r] = ground(y); if (x < l + 6 * K || x > r - 6 * K) continue; return { x, y };
     }
+    if (MECH && MECH.on()) { for (let i = 0; i < 40; i++) { const x = R(g.y0 * 0 + 300 * 1.5, 1300 * 1.5), y = R(g.y0, g.y1); if (MECH.walk(x, y, false) && Math.hypot(x - hero.x, (y - hero.y) * YS) > 120 * K) return { x, y }; } return { x: hero.x + 200 * K, y: hero.y }; }
     const y = R(g.y0, g.y1), [l, r] = ground(y); return { x: Math.abs(l - hero.x) > Math.abs(r - hero.x) ? l + 8 * K : r - 8 * K, y };
   }
   function spawn(type, at, tier) {
@@ -392,7 +397,7 @@
   function nextWave() {   // 进下一站（第 1 段）；站打完 → 路线卡
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();
-    G.wi = -1; Object.assign(G, { firstArm: true, wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], stT: 0, thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
+    applyStationMap(); G.wi = -1; Object.assign(G, { firstArm: true, wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], stT: 0, thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
     if (G.st > 1 && (RUN.cryStn || 1) < G.st) { RUN.cryStn = G.st; addCrystal(2 + G.st, hero.x, hero.y); } saveRun();   /* 每站只给一次，续关 / 重进不重复给 */ nextPhase(); G.ready = 2.2; hero.cs = null; banner(G.W.boss ? '首领战！' : `第 ${G.st} 站 · 准备`, 2); G.paused = false;   // 11/25 开战前 2 秒准备：不刷怪、不出招
   }
   // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
@@ -887,7 +892,7 @@
         for (const z of foes) if (!z.dead && !z.flee && dist(z, hero) < 46 && !(z.zdT > G.t)) { z.zdT = G.t + 2; hurt(z, 0, hero, 30, null, { cc: ['stun', z.T.boss || z.tier === 'mini' ? sec / 2 : sec], quiet: true }); } } } if (hero.rollBuf > 0) { hero.rollBuf -= dt; if (hero.roll <= 0 && hero.rollCd <= 0) roll(); }
       if (hero.roll > 0 && OB('zhendi') && hero.rollFull) for (const z of foes) if (!z.dead && !z.flee && !hero.pushed.has(z) && dist(z, hero) < 26) { hero.pushed.add(z); const a = Math.atan2(z.y - hero.y, z.x - hero.x); z.kbx += Math.cos(a) * 26 * K; z.kby += Math.sin(a) * 26 * K; }   // 震地步：路上的怪被推开
       if (hero.roll > 0) { hero.roll -= dt; hero.x += hero.rvx * 240 * K * dt * (hero.rollMul || 1); hero.y += hero.rvy * 182 * K * dt * (hero.rollMul || 1); if (Math.random() < .7) parts.push({ x: hero.x, y: hero.y, vx: R(-10, 10) * K, vy: R(-10, 0) * K, t: 0, T: .3, col: '#e6dcb4', g: 0 }); }
-      else { const c = hero.cs, root = false, mm = !c ? 1 : c.ph === 'wu' ? (c.S.charge ? .5 : 1) : c.ph === 'hold' ? c.move : (!c.move && c.t < SKF.get(c.sk.id).hitT) ? 1 : .4;   // 11/22：出手那一下不减速，之后的后摇 40% 慢走（翻滚取消）
+      else { const c = hero.cs, root = hero.rootT > 0, mm = !c ? 1 : c.ph === 'wu' ? (c.S.charge ? .5 : 1) : c.ph === 'hold' ? c.move : (!c.move && c.t < SKF.get(c.sk.id).hitT) ? 1 : .4;   // 11/22：出手那一下不减速，之后的后摇 40% 慢走（翻滚取消）
         const [dx, dy] = root ? [0, 0] : moveDir(), d = Math.hypot(dx, dy); hero.moving = d > .1; if (hero.moving) { hero.mvx = (hero.mvx || 0) * .9 + dx / (d || 1) * .1; hero.mvy = (hero.mvy || 0) * .9 + dy / (d || 1) * .1; hero.mvT = (hero.mvT || 0) + dt; } else hero.mvT = 0; if (hero.moving) { const k = Math.min(1, d), v = 80 * hero.m.move * mm * K * (ESK ? ESK.slow() : 1) * (OB('qingyu') && hero.mvT > 2 ? 1 + .06 * OB('qingyu') : 1) * (hero.shadowT > 0 ? 1.3 : 1); hero.x += dx / (d || 1) * k * v * dt; hero.y += dy / (d || 1) * k * v * .76 * dt; if (!c || c.ph !== 'hold') hero.f = dx < -.1 ? -1 : dx > .1 ? 1 : hero.f; } }
       clampG(hero, 8 * K); weapon(dt);
     }
@@ -903,6 +908,7 @@
       z.x += z.kbx * dt * 8; z.y += z.kby * dt * 8; z.kbx *= .8; z.kby *= .8; clampG(z, 4 * K);
     }
     if (ESK) ESK.tick(dt, foes);
+    if (MECH && MECH.on() && !G.over) MECH.tick(dt);
     const L = foes.filter(z => !z.dead && !z.T.ghost), m0 = 9 * K;   // 互相推开，别叠成一坨
     for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j], dx = b.x - a.x, dy = (b.y - a.y) * YS, d = Math.hypot(dx, dy), m = a.T.boss || b.T.boss ? m0 * 2.2 : m0; if (d > 0 && d < m) { const p = (m - d) / 2 / d; if (!a.T.boss) { a.x -= dx * p; a.y -= dy * p / YS; } if (!b.T.boss) { b.x += dx * p; b.y += dy * p / YS; } } }
     for (let i = foes.length - 1; i >= 0; i--) { const z = foes[i]; if ((z.dead && z.deadT > (z.T.boss ? 3 : 1.3)) || (z.flee && (z.fleeT = (z.fleeT || 0) + dt) > 1.6)) foes.splice(i, 1); }
@@ -985,7 +991,7 @@
       const p = w.t / .55, r = (14 + 10 * (1 - p)) * u; ctx.fillStyle = `rgba(30,10,5,${.25 + .25 * p})`; ctx.beginPath(); ctx.ellipse(X(w.x), Y(w.y), r, r / YS, 0, 0, 7); ctx.fill();
       ctx.fillStyle = w.tier ? '#ffcf3a' : '#d8402a'; for (let a = 0; a < PI * 2; a += .2) ctx.fillRect(X(w.x) + rd(Math.cos(a) * r), Y(w.y) + rd(Math.sin(a) * r / YS), u, u);
     }
-    SK.drawUnder(ctx, X, Y, u); ESK && ESK.drawUnder(ctx, X, Y, u, G.t); chargePreview(); coinDraw(); princessDraw(); fieldDraw();   // 11/23 地上的光球、掉落、门画在人物下面
+    SK.drawUnder(ctx, X, Y, u); ESK && ESK.drawUnder(ctx, X, Y, u, G.t); chargePreview(); coinDraw(); princessDraw(); fieldDraw(); MECH && MECH.drawUnder(ctx, X, Y, s, G.t); MECH && MECH.drawUnder(ctx, X, Y, s, G.t);   // 11/23 地上的光球、掉落、门画在人物下面
     for (const o of shots) if (o.k === 'fire') {   // 火球落点：地上的影子越来越大
       const p = o.t / o.T, r = o.r * u * (.3 + .7 * p); ctx.fillStyle = `rgba(255,90,30,${.15 + .2 * p})`; ctx.beginPath(); ctx.ellipse(X(o.x), Y(o.y), r, r / YS * .8, 0, 0, 7); ctx.fill();
     }
@@ -994,6 +1000,7 @@
     if (G.fe) { const P = G.fe.pr, M = G.fe.mer;   // 11/23 公主、商人和勇者按前后排序，脚下有影子
       list.push({ y: P.y, d: () => { shadow(P.x, P.y, 26); SPR.drawHero(ctx, P.orbs ? 'big' : 'idle', Math.floor(G.t * 3) % 2, X(P.x), Y(P.y), P.x > hero.x, u, { w: 'staff', c: 'p' }); } });
       list.push({ y: M.y, d: () => { shadow(M.x, M.y, 30); SPR.draw(ctx, 'gob_merchant', merFrame(M), 0, X(M.x), Y(M.y), false, u, {}); } }); }
+    if (MECH && MECH.on()) list.push(...MECH.entries(ctx, X, Y, s));
     list.sort((a, b) => a.y - b.y);
     for (const o of list) {
       if (o.d) { o.d(); continue; }
@@ -1032,7 +1039,7 @@
       else if (o.k === 'harrow') { const a = Math.atan2(o.vy, o.vx); for (let j = 0; j < 9; j++) { ctx.fillStyle = j < 2 ? '#e8ecf4' : j > 6 ? '#e8e0c8' : '#8a5a2a'; ctx.fillRect(X(o.x) - rd(Math.cos(a) * j * 1.6 * u), Y(o.y) - rd(Math.sin(a) * j * 1.6 * u), u + 1, u + 1); } }
       else if (o.k === 'fire') { const p = o.t / o.T, hy = (1 - p) * 120; for (let j = 0; j < 5; j++) { ctx.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; ctx.fillRect(X(o.x) - q / 2 - rd(j * 3 * u * (1 - p)), Y(o.y) - rd((hy + j * 7) * u) - q / 2, q, q); } }
     }
-    SK.drawOver(ctx, X, Y, u); ESK && ESK.drawOver(ctx, X, Y, u, G.t); { const n = performance.now(), adt = Math.min(.1, (n - (AMB.tm || n)) / 1000); AMB.tm = n; ambDraw(G.paused ? 0 : adt); }
+    MECH && MECH.drawOver(ctx, G.t); SK.drawOver(ctx, X, Y, u); ESK && ESK.drawOver(ctx, X, Y, u, G.t); { const n = performance.now(), adt = Math.min(.1, (n - (AMB.tm || n)) / 1000); AMB.tm = n; ambDraw(G.paused ? 0 : adt); }
     if (G.lvUpT > 1.3 && !hero.dead) { const t = 2.2 - G.lvUpT, hgt = Math.min(1, t / .27) * 150 * u, a = t < .27 ? 1 : 1 - (t - .27) / .63, bw = 16 * u, bx = X(hero.x), by = Y(hero.y); ctx.save(); ctx.globalAlpha = Math.max(0, a) * .85; const gr = ctx.createLinearGradient(0, by - hgt, 0, by); gr.addColorStop(0, 'rgba(255,230,140,0)'); gr.addColorStop(1, 'rgba(255,230,140,.9)'); ctx.fillStyle = gr; ctx.fillRect(rd(bx - bw / 2), by - hgt, rd(bw), hgt); ctx.restore(); }
     if (G.lvUpT > 0 && !hero.dead) {   // 11/22：升级字跳在勇者头上（跟着人走，弹两下再慢慢淡出）
       const t = 2.2 - G.lvUpT, hop = t < .6 ? Math.abs(Math.sin(t / .6 * PI * 2)) * 10 : 0, a = Math.min(1, G.lvUpT / .5), x = X(hero.x), y = Y(hero.y) - (44 + hop + Math.min(t, .3) * 8) * u;
@@ -1094,7 +1101,17 @@
       update(dt); }
     draw();
   }
-  function init(canvas) { cv = canvas; ctx = cv.getContext('2d'); fit(); addEventListener('resize', fit); bindInput(); }
+  function applyStationMap(force) {   // 11/25 第 4–6 站换成森林深处
+    const id = (DATA.stationMap || {})[G.st] || 'field', m = DATA.maps.find(x => x.id === id) || DATA.maps[0], chg = force || m !== MAP;
+    if (chg) { MAP = m; SPR.setGrade(MAP.grade); MAPW = MAP.w || 1672; MAPH = MAP.h || 941; MIMG = new Image(); MIMG.crossOrigin = 'anonymous'; MIMG.src = MAP.img; fit(); cam.snap = true; foes = []; shots = []; warns.length = 0; }
+    if (MAP.zone) { const q = MAPW / 1672; MECH.setMap(MAP.zone, q, G.st); hero.x = MAP.zone.start[0] * q; hero.y = MAP.zone.start[1] * q; hero.lx = hero.ly = null; hero.rootT = 0; cam.snap = true; }
+    else { MECH.off(); if (chg) { const g = MAP.ground; hero.x = MAPW / 2; hero.y = (g.y0 + g.y1) / 2; hero.lx = hero.ly = null; } }
+  }
+  function init(canvas) { MECH = MECHF({ hero: () => hero, foes: () => foes, G: () => G, fx: () => fx, parts: () => parts, K, kill: z => kill(z),
+      num: (o, t, c) => nums.push({ x: o.x, y: o.y - 44 * K, txt: t, t: 0, col: c }), dot: (z, d) => { if (z.dead) return; z.hp -= d; if (z.hp <= 0) kill(z); },
+      stun: (z, t) => { if (!z.dead) cc(z, 'stun', t); },
+      chest: (x, y) => { G.shake = Math.max(G.shake, .3); for (let i = 0; i < 18; i++) parts.push({ x, y, vx: R(-60, 60) * K, vy: R(-90, -20) * K, t: 0, T: R(.4, .8), col: '#ffd86a', g: 200 * K }); RUN.coins += 20 + 15 * G.st; nums.push({ x, y: y - 50 * K, txt: '宝箱！+' + (20 + 15 * G.st) + ' 铜钱', t: 0, col: '#ffd86a' }); gearDrop(); } });
+    cv = canvas; ctx = cv.getContext('2d'); fit(); addEventListener('resize', fit); bindInput(); }
   window.BATTLE = { healHero: n => healHero(n),
     init, start, frame, fit, roll,
     spawnDbg(t, tier) { const z = spawn(t, { x: hero.x + R(-160, 160) * K, y: hero.y + R(-60, 60) * K }, tier); clampG(z); return !!z; },   // 调试：在勇者旁边放一只
