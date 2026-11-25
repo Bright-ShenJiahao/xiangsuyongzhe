@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>局外 · 森林深处 布局调整</title>
+<style>
+body{margin:0;background:#111;color:#eee;font-family:system-ui,sans-serif;font-size:14px}
+#wrap{padding:8px}
+canvas{display:block;width:100%;background:#000;image-rendering:pixelated;touch-action:none}
+.row{display:flex;flex-wrap:wrap;gap:10px 18px;margin:8px 0}
+label{display:flex;align-items:center;gap:6px;background:#222;padding:6px 10px;border-radius:6px}
+input[type=range]{width:140px}
+select,button{font-size:14px;background:#2a2116;color:#ffd77a;border:2px solid #d9b45a;border-radius:6px;padding:4px 8px}
+#out{width:100%;height:60px;background:#000;color:#9f9;font-family:monospace;font-size:12px}
+.tip{color:#aaa;font-size:12px}
+</style></head><body><div id="wrap">
+<div class="tip">拖动滑条调整，画面实时变化。黄框 = 一屏能看到的范围（可以拖着黄框看）。数字 1.0 = 原图大小，超过 1 会变糊一点（红字提示）。调好了点「复制设置」发给我。</div>
+<canvas id="c"></canvas>
+<div class="row">
+<label>地图宽 <input type="range" id="mw" min="1" max="2" step="0.05" value="1.5"><b id="mwv"></b> 屏</label>
+<label>左空地 <select id="lp"><option value="B1">椭圆</option><option value="B2">缺口</option><option value="B3">葫芦</option></select></label>
+<label>左空地大小 <input type="range" id="ls" min="0.8" max="1.6" step="0.05" value="1.1"><b id="lsv"></b></label>
+<label>右空地 <select id="rp"><option value="B3">葫芦</option><option value="B1">椭圆</option><option value="B2">缺口</option></select></label>
+<label>右空地大小 <input type="range" id="rs" min="0.8" max="1.6" step="0.05" value="1.1"><b id="rsv"></b></label>
+<label>右空地上下 <input type="range" id="ry" min="-200" max="200" step="5" value="0"><b id="ryv"></b></label>
+<label>吊桥宽度 <input type="range" id="bw" min="0.8" max="2" step="0.05" value="1.25"><b id="bwv"></b></label>
+<label>两块空地距离 <input type="range" id="gap" min="100" max="1200" step="10" value="900"><b id="gapv"></b> 像素</label>
+<label>上下位置 <input type="range" id="yy" min="0" max="400" step="5" value="150"><b id="yyv"></b></label>
+</div>
+<div class="row"><button id="cp">复制设置</button><span id="warn" style="color:#f66"></span></div>
+<textarea id="out" readonly></textarea>
+</div>
+<script>
+const cv = document.getElementById('c'), g = cv.getContext('2d'), SW = 1672, SH = 941;
+const IM = {}; ['B1', 'B2', 'B3', 'bridge'].forEach(k => { IM[k] = new Image(); IM[k].src = 'art/map/deep_parts/' + k + '.png'; IM[k].onload = draw; });
+const BL = new Image(), BRg = new Image(); BL.src = 'art/map/deep_parts/bgL.webp'; BRg.src = 'art/map/deep_parts/bgR.webp'; BL.onload = BRg.onload = draw;
+const $ = id => document.getElementById(id); let view = 0;
+document.querySelectorAll('input,select').forEach(e => e.oninput = draw);
+let drag = null; cv.addEventListener('pointerdown', e => { drag = 1; mv(e); }); addEventListener('pointerup', () => drag = null); cv.addEventListener('pointermove', e => drag && mv(e));
+function mv(e) { const r = cv.getBoundingClientRect(); view = (e.clientX - r.left) / r.width * cv.width - SW / 2; draw(); }
+function draw() {
+  const v = k => +$(k).value, W = Math.round(SW * v('mw')); cv.width = W; cv.height = SH;
+  ['mw', 'ls', 'rs', 'ry', 'bw', 'gap', 'yy'].forEach(k => $(k + 'v').textContent = $(k).value);
+  if (BL.complete) g.drawImage(BL, 0, 0);
+  if (BRg.complete && W > SW) { const ov = 160, w = W - SW + ov, t = document.createElement('canvas'); t.width = w; t.height = SH; const q = t.getContext('2d');
+    q.drawImage(BRg, SW - w, 0, w, SH, 0, 0, w, SH); const gr = q.createLinearGradient(0, 0, ov, 0); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, '#000');
+    q.globalCompositeOperation = 'destination-in'; q.fillStyle = gr; q.fillRect(0, 0, ov, SH); q.fillStyle = '#000'; q.fillRect(ov, 0, w, SH); g.drawImage(t, SW - ov, 0); }
+  const L = IM[$('lp').value], R = IM[$('rp').value], B = IM.bridge; if (!L.complete || !R.complete || !B.complete) return;
+  const ls = v('ls'), rs = v('rs'), bw = v('bw'), gap = v('gap'), Y = v('yy');
+  const lw = L.width * ls, lh = L.height * ls, rw = R.width * rs, rh = R.height * rs, bW = B.width * bw, bH = B.height * bw;
+  const tot = lw + gap + rw, xL = (W - tot) / 2, xR = xL + lw + gap, yR = Y + v('ry');
+  // 吊桥：从左空地顶面中间高度接到右空地，按需要接几段
+  const yc = Y + lh * .32, by = yc - bH * .6, x0 = xL + lw - 70 * ls, x1 = xR + 70 * rs, n = Math.max(1, Math.ceil((x1 - x0) / (bW - 40)));
+  const seg = (x1 - x0 + 40 * (n - 1)) / n; g.imageSmoothingEnabled = true;
+  for (let i = 0; i < n; i++) g.drawImage(B, x0 + i * (seg - 40), by, seg, bH);
+  g.drawImage(L, xL, Y, lw, lh); g.drawImage(R, xR, yR, rw, rh);
+  const vx = Math.max(0, Math.min(W - SW, view)); g.strokeStyle = '#ffd23a'; g.lineWidth = 6; g.setLineDash([24, 14]); g.strokeRect(vx + 3, 3, SW - 6, SH - 6); g.setLineDash([]);
+  const st = seg / B.width;
+  $('warn').textContent = [ls > 1.15 && '左空地放大较多会变糊', rs > 1.15 && '右空地放大较多会变糊', bw > 1.3 && '吊桥放大较多会变糊', st / bw > 1.4 && '吊桥被横向拉长了（太长）'].filter(Boolean).join('；');
+  $('out').value = JSON.stringify({ 地图宽屏: v('mw'), 左: $('lp').value, 左大小: ls, 右: $('rp').value, 右大小: rs, 右上下: v('ry'), 吊桥宽: bw, 距离: gap, 上下: Y, 吊桥段数: n });
+}
+$('cp').onclick = () => { $('out').select(); try { navigator.clipboard.writeText($('out').value); $('cp').textContent = '已复制'; } catch (e) { document.execCommand('copy'); } };
+draw();
+</script></body></html>
