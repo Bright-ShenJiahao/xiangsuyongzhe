@@ -1438,3 +1438,6 @@ html body .oathrow .oic { border-radius: 50%; }
 .bag > div.eqS { cursor: grab; touch-action: none; user-select: none; } .eqD .slot.dro { border-color: #fff0a8 !important; box-shadow: 0 0 14px rgba(255, 230, 120, .8); }
 .eqMdl { position: fixed; inset: 0; background: #000a; display: flex; align-items: center; justify-content: center; z-index: 300; } .eqMdl > div { background: #1c120a; border: 2px solid #c8a060; padding: 16px 20px; max-width: min(360px, 88vw); font-size: 16px; line-height: 1.6; color: #e8d8b0; } .eqMdl p { margin: 0; } .eqMdl b { color: #ff9a70; font-weight: 400; } .eqMdl .eqBtns { justify-content: flex-end; }
 .bag > div.eqI.tr2, .bag > div.eqI.tr3 { outline: 2px solid currentColor; outline-offset: -6px; }
+.wimg { width: 82%; max-height: 82%; object-fit: contain; image-rendering: auto; pointer-events: none; } .wimg.ghost { opacity: .3; filter: grayscale(.5); }
+.eqD .slot .wimg { width: 70%; max-height: 70%; }
+.eqD .slot[data-s=main] .wimg, .eqD .slot[data-s=off] .wimg { width: 92%; max-height: 92%; }

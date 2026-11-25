@@ -308,6 +308,7 @@
   }
   // 11/25 装备状态在本局里（RUN.eq / gbag / stones），通关自动卖，真死全丢
   function GS() { const r = R(); if (!r.eq) r.eq = {}; if (!r.eq.main) r.eq.main = { t: 1, aff: [] }; if (!r.gbag) r.gbag = []; if (!r.stones) r.stones = { 1: 0, 2: 0, 3: 0 }; return r; }
+  const wIcon = (wp, t, cls) => `<img class="wimg${cls ? ' ' + cls : ''}" src="art/ui2/w_${wp}${t}.png?v=1" alt="">`;
   const WN = (wp, t) => DATA.weaponNames[wp][t - 1], gname = it => (it.k === 'w' || !it.id) ? WN(R().weapon || 'sword', it.t) : DATA.gear[it.id].names[it.t - 1];
   const affTxt = a => a.map(x => `${DATA.affixes[x[0]][0]} +${DATA.affixes[x[0]][1][x[1] - 1]}%（${DATA.stoneNames[x[1]]}）`);
   const statTxt = (D, t) => Object.entries(D.st[t - 1]).map(([k, v]) => `${DATA.statLabel[k]} +${k.startsWith('dmg') ? Math.round(v * 100) + '%' : v}`);
@@ -318,8 +319,8 @@
     const SN = { main: '主手', off: '副手', helm: '头盔', armor: '铠甲', belt: '腰带', boots: '鞋子', acc: '配饰' };
     const cellOf = (key, label, area) => {
       let inner = `<canvas class="sil" data-sil="${key}" width="16" height="16"></canvas>`, cls = 'slot', nm = label, em = ' em';
-      if (key === 'main') { cls += ' has full'; inner = '<span data-ic="' + wp + '"></span>'; nm = WN(wp, mt); em = ' tr' + mt; }
-      else if (key === 'off' && two) { cls += ' eqghost'; inner = '<span class="ghost" data-ic="' + wp + '"></span>'; nm = '（占用）'; }
+      if (key === 'main') { cls += ' has full'; inner = wIcon(wp, mt); nm = WN(wp, mt); em = ' tr' + mt; }
+      else if (key === 'off' && two) { cls += ' eqghost'; inner = wIcon(wp, mt, 'ghost'); nm = '（占用）'; }
       else if (E[key]) { const D = DATA.gear[E[key].id]; cls += ' has full'; inner = gearIcon(D); nm = gname(E[key]); em = ' tr' + E[key].t; }
       return `<div class="sw" style="grid-area:${area}"><div class="${cls}" data-s="${key}">${inner}</div><div class="nm${em}">${nm}</div></div>`;
     };
@@ -331,7 +332,7 @@
       `<div class="lor"><h4>物品栏 <span class="bagN${r.gbag.length >= 14 ? ' warn' : ''}">${r.gbag.length}/16</span> <small>拖附魔石到主手武器 · 通关自动卖</small></h4><div class="eqBtns" style="margin:0 0 6px"><button class="btn mini" data-m="1" ${r.stones[1] >= 2 ? '' : 'disabled'}>2 低阶 → 1 中阶</button><button class="btn mini" data-m="2" ${r.stones[2] >= 2 ? '' : 'disabled'}>2 中阶 → 1 高阶</button></div><div class="bag">` +
       Array.from({ length: cells }, (_, i) => { const x = list[i]; if (i >= cells - 4) return '<div class="lk" data-tip="未解锁的物品格：以后开放"></div>'; if (!x) return '<div></div>';
         if (x.st) return `<div class="has full eqS${eqSel === x.st ? ' sel' : ''}" data-st="${x.st}"><b class="stn s${x.st}">石</b><i class="stk">${r.stones[x.st]}</i></div>`;
-        const it = x.it; return `<div class="has full eqI tr${it.t}" data-i="${x.i}">${it.k === 'w' ? `<span data-ic="${wp}"></span>` : gearIcon(DATA.gear[it.id])}</div>`; }).join('') + `</div></div></div>`;
+        const it = x.it; return `<div class="has full eqI tr${it.t}" data-i="${x.i}">${it.k === 'w' ? wIcon(wp, it.t) : gearIcon(DATA.gear[it.id])}</div>`; }).join('') + `</div></div></div>`;
     for (const e of box.querySelectorAll('[data-ic]')) { const n = UI.icon(e.dataset.ic); if (e.classList.contains('ghost')) n.classList.add('ghost'); e.replaceWith(n); }
     drawSil(box);
     let tt = document.getElementById('eqTT'); if (!tt) { tt = document.createElement('div'); tt.id = 'eqTT'; tt.className = 'eqTT'; document.body.appendChild(tt); } tt.style.display = 'none';
