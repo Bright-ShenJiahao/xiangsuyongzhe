@@ -1137,7 +1137,7 @@
     const q=MAPW/1672;
     for (const b of G.birds || []) {
       if (b.fly && b.t>3) continue;
-      const im=pim((G.st<=3?'crow':'bat') + (b.fly ? Math.floor(b.t*10)%3 : 0));
+      const im=pim((MAP.fauna||(G.st<=3?'crow':'bat')) + (b.fly ? Math.floor(b.t*10)%3 : 0));
       if (!im.complete || !im.naturalWidth) continue;
       ctx.save(); ctx.globalAlpha=b.fly?Math.max(0,1-b.t/3):Math.min(1,b.t*2);
       const x=b.x+(b.fly?b.dir*b.t*240:0), y=b.y-(b.fly?b.t*180:0);
@@ -1146,16 +1146,17 @@
     }
     const warning=warns.some(w => w.tier || DATA.enemies[w.type].boss) || (G.bossT>0 && G.bossT<=1.5);
     if (!warning) return;
-    const pts=G.st<=3?[[220,130],[548,128],[768,120],[1022,126],[1226,145]]:[[120,350],[1560,350]];
+    const pts=MAP.totem||(G.st<=3?[[220,130],[548,128],[768,120],[1022,126],[1226,145]]:[[120,350],[1560,350]]);
     ctx.save(); ctx.globalCompositeOperation='lighter';
     for (const [x,y] of pts) { const r=65*q*s, g=ctx.createRadialGradient(X(x*q),Y(y*q),0,X(x*q),Y(y*q),r); g.addColorStop(0,'rgba(255,25,10,.65)');g.addColorStop(1,'rgba(255,0,0,0)');ctx.fillStyle=g;ctx.fillRect(X(x*q)-r,Y(y*q)-r,r*2,r*2); }
     ctx.restore();
   }
   function initProps() {
     const q = MAPW / 1672, deep = !!MAP.zone;
-    G.props = (PDEF[G.st] || []).filter(d => deep ? G.st >= 4 : G.st <= 3).map(([k, x, y]) => ({ k, x: x * q, y: y * q, hp: PROP_HP[k], brk: 0, hitT: 0 }));
-    G.cl = deep ? (CDEF[G.st] || []).map(([k, x, y], i) => ({ k, x: x * q, y: y * q, cd: 3 + i * 1.7, st: 'idle', t: 0 })) : [];
-    G.birds = G.st<=6 ? [[310,75],[600,95],[980,65],[1450,145]].map(([x,y],i)=>({x:x*q,y:y*q,t:1,fly:false,dir:i%2?1:-1,wait:i*2})) : [];
+    const own = !!MAP.props;   // 11/26 新地图自带摆设 / 鸟 / 图腾坐标（地图像素 1672×941）；没写的走旧的按站号规则
+    G.props = (own ? MAP.props : (PDEF[G.st] || []).filter(d => deep ? G.st >= 4 : G.st <= 3)).map(([k, x, y]) => ({ k, x: x * q, y: y * q, hp: PROP_HP[k], brk: 0, hitT: 0 }));
+    G.cl = own ? (MAP.cliff || []).map(([k, x, y], i) => ({ k, x: x * q, y: y * q, cd: 3 + i * 1.7, st: 'idle', t: 0 })) : deep ? (CDEF[G.st] || []).map(([k, x, y], i) => ({ k, x: x * q, y: y * q, cd: 3 + i * 1.7, st: 'idle', t: 0 })) : [];
+    G.birds = (MAP.birds || (G.st<=6 ? [[310,75],[600,95],[980,65],[1450,145]] : [])).map(([x,y],i)=>({x:x*q,y:y*q,t:1,fly:false,dir:i%2?1:-1,wait:i*2}));
     try { SEEN.add('place:' + G.st); } catch(e) {}
     G.cp = [];   // 飞行中的石头 / 箭 / 魔弹
   }

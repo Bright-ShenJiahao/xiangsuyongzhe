@@ -274,7 +274,7 @@ window.DATA = {
   },
   meleeBooks: ['sword', 'whirl', 'spear', 'sweep', 'storm', 'leap', 'rising', 'hundred', 'flash'],
   // 地图：第一版只开打谷场
-  stationMap: { 2: 'fieldmist', 3: 'fieldrain', 4: 'deep4', 5: 'deep5', 6: 'deep6' },   // 11/26 1 晴（field）/ 2 薄雾 / 3 雨；   // 11/25 第几站用哪张地图（没写的用 field）
+  stationMap: { 2: 'ford', 3: 'logyard', 4: 'deep4', 5: 'deep5', 6: 'deep6' },   // 11/26 1 晴（field）/ 2 薄雾 / 3 雨；   // 11/25 第几站用哪张地图（没写的用 field）
   maps: [
     { id: 'field', name: '哥布林森林', img: 'art/map/forest_sun.webp', w: 2508, h: 1412,   // 11/21 哥布林森林扩图版：图 1672×941，世界按 1.5 倍算（forest / forest2 / 打谷场 field 都留着）
       open: true, wx: '晴', foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
@@ -288,6 +288,21 @@ window.DATA = {
       foes: ['goblin', 'gob_blade', 'gob_archer'], desc: '森林深处的林间空地。', grade: [['saturate', .94]],
       ground: { y0: 427, y1: 1275, pts: [[427, 0, 2508], [1275, 0, 2508]] },
       zone: { simple: true, start: [836, 700], main: [[445,285],[1355,285],[1640,620],[1640,700],[1605,850],[75,850],[32,700],[32,622]] } })),
+    // 11/26 新外围地图：第 2 站 决口浅河（浅河整片可走）/ 第 3 站 倒木集散场；zone 是布局图里的可走多边形（原图像素 1672×941）
+    { id: 'ford', name: '决口浅河', wx: '晨雾', img: 'art/map/forest_s2.webp', w: 2508, h: 1412, hidden: true, open: false, boss: 'gob_king', time: 120,
+      foes: ['goblin', 'gob_blade', 'gob_archer'], desc: '精灵旧水闸被拆开的决口，河水退成一片浅滩。', grade: [['saturate', .94]],
+      ground: { y0: 427, y1: 1275, pts: [[427, 0, 2508], [1275, 0, 2508]] },
+      zone: { simple: true, start: [700, 690], main: [[180,160],[1430,150],[1580,380],[1530,790],[1230,870],[260,830],[80,590]] },
+      amb: { fires: [], rays: [], leaf: [0, 1672, 0, 140], flies: [[0, 240, 300, 600], [1380, 240, 1672, 600]] },
+      props: [['barrel', 235, 650], ['barrel', 265, 662], ['crate', 1340, 290], ['barrel', 1450, 420], ['crate', 420, 770]],
+      birds: [[660, 100], [1030, 95], [1570, 235]], totem: [[105, 100], [1005, 860]], fauna: 'crow' },
+    { id: 'logyard', name: '倒木集散场', wx: '午后', img: 'art/map/forest_s3.webp', w: 2508, h: 1412, hidden: true, open: false, boss: 'gob_king', time: 120,
+      foes: ['goblin', 'gob_blade', 'gob_archer'], desc: '哥布林砍倒精灵树运出森林的集散地。', grade: [['saturate', .94]],
+      ground: { y0: 427, y1: 1275, pts: [[427, 0, 2508], [1275, 0, 2508]] },
+      zone: { simple: true, start: [800, 560], main: [[80,340],[1360,230],[1600,365],[1570,700],[360,810],[75,675]] },
+      amb: { fires: [], rays: [[140, 0, 300, 300]], leaf: [0, 1672, 0, 150], flies: [[0, 240, 300, 600]] },
+      props: [['barrel', 300, 640], ['crate', 1380, 600], ['crate', 1350, 620], ['barrel', 1180, 330], ['barrel', 220, 450]],
+      birds: [[330, 175], [540, 170], [740, 170], [1275, 150]], totem: [[120, 190], [570, 115], [825, 100], [1525, 130]], fauna: 'crow' },
   ],
   // 骑兵素材的沙盒板块（11/21 对比后定了勇者画风，先从地图选择里拿掉；代码 js/cav.js 和素材 art/cav/ 留着，以后当别的世界还能用）
   sandbox: [
