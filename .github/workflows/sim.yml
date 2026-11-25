@@ -1,0 +1,63 @@
+# 11/26 第一章 AI 测试：先训练一个走位 / 翻滚 AI，再用它测兵器、角色、技能、怪物。公开仓库 Actions 免费。
+# 手动运行（Actions 页 → Run workflow）或往 preview 分支推 tools/sim 下的改动自动跑。
+name: sim
+on:
+  workflow_dispatch:
+    inputs:
+      train_min: { description: '训练分钟数', default: '25' }
+  push:
+    branches: [preview]
+    paths: ['tools/sim/**', '.github/workflows/sim.yml', 'js/sim.js']
+concurrency: { group: sim, cancel-in-progress: true }
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: cd tools/sim && npm i --no-audit --no-fund && npx playwright install --with-deps chromium
+      - run: NODE_PATH=tools/sim/node_modules TRAIN_MIN=${{ github.event.inputs.train_min || '25' }} node tools/sim/train.js
+      - uses: actions/upload-artifact@v4
+        with: { name: weights, path: out }
+  eval:
+    needs: train
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { mode: grid, shard: 0, shards: 4 }
+          - { mode: grid, shard: 1, shards: 4 }
+          - { mode: grid, shard: 2, shards: 4 }
+          - { mode: grid, shard: 3, shards: 4 }
+          - { mode: skills, shard: 0, shards: 1 }
+          - { mode: enemies, shard: 0, shards: 2 }
+          - { mode: enemies, shard: 1, shards: 2 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/download-artifact@v4
+        with: { name: weights, path: out }
+      - run: cd tools/sim && npm i --no-audit --no-fund && npx playwright install --with-deps chromium
+      - run: NODE_PATH=tools/sim/node_modules MODE=${{ matrix.mode }} SHARD=${{ matrix.shard }} SHARDS=${{ matrix.shards }} node tools/sim/eval.js
+      - uses: actions/upload-artifact@v4
+        with: { name: res-${{ matrix.mode }}-${{ matrix.shard }}, path: 'out/*.jsonl' }
+  report:
+    needs: eval
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/download-artifact@v4
+        with: { name: weights, path: out }
+      - uses: actions/download-artifact@v4
+        with: { pattern: 'res-*', path: out, merge-multiple: true }
+      - run: node tools/sim/report.js
+      - uses: actions/upload-artifact@v4
+        with: { name: report, path: out/report.md }

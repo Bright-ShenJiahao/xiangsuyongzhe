@@ -14,7 +14,7 @@
   // 可走地面：y0–y1 之间，每一行的左右边界按 pts 表插值
   function ground(y) { if (MECH && MECH.on()) return MECH.bounds(y); const P = MAP.ground.pts; if (y <= P[0][0]) return [P[0][1], P[0][2]]; for (let i = 1; i < P.length; i++) if (y <= P[i][0]) { const a = P[i - 1], b = P[i], t = (y - a[0]) / (b[0] - a[0] || 1); return [a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; } const q = P.at(-1); return [q[1], q[2]]; }
   function clampG(o, pad = 0) {
-    if (MECH && MECH.on()) { const hh = o === hero; let ok = MECH.walk(o.x, o.y, hh) || (!hh && !o.T.boss && !o.tier && MECH.walk(o.x, o.y, true));   // 普通怪被推进坑里就掉下去
+    if (MECH && MECH.on()) { const hh = o === hero; let ok = MECH.walk(o.x, o.y, hh) || (!hh && !(o.T && o.T.boss) && !o.tier && MECH.walk(o.x, o.y, true));   // 普通怪被推进坑里就掉下去
       if (ok) { o.lx = o.x; o.ly = o.y; return; } if (o.lx != null) { if (MECH.walk(o.x, o.ly, hh)) { o.y = o.ly; o.lx = o.x; return; } if (MECH.walk(o.lx, o.y, hh)) { o.x = o.lx; o.ly = o.y; return; } o.x = o.lx; o.y = o.ly; return; }
       const [sx, sy] = MECH.snap(o.x, o.y, hh); o.x = sx; o.y = sy; o.lx = sx; o.ly = sy; return; }
     const g = MAP.ground; o.y = Math.max(g.y0, Math.min(g.y1, o.y)); const [l, r] = ground(o.y); o.x = Math.max(l + pad, Math.min(r - pad, o.x)); }
@@ -113,8 +113,10 @@
     addEventListener('blur', () => { if (running()) UI.softPause(); for (const k in keys) keys[k] = 0; joy.on = false; });
   }
   const running = () => G && !G.over && !G.paused;
+  let SIMIN = null;   // 11/26 无头测试：外部直接给移动方向（?sim，见 js/sim.js）
   function moveDir() {
     if (G && G.lock) return [0, 0];
+    if (SIMIN) return SIMIN;
     let dx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0), dy = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0);
     if (joy.on) { const jx = joy.x - joy.sx, jy = joy.y - joy.sy, d = Math.hypot(jx, jy); if (d > 6) { const k = Math.min(1, d / 40); dx = jx / d * k; dy = jy / d * k; } }
     if (ESK && ESK.rev()) { dx = -dx; dy = -dy; }   // 11/24 混乱诅咒：方向颠倒
@@ -1231,7 +1233,26 @@
       stun: (z, t) => { if (!z.dead) cc(z, 'stun', t); },
       chest: (x, y) => { G.shake = Math.max(G.shake, .3); for (let i = 0; i < 18; i++) parts.push({ x, y, vx: R(-60, 60) * K, vy: R(-90, -20) * K, t: 0, T: R(.4, .8), col: '#ffd86a', g: 200 * K }); RUN.coins += 20 + 15 * G.st; nums.push({ x, y: y - 50 * K, txt: '宝箱！+' + (20 + 15 * G.st) + ' 铜钱', t: 0, col: '#ffd86a' }); gearDrop(); } });
     cv = canvas; ctx = cv.getContext('2d'); fit(); addEventListener('resize', fit); bindInput(); }
-  window.BATTLE = { healHero: n => healHero(n),
+  // 11/26 无头快进（不画画面、固定步长）：给 GitHub Actions 上的 AI 测试用，只在网址带 ?sim 时由 js/sim.js 调用，不影响正常游戏
+  const SIM = {
+    step(n, dt, mx, my, rl) { SIMIN = [mx || 0, my || 0]; for (let i = 0; i < n; i++) { if (!G || G.over) break; if (rl && i === 0) roll();
+        if (!G.paused) { let d = dt; if (G.hitStop > 0) { G.hitStop -= d; d *= .2; } else if (G.slowMo > 0) { G.slowMo -= d; d *= .35; }
+          if (hero.dead) { G.deadR = (G.deadR || 0) + d; G.loseT -= d; if (G.loseT <= 0 && !G.over) { G.over = 'lose'; end(); break; } d *= G.deadR < .3 ? .06 : G.deadR < 1.3 ? .35 : 1; }
+          update(d); } if (G.fe && !G.paused) SIM.meta(); } },
+    // 站末结算：捡光掉落、修炼点全花、书放进空技能格、选一张战斗门。pol = { xiu(L), door(cards) } 返回下标
+    meta(pol) { const f = G && G.fe; if (!f || !f.doors || !f.doors.length || G.lock) return false; pol = pol || SIM.pol || {};
+      for (const o of f.items.splice(0)) CAMP.learn(o, true);
+      for (let k = 0; k < RUN.bag.length; k++) { const o = RUN.bag[k]; if (o && o.kind === 'book') { const j = RUN.slots.findIndex((s, i) => i < RUN.open && !s); if (j >= 0) { RUN.slots[j] = { id: o.id, lv: 1, xp: 0 }; RUN.bag[k] = null; } } }
+      while (RUN.xiu > 0) { const L = CAMP.rollXiu(3 + (hero.fx.xiuOpt || 0)); if (!L.length) break; const o = L[Math.max(0, Math.min(L.length - 1, pol.xiu ? pol.xiu(L) : 0))]; for (const [a, v] of o.adds) RUN.train[a] = (RUN.train[a] || 0) + v; RUN.xiu--; }
+      recompute();
+      const C = f.doors.map(d => d.c).filter(c => !c.rest), cards = C.length ? C : f.doors.map(d => d.c); const c = cards[Math.max(0, Math.min(cards.length - 1, pol.door ? pol.door(cards) : 0))];
+      f.pick(c); return true; },
+    // 观察：勇者、最近 K 只怪（相对位置 / 血量 / 是否远程）、技能就绪情况
+    obs(K = 8) { const h = hero, al = foes.filter(z => !z.dead && !z.flee).map(z => ({ dx: (z.x - h.x) / 100, dy: (z.y - h.y) / 100, d: Math.hypot(z.x - h.x, z.y - h.y), hp: z.hp / (z.maxHp || z.hp || 1), r: z.T && z.T.ranged ? 1 : 0, boss: z.T && z.T.boss ? 1 : 0 })).sort((a, b) => a.d - b.d).slice(0, K);
+      return { hp: h.hp / h.maxHp, x: h.x / MAPW, y: h.y / MAPH, rollN: h.rollN, rollN0: h.rollN0, roll: h.roll > 0 ? 1 : 0, foes: al, n: foes.filter(z => !z.dead).length, st: G.st, wi: G.wi, t: G.t, kills: G.kills, lv: G.lv, over: G.over, fe: !!G.fe, dead: !!h.dead }; },
+    pol: {}, setPol(p) { SIM.pol = p; }
+  };
+  window.BATTLE = { sim: SIM, healHero: n => healHero(n),
     init, start, frame, fit, roll,
     spawnDbg(t, tier) { const z = spawn(t, { x: hero.x + R(-160, 160) * K, y: hero.y + R(-60, 60) * K }, tier); clampG(z); return !!z; },   // 调试：在勇者旁边放一只
     pause(v) { if (G && !G.over) G.paused = v; }, get paused() { return !!(G && G.paused); }, active: () => !!G && !G.over,
