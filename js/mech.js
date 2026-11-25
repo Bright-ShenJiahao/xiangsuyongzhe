@@ -7,7 +7,7 @@ function MECHF(A) {
   const R = (a, b) => a + Math.random() * (b - a);
   function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
   const inPit = (mx, my, k = 1) => ((mx - Z.pit.x) / (Z.pit.rx * k)) ** 2 + ((my - Z.pit.y) / (Z.pit.ry * k)) ** 2 < 1;
-  const walkM = (mx, my, isHero) => (inPoly(mx, my, Z.main) || (opened && (inPoly(mx, my, Z.log) || inPoly(mx, my, Z.ledge)))) && !inPoly(mx, my, Z.bone) && (isHero || !inPit(mx, my, 1.15));
+  const walkM = (mx, my, isHero) => Z.simple ? inPoly(mx, my, Z.main) : (inPoly(mx, my, Z.main) || (opened && (inPoly(mx, my, Z.log) || inPoly(mx, my, Z.ledge)))) && !inPoly(mx, my, Z.bone) && (isHero || !inPit(mx, my, 1.15));
   const phase = () => { const t = wt % 8; return t < 5 ? 0 : t < 6 ? 1 : t < 8 ? 2 : 0; };
   const BC = {};
   function bounds(y) {   // 这一行能走的最左 / 最右（世界坐标），给放道具、门、刷怪用
@@ -24,6 +24,7 @@ function MECHF(A) {
       if (avoid.some(([ax, ay]) => Math.hypot(ax - mx, (ay - my) * 1.4) < minD)) continue; return [mx, my]; } return [700, 400]; }
   function setMap(zone, qq, stn) {
     Z = zone; q = qq; st = stn; opened = false; wt = 0; for (const k in BC) delete BC[k];
+    if (Z.simple) { SH = []; TR = []; RU = null; CH = null; return; }
     const ns = st >= 6 ? 3 : 2, nt = st >= 5 ? 3 : 2, used = [[Z.rune.x, Z.rune.y], Z.start, [Z.pit.x, Z.pit.y], [1338, 262]];
     SH = []; TR = [];
     for (let i = 0; i < ns; i++) { const p = randPt(160, used); used.push(p); SH.push({ x: p[0], y: p[1], cd: 0, cloud: 0 }); }
@@ -33,7 +34,7 @@ function MECHF(A) {
   const M = a => a * q;
   function ring(x, y, r) { A.fx().push({ k: 'ring', x, y, t: 0, T: .35, r: r / A.K }); }
   function tick(dt) {
-    if (!Z) return; const hero = A.hero(), foes = A.foes(), G = A.G(); wt += dt; if (G.paused) return;
+    if (!Z || Z.simple) return; const hero = A.hero(), foes = A.foes(), G = A.G(); wt += dt; if (G.paused) return;
     opened = !!(G.cleared || G.fe);
     const hx = hero.x / q, hy = hero.y / q, wp = phase(), live = foes.filter(z => !z.dead && !z.flee);
     // 阵风：坑口卷叶提示后吸，吸力离坑越近越强；精英 / 首领无效
@@ -74,7 +75,7 @@ function MECHF(A) {
   }
   // ---- 画 ----
   function drawUnder(ctx, X, Y, s, T) {
-    if (!Z) return; const u = s * q, wp = phase(), hero = A.hero();
+    if (!Z || Z.simple) return; const u = s * q, wp = phase(), hero = A.hero();
     const img = (n, x, y, sc) => { const I = im(n); if (ok(I)) ctx.drawImage(I, X(x * q) - I.width * sc * u / 2, Y(y * q) - I.height * sc * u, I.width * sc * u, I.height * sc * u); };
     // 符文
     const rg = RU.ready ? .3 + .2 * Math.sin(T * 4) + RU.charge * .4 : 0; if (rg > 0) { ctx.fillStyle = `rgba(90,160,255,${rg})`; ctx.beginPath(); ctx.ellipse(X(RU.x * q), Y(RU.y * q), 70 * u, 30 * u, 0, 0, 7); ctx.fill(); }
@@ -95,13 +96,13 @@ function MECHF(A) {
   }
   // 巨人骸骨：按 y 排序；后面有人时半透明（贴地部分在 bone 多边形里不能走）
   function entries(ctx, X, Y, s) {
-    if (!Z) return []; const u = s * q;
+    if (!Z || Z.simple) return []; const u = s * q;
     return [{ y: Z.boneBase * q, d: () => { if (!ok(BONEI)) return; const [bx, by] = Z.boneAt, o = [A.hero(), ...A.foes()].filter(o => !o.dead);
       const behind = o.some(o => o.y / q < Z.boneBase && o.y / q > by && o.x / q > bx - 70 && o.x / q < bx + 383 + 20);
       ctx.save(); ctx.globalAlpha = behind ? .45 : 1; ctx.drawImage(BONEI, X(bx * q), Y(by * q), BONEI.width * u, BONEI.height * u); ctx.restore(); } }];
   }
   function drawOver(ctx, T) {
-    if (!Z) return; const wp = phase(), W = ctx.canvas.width;
+    if (!Z || Z.simple) return; const wp = phase(), W = ctx.canvas.width;
     if (wp) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); const u = Math.max(1, Math.round(ctx.canvas.height / 480)); ctx.fillStyle = wp === 1 ? '#ffd23a' : '#ff6a4a'; ctx.font = `bold ${7 * u}px system-ui`; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
       ctx.fillText(wp === 1 ? '⚠ 深坑在呼吸…' : '⚠ 风吸！远离深坑', W / 2, 22 * u); ctx.restore(); }
   }
