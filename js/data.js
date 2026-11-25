@@ -8,16 +8,28 @@ window.DATA = {
     bow: { name: '弓', skill: '疾矢', icon: 'bow', type: 'agi', desc: '远程直线箭，射最近的敌人，能穿过一个。', cd: .55, dmg: 4, range: 153, pierce: 1 },
     staff: { name: '法杖', skill: '火球术', icon: 'fire', type: 'int', desc: '砸向远处的敌群，落地炸开一圈。', cd: 1.5, dmg: 9, range: 135, boom: 30 },
   },
-  // 11/25 装备（先搭界面；属性加成待定）。slot：two=双格武器占满主手+副手；off 副手；其余各一格
+  // 11/25 装备：本局有效，通关自动卖给士兵 / 大法师换水晶；三阶（t=1/2/3）。st=[各阶数值]，fx 进 calc，dmgP/dmgM 为物理 / 法术招式伤害
   gearSlots: { helm: '头盔', armor: '铠甲', belt: '腰带', boots: '鞋子', acc: '配饰' },
   gear: {
-    shield: { name: '木盾', slot: 'off', tag: '副手', g: '盾' },
-    helm: { name: '皮盔', slot: 'helm', tag: '头盔', g: '盔' },
-    armor: { name: '皮甲', slot: 'armor', tag: '铠甲', img: 'art/ui2/heavy_armor.png' },
-    belt: { name: '皮带', slot: 'belt', tag: '腰带', g: '带' },
-    boots: { name: '皮靴', slot: 'boots', tag: '鞋子', img: 'art/ui2/boots.png' },
-    ring: { name: '铜戒', slot: 'acc', tag: '配饰', g: '戒' },
+    helmP: { slot: 'helm', tag: '头盔', g: '盔', names: ['皮盔', '铁盔', '精钢盔'], st: [{ pdef: 1, dmgP: .03 }, { pdef: 2, dmgP: .05 }, { pdef: 3, dmgP: .07 }] },
+    helmM: { slot: 'helm', tag: '头盔', g: '帽', names: ['布帽', '法帽', '贤者帽'], st: [{ mdef: 1, dmgM: .03 }, { mdef: 2, dmgM: .05 }, { mdef: 3, dmgM: .07 }] },
+    plate: { slot: 'armor', tag: '铠甲', g: '甲', img: 'art/ui2/heavy_armor.png', names: ['皮甲', '锁甲', '板甲'], st: [{ pdef: 2, hp: 10 }, { pdef: 4, hp: 20 }, { pdef: 6, hp: 32 }] },
+    robe: { slot: 'armor', tag: '铠甲', g: '袍', names: ['布袍', '法袍', '星辉袍'], st: [{ mdef: 2, hp: 10 }, { mdef: 4, hp: 20 }, { mdef: 6, hp: 32 }] },
+    shieldP: { slot: 'off', tag: '副手', g: '盾', sword: 1, names: ['木盾', '铁盾', '塔盾'], st: [{ pdef: 3 }, { pdef: 5 }, { pdef: 8 }] },
+    shieldM: { slot: 'off', tag: '副手', g: '符', sword: 1, names: ['符文盾', '奥术盾', '星辉盾'], st: [{ mdef: 3 }, { mdef: 5 }, { mdef: 8 }] },
+    belt: { slot: 'belt', tag: '腰带', g: '带', names: ['皮带', '铁扣带', '金腰带'], st: [{ hp: 12 }, { hp: 24 }, { hp: 40 }] },
+    boots: { slot: 'boots', tag: '鞋子', g: '靴', img: 'art/ui2/boots.png', names: ['皮靴', '疾行靴', '疾风靴'], st: [{ agi: 1 }, { agi: 2 }, { agi: 3 }] },
+    ring: { slot: 'acc', tag: '配饰', g: '戒', names: ['铜戒', '银戒', '智者之戒'], st: [{ int: 1 }, { int: 2 }, { int: 3 }] },
   },
+  // 武器三阶：加成该武器系所有招式伤害
+  weaponNames: { sword: ['铁剑', '精钢剑', '传说之剑'], spear: ['铁枪', '精钢枪', '传说之枪'], bow: ['木弓', '复合弓', '传说之弓'], staff: ['木杖', '秘银杖', '传说之杖'] },
+  weaponDmg: [0, .15, .30],
+  // 附魔词条：[名字, [低, 中, 高阶石的数值], 钥匙]（百分比）
+  affixes: [['暴击率', [2, 4, 7], 'crit'], ['暴击伤害', [8, 16, 28], 'critMul'], ['出手速度', [3, 6, 10], 'spd'], ['范围', [3, 6, 10], 'area'], ['对精英伤害', [4, 8, 14], 'elite']],
+  stoneNames: ['', '低阶', '中阶', '高阶'],
+  // 回塔顶自动结算的价格（水晶）
+  sellWeapon: [1, 3, 8], sellGear: [1, 2, 4], sellStone: [0, 1, 2, 5], sellBook: [0, 1, 2, 4, 6],
+  statLabel: { pdef: '物防', mdef: '魔防', hp: '生命', agi: '敏捷', int: '智力', dmgP: '物理招式伤害', dmgM: '法术招式伤害' },
   // 属性：开局各 3 点，另有 5 点自由分配（备战页）
   attrs: [
     { id: 'str', name: '力量', desc: '剑、枪招式伤害 +6%、物防 +1、物理暴击伤害 +2% / 点' },
@@ -301,7 +313,7 @@ window.DATA.calc = function (b) {
   const DATA = window.DATA;
   const fx = {}, add = o => { for (const k in (o || {})) fx[k] = (fx[k] || 0) + o[k]; };
   for (const e of (b.items || [b.item])) { const id = e && e.id || e, it = DATA.startItems.find(i => i.id === id) || {}, m = DATA.oathLv[Math.min(5, (e && e.lv) || 1) - 1];
-    const f = {}; for (const k in (it.fx || {})) { f[k] = it.fx[k] * (it.d ? m : 1); if (it.cap && it.cap[k] != null) f[k] = it.cap[k] < 0 ? Math.max(it.cap[k], f[k]) : Math.min(it.cap[k], f[k]); } add(f); add(it.cost); } add((DATA.habits.find(h => h.id === b.habit) || {}).fx);
+    const f = {}; for (const k in (it.fx || {})) { f[k] = it.fx[k] * (it.d ? m : 1); if (it.cap && it.cap[k] != null) f[k] = it.cap[k] < 0 ? Math.max(it.cap[k], f[k]) : Math.min(it.cap[k], f[k]); } add(f); add(it.cost); } add(b.gfx); add((DATA.habits.find(h => h.id === b.habit) || {}).fx);
   const A = {}; for (const a of DATA.attrs) A[a.id] = (b.attrs && b.attrs[a.id] || 0) + (b.train && b.train[a.id] || 0) + (fx[a.id] || 0);
   const W = DATA.weapons[b.weapon] || DATA.weapons.sword, type = W.type || 'str';
   const out = {

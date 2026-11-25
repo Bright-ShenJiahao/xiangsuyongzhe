@@ -482,7 +482,8 @@
     f.dataset.pal = f.src.replace(/&v=\d+$/, ''); hubMsgs(f, go); }
   function playTower(r, go) { let seen; try { seen = new Set(JSON.parse(store.get('linesSeen') || '[]')); } catch (e) { seen = new Set(); }
     const L = pickLines(towerCtx(r), seen); for (const l of L) if (!l.rep) seen.add(l.id); store.set('linesSeen', JSON.stringify([...seen]));
-    const say = [].concat(...L.map(l => l.say)), f = $('introF'); try { BGM.play('k1'); } catch (e) {}
+    const sl = []; if (r.sellG) sl.push(['士兵甲', `勇者回来了！身上的装备我都替你收下了，折合 ${r.sellG} 水晶，记在账上。`]); if (r.sellB) sl.push(['大法师', `你带回来的书和石头，我替你处理了，共 ${r.sellB} 水晶。下次再来。`]);   /* 11/25 通关自动结算 */
+    const say = [].concat(...L.map(l => l.say), sl), f = $('introF'); try { BGM.play('k1'); } catch (e) {}
     f.src = 'demo/palace.html?game&cry=' + (r.cry || 0) + '&cont=' + (r.cont || 0) + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&L=' + encodeURIComponent(JSON.stringify(say)) + '&v=' + Date.now();   /* 11/24 死后回宫殿（塔顶开场只在第一次） */ f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     f.dataset.pal = f.src.replace(/&v=\d+$/, ''); hubMsgs(f, go); }
   $('rAgain').onclick = () => { BATTLE.stop(); overlay('result', false); const r = lastRes || {};

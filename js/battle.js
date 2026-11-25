@@ -41,7 +41,7 @@
     // 这一局的全部状态：属性、修炼加的点、技能栏、背包、铜钱
     try { SEEN.add('s:' + (b.book1 || b.skill || b.weapon || 'sword')); if (b.book2) SEEN.add('s:' + b.book2); } catch (e) {}
     RUN = { title: b.title || null, hero: b.hero || 'm', weapon: b.weapon, attrs: b.attrs || A0, habit: b.habit || null, train: {}, pts: 0,   /* 11/22 属性加点删除，只靠修炼 */ alloc: {}, tmp: {}, slots: Array(DATA.slotsMax).fill(null), open: DATA.slotsOpen,
-      bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: [null], coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
+      bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: [null], eq: { main: { t: 1, aff: [] } }, gbag: [], stones: { 1: 0, 2: 0, 3: 0 }, coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
     RUN.slots[0] = { id: (b.book1 && DATA.skills[b.book1]) ? b.book1 : (b.skill && DATA.skills[b.skill] && DATA.skills[b.skill].w === b.weapon) ? b.skill : b.weapon, lv: 1, xp: 0 };   // 11/24 公主出发准备：第 1 格可放书库的书
     if (b.book2 && DATA.skills[b.book2] && ML('slot2') && b.book2 !== RUN.slots[0].id) RUN.slots[1] = { id: b.book2, lv: 1, xp: 0 };   /* 解锁了第 2 格就多带一本 */ if (b.item) RUN.gear[0] = { kind: 'item', id: b.item };
     RUN.heat = HEATLS(); if (!ML('oath')) RUN.heat = {}; RUN.hpCut = .1 * (RUN.heat.life || 0);   /* 誓约石热度（要先解锁） */
@@ -70,9 +70,15 @@
   const TT = () => { const t = DATA.titles.find(x => x.id === RUN.title); return (t && t.fx) || {}; };   // 11/24 佩戴的称号
   const META = () => { try { return JSON.parse(localStorage.getItem('xsyz-meta') || '{}'); } catch (e) { return {}; } }, ML = id => META()[id] || 0, HEATLS = () => { try { return JSON.parse(localStorage.getItem('xsyz-heat') || '{}'); } catch (e) { return {}; } }, HT = k => (RUN && RUN.heat && RUN.heat[k]) || 0, HH = () => HT('mob') + HT('dmg') + HT('life');   /* 11/25 誓约热度：怪物数量 / 怪物伤害 / 自身生命 */
   function addCrystal(n, x, y) { if (!n) return; if (HH()) n = Math.max(n, Math.round(n * (1 + .12 * HH()))); try { localStorage.setItem('xsyz-crystal', (+localStorage.getItem('xsyz-crystal') || 0) + n); } catch (e) {} RUN.cry = (RUN.cry || 0) + n; nums.push({ x, y: y - 60 * K, txt: '+' + n + ' 水晶', t: 0, col: '#9fe6ff' }); }
+  // 11/25 装备：本局有效。武器三阶 + 附魔词条 + 各部位属性
+  function gs() { const r = RUN; if (!r.eq) r.eq = {}; if (!r.eq.main) r.eq.main = { t: 1, aff: [] }; if (!r.gbag) r.gbag = []; if (!r.stones) r.stones = { 1: 0, 2: 0, 3: 0 }; return r; }
+  function gearFx() { gs(); const g = {}, o = { g, dmgP: 0, dmgM: 0, wd: 0, a: { crit: 0, critMul: 0, spd: 0, area: 0, elite: 0 } }, m = RUN.eq.main; o.wd = DATA.weaponDmg[(m.t || 1) - 1] || 0;
+    for (const a of m.aff || []) { const A = DATA.affixes[a[0]]; if (A) o.a[A[2]] += A[1][a[1] - 1] / 100; }
+    for (const [k, it] of Object.entries(RUN.eq)) { if (k === 'main' || !it || (k === 'off' && RUN.weapon !== 'sword')) continue; const D = DATA.gear[it.id], st = D && D.st[(it.t || 1) - 1]; if (!st) continue; for (const [key, v] of Object.entries(st)) { if (key === 'dmgP') o.dmgP += v; else if (key === 'dmgM') o.dmgM += v; else g[key] = (g[key] || 0) + v; } }
+    return o; }
   function recompute() {
     const items = RUN.gear.filter(x => x && x.kind === 'item').map(x => ({ id: x.id, lv: x.lv || 1 }));   // 11/23 只有左边宝物格里的宝物生效
-    const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit }), m = hero.m;
+    const gx = gearFx(); hero.gx = gx; const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit, gfx: gx.g }), m = hero.m;
     m.dmg = (1 + (c.fx.dmg || 0)) * (1 + .03 * (G.lv - 1)) * (1 + (TT().dmg || 0)); m.spd = c.spd; m.area = c.area; m.move = c.move;
     hero.critP = c.critP; hero.critM = c.critM; hero.critMulP = c.critMulP; hero.critMulM = c.critMulM; hero.eva = c.eva; hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = RUN.hero === 'f' ? 1.2 : 1.5; hero.rollN0 = 2 + (OB('erduan') ? 1 : 0); if (hero.rollN == null || hero.rollN > hero.rollN0) hero.rollN = hero.rollN0; /* 11/24 翻滚 2 格（二段滚 3 格），每格 1.5 秒回 */ hero.A = c.A; hero.fx = c.fx;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20%（11/23 修：hero.A / hero.fx 之前被注释吞掉了）
     hero.ob = {}; for (const o of [...(RUN.oath || []), ...(RUN.mv || [])]) if (o && DATA.oaths[o.id]) hero.ob[o.id] = DATA.oathLv[Math.min(5, o.lv || 1) - 1];
@@ -81,6 +87,7 @@
       if (F.dmg) m.dmg *= 1 + F.dmg; if (hero.fx) for (const k of ['sspd_bow', 'srng_bow', 'sdmg_staff']) if (F[k]) hero.fx[k] = (hero.fx[k] || 0) + F[k];
       const pd = (c.pdef || 0) + (F.pdef || 0), md = (c.mdef || 0) + (F.mdef || 0); hero.pIn = 1 - Math.min(.5, pd / (pd + 100)); hero.mIn = 1 - Math.min(.5, md / (md + 100)); }
     hero.rollN0 = 2 + (OB('erduan') ? 1 : 0) + (ML('roll3') ? 1 : 0); if (hero.rollN == null || hero.rollN > hero.rollN0) hero.rollN = hero.rollN0; hero.eva += .01 * ML('eva') + (TT().eva || 0); hero.critP += TT().crit || 0; hero.critM += TT().crit || 0; m.move *= 1 + (TT().move || 0); if (hero.fx) hero.fx.coinMul = (hero.fx.coinMul || 0) + (TT().coin || 0); if (TT().take) { hero.pIn *= 1 + TT().take; hero.mIn *= 1 + TT().take; } if (hero.fx && ML('disc')) hero.fx.shop = (hero.fx.shop || 0) - .05 * ML('disc');   // 局外：三格翻滚、闪避
+    { const a = hero.gx.a; hero.critP += a.crit; hero.critM += a.crit; hero.critMulP += a.critMul; hero.critMulM += a.critMul; m.spd *= 1 + a.spd; m.area *= 1 + a.area; }   /* 11/25 附魔词条 */
     m.dmg *= 1 + .03 * ML('pow'); hero.critMulP += .08 * ML('cdm'); hero.critMulM += .08 * ML('cdm'); hero.critP += .01 * ML('crit'); hero.critM += .01 * ML('crit'); m.move *= 1 + .02 * ML('spd'); m.area *= 1 + .03 * ML('area'); hero.xpMul *= 1 + .03 * ML('xpg'); if (ML('iron')) { hero.pIn *= 1 - .03 * ML('iron'); hero.mIn *= 1 - .03 * ML('iron'); }   /* 11/25 局外强化：力道/暴击伤害/暴击率/移速/范围/经验/铁壁 */
     const max = Math.round((c.hp + 3 * (G.lv - 1)) * (1 - (RUN.hpCut || 0)) * (1 + .05 * ML('hp')) * (1 + ((hero.setF || {}).hp || 0)) * (1 + (TT().hp || 0))); hero.hp = hero.maxHp ? Math.max(1, Math.min(max, hero.hp + max - hero.maxHp)) : max; hero.maxHp = max;
     return c;
@@ -182,6 +189,8 @@
     if (z.shieldHp > 0 && from && (from.x - z.x) * z.f > 0 && !(z.cc)) { d *= .3; if (--z.shieldHp <= 0) { z.noShield = true; z.st = 'hurt'; z.t = -.25; z.brk = .45; nums.push({ x: z.x, y: z.y - 40 * K, txt: '盾碎了！', t: 0, col: '#ffcf6a' }); } else for (let i = 0; i < 3; i++) parts.push({ x: z.x + z.f * 10 * K, y: z.y - 16 * K, vx: z.f * R(10, 50) * K, vy: R(-50, -10) * K, t: 0, T: .3, col: '#fff2a0', g: 120 * K }); }   // 盾兵正面挡 70%，挡够次数盾碎
     if (z.curseT > 0) d *= 1.15; if (z.vulnN && z.vulnT > 0) d *= 1 + .05 * z.vulnN; if (z.cc && z.cc.k === 'air' && z.airVuln) d *= 1.3;
     if ((z.tier || T.boss) && OB('tulong')) d *= 1 + .12 * OB('tulong');
+    if (hero.gx) { d *= 1 + (dt === 'magic' ? hero.gx.dmgM : hero.gx.dmgP); if (z.tier || T.boss) d *= 1 + hero.gx.a.elite; }   // 11/25 头盔 / 附魔：对精英
+
     { const tf = TT(); d *= 1 + (T.boss ? tf.boss || 0 : z.tier ? tf.elite || 0 : tf.mob || 0); }
     const mg = dt === 'magic', crit = Math.random() < (mg ? hero.critM : hero.critP) + (hero.castCrit || 0) + (o.crit || 0); if (crit) d *= mg ? hero.critMulM : hero.critMulP; d = Math.max(1, rd(d));
     status(z, o, d);
@@ -300,7 +309,7 @@
   function nearest(maxD = 1e9) { let b = null, bd = maxD; for (const z of foes) if (!z.dead && !z.flee) { const d = dist(z, hero); if (d < bd) { bd = d; b = z; } } return b; }
   // 熟练度：每本书出手一次 +1，7 格（DATA.prof）；第 2/4/6 格伤害 +10%，第 7 格前摇后摇各快 0.05 秒
   const profL = sk => { let L = 0; for (const n of DATA.prof) if ((sk.xp || 0) >= n) L++; return L; };
-  function skillDmg(S, sk) { const L = profL(sk), sk2 = DATA.SYSK[S.sys], fx = hero.fx || {}; return (1 + (fx['sdmg_' + sk2] || 0)) * (fx.low && hero.hp < hero.maxHp * .3 ? 1 + fx.low : 1) * (RUN.hero === 'p' && S.sys === '法杖' ? 1.1 : 1) * S.dmg * (1 + .06 * (hero.A[S.type] || 0)) * hero.m.dmg * (1 + .1 * Math.floor(L / 2)) * (G && G.wi === 0 ? 1 + (hero.fx.firstWave || 0) : 1); }
+  function skillDmg(S, sk) { const L = profL(sk), sk2 = DATA.SYSK[S.sys], fx = hero.fx || {}; return (1 + (fx['sdmg_' + sk2] || 0)) * (fx.low && hero.hp < hero.maxHp * .3 ? 1 + fx.low : 1) * (RUN.hero === 'p' && S.sys === '法杖' ? 1.1 : 1) * S.dmg * (1 + .06 * (hero.A[S.type] || 0)) * hero.m.dmg * (1 + (sk2 === RUN.weapon && hero.gx ? hero.gx.wd : 0)) * (1 + .1 * Math.floor(L / 2)) * (G && G.wi === 0 ? 1 + (hero.fx.firstWave || 0) : 1); }
   // 前摇 / 后摇：敏捷的出手速度一起缩短；瞬光斩、贯星箭第 3 格蓄力变短
   function skillT(S, sk) { const L = profL(sk), sp = (hero.m.spd || 1) * (1 + ((hero.fx || {})['sspd_' + DATA.SYSK[S.sys]] || 0)); let wu = S.wu; if (S.charge && L >= 3) wu = S.kind === 'pierce' || sk.id === 'pierce' ? .45 : .5; const cut = L >= 7 ? .05 : 0; return { wu: Math.max(.08, (wu - cut) / sp), rc: Math.max(.08, (S.rc - cut) / sp) }; }
   const nextSlot = () => { for (let k = 0; k < RUN.open; k++) { const i = (RUN.si + k) % RUN.open; if (RUN.slots[i]) return i; } return -1; };
@@ -482,10 +491,20 @@
     for (const d of G.drops) loot.push(d.kind === 'book' && ids.length ? { kind: 'book', id: pickNew() } : { kind: 'item', id: pick(ITEMS()).id });
     if (!loot.length && Math.random() < .3) loot.push({ kind: 'use', id: 'meat' });
     const last = G.wi === STN().waves.length - 1 || !!(STN().waves[G.wi + 1] || {}).boss;
+    gearDrop();
     fieldEnd(loot, cw);   // 11/22 站末留在战场：捡掉落、找公主修炼、找地精商人、走进门
   }
   // ---------- 11/22 站末在战场上结算（哈迪斯式）：掉落在地上走过去捡；公主在中间，靠近她跳 3 个修炼光球 + 1 颗刷新水晶；地精商人；三扇门 ----------
   const IMG = {}; const img = n => IMG[n] || (IMG[n] = Object.assign(new Image(), { src: 'art/ui2/' + n + '.png' }));
+  // 11/25 站末自动掉装备 / 附魔石（直接进装备栏的物品栏，弹提示）
+  function gearDrop() { gs(); const st = G.st, tier = st <= 3 ? 1 : st <= 6 ? 2 : 3, got = [], P = a => a[Math.random() * a.length | 0], stone = t => { RUN.stones[t]++; got.push(DATA.stoneNames[t] + '附魔石'); };
+    if (Math.random() < .6) stone(1); if (st >= 3 && Math.random() < .35) stone(2); if (st >= 6 && Math.random() < .25) stone(3);
+    if (Math.random() < .5 && RUN.gbag.length < 16) {
+      const best = Math.max(RUN.eq.main.t || 1, ...RUN.gbag.filter(x => x.k === 'w').map(x => x.t));
+      if (tier > best && Math.random() < .35) { RUN.gbag.push({ k: 'w', t: tier, aff: [] }); got.push(DATA.weaponNames[RUN.weapon][tier - 1]); }
+      else { const id = P(Object.keys(DATA.gear).filter(k => !(DATA.gear[k].sword && RUN.weapon !== 'sword'))), t = Math.max(1, tier - (Math.random() < .5 ? 1 : 0)); RUN.gbag.push({ k: 'g', id, t }); got.push(DATA.gear[id].names[t - 1]); } }
+    if (got.length) UI.feed('获得：' + got.join('、') + '（装备页 · 物品栏）');
+    const free = 16 - RUN.gbag.length; if (free <= 2) UI.feed(free > 0 ? `装备物品栏快满了，只剩 ${free} 格` : '装备物品栏已满，新装备拿不了了'); }
   function fieldEnd(loot) {
     for (const o of [...RUN.bag, ...RUN.gear]) if (o) delete o.fresh;   // 站末：「新拿到」标记清掉
     G.paused = false; G.waveOn = false; const g = MAP.ground, cy = (g.y0 + g.y1) / 2 - 10 * K, [gl, gr] = ground(cy), cx = (gl + gr) / 2, ly = cy + 88 * K, n = loot.length;   // 11/23 位置按地图固定
@@ -898,7 +917,12 @@
     try { const R0 = JSON.parse(localStorage.getItem('xsyz-rec') || '{}'); R0.best = Math.max(R0.best || 0, G.over === 'win' ? 99 : G.st); R0.kills = (R0.kills || 0) + Math.max(0, G.kills - (RUN.recK || 0)); if (G.over === 'win') R0.wins = (R0.wins || 0) + 1; else R0.deaths = (R0.deaths || 0) + 1; R0.runs = (R0.runs || 0) + (cont ? 0 : 1); R0.elites = (R0.elites || 0) + (RUN.elites || 0); RUN.elites = 0; localStorage.setItem('xsyz-rec', JSON.stringify(R0));
       const own = JSON.parse(localStorage.getItem('xsyz-titles') || '[]'); for (const t of DATA.titles) if (!own.includes(t.id) && t.need(R0, RUN)) { own.push(t.id); (RUN.newT = RUN.newT || []).push(t.name); } localStorage.setItem('xsyz-titles', JSON.stringify(own));
       if (cont) { const S = loadSave(); if (S) { S.RUN.recK = S.G.kills || 0; S.RUN.elites = 0; S.RUN.newT = RUN.newT || []; localStorage.setItem(SAVE, JSON.stringify(S)); } } } catch (e) {}   // 续关：已记过的击杀 / 精英不重复记，新称号留到结算页   // 11/24 称号解锁   // 11/24 大臣的战绩
-    if (!cont) clearSave(); UI.result({ cont, cry: RUN.cry || 0, newT: RUN.newT || [], win: G.over === 'win', kills: G.kills, time: G.t, lv: G.lv, weapon: RUN.weapon, st: G.st, wi: G.wi, boss: !!(G.W && G.W.boss), dmg: RUN.dmgAll, killer: G.killer, killerElite: G.killerElite, stolen: G.stolen });
+    // 11/25 通关：装备卖给士兵、书 / 石头 / 宝物卖给大法师，自动换成水晶（没通关不结算）
+    let sellG = 0, sellB = 0; if (G.over === 'win') { gs(); const w = x => (DATA.sellWeapon[(x.t || 1) - 1] || 0) + (x.aff || []).length;
+      sellG = w(RUN.eq.main) + RUN.gbag.reduce((a, x) => a + (x.k === 'w' ? w(x) : DATA.sellGear[(x.t || 1) - 1] || 0), 0) + Object.entries(RUN.eq).reduce((a, [k, x]) => a + (k !== 'main' && x ? DATA.sellGear[(x.t || 1) - 1] || 0 : 0), 0);
+      sellB = [1, 2, 3].reduce((a, t) => a + (RUN.stones[t] || 0) * DATA.sellStone[t], 0) + RUN.bag.reduce((a, x) => a + (x && x.kind === 'book' && DATA.skills[x.id] ? DATA.sellBook[DATA.skills[x.id].tier] || 1 : x && x.kind === 'item' ? 1 : 0), 0);
+      const n = sellG + sellB; if (n) { try { localStorage.setItem('xsyz-crystal', (+localStorage.getItem('xsyz-crystal') || 0) + n); } catch (e) {} RUN.cry = (RUN.cry || 0) + n; } }
+    if (!cont) clearSave(); UI.result({ cont, sellG, sellB, cry: RUN.cry || 0, newT: RUN.newT || [], win: G.over === 'win', kills: G.kills, time: G.t, lv: G.lv, weapon: RUN.weapon, st: G.st, wi: G.wi, boss: !!(G.W && G.W.boss), dmg: RUN.dmgAll, killer: G.killer, killerElite: G.killerElite, stolen: G.stolen });
   }
 
   // ---------- 绘制 ----------

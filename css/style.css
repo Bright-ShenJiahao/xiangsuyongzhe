@@ -1427,3 +1427,14 @@ html body .lo .bag.oathrow > div.mv:not(.full)::before { content: '身'; }
 html body .lo .bag.oathrow > div.mv:not(.full) span { display: none; }
 html body .oathrow .oic { border-radius: 50%; }
 .chead > span.pTop { margin-left: auto; display: inline-flex; gap: 8px; } .chead > span.pTop + span { margin-left: 4px; } .pTop .btn.mini { font-size: 14px; padding: 2px 10px; }
+
+/* 11/25 武器三阶 / 附魔石 / 装备阶数颜色 */
+.tr1 { color: #cfd8e0 !important; } .tr2 { color: #7fc8ff !important; } .tr3 { color: #ffb84a !important; }
+.eqD .nm.tr1, .eqD .nm.tr2, .eqD .nm.tr3 { text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
+.eqBtns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; } .eqBtns .btn[disabled] { opacity: .4; }
+.eqDet .aff { display: inline-block; margin: 2px 6px 0 0; padding: 1px 8px; border: 1px solid #6a5230; background: #2c2013; }
+.stn { display: flex; align-items: center; justify-content: center; width: 62%; aspect-ratio: 1; border-radius: 8px; font-size: 22px; font-weight: 400; color: #fff; text-shadow: 1px 1px 0 #000; } .stn.s1 { background: #7a8a96; } .stn.s2 { background: #4a8ad0; } .stn.s3 { background: #d08a2a; }
+.bag > div .stk { position: absolute; right: 5px; bottom: 2px; font-style: normal; font-size: 14px; color: #fff; text-shadow: 1px 1px 0 #000; }
+.bag > div.eqS { cursor: grab; touch-action: none; user-select: none; } .eqD .slot.dro { border-color: #fff0a8 !important; box-shadow: 0 0 14px rgba(255, 230, 120, .8); }
+.eqMdl { position: fixed; inset: 0; background: #000a; display: flex; align-items: center; justify-content: center; z-index: 300; } .eqMdl > div { background: #1c120a; border: 2px solid #c8a060; padding: 16px 20px; max-width: min(360px, 88vw); font-size: 16px; line-height: 1.6; color: #e8d8b0; } .eqMdl p { margin: 0; } .eqMdl b { color: #ff9a70; font-weight: 400; } .eqMdl .eqBtns { justify-content: flex-end; }
+.bag > div.eqI.tr2, .bag > div.eqI.tr3 { outline: 2px solid currentColor; outline-offset: -6px; }

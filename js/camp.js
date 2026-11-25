@@ -289,8 +289,6 @@
   };
 
   // ---------- 装备页（暂停页里的一页，11/25）：主手＝本局兵器；副手可放盾；长枪/弓/法杖占两格 ----------
-  const gearLoad = () => { let g = {}; try { g = JSON.parse(localStorage.getItem('xsyz-gear') || '{}'); } catch (e) {} g.bag = Array.isArray(g.bag) ? g.bag.filter(i => DATA.gear[i]) : []; g.eq = g.eq || {}; return g; };
-  const gearSave = g => localStorage.setItem('xsyz-gear', JSON.stringify(g));
   let eqMsg = '起手只有一把兵器，其余格子都空着。';
   const gearIcon = it => it.img ? `<img src="${it.img}" alt="" style="width:62%;image-rendering:pixelated">` : `<b class="gl">${it.g}</b>`;
   // 空装备格的像素剪影（16×16，# 为填充）
@@ -308,44 +306,74 @@
       rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '#') return; g.fillStyle = '#7a6040'; g.fillRect(x, y + dy, 1, 1); }));
       g.fillStyle = '#9a7c52'; rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#' && (rows[y - 1] || '')[x] !== '#') g.fillRect(x, y + dy, 1, 1); })); }
   }
+  // 11/25 装备状态在本局里（RUN.eq / gbag / stones），通关自动卖，真死全丢
+  function GS() { const r = R(); if (!r.eq) r.eq = {}; if (!r.eq.main) r.eq.main = { t: 1, aff: [] }; if (!r.gbag) r.gbag = []; if (!r.stones) r.stones = { 1: 0, 2: 0, 3: 0 }; return r; }
+  const WN = (wp, t) => DATA.weaponNames[wp][t - 1], gname = it => (it.k === 'w' || !it.id) ? WN(R().weapon || 'sword', it.t) : DATA.gear[it.id].names[it.t - 1];
+  const affTxt = a => a.map(x => `${DATA.affixes[x[0]][0]} +${DATA.affixes[x[0]][1][x[1] - 1]}%（${DATA.stoneNames[x[1]]}）`);
+  const statTxt = (D, t) => Object.entries(D.st[t - 1]).map(([k, v]) => `${DATA.statLabel[k]} +${k.startsWith('dmg') ? Math.round(v * 100) + '%' : v}`);
   function equipPanel(box) {
-    const G = gearLoad(), wp = R().weapon || 'sword', W = DATA.weapons[wp], two = wp !== 'sword', worn = new Set(Object.values(G.eq)), it = id => DATA.gear[id];
-    if (two) G.eq.off = null;
-    const HINT = { main: '本局拿的兵器，局内不能换。', off: '盾牌等副手；双手武器占着副手时放不了。', helm: '头部防具。', armor: '身体防具。', belt: '腰带。', boots: '鞋子。', acc: '戒指、护符等配饰。' };
+    const r = GS(), wp = r.weapon || 'sword', W = DATA.weapons[wp], two = wp !== 'sword', E = r.eq, mt = E.main.t || 1;
+    if (two) E.off = null;
+    const HINT = { main: '本局拿的兵器，局内换不了系，只能升阶。', off: '盾牌；只有拿剑才能装。', helm: '头部防具。', armor: '身体防具。', belt: '腰带。', boots: '鞋子。', acc: '戒指、护符等配饰。' };
     const SN = { main: '主手', off: '副手', helm: '头盔', armor: '铠甲', belt: '腰带', boots: '鞋子', acc: '配饰' };
-    const cellOf = (key, label, area) => {   // 11/25 改版：名字在格子下方（放大描边）、剪影调淡、悬停有提示和详情栏
+    const cellOf = (key, label, area) => {
       let inner = `<canvas class="sil" data-sil="${key}" width="16" height="16"></canvas>`, cls = 'slot', nm = label, em = ' em';
-      if (key === 'main') { cls += ' has full'; inner = '<span data-ic="' + wp + '"></span>'; nm = W.name; em = ''; }
+      if (key === 'main') { cls += ' has full'; inner = '<span data-ic="' + wp + '"></span>'; nm = WN(wp, mt); em = ' tr' + mt; }
       else if (key === 'off' && two) { cls += ' eqghost'; inner = '<span class="ghost" data-ic="' + wp + '"></span>'; nm = '（占用）'; }
-      else if (G.eq[key]) { cls += ' has full'; inner = gearIcon(it(G.eq[key])); nm = it(G.eq[key]).name; em = ''; }
+      else if (E[key]) { const D = DATA.gear[E[key].id]; cls += ' has full'; inner = gearIcon(D); nm = gname(E[key]); em = ' tr' + E[key].t; }
       return `<div class="sw" style="grid-area:${area}"><div class="${cls}" data-s="${key}">${inner}</div><div class="nm${em}">${nm}</div></div>`;
     };
-    const cells = Math.max(16, G.bag.length) + 4;
+    const stoneKs = [1, 2, 3].filter(t => r.stones[t] > 0), cells = Math.max(16, stoneKs.length + r.gbag.length) + 4;
+    const list = [...stoneKs.map(t => ({ st: t })), ...r.gbag.map((it, i) => ({ it, i }))];
     box.innerHTML = `<div class="lo gearlo"><div class="lol"><h4>装备栏 <small>点一下卸下</small></h4><div class="eqD">` +
       cellOf('main', '主手', 'm') + cellOf('helm', '头盔', 'h') + cellOf('off', '副手', 'o') + cellOf('armor', '铠甲', 'a') + cellOf('acc', '配饰', 'c') + cellOf('boots', '鞋子', 'b') + cellOf('belt', '腰带', 'e') +
-      `</div><div class="eqDet" id="eqDet">${eqMsg}</div></div><div class="lor"><h4>物品栏 <small>点一下装备</small></h4><div class="bag">` +
-      Array.from({ length: cells }, (_, i) => { const id = G.bag[i]; if (i >= cells - 4) return '<div class="lk" data-tip="未解锁的物品格：以后开放"></div>'; if (!id) return '<div></div>'; const w = worn.has(id); return `<div class="has full eqI${w ? ' eqdim' : ''}" data-i="${id}">${gearIcon(it(id))}<i style="color:#ffd860">${w ? '已装' : ''}</i></div>`; }).join('') + `</div></div></div>`;
+      `</div><div class="eqDet" id="eqDet">${eqMsg}</div></div>` +
+      `<div class="lor"><h4>物品栏 <span class="bagN${r.gbag.length >= 14 ? ' warn' : ''}">${r.gbag.length}/16</span> <small>拖附魔石到主手武器 · 通关自动卖</small></h4><div class="eqBtns" style="margin:0 0 6px"><button class="btn mini" data-m="1" ${r.stones[1] >= 2 ? '' : 'disabled'}>2 低阶 → 1 中阶</button><button class="btn mini" data-m="2" ${r.stones[2] >= 2 ? '' : 'disabled'}>2 中阶 → 1 高阶</button></div><div class="bag">` +
+      Array.from({ length: cells }, (_, i) => { const x = list[i]; if (i >= cells - 4) return '<div class="lk" data-tip="未解锁的物品格：以后开放"></div>'; if (!x) return '<div></div>';
+        if (x.st) return `<div class="has full eqS${eqSel === x.st ? ' sel' : ''}" data-st="${x.st}"><b class="stn s${x.st}">石</b><i class="stk">${r.stones[x.st]}</i></div>`;
+        const it = x.it; return `<div class="has full eqI tr${it.t}" data-i="${x.i}">${it.k === 'w' ? `<span data-ic="${wp}"></span>` : gearIcon(DATA.gear[it.id])}</div>`; }).join('') + `</div></div></div>`;
     for (const e of box.querySelectorAll('[data-ic]')) { const n = UI.icon(e.dataset.ic); if (e.classList.contains('ghost')) n.classList.add('ghost'); e.replaceWith(n); }
     drawSil(box);
-    // 悬停提示（和技能提示同款的小框）+ 底部详情栏
     let tt = document.getElementById('eqTT'); if (!tt) { tt = document.createElement('div'); tt.id = 'eqTT'; tt.className = 'eqTT'; document.body.appendChild(tt); } tt.style.display = 'none';
     const det = $('eqDet'), hideT = () => { tt.style.display = 'none'; det.innerHTML = eqMsg; };
     const showT = (e, html, d) => { tt.innerHTML = html; tt.style.display = 'block'; const w = tt.offsetWidth, h = tt.offsetHeight; let x = e.clientX + 16, y = e.clientY + 16; if (x + w > innerWidth - 6) x = e.clientX - w - 12; if (y + h > innerHeight - 6) y = innerHeight - h - 6; tt.style.left = Math.max(6, x) + 'px'; tt.style.top = y + 'px'; det.innerHTML = d; };
-    const attr = d => d.st ? d.st.map(a => `<div class="g">${a[0]} ${a[1]}</div>`).join('') : '<div class="d">属性数值：待定</div>';
-    for (const e of box.querySelectorAll('.eqD .slot')) { const k = e.dataset.s, id = k === 'main' ? null : G.eq[k], d = id && it(id);
-      e.onmousemove = ev => { if (k === 'main') showT(ev, `<h5>${W.name}<span>主手</span></h5><div class="d">${HINT.main}</div>`, `<b>${W.name}</b> <i>· 主手　${HINT.main}</i>`);
+    const wTip = (it, tag) => `<h5 class="tr${it.t}">${gname(it)}<span>${tag || W.name + ' · ' + it.t + ' 阶'}</span></h5><div class="g">${W.name}系招式伤害 +${Math.round(DATA.weaponDmg[it.t - 1] * 100)}%</div>` + (it.aff && it.aff.length ? affTxt(it.aff).map(t => `<div class="g">✦ ${t}</div>`).join('') : '') + `<div class="d">附魔 ${(it.aff || []).length}/${it.t}</div>`;
+    const wDet = it => `<b class="tr${it.t}">${gname(it)}</b> <i>· ${it.t} 阶 · ${W.name}系招式伤害 +${Math.round(DATA.weaponDmg[it.t - 1] * 100)}%　附魔 ${(it.aff || []).length}/${it.t}</i><br>` + ((it.aff || []).map(a => `<span class="aff">✦ ${affTxt([a])[0]}</span>`).join('') || '<i>还没有词条</i>');
+    const gTip = (it, tag, extra) => { const D = DATA.gear[it.id]; return `<h5 class="tr${it.t}">${gname(it)}<span>${tag}</span></h5>${statTxt(D, it.t).map(t => `<div class="g">${t}</div>`).join('')}${extra || ''}`; };
+    for (const e of box.querySelectorAll('.eqD .slot')) { const k = e.dataset.s, it = k === 'main' ? E.main : E[k];
+      e.onmousemove = ev => { if (k === 'main') showT(ev, wTip(E.main, '主手'), wDet(E.main));
         else if (k === 'off' && two) showT(ev, `<h5>副手<span>被占用</span></h5><div class="d">${HINT.off}</div>`, `<b>副手</b> <i>· 被双手武器占用</i>`);
-        else if (d) showT(ev, `<h5>${d.name}<span>${SN[k]}</span></h5>${attr(d)}<hr><div class="d">点一下卸下</div>`, `<b>${d.name}</b> <i>· ${SN[k]}　点一下卸下</i>`);
-        else showT(ev, `<h5>${SN[k]}<span>空</span></h5><div class="d">${HINT[k]}</div><hr><div class="d">获得途径：商人、宝箱、精英掉落、奇遇</div>`, `<b>${SN[k]}</b> <i>· 空　${HINT[k]}</i>`); };
+        else if (it) showT(ev, gTip(it, SN[k], '<hr><div class="d">点一下卸下</div>'), `<b class="tr${it.t}">${gname(it)}</b> <i>· ${SN[k]}　${statTxt(DATA.gear[it.id], it.t).join('　')}　点一下卸下</i>`);
+        else showT(ev, `<h5>${SN[k]}<span>空</span></h5><div class="d">${HINT[k]}</div><hr><div class="d">获得途径：打完一站后偶尔掉落</div>`, `<b>${SN[k]}</b> <i>· 空　${HINT[k]}</i>`); };
       e.onmouseleave = hideT; }
-    for (const e of box.querySelectorAll('.eqI')) { const id = e.dataset.i, d = it(id); e.onmousemove = ev => { const cur = G.eq[d.slot] ? it(G.eq[d.slot]) : null, cmp = worn.has(id) ? '<div class="d">已经装备在身上</div>' : cur ? `<div class="d">替换 ${cur.name}</div>` : `<div class="g">装备后：${d.tag}栏 空 → ${d.name}</div>`;
-      showT(ev, `<h5>${d.name}<span>${d.tag}${worn.has(id) ? '' : '（未装备）'}</span></h5>${attr(d)}<hr>${cmp}<div class="d">点一下装备</div>`, `<b>${d.name}</b> <i>· ${d.tag}${worn.has(id) ? '' : '（未装备）'}</i>　${cur && !worn.has(id) ? '替换 ' + cur.name : worn.has(id) ? '已装备' : '装备到空的' + d.tag + '栏'}`); }; e.onmouseleave = hideT; }
+    for (const e of box.querySelectorAll('.eqI')) { const i = +e.dataset.i, it = r.gbag[i];
+      e.onmousemove = ev => { if (it.k === 'w') { const c = E.main; showT(ev, wTip(it, it.t + ' 阶' + (it.t > mt ? '（比现在的更好）' : '')) + `<hr><div class="d">点一下换上（词条跟着武器走，旧武器回物品栏）</div>`, wDet(it)); }
+        else { const D = DATA.gear[it.id], cur = E[D.slot], blk = D.sword && two; showT(ev, gTip(it, D.tag + '（未装备）', `<hr>${blk ? '<div class="d">只有拿剑才能装盾</div>' : cur ? `<div class="d">替换 ${gname(cur)}</div>` : `<div class="g">装备后：${D.tag}栏 空 → ${gname(it)}</div>`}<div class="d">点一下装备</div>`), `<b class="tr${it.t}">${gname(it)}</b> <i>· ${D.tag}（未装备）</i>　${statTxt(D, it.t).join('　')}`); } };
+      e.onmouseleave = hideT; }
+    for (const e of box.querySelectorAll('.eqS')) { const t = +e.dataset.st; e.onmousemove = ev => showT(ev, `<h5>附魔石<span>${DATA.stoneNames[t]}</span></h5><div class="g">给武器随机添加 1 个词条</div><div class="d">词条强度：${DATA.stoneNames[t]}　·　拖到主手武器上（点选后再点武器也行）</div>`, `<b>附魔石</b> <i>· ${DATA.stoneNames[t]}　×${r.stones[t]}　拖到主手武器上</i>`); e.onmouseleave = hideT; }
     for (const e of box.querySelectorAll('.lk')) { e.onmousemove = ev => showT(ev, `<h5>未解锁的格子<span>物品栏</span></h5><div class="d">以后开放。</div>`, '<b>未解锁</b> <i>· 以后开放</i>'); e.onmouseleave = hideT; }
-    const redo = m => { eqMsg = m; hideT(); equipPanel(box); };
-    for (const e of box.querySelectorAll('.eqD .slot')) e.onclick = () => { const k = e.dataset.s; if (k === 'main') return redo('主手就是本局的兵器，局内不能换。'); if (k === 'off' && two) return redo('双格武器占着副手，只有拿剑才能放盾。'); if (!G.eq[k]) return; G.eq[k] = null; gearSave(G); redo('已卸下，回到物品栏。'); };
-    for (const e of box.querySelectorAll('.eqI')) e.onclick = () => { const id = e.dataset.i, d = DATA.gear[id]; if (worn.has(id)) return; if (d.slot === 'off' && two) return redo('现在拿的是双格武器，副手用不了盾。'); G.eq[d.slot] = id; gearSave(G); redo(d.name + '已装备。'); };
+    const redo = m => { eqMsg = m; hideT(); equipPanel(box); B().recompute(); };
+    // 附魔：满了弹确认，随机覆盖一条
+    const doEnc = t => { if (!(r.stones[t] > 0)) return; const w = E.main, P = a => a[Math.random() * a.length | 0], used = new Set(w.aff.map(a => a[0])), pool = DATA.affixes.map((_, i) => i).filter(i => !used.has(i)), n = [P(pool.length ? pool : DATA.affixes.map((_, i) => i)), t]; let old = null;
+      if (w.aff.length < mt) w.aff.push(n); else { const i = Math.random() * w.aff.length | 0; old = affTxt([w.aff[i]])[0]; w.aff[i] = n; }
+      r.stones[t]--; if (!r.stones[t] && eqSel === t) eqSel = 0; redo(`新增：${affTxt([n])[0]}${old ? '（覆盖了：' + old + '）' : ''}`); };
+    const enc = t => { t = t || eqSel; if (!t || !(r.stones[t] > 0)) return; if (E.main.aff.length < mt) return doEnc(t);
+      const m = document.createElement('div'); m.className = 'eqMdl'; m.innerHTML = `<div><p>${WN(wp, mt)} 的附魔已满（${E.main.aff.length}/${mt}）。<br>用${DATA.stoneNames[t]}石会<b>随机覆盖一条词条</b>，确定吗？</p><div class="eqBtns"><button class="btn mini" data-n>取消</button><button class="btn mini gold" data-y>确定覆盖</button></div></div>`; document.body.appendChild(m);
+      m.querySelector('[data-n]').onclick = () => m.remove(); m.querySelector('[data-y]').onclick = () => { m.remove(); doEnc(t); }; };
+    for (const e of box.querySelectorAll('.eqD .slot')) e.onclick = () => { const k = e.dataset.s; if (k === 'main') { if (eqSel) return enc(); return redo('主手是本局的兵器，只能升阶（背包里有更高阶的就点它换上）。'); } if (k === 'off' && two) return redo('双格武器占着副手，只有拿剑才能放盾。'); if (!E[k]) return; if (r.gbag.length >= 16) return redo('物品栏满了，先把东西腾出来。'); r.gbag.push(E[k]); E[k] = null; redo('已卸下，回到物品栏。'); };
+    for (const e of box.querySelectorAll('.eqI')) e.onclick = () => { const i = +e.dataset.i, it = r.gbag[i];
+      if (it.k === 'w') { const old = E.main; E.main = it; r.gbag.splice(i, 1); r.gbag.push(old.k ? old : Object.assign({ k: 'w' }, old)); return redo(`换上了 ${WN(wp, it.t)}。`); }
+      const D = DATA.gear[it.id]; if (D.sword && two) return redo('现在拿的是双格武器，副手用不了盾。'); const old = E[D.slot]; E[D.slot] = it; r.gbag.splice(i, 1); if (old) r.gbag.push(old); redo(gname(it) + '已装备。'); };
+    for (const e of box.querySelectorAll('[data-m]')) e.onclick = () => { const t = +e.dataset.m; if (r.stones[t] < 2) return; r.stones[t] -= 2; r.stones[t + 1]++; redo(`合成了 1 颗${DATA.stoneNames[t + 1]}附魔石。`); };
+    // 石头：按住拖到主手武器上（手机手指也行）；不拖动就是选中，再点主手
+    for (const e of box.querySelectorAll('.eqS')) { const t = +e.dataset.st; e.onpointerdown = ev => { const sx = ev.clientX, sy = ev.clientY; let gh = null, moved = 0;
+        const mv = m => { if (!moved && Math.hypot(m.clientX - sx, m.clientY - sy) > 6) { moved = 1; gh = document.createElement('div'); gh.className = 'dragghost'; gh.innerHTML = e.innerHTML; gh.style.cssText += ';position:fixed;z-index:200;pointer-events:none;width:48px;height:48px;opacity:.9'; document.body.appendChild(gh); } if (gh) { gh.style.left = m.clientX - 24 + 'px'; gh.style.top = m.clientY - 24 + 'px'; box.querySelector('.eqD .slot[data-s=main]').classList.toggle('dro', !!(document.elementFromPoint(m.clientX, m.clientY) || {}).closest && !!document.elementFromPoint(m.clientX, m.clientY).closest('.slot[data-s=main]')); } };
+        const up = m => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); if (gh) gh.remove(); const ms = box.querySelector('.eqD .slot[data-s=main]'); if (ms) ms.classList.remove('dro');
+          if (moved) { const el = document.elementFromPoint(m.clientX, m.clientY); if (el && el.closest('.slot[data-s=main]')) enc(t); } else { eqSel = eqSel === t ? 0 : t; equipPanel(box); } };
+        addEventListener('pointermove', mv); addEventListener('pointerup', up); }; e.ondragstart = ev => ev.preventDefault(); }
   }
-  function giveGear() { const g = gearLoad(); g.bag = Object.keys(DATA.gear); gearSave(g); if ($('pause').classList.contains('on') && ptab === 'zhuang') pauseRender(); }
+  let eqSel = 0;
+  function giveGear() { const r = GS(); r.stones = { 1: 5, 2: 3, 3: 1 }; r.gbag = [{ k: 'w', t: 2, aff: [] }, { k: 'w', t: 3, aff: [] }, ...Object.keys(DATA.gear).filter(k => !(DATA.gear[k].sword && r.weapon !== 'sword')).map(id => ({ k: 'g', id, t: 1 + Math.floor(Math.random() * 3) }))].slice(0, 16); B().recompute(); if ($('pause').classList.contains('on') && ptab === 'zhuang') pauseRender(); }
   // ---------- 暂停页 = 备战 ----------
   let ptab = 'ji';
   function pauseRender() {
