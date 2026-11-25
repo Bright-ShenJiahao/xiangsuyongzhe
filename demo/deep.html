@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>局外 · 森林深处 地图试验</title>
+<style>
+html,body{margin:0;height:100%;background:#0b1014;overflow:hidden;touch-action:none;font-family:system-ui,sans-serif;color:#eee;user-select:none}
+canvas{display:block;image-rendering:pixelated}
+#hud{position:fixed;left:8px;top:8px;font-size:13px;line-height:1.6;text-shadow:0 1px 2px #000;pointer-events:none}
+#tg{position:fixed;right:8px;top:8px;display:flex;gap:6px}
+#tg button{background:#2a2116;color:#ffd77a;border:2px solid #d9b45a;border-radius:6px;padding:5px 9px;font-size:13px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud">森林深处 · 地图试验<br>WASD / 方向键移动 · 空格翻滚<br>手机：左半屏拖动移动，右半屏点一下翻滚</div>
+<div id="tg"><button id="bMask">显示可走范围</button><button id="bZoom">镜头：1.5 屏</button><button id="bFoe">再来 5 只</button></div>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+// 11/25 局外 demo：哈迪斯式不规则房间。整张图 1672×941（坐标 = 原图像素），只有多边形里能走；镜头跟随，视野约 1/1.5 张图
+const cv = document.getElementById('c'), g = cv.getContext('2d'), BG = new Image(); BG.src = 'art/map/deep1.webp?v=1';
+const MW = 1672, MH = 941;
+const POLY = {"main":[[548,455],[600,400],[650,360],[700,348],[780,345],[810,328],[850,345],[930,358],[990,395],[1048,470],[1045,520],[1010,560],[1000,610],[960,640],[880,660],[780,668],[680,660],[615,650],[595,610],[560,545]],
+"log":[[95,598],[620,543],[625,612],[95,668]],"log2":[[1015,505],[1195,483],[1200,532],[1020,560]],
+"p1":[[1165,470],[1190,432],[1240,417],[1300,425],[1340,470],[1330,520],[1290,545],[1200,545],[1170,512]],
+"root":[[1218,540],[1262,540],[1278,662],[1238,672]],"p2":[[1185,705],[1225,672],[1300,662],[1350,680],[1372,720],[1342,752],[1260,762],[1200,752]]};
+const PL = Object.values(POLY);
+function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
+const ok = (x, y) => PL.some(p => inPoly(x, y, p));
+function move(o, dx, dy) { if (ok(o.x + dx, o.y + dy)) { o.x += dx; o.y += dy; return; } if (ok(o.x + dx, o.y)) o.x += dx; else if (ok(o.x, o.y + dy)) o.y += dy; }
+let VW = 1, VH = 1, SC = 1, zoom = 1.5, showMask = false;
+function fit() { cv.width = innerWidth; cv.height = innerHeight; VW = innerWidth; VH = innerHeight;
+  // 视野宽 = 图宽 / zoom；手机竖屏按高度算，保证至少看到同样的高度
+  SC = Math.max(VW / (MW / zoom), VH / (MH / zoom)); }
+addEventListener('resize', fit); fit();
+const hero = { x: 800, y: 520, fx: 1, roll: 0, rcd: 0, rx: 0, ry: 0 }, foes = [];
+const R = (a, b) => a + Math.random() * (b - a);
+function spawnFoes(n) { const T = ['gob_shield', 'gob_archer', 'gob_wolf']; for (let i = 0; i < n; i++) { let x, y, k = 0; do { const p = PL[Math.random() * PL.length | 0]; x = R(...[Math.min(...p.map(q => q[0])), Math.max(...p.map(q => q[0]))]); y = R(...[Math.min(...p.map(q => q[1])), Math.max(...p.map(q => q[1]))]); } while ((!ok(x, y) || Math.hypot(x - hero.x, y - hero.y) < 200) && ++k < 200); foes.push({ x, y, t: T[i % 3], sp: R(55, 85) }); } }
+spawnFoes(6);
+const K = {}; addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'Space') doRoll(); }); addEventListener('keyup', e => K[e.code] = 0);
+let joy = null; cv.addEventListener('pointerdown', e => { if (e.clientX < VW / 2) joy = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY }; else doRoll(); });
+addEventListener('pointermove', e => { if (joy && e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } }); addEventListener('pointerup', e => { if (joy && e.pointerId === joy.id) joy = null; });
+function input() { let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0);
+  if (joy) { const dx = joy.x - joy.x0, dy = joy.y - joy.y0, d = Math.hypot(dx, dy); if (d > 8) { x = dx / Math.max(d, 40); y = dy / Math.max(d, 40); } }
+  const d = Math.hypot(x, y); return d > 1 ? [x / d, y / d] : [x, y]; }
+function doRoll() { if (hero.rcd > 0) return; const [x, y] = input(); hero.rx = x || hero.fx; hero.ry = y; const d = Math.hypot(hero.rx, hero.ry); hero.rx /= d; hero.ry /= d; hero.roll = .28; hero.rcd = .8; }
+document.getElementById('bMask').onclick = e => { showMask = !showMask; e.target.textContent = showMask ? '隐藏可走范围' : '显示可走范围'; };
+document.getElementById('bZoom').onclick = e => { zoom = zoom === 1.5 ? 1 : zoom === 1 ? 2 : 1.5; e.target.textContent = '镜头：' + zoom + ' 屏'; fit(); };
+document.getElementById('bFoe').onclick = () => spawnFoes(5);
+let cam = { x: hero.x, y: hero.y }, last = performance.now(), T = 0;
+function fr(set, names) { const S = SPR.sets[set]; if (!S || !S.f) return null; for (const n of names) if (S.f[n]) return n; return S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
+function anim(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : fr(set, [base, 'idle0']); }
+const HS = 115;   // 勇者每秒走多少原图像素
+function loop(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; T = now / 1000;
+  hero.rcd -= dt; const [ix, iy] = input(); hero.mv = !!(ix || iy);
+  if (hero.roll > 0) { hero.roll -= dt; move(hero, hero.rx * HS * 3 * dt, hero.ry * HS * 3 * dt * .75); }
+  else { if (ix) hero.fx = Math.sign(ix); move(hero, ix * HS * dt, iy * HS * dt * .75); }
+  for (const f of foes) { const dx = hero.x - f.x, dy = hero.y - f.y, d = Math.hypot(dx, dy); f.mv = d > 26; if (f.mv) move(f, dx / d * f.sp * dt, dy / d * f.sp * dt * .75); }
+  for (let i = 0; i < foes.length; i++) for (let j = i + 1; j < foes.length; j++) { const a = foes[i], b = foes[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1; if (d < 24) { const p = (24 - d) / 2; move(a, -dx / d * p, -dy / d * p); move(b, dx / d * p, dy / d * p); } }
+  // 镜头：平滑跟随，夹在图内
+  const hw = VW / SC / 2, hh = VH / SC / 2; cam.x += (hero.x - cam.x) * Math.min(1, dt * 6); cam.y += (hero.y - cam.y) * Math.min(1, dt * 6);
+  const cx = Math.max(hw, Math.min(MW - hw, cam.x)), cy = Math.max(hh, Math.min(MH - hh, cam.y));
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0b1014'; g.fillRect(0, 0, VW, VH);
+  g.setTransform(SC, 0, 0, SC, Math.round(VW / 2 - cx * SC), Math.round(VH / 2 - cy * SC)); g.imageSmoothingEnabled = false;
+  if (BG.complete && BG.naturalWidth) g.drawImage(BG, 0, 0, MW, MH);
+  if (showMask) { g.fillStyle = 'rgba(80,255,80,.28)'; g.strokeStyle = '#f33'; g.lineWidth = 2 / SC; for (const p of PL) { g.beginPath(); p.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); g.stroke(); } }
+  const all = [...foes.map(f => ({ o: f, y: f.y, f: 1 })), { o: hero, y: hero.y }].sort((a, b) => a.y - b.y);
+  for (const e of all) { const o = e.o; g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(o.x, o.y, 13, 5, 0, 0, 7); g.fill();
+    if (e.f) { const nm = SPR.sets[o.t] && anim(o.t, 'walk', 9); if (nm) SPR.draw(g, o.t, nm, 0, o.x, o.y, hero.x < o.x, .9); else { g.fillStyle = '#7c4'; g.beginPath(); g.arc(o.x, o.y - 12, 11, 0, 7); g.fill(); } }
+    else { const hs = SPR.heroSet && SPR.heroSet('m'), nm = hs && SPR.sets[hs] ? (o.mv || o.roll > 0 ? anim(hs, 'run', 12) || anim(hs, 'walk', 10) : anim(hs, 'idle', 2)) : null;
+      if (nm) SPR.drawHero(g, nm, 0, o.x, o.y, o.fx < 0, .9, { white: o.roll > 0 ? .4 : 0 }); else { g.fillStyle = '#e8d8b0'; g.beginPath(); g.arc(o.x, o.y - 12, 11, 0, 7); g.fill(); } } }
+  requestAnimationFrame(loop); }
+Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
+</script></body></html>
