@@ -444,7 +444,7 @@
       return;
     }
     G.wt += dt;
-    if (G.endT != null) { if ((G.endT -= dt) <= 0) { G.waveOn = false; waveEnd(); } return; }
+    if (G.endT != null) { if ((G.endT -= dt) <= 0) { if (G.paused) return; if ((G.gc.length || G.gi.length) && (G.abs = (G.abs || 0) + dt) < 3) { for (const c of G.gc) c.pull = 1; for (const o of G.gi) o.pull = 1; return; }   /* 11/25 地上的东西先全部吸到人物身上，再结算、公主才出现 */ G.abs = 0; G.waveOn = false; waveEnd(); } return; }
     // 场上打光了：下一批提前出
     if (!alive.length && G.q.length && !warns.length && G.q[0].at > G.wt) { const d = G.q[0].at - G.wt; for (const o of G.q) o.at -= d; }
     const arch = alive.filter(z => z.T.ranged).length;
@@ -772,7 +772,7 @@
       const d = dist(c, hero); if (c.pull && c.t > .35) { const k = Math.min(1, dt * 8); c.x += (hero.x - c.x) * k; c.y += (hero.y - c.y) * k; } if (c.t > .35 && d < mag && !hero.dead) { const k = Math.min(1, dt * (6 + 300 / Math.max(d, 5))); c.x += (hero.x - c.x) * k; c.y += (hero.y - c.y) * k; }
       if (c.t > .35 && d < 9) { c.got = 1; G.cf += c.v * cMul(); const n = Math.floor(G.cf); G.cf -= n; RUN.coins += n; SFX.play('coin'); parts.push({ x: hero.x, y: hero.y - 30 * K, vx: 0, vy: -40 * K, t: 0, T: .3, col: '#ffe08a', g: 0 }); } }
     G.gc = G.gc.filter(c => !c.got);
-    for (const o of G.gi) { o.t += dt; if (o.t > .4 && dist(o, hero) < 14 && !hero.dead) { o.got = 1;   // 11/23 书 / 宝物也要走过去捡
+    for (const o of G.gi) { o.t += dt; if (o.pull && o.t > .4) { const k = Math.min(1, dt * 7); o.x += (hero.x - o.x) * k; o.y += (hero.y - o.y) * k; } if (o.t > .4 && dist(o, hero) < 14 && !hero.dead) { o.got = 1;   // 11/23 书 / 宝物也要走过去捡
       if (o.kind === 'book') { const id = randBook(); if (id) { CAMP.learn({ kind: 'book', id }, true); gotFeed({ kind: 'book', id, x: o.x, y: o.y }); } else { RUN.coins += 30; UI.feed('捡到 30 铜钱'); } }
       else { const it = ITEMS()[Math.random() * ITEMS().length | 0]; G.paused = true; SFX.play('pick'); UI.slot(slotPool(), [slotOf({ kind: 'item', id: it.id })], () => { G.paused = false; CAMP.learn({ kind: 'item', id: it.id }, true); gotFeed({ kind: 'item', x: o.x, y: o.y }); }); } } }
     G.gi = G.gi.filter(o => !o.got);
