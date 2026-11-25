@@ -29,7 +29,8 @@ const PIL = [];   // 石柱在平台后缘，只是装饰
 const MW = 1672, MH = 941, ZOOM = 1.2;
 const MAIN = [[185,330],[215,220],[290,165],[420,135],[620,130],[800,128],[1000,132],[1150,155],[1250,210],[1315,290],[1340,380],[1335,480],[1310,580],[1270,650],[1180,690],[1000,690],[800,700],[720,690],[620,700],[450,680],[300,650],[225,600],[190,480],[180,400]];
 const LOG = [[1245,265],[1420,195],[1436,230],[1265,302]], LEDGE = [[1390,160],[1430,120],[1500,110],[1560,140],[1555,190],[1480,210],[1405,195]];
-const BONE = [[920,612],[1110,520],[1275,520],[1290,610],[1230,640],[1130,600],[940,650]];   // 巨人骸骨：挡路
+const BONE = [[915,628],[1100,592],[1140,600],[1280,605],[1288,632],[1210,642],[1110,615],[945,652]];   // 巨人骸骨：只有贴地的底部挡路，后面能走
+const BONEI = new Image(); BONEI.src = 'art/map/deep_obj/bone.png?v=1'; const BONE_X = 912, BONE_Y = 488, BONE_BASE = 600;
 const PIT = { x: 962, y: 316, rx: 70, ry: 34 };   // 坑口（黑色部分）
 let opened = false;
 function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
@@ -144,8 +145,10 @@ function loop(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; 
   if (wp) { g.save(); g.translate(PIT.x, PIT.y); for (let i = 0; i < 26; i++) { const a = i / 26 * 6.28 + T * (wp === 2 ? 4 : 2), r = (wp === 2 ? 150 : 120) * (1 - ((T * (wp === 2 ? 1.6 : .6) + i * .13) % 1));
       g.fillStyle = i % 3 ? 'rgba(170,200,120,.85)' : 'rgba(220,230,255,.6)'; g.fillRect(Math.cos(a) * r - 3, Math.sin(a) * r * .55 - 2, 6, 3); } g.restore(); }
   // 角色 + 断柱（按 y 排序；人在柱子后面时柱子半透明）
-  const list = [...foes.map(f => ({ o: f, y: f.y, f: 1 })), { o: hero, y: hero.y, h: 1 }, ...PIL.map(p => ({ p, y: p.by }))].sort((a, b) => a.y - b.y);
+  const list = [...foes.map(f => ({ o: f, y: f.y, f: 1 })), { o: hero, y: hero.y, h: 1 }, ...PIL.map(p => ({ p, y: p.by })), { bone: 1, y: BONE_BASE }].sort((a, b) => a.y - b.y);
   for (const e of list) {
+    if (e.bone) { const behind = [hero, ...foes].some(o => !o.fall && o.y < BONE_BASE && o.y > BONE_Y && o.x > BONE_X && o.x < BONE_X + 383);
+      if (BONEI.complete) { g.globalAlpha = behind ? .45 : 1; g.drawImage(BONEI, BONE_X, BONE_Y); g.globalAlpha = 1; } continue; }
     if (e.p) { const p = e.p, behind = [hero, ...foes].some(o => o.y < p.by && o.y > p.y + 20 && Math.abs(o.x - (p.x + p.im.width / 2)) < p.im.width / 2 + 8);
       if (p.im.complete) { g.globalAlpha = behind ? .45 : 1; g.drawImage(p.im, p.x, p.y); g.globalAlpha = 1; } continue; }
     const o = e.o, s = o.fall > 0 ? Math.max(.05, o.fall / (e.h ? .6 : .7)) : 1;
