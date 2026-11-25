@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>局外 · 森林深处 地图试验</title>
+<style>
+html,body{margin:0;height:100%;background:#0b1014;overflow:hidden;touch-action:none;font-family:system-ui,sans-serif;color:#eee;user-select:none}
+canvas{display:block;image-rendering:pixelated}
+#hud{position:fixed;left:8px;top:8px;font-size:13px;line-height:1.6;text-shadow:0 1px 2px #000;pointer-events:none}
+#tg{position:fixed;right:8px;top:8px;display:flex;gap:6px}
+#tg button{background:#2a2116;color:#ffd77a;border:2px solid #d9b45a;border-radius:6px;padding:5px 9px;font-size:13px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud">森林深处 · 零件拼接试验（专门出的零件，3 块大空地）<br>WASD / 方向键移动 · 空格翻滚<br>手机：左半屏拖动移动，右半屏点一下翻滚</div>
+<div id="tg"><button id="bMask">显示可走范围</button><button id="bFoe">再来 5 只</button></div>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+// 11/25 局外 demo：哈迪斯式不规则房间。整张图 1672×941（坐标 = 原图像素），只有多边形里能走；镜头跟随，视野约 1/1.5 张图
+const cv = document.getElementById('c'), g = cv.getContext('2d'), BG = new Image(); BG.src = 'art/map/deep3.webp?v=1';
+const MW = 3344, MH = 941, SW = 1672, SH = 941;   // 整张约 2 屏，镜头 1 屏 = 原图大小
+const PL = [[[739, 242], [680, 236], [663, 221], [638, 221], [626, 206], [542, 201], [531, 190], [498, 190], [497, 170], [468, 170], [467, 190], [446, 192], [427, 205], [316, 208], [287, 252], [244, 257], [220, 290], [197, 300], [173, 333], [173, 365], [179, 366], [196, 413], [222, 422], [246, 471], [263, 471], [286, 508], [314, 508], [317, 515], [340, 518], [360, 556], [414, 562], [436, 593], [459, 593], [466, 603], [487, 611], [493, 593], [506, 591], [507, 574], [574, 570], [590, 555], [643, 551], [660, 524], [677, 515], [689, 499], [705, 499], [723, 471], [750, 471], [750, 461], [764, 460], [776, 437], [790, 436], [797, 418], [804, 416], [804, 403], [809, 402], [823, 362], [820, 317], [801, 301], [791, 300], [772, 278], [758, 277]], [[690, 359], [1408, 359], [1408, 427], [690, 427]], [[1480, 170], [1476, 196], [1431, 198], [1422, 210], [1421, 225], [1411, 234], [1410, 247], [1394, 264], [1369, 270], [1357, 281], [1315, 281], [1306, 291], [1303, 307], [1289, 326], [1289, 390], [1278, 402], [1280, 420], [1289, 433], [1311, 437], [1317, 461], [1329, 467], [1358, 525], [1395, 525], [1400, 535], [1422, 538], [1438, 566], [1460, 566], [1465, 576], [1478, 579], [1482, 593], [1502, 596], [1512, 611], [1528, 613], [1544, 584], [1578, 584], [1589, 570], [1620, 570], [1620, 555], [1629, 543], [1652, 536], [1654, 524], [1670, 517], [1676, 506], [1695, 505], [1705, 489], [1733, 486], [1732, 472], [1724, 463], [1702, 460], [1703, 410], [1722, 409], [1736, 393], [1762, 391], [1762, 380], [1745, 364], [1735, 363], [1721, 345], [1702, 344], [1703, 294], [1722, 293], [1736, 277], [1763, 275], [1780, 259], [1745, 245], [1730, 218], [1615, 216], [1606, 209], [1586, 209], [1573, 195], [1538, 194], [1534, 170]], [[1687, 366], [2207, 366], [2207, 425], [1687, 425]], [[2734, 257], [2704, 255], [2700, 245], [2685, 239], [2677, 219], [2639, 201], [2620, 200], [2613, 189], [2613, 170], [2546, 170], [2545, 190], [2466, 190], [2440, 209], [2420, 210], [2396, 243], [2385, 244], [2363, 266], [2362, 285], [2353, 298], [2353, 321], [2340, 337], [2285, 344], [2245, 344], [2229, 338], [2190, 360], [2182, 374], [2151, 374], [2141, 384], [2127, 420], [2114, 422], [2090, 443], [2110, 450], [2115, 473], [2125, 476], [2142, 526], [2149, 527], [2157, 546], [2185, 546], [2196, 556], [2208, 557], [2232, 579], [2241, 597], [2259, 597], [2280, 612], [2289, 603], [2290, 588], [2331, 586], [2349, 559], [2370, 559], [2379, 545], [2392, 545], [2401, 537], [2408, 520], [2430, 511], [2448, 473], [2471, 463], [2483, 421], [2544, 426], [2566, 448], [2589, 411], [2619, 411], [2636, 366], [2667, 356], [2672, 333], [2687, 314], [2693, 314], [2710, 268], [2734, 267]], [[2610, 359], [2965, 359], [2965, 421], [2610, 421]], [[2841, 389], [2860, 389], [2869, 411], [2886, 419], [2902, 447], [2931, 450], [2938, 460], [2965, 464], [2975, 483], [2988, 489], [2998, 473], [3024, 470], [3030, 460], [3054, 458], [3066, 442], [3103, 439], [3118, 416], [3136, 408], [3143, 392], [3153, 392], [3159, 373], [3180, 371], [3180, 362], [3154, 360], [3144, 342], [3079, 323], [3077, 301], [3030, 301], [3029, 321], [2991, 321], [2988, 301], [2985, 324], [2956, 324], [2939, 337], [2913, 338], [2892, 360], [2877, 362], [2868, 378], [2841, 382]]];
+function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
+const ok = (x, y) => PL.some(p => inPoly(x, y, p));
+function move(o, dx, dy) { if (ok(o.x + dx, o.y + dy)) { o.x += dx; o.y += dy; return; } if (ok(o.x + dx, o.y)) o.x += dx; else if (ok(o.x, o.y + dy)) o.y += dy; }
+let VW = 1, VH = 1, SC = 1, zoom = 1.5, showMask = false;
+function fit() { cv.width = innerWidth; cv.height = innerHeight; VW = innerWidth; VH = innerHeight;
+  // 视野宽 = 图宽 / zoom；手机竖屏按高度算，保证至少看到同样的高度
+  SC = Math.max(VW / SW, VH / SH); }
+addEventListener('resize', fit); fit();
+const hero = { x: 500, y: 420, fx: 1, roll: 0, rcd: 0, rx: 0, ry: 0 }, foes = [];
+const R = (a, b) => a + Math.random() * (b - a);
+function spawnFoes(n) { const T = ['gob_shield', 'gob_archer', 'gob_wolf']; for (let i = 0; i < n; i++) { let x, y, k = 0; do { const p = PL[Math.random() * PL.length | 0]; x = R(...[Math.min(...p.map(q => q[0])), Math.max(...p.map(q => q[0]))]); y = R(...[Math.min(...p.map(q => q[1])), Math.max(...p.map(q => q[1]))]); } while ((!ok(x, y) || Math.hypot(x - hero.x, y - hero.y) < 200) && ++k < 200); foes.push({ x, y, t: T[i % 3], sp: R(55, 85) }); } }
+spawnFoes(6);
+const K = {}; addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'Space') doRoll(); }); addEventListener('keyup', e => K[e.code] = 0);
+let joy = null; cv.addEventListener('pointerdown', e => { if (e.clientX < VW / 2) joy = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY }; else doRoll(); });
+addEventListener('pointermove', e => { if (joy && e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } }); addEventListener('pointerup', e => { if (joy && e.pointerId === joy.id) joy = null; });
+function input() { let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0);
+  if (joy) { const dx = joy.x - joy.x0, dy = joy.y - joy.y0, d = Math.hypot(dx, dy); if (d > 8) { x = dx / Math.max(d, 40); y = dy / Math.max(d, 40); } }
+  const d = Math.hypot(x, y); return d > 1 ? [x / d, y / d] : [x, y]; }
+function doRoll() { if (hero.rcd > 0) return; const [x, y] = input(); hero.rx = x || hero.fx; hero.ry = y; const d = Math.hypot(hero.rx, hero.ry); hero.rx /= d; hero.ry /= d; hero.roll = .28; hero.rcd = .8; }
+document.getElementById('bMask').onclick = e => { showMask = !showMask; e.target.textContent = showMask ? '隐藏可走范围' : '显示可走范围'; };
+document.getElementById('bFoe').onclick = () => spawnFoes(5);
+let cam = { x: hero.x, y: hero.y }, last = performance.now(), T = 0;
+function fr(set, names) { const S = SPR.sets[set]; if (!S || !S.f) return null; for (const n of names) if (S.f[n]) return n; return S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
+function anim(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : fr(set, [base, 'idle0']); }
+const HS = 115;   // 勇者每秒走多少原图像素
+function loop(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; T = now / 1000;
+  hero.rcd -= dt; const [ix, iy] = input(); hero.mv = !!(ix || iy);
+  if (hero.roll > 0) { hero.roll -= dt; move(hero, hero.rx * HS * 3 * dt, hero.ry * HS * 3 * dt * .75); }
+  else { if (ix) hero.fx = Math.sign(ix); move(hero, ix * HS * dt, iy * HS * dt * .75); }
+  for (const f of foes) { const dx = hero.x - f.x, dy = hero.y - f.y, d = Math.hypot(dx, dy); f.mv = d > 26; if (f.mv) move(f, dx / d * f.sp * dt, dy / d * f.sp * dt * .75); }
+  for (let i = 0; i < foes.length; i++) for (let j = i + 1; j < foes.length; j++) { const a = foes[i], b = foes[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1; if (d < 24) { const p = (24 - d) / 2; move(a, -dx / d * p, -dy / d * p); move(b, dx / d * p, dy / d * p); } }
+  // 镜头：平滑跟随，夹在图内
+  const hw = VW / SC / 2, hh = VH / SC / 2; cam.x += (hero.x - cam.x) * Math.min(1, dt * 6); cam.y += (hero.y - cam.y) * Math.min(1, dt * 6);
+  const cx = Math.max(hw, Math.min(MW - hw, cam.x)), cy = Math.max(hh, Math.min(MH - hh, cam.y));
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0b1014'; g.fillRect(0, 0, VW, VH);
+  g.setTransform(SC, 0, 0, SC, Math.round(VW / 2 - cx * SC), Math.round(VH / 2 - cy * SC)); g.imageSmoothingEnabled = false;
+  if (BG.complete && BG.naturalWidth) g.drawImage(BG, 0, 0, MW, MH);
+  if (showMask) { g.fillStyle = 'rgba(80,255,80,.28)'; g.strokeStyle = '#f33'; g.lineWidth = 2 / SC; for (const p of PL) { g.beginPath(); p.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); g.stroke(); } }
+  const all = [...foes.map(f => ({ o: f, y: f.y, f: 1 })), { o: hero, y: hero.y }].sort((a, b) => a.y - b.y);
+  for (const e of all) { const o = e.o; g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(o.x, o.y, 13, 5, 0, 0, 7); g.fill();
+    if (e.f) { const nm = SPR.sets[o.t] && anim(o.t, 'walk', 9); if (nm) SPR.draw(g, o.t, nm, 0, o.x, o.y, hero.x < o.x, .9); else { g.fillStyle = '#7c4'; g.beginPath(); g.arc(o.x, o.y - 12, 11, 0, 7); g.fill(); } }
+    else { const hs = SPR.heroSet && SPR.heroSet('m'), nm = hs && SPR.sets[hs] ? (o.mv || o.roll > 0 ? anim(hs, 'run', 12) || anim(hs, 'walk', 10) : anim(hs, 'idle', 2)) : null;
+      if (nm) SPR.drawHero(g, nm, 0, o.x, o.y, o.fx < 0, .9, { white: o.roll > 0 ? .4 : 0 }); else { g.fillStyle = '#e8d8b0'; g.beginPath(); g.arc(o.x, o.y - 12, 11, 0, 7); g.fill(); } } }
+  requestAnimationFrame(loop); }
+Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
+</script></body></html>
