@@ -98,7 +98,7 @@ window.DATA = {
   heroes: [
     { id: 'm', name: '阿远', from: '中国', desc: '熬夜打游戏的年轻人', perk: '经验 +10%' },
     { id: 'f', name: '小凛', from: '日本', desc: '剑道部的高中生', perk: '翻滚冷却 −20%' },
-    { id: 'e', name: '戈拉斯尔', from: '精灵王国', desc: '精灵小王国的王子，战死后被神明留住了魂魄', perk: '弓伤害 +10%' },   // 11/26 精灵王子（素材 art/heroE；先开放方便试玩，要锁就加 locked: true）
+    { id: 'e', name: '戈拉斯尔', from: '精灵王国', desc: '精灵小王国的王子，战死后被神明留住了魂魄', perk: '闪避 +8%' },   // 11/26 精灵王子（素材 art/heroE；先开放方便试玩，要锁就加 locked: true）
     { id: 'p', name: '公主', desc: '光之王国的公主露米娜', perk: '法杖伤害 +10%', locked: true },   // 11/22 先锁起来（素材都在）
   ],
   habits: [
