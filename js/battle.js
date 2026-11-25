@@ -632,12 +632,13 @@
     for (let i = f.items.length - 1; i >= 0; i--) { const o = f.items[i]; if (f.t > .6 && SKUL(o, 16)) o.st += dt; else o.st = 0; if (o.st > .6) { o.st = 0; if (CAMP.learn(o, true)) { gotFeed(o); f.items.splice(i, 1); for (let k = 0; k < 10; k++) { const a = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(a) * 50 * K, vy: Math.sin(a) * 50 * K, t: 0, T: .4, col: '#ffe08a', g: 0 }); } } else { o.x += (o.x - hero.x) * .5; o.y += (o.y - hero.y) * .5; } } }
     const P = f.pr;
     if (!P.arm && !SKUL(P, 40)) P.arm = true;
-    if (!P.orbs && P.arm && SKUL(P, 26)) { if (RUN.xiu > 0) { xiuOrbs(); P.said = 1; P.ot = f.t; } else P.said = 2; }
+    if (P.wait && !P.orbs && f.t >= P.wait) { P.wait = 0; xiuOrbs(); P.ot = f.t; }
+    if (!P.orbs && !P.wait && P.arm && SKUL(P, 26)) { if (RUN.xiu > 0) { xiuOrbs(); P.said = 1; P.ot = f.t; } else P.said = 2; }
     if (P.orbs && f.t - (P.ot || 0) > 1) {   // 光球出现 1 秒内碰到不算；站上去转满一圈（0.8 秒）才拿
       for (const o of P.orbs) { if (SKUL(o, 15)) o.st += dt; else o.st = 0;
         if (o.st > .8) { for (const [a, v] of o.adds) RUN.train[a] = (RUN.train[a] || 0) + v; RUN.xiu--; recompute(); toastMsg(`修炼：${o.adds.map(([a, v]) => DATA.attrs.find(x => x.id === a).name + ' +' + v).join('、')}`);
           for (let k = 0; k < 16; k++) { const an = R(0, PI * 2); parts.push({ x: o.x, y: o.y, vx: Math.cos(an) * 60 * K, vy: Math.sin(an) * 60 * K, t: 0, T: .5, col: DATA.rarity[o.q].col, g: 0 }); }
-          if (RUN.xiu > 0) { P.cr.n = 0; xiuOrbs(); } else { P.orbs = null; P.cr = null; P.said = 3; } return; } }
+          if (RUN.xiu > 0) { P.cr.n = 0; P.orbs = null; P.w0 = f.t; P.wait = f.t + 2; } else { P.orbs = null; P.cr = null; P.said = 3; } return; } }   /* 11/25 还有修炼机会：公主先说一声，过一会再刷出下一组，免得玩家顺脚又踩中 */
       const c = P.cr; if (c) { if (!SKUL(c, 20)) c.lock = false; if (SKUL(c, 14) && !c.lock) c.st += dt; else c.st = 0;
         if (c.st > .5) { c.st = 0; const free = 2 + (hero.fx.xiuReroll || 0), cost = c.n < free ? 0 : 5 * (c.n - free + 1); c.lock = true; if (cost && RUN.coins < cost) toastMsg('铜钱不够'); else { RUN.coins -= cost; c.n++; const keep = c; xiuOrbs(); P.cr = keep; } } }
     }
@@ -689,7 +690,8 @@
     const P = f.pr, px = X(P.x), py = Y(P.y);
     ctx.save(); ctx.globalAlpha = .5 + .15 * Math.sin(G.t * 2); ctx.strokeStyle = '#c8a8ff'; ctx.lineWidth = 2 * u; ctx.setLineDash([4 * u, 4 * u]); ctx.beginPath(); ctx.ellipse(px, py + 30 * u, 62 * u, 62 * u / YS * .9, 0, 0, 7); ctx.stroke(); ctx.fillStyle = 'rgba(200,170,255,.07)'; ctx.fill(); ctx.restore();
     const gl = ctx.createRadialGradient(px, py - 20 * u, 0, px, py - 20 * u, 40 * u); gl.addColorStop(0, 'rgba(220,190,255,.5)'); gl.addColorStop(1, 'rgba(220,190,255,0)'); ctx.fillStyle = gl; ctx.fillRect(px - 40 * u, py - 60 * u, 80 * u, 80 * u);
-    if (!P.orbs) { label(RUN.xiu > 0 ? `露米娜 · 修炼 ×${RUN.xiu}` : '露米娜', px, py + 4 * u, '#e6d4ff'); say(px, py - 44 * u, RUN.xiu > 0 ? ['辛苦了，勇者。', '过来，我帮你修炼。'] : ['再坚持一下，勇者。', '前面会更危险……'], 0); }
+    if (!P.orbs && P.wait) { label(`露米娜 · 修炼 ×${RUN.xiu}`, px, py + 4 * u, '#e6d4ff'); say(px, py - 44 * u, ['还有修炼机会！'], -P.w0); }
+    else if (!P.orbs) { label(RUN.xiu > 0 ? `露米娜 · 修炼 ×${RUN.xiu}` : '露米娜', px, py + 4 * u, '#e6d4ff'); say(px, py - 44 * u, RUN.xiu > 0 ? ['辛苦了，勇者。', '过来，我帮你修炼。'] : ['再坚持一下，勇者。', '前面会更危险……'], 0); }
     if (P.orbs) { for (const o of P.orbs) { const Q = DATA.rarity[o.q], x = X(o.x), y = Y(o.y) - 12 * u, r = 12 * u; ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + 2 * u, 11 * u, 3.5 * u, 0, 0, 7); ctx.fill();
         const g2 = ctx.createRadialGradient(x, y, 0, x, y, r * 1.8); g2.addColorStop(0, Q.col + 'aa'); g2.addColorStop(1, Q.col + '00'); ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(x, y, r * 1.8, 0, 7); ctx.fill();
         ctx.fillStyle = 'rgba(20,14,30,.8)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.strokeStyle = Q.col; ctx.lineWidth = u; ctx.stroke();
