@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>局外 · 森林深处（整图 + 机关）</title>
+<style>
+html,body{margin:0;height:100%;background:#0b1014;overflow:hidden;touch-action:none;font-family:system-ui,sans-serif;color:#eee;user-select:none}
+canvas{display:block}
+#hud{position:fixed;left:8px;top:8px;font-size:13px;line-height:1.6;text-shadow:0 1px 2px #000;pointer-events:none}
+#tg{position:fixed;right:8px;top:8px;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;max-width:70%}
+#tg button,#ed button{background:#2a2116;color:#ffd77a;border:2px solid #d9b45a;border-radius:6px;padding:5px 9px;font-size:13px}
+#hp{position:fixed;left:8px;bottom:10px;width:180px;height:12px;background:#300;border:2px solid #d9b45a;border-radius:4px}
+#hp i{display:block;height:100%;background:#d33;width:100%}
+#ed{display:none;position:fixed;left:8px;bottom:34px;background:rgba(20,16,10,.92);border:2px solid #d9b45a;border-radius:8px;padding:8px;font-size:13px;line-height:2}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud">森林深处 · 整图 + 机关试验（镜头拉近 1.2）<br>WASD / 方向键移动 · 空格翻滚 · J 或右下按钮 = 震开（试击退）<br>深坑：走进去会掉（扣 1/3 血）；每 8 秒一次阵风，坑口卷叶提示后吸 2 秒<br>手机：左半屏拖动移动，右半屏点一下翻滚</div>
+<div id="tg"><button id="bMask">显示可走范围</button><button id="bFoe">再来 6 只</button><button id="bOpen">清完这站（打开支路）</button><button id="bEd">编辑可走范围</button><button id="bPush">震开</button></div>
+<div id="hp"><i></i></div>
+<div id="ed"><b style="color:#ffd77a">编辑可走范围</b>　涂抹 = 加上；按住 Shift 或选「擦掉」= 去掉<br>
+<label><input type="radio" name="em" value="1" checked> 加上</label> <label><input type="radio" name="em" value="0"> 擦掉</label>
+　笔刷 <input type="range" id="brush" min="1" max="12" value="4" style="width:90px">
+　<button id="bReset">恢复默认</button> <button id="bCopy">复制结果发给我</button> <button id="bDone">完成</button>
+<textarea id="edOut" readonly style="display:block;width:100%;height:36px;margin-top:4px;background:#000;color:#9f9;font-size:11px"></textarea></div>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+// 11/25 局外 demo：森林深处整图（1672×941，一次出图），拉近 1.2，镜头跟随；断柱遮挡、深坑掉落 + 阵风吸、击退下崖
+const cv = document.getElementById('c'), g = cv.getContext('2d'), E = id => document.getElementById(id);
+const BG = new Image(); BG.src = 'art/map/deep6.webp?v=1';
+const PIL = [{ im: new Image(), x: 450, y: 162, bx: 512, by: 312, rx: 40, ry: 16 }, { im: new Image(), x: 734, y: 338, bx: 790, by: 458, rx: 36, ry: 14 }];
+PIL[0].im.src = 'art/map/deep6_p1.png?v=1'; PIL[1].im.src = 'art/map/deep6_p2.png?v=1';
+const MW = 1672, MH = 941, ZOOM = 1.2;
+const MAIN = [[240,300],[270,240],[330,215],[470,190],[620,175],[800,185],[900,180],[1020,175],[1150,205],[1250,240],[1290,300],[1300,380],[1275,450],[1230,510],[1150,560],[1060,590],[900,600],[830,545],[780,560],[700,590],[560,595],[420,590],[310,560],[245,500],[230,420]];
+const LOG = [[1240,282],[1420,214],[1432,250],[1256,322]], LEDGE = [[1395,165],[1450,138],[1530,140],[1552,180],[1522,222],[1440,226],[1398,202]];
+const PIT = { x: 966, y: 326, rx: 96, ry: 46 };   // 坑口（黑色部分）
+let opened = false;
+function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
+const inPit = (x, y, k = 1) => ((x - PIT.x) / (PIT.rx * k)) ** 2 + ((y - PIT.y) / (PIT.ry * k)) ** 2 < 1;
+const inPillar = (x, y) => PIL.some(p => ((x - p.bx) / p.rx) ** 2 + ((y - p.by) / p.ry) ** 2 < 1);
+// 可走格子（8 像素一格），可用画笔改
+const CS = 8, GW = Math.ceil(MW / CS), GH = Math.ceil(MH / CS); let GRID = new Uint8Array(GW * GH);
+function gridDefault() { for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) { const x = i * CS + 4, y = j * CS + 4; GRID[j * GW + i] = (inPoly(x, y, MAIN) || inPoly(x, y, LOG) || inPoly(x, y, LEDGE)) ? 1 : 0; } }
+function enc() { let o = '', c = GRID[0], n = 0; for (const v of GRID) { if (v === c) n++; else { o += n + ','; c = v; n = 1; } } return GW + 'x' + GH + ':' + GRID[0] + ':' + o + n; }
+function dec(s) { const [, f, r] = s.split(':'); let c = +f, k = 0; for (const n of r.split(',')) { GRID.fill(c, k, k + +n); k += +n; c ^= 1; } }
+try { const sv = localStorage.getItem('deep6-grid'); sv ? dec(sv) : gridDefault(); } catch (e) { gridDefault(); }
+const ground = (x, y) => { const i = x / CS | 0, j = y / CS | 0; return i >= 0 && j >= 0 && i < GW && j < GH && GRID[j * GW + i] === 1; };
+const blockedLog = (x, y) => !opened && (inPoly(x, y, LOG) || inPoly(x, y, LEDGE));
+// 人：坑里可以走进去（会掉）；怪：平时绕开坑
+const okHero = (x, y) => ground(x, y) && !inPillar(x, y) && !blockedLog(x, y);
+const okFoe = (x, y) => okHero(x, y) && !inPit(x, y, 1.15);
+function move(o, dx, dy, ok) { if (ok(o.x + dx, o.y + dy)) { o.x += dx; o.y += dy; return; } if (ok(o.x + dx, o.y)) o.x += dx; else if (ok(o.x, o.y + dy)) o.y += dy; }
+let VW = 1, VH = 1, SC = 1, showMask = false;
+function fit() { cv.width = innerWidth; cv.height = innerHeight; VW = innerWidth; VH = innerHeight; SC = Math.max(VW / MW, VH / MH) * ZOOM; }
+addEventListener('resize', fit); fit();
+const hero = { x: 380, y: 420, fx: 1, roll: 0, rcd: 0, rx: 0, ry: 0, hp: 1, inv: 0, fall: 0 }, foes = [], fx = [];
+const R = (a, b) => a + Math.random() * (b - a);
+function spawnFoes(n) { const T = ['gob_shield', 'gob_archer', 'gob_wolf', 'gob_elite']; for (let i = 0; i < n; i++) { let x, y, k = 0; do { x = R(260, 1280); y = R(200, 590); } while ((!okFoe(x, y) || Math.hypot(x - hero.x, y - hero.y) < 220) && ++k < 300); foes.push({ x, y, t: T[i % 4], elite: i % 4 === 3, sp: R(50, 80), vx: 0, vy: 0, fall: 0 }); } }
+spawnFoes(6);
+// 阵风：8 秒一轮，前 1 秒提示，后 2 秒吸
+let windT = 0; const WIND_R = 150, WIND_F = 210;
+const windPhase = () => { const t = windT % 8; return t < 5 ? 0 : t < 6 ? 1 : t < 8 ? 2 : 0; };
+const K = {}; addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'Space') doRoll(); if (e.code === 'KeyJ') push(); }); addEventListener('keyup', e => K[e.code] = 0);
+let joy = null, EDIT = false, paint = null, camX = 0, camY = 0;
+cv.addEventListener('pointerdown', e => { if (EDIT) { paint = e.pointerId; doPaint(e); return; } if (e.clientX < VW / 2) joy = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY }; else doRoll(); });
+addEventListener('pointermove', e => { if (EDIT && paint === e.pointerId) doPaint(e); if (joy && e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } });
+addEventListener('pointerup', e => { if (e.pointerId === paint) { paint = null; save(); } if (joy && e.pointerId === joy.id) joy = null; });
+function input() { let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0), y = (K.KeyS || K.ArrowDown ? 1 : 0) - (K.KeyW || K.ArrowUp ? 1 : 0);
+  if (joy) { const dx = joy.x - joy.x0, dy = joy.y - joy.y0, d = Math.hypot(dx, dy); if (d > 8) { x = dx / Math.max(d, 40); y = dy / Math.max(d, 40); } }
+  const d = Math.hypot(x, y); return d > 1 ? [x / d, y / d] : [x, y]; }
+function doRoll() { if (hero.rcd > 0 || hero.fall) return; const [x, y] = input(); hero.rx = x || hero.fx; hero.ry = y; const d = Math.hypot(hero.rx, hero.ry); hero.rx /= d; hero.ry /= d; hero.roll = .28; hero.rcd = .8; }
+function push() { fx.push({ x: hero.x, y: hero.y, t: 0, k: 'ring' }); for (const f of foes) { const dx = f.x - hero.x, dy = f.y - hero.y, d = Math.hypot(dx, dy) || 1; if (d < 130 && !f.fall) { const p = f.elite ? 160 : 520; f.vx = dx / d * p; f.vy = dy / d * p; } } }
+E('bPush').onclick = push;
+E('bMask').onclick = e => { showMask = !showMask; e.target.textContent = showMask ? '隐藏可走范围' : '显示可走范围'; };
+E('bFoe').onclick = () => spawnFoes(6);
+E('bOpen').onclick = e => { opened = !opened; e.target.textContent = opened ? '支路已打开（点击再封上）' : '清完这站（打开支路）'; };
+function save() { try { localStorage.setItem('deep6-grid', enc()); } catch (e) {} E('edOut').value = enc(); }
+function doPaint(e) { const x = (e.clientX - VW / 2) / SC + camX, y = (e.clientY - VH / 2) / SC + camY, r = +E('brush').value, v = e.shiftKey ? 0 : +document.querySelector('input[name=em]:checked').value, ci = x / CS | 0, cj = y / CS | 0;
+  for (let j = cj - r; j <= cj + r; j++) for (let i = ci - r; i <= ci + r; i++) if (i >= 0 && j >= 0 && i < GW && j < GH && (i - ci) ** 2 + (j - cj) ** 2 <= r * r) GRID[j * GW + i] = v; }
+E('bEd').onclick = () => { EDIT = true; showMask = true; E('ed').style.display = 'block'; E('edOut').value = enc(); };
+E('bDone').onclick = () => { EDIT = false; E('ed').style.display = 'none'; save(); };
+E('bReset').onclick = () => { gridDefault(); save(); };
+E('bCopy').onclick = () => { E('edOut').select(); try { navigator.clipboard.writeText(E('edOut').value); } catch (e) { document.execCommand('copy'); } E('bCopy').textContent = '已复制'; };
+function fr(set, names) { const S = SPR.sets[set]; if (!S || !S.f) return null; for (const n of names) if (S.f[n]) return n; return S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
+function anim(set, base, sp) { const S = SPR.sets[set]; if (!S || !S.f) return null; let c = 0; while (S.f[base + c]) c++; return c ? base + (Math.floor(T * sp) % c) : fr(set, [base, 'idle0']); }
+function nearestSafe(x, y) { for (let r = 10; r < 400; r += 8) for (let a = 0; a < 6.28; a += .3) { const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r * .6; if (okFoe(px, py) && !inPit(px, py, 1.9)) return [px, py]; } return [380, 420]; }
+const HS = 115; let last = performance.now(), T = 0, cam = { x: hero.x, y: hero.y };
+function loop(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; T = now / 1000; windT += dt; const wp = windPhase();
+  // 勇者
+  hero.rcd -= dt; hero.inv -= dt; const [ix, iy] = input(); hero.mv = !!(ix || iy);
+  if (hero.fall > 0) { hero.fall -= dt; if (hero.fall <= 0) { hero.hp = Math.max(.01, hero.hp - 1 / 3); [hero.x, hero.y] = nearestSafe(hero.x, hero.y); hero.inv = 1.5; hero.fall = 0; } }
+  else { if (hero.roll > 0) { hero.roll -= dt; move(hero, hero.rx * HS * 3 * dt, hero.ry * HS * 3 * dt * .75, okHero); }
+    else { if (ix) hero.fx = Math.sign(ix); move(hero, ix * HS * dt, iy * HS * dt * .75, okHero); }
+    if (wp === 2) { const dx = PIT.x - hero.x, dy = PIT.y - hero.y, d = Math.hypot(dx, dy * 1.6); if (d < WIND_R && d > 1) { const f = WIND_F * (1 - d / WIND_R) ** 1.5; move(hero, dx / d * f * dt, dy / d * f * dt, okHero); } }
+    if (inPit(hero.x, hero.y, .85)) { hero.fall = .6; fx.push({ x: hero.x, y: hero.y, t: 0, k: 'fallH' }); } }
+  // 怪
+  for (const f of foes) { if (f.fall) { f.fall -= dt; continue; }
+    const kb = Math.hypot(f.vx, f.vy);
+    if (kb > 20) { f.x += f.vx * dt; f.y += f.vy * dt * .75; f.vx *= Math.pow(.02, dt); f.vy *= Math.pow(.02, dt);
+      if (!f.elite && (inPit(f.x, f.y, .85) || !ground(f.x, f.y))) { f.fall = .7; continue; }
+      if (!okHero(f.x, f.y)) { f.x -= f.vx * dt; f.y -= f.vy * dt * .75; f.vx = f.vy = 0; } continue; }
+    const dx = hero.x - f.x, dy = hero.y - f.y, d = Math.hypot(dx, dy); f.mv = d > 26; if (f.mv && !hero.fall) move(f, dx / d * f.sp * dt, dy / d * f.sp * dt * .75, okFoe);
+    if (wp === 2 && !f.elite) { const px = PIT.x - f.x, py = PIT.y - f.y, pd = Math.hypot(px, py * 1.6); if (pd < WIND_R) { const s = WIND_F * (1 - pd / WIND_R) ** 1.5; f.x += px / pd * s * dt; f.y += py / pd * s * dt; if (inPit(f.x, f.y, .85)) f.fall = .7; } }
+    if (d < 22 && hero.inv <= 0 && !hero.fall && hero.roll <= 0) { hero.hp = Math.max(.01, hero.hp - .002); } }
+  for (let i = foes.length - 1; i >= 0; i--) if (foes[i].fall < 0) foes.splice(i, 1);
+  for (let i = 0; i < foes.length; i++) for (let j = i + 1; j < foes.length; j++) { const a = foes[i], b = foes[j]; if (a.fall || b.fall) continue; const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1; if (d < 24) { const p = (24 - d) / 2; move(a, -dx / d * p, -dy / d * p, okFoe); move(b, dx / d * p, dy / d * p, okFoe); } }
+  E('hp').firstChild.style.width = (hero.hp * 100) + '%';
+  // 镜头
+  const hw = VW / SC / 2, hh = VH / SC / 2; cam.x += (hero.x - cam.x) * Math.min(1, dt * 6); cam.y += (hero.y - cam.y) * Math.min(1, dt * 6);
+  const cx = Math.max(hw, Math.min(MW - hw, cam.x)), cy = Math.max(hh, Math.min(MH - hh, cam.y)); camX = cx; camY = cy;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0b1014'; g.fillRect(0, 0, VW, VH);
+  g.setTransform(SC, 0, 0, SC, Math.round(VW / 2 - cx * SC), Math.round(VH / 2 - cy * SC)); g.imageSmoothingEnabled = false;
+  if (BG.complete && BG.naturalWidth) g.drawImage(BG, 0, 0, MW, MH);
+  if (!opened) { g.fillStyle = 'rgba(255,60,60,.0)'; }
+  if (showMask) { g.fillStyle = 'rgba(80,255,80,.32)'; for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) if (GRID[j * GW + i]) g.fillRect(i * CS, j * CS, CS, CS);
+    g.fillStyle = 'rgba(255,40,40,.35)'; g.beginPath(); g.ellipse(PIT.x, PIT.y, PIT.rx * .85, PIT.ry * .85, 0, 0, 7); g.fill(); for (const p of PIL) { g.beginPath(); g.ellipse(p.bx, p.by, p.rx, p.ry, 0, 0, 7); g.fill(); }
+    if (!opened) { g.beginPath(); LOG.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.fill(); } }
+  // 阵风提示 / 吸
+  if (wp) { g.save(); g.translate(PIT.x, PIT.y); for (let i = 0; i < 26; i++) { const a = i / 26 * 6.28 + T * (wp === 2 ? 4 : 2), r = (wp === 2 ? 150 : 120) * (1 - ((T * (wp === 2 ? 1.6 : .6) + i * .13) % 1));
+      g.fillStyle = i % 3 ? 'rgba(170,200,120,.85)' : 'rgba(220,230,255,.6)'; g.fillRect(Math.cos(a) * r - 3, Math.sin(a) * r * .55 - 2, 6, 3); } g.restore(); }
+  // 角色 + 断柱（按 y 排序；人在柱子后面时柱子半透明）
+  const list = [...foes.map(f => ({ o: f, y: f.y, f: 1 })), { o: hero, y: hero.y, h: 1 }, ...PIL.map(p => ({ p, y: p.by }))].sort((a, b) => a.y - b.y);
+  for (const e of list) {
+    if (e.p) { const p = e.p, behind = [hero, ...foes].some(o => o.y < p.by && o.y > p.y + 20 && Math.abs(o.x - (p.x + p.im.width / 2)) < p.im.width / 2 + 8);
+      if (p.im.complete) { g.globalAlpha = behind ? .45 : 1; g.drawImage(p.im, p.x, p.y); g.globalAlpha = 1; } continue; }
+    const o = e.o, s = o.fall > 0 ? Math.max(.05, o.fall / (e.h ? .6 : .7)) : 1;
+    g.save(); g.translate(o.x, o.y); g.scale(s, s); g.translate(-o.x, -o.y); if (o.fall > 0) g.globalAlpha = s;
+    if (!o.fall) { g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(o.x, o.y, 13, 5, 0, 0, 7); g.fill(); }
+    if (e.f) { const nm = SPR.sets[o.t] && anim(o.t, 'walk', 9); if (nm) SPR.draw(g, o.t, nm, 0, o.x, o.y, hero.x < o.x, o.elite ? 1.15 : .9); else { g.fillStyle = o.elite ? '#c44' : '#7c4'; g.beginPath(); g.arc(o.x, o.y - 12, o.elite ? 15 : 11, 0, 7); g.fill(); } }
+    else { const hs = SPR.heroSet && SPR.heroSet('m'), nm = hs && SPR.sets[hs] ? (o.mv || o.roll > 0 ? anim(hs, 'run', 12) || anim(hs, 'walk', 10) : anim(hs, 'idle', 2)) : null;
+      if (hero.inv > 0 && Math.floor(T * 12) % 2) g.globalAlpha = .4;
+      if (nm) SPR.drawHero(g, nm, 0, o.x, o.y, o.fx < 0, .9, { white: o.roll > 0 ? .4 : 0 }); else { g.fillStyle = '#e8d8b0'; g.beginPath(); g.arc(o.x, o.y - 12, 11, 0, 7); g.fill(); } }
+    g.restore(); }
+  for (let i = fx.length - 1; i >= 0; i--) { const f = fx[i]; f.t += dt; if (f.k === 'ring') { g.strokeStyle = `rgba(150,200,255,${1 - f.t / .3})`; g.lineWidth = 3; g.beginPath(); g.ellipse(f.x, f.y, 130 * f.t / .3, 70 * f.t / .3, 0, 0, 7); g.stroke(); } if (f.t > .3) fx.splice(i, 1); }
+  if (hero.fall > 0) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#fff'; g.font = 'bold 22px system-ui'; g.textAlign = 'center'; g.fillText('掉下去了！-1/3 血', VW / 2, VH * .3); }
+  requestAnimationFrame(loop); }
+Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
+</script></body></html>
