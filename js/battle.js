@@ -398,7 +398,7 @@
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();
     applyStationMap(); G.wi = -1; Object.assign(G, { firstArm: true, wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], stT: 0, thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
-    if (G.st > 1 && (RUN.cryStn || 1) < G.st) { RUN.cryStn = G.st; addCrystal(2 + G.st, hero.x, hero.y); } saveRun();   /* 每站只给一次，续关 / 重进不重复给 */ nextPhase(); G.ready = 2.2; hero.cs = null; banner(G.W.boss ? '首领战！' : `第 ${G.st} 站 · 准备`, 2); G.paused = false;   // 11/25 开战前 2 秒准备：不刷怪、不出招
+    if (G.st > 1 && (RUN.cryStn || 1) < G.st) { RUN.cryStn = G.st; addCrystal(2 + G.st, hero.x, hero.y); } saveRun();   /* 每站只给一次，续关 / 重进不重复给 */ nextPhase(); G.ready = 2.2; hero.cs = null; banner(G.W.boss ? '首领战！' : `第 ${G.st} 站 · ${MAP.name || ''}${MAP.wx ? ' · ' + MAP.wx : ''}`, 2); G.paused = false;   // 11/25 开战前 2 秒准备：不刷怪、不出招
   }
   // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
   function nextPhase() {
@@ -832,7 +832,7 @@
   }
 
   // ---------- 11/23 地图氛围：光柱 / 火光火星 / 落叶 / 萤火虫，位置全部取自地图本身（MAP.amb，原图像素） ----------
-  const AMB = { leaves: [], flies: [], sparks: [] };
+  const AMB = { leaves: [], flies: [], sparks: [], rain: [] };
   // 11/23 照三国终章：火用 8 帧火焰序列图（盖在地图画的火上），落叶用桑叶图，光柱用 shaft 图
   const CI = {}; const CAMPI = n => CI[n] || (CI[n] = Object.assign(new Image(), { src: 'art/camp/' + n + '.png' }));
   const FXI = {}; const fxi = n => FXI[n] || (FXI[n] = Object.assign(new Image(), { src: 'art/fx/map/' + n + '.webp' })); const okI = i => i.complete && i.naturalWidth;
@@ -861,6 +861,11 @@
       ctx.globalAlpha = Math.max(0, a); if (okI(im)) { const w = l.sz * q * s, fl = Math.cos(l.t * 3 + l.ph); ctx.save(); ctx.translate(sx, sy); ctx.rotate(Math.sin(l.t * 1.3 + l.ph) * 1.2); ctx.scale(fl, 1); ctx.drawImage(im, -w / 2, -w / 2, w, w * im.naturalHeight / im.naturalWidth); ctx.restore(); }
       ctx.globalAlpha = 1; }
     AMB.leaves = AMB.leaves.filter(l => l.t < 12);
+    // 11/26 雨丝：斜着落的短线，落到地面溅一个小圈
+    if (A.rain) { const n = 160; while (AMB.rain.length < n) AMB.rain.push({ x: R(-60, W + 60), y: R(-H, H), v: R(520, 820), L: R(10, 18), a: R(.35, .65) });
+      ctx.save(); ctx.lineWidth = Math.max(1, u * .6);
+      for (const r of AMB.rain) { r.y += r.v * dt * H / 800; r.x -= r.v * .22 * dt * H / 800; if (r.y > H + 20) { r.y = R(-80, -10); r.x = R(-60, W + 120); } ctx.strokeStyle = `rgba(190,210,235,${r.a})`; ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x + r.L * .22 * u * .5, r.y - r.L * u * .5); ctx.stroke(); }
+      ctx.restore(); }
   }
   const BKI = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' };
   function slotOf(o) { if (o.kind === 'book') { const S = DATA.skills[o.id]; return { src: 'art/ui2/' + BKI[S.sys] + '.png', name: S.name, rare: S.tier >= 3 }; } const it = DATA.startItems.find(i => i.id === o.id) || {}; return { src: 'art/ui2/' + o.id + '.png', name: it.name || '宝物', em: it.icon, rare: (it.price || 0) >= 44 }; }
@@ -878,7 +883,7 @@
     if (G.comboT > 0 && (G.comboT -= dt) <= 0) G.combo = 0; coinTick(dt);   // 11/22 连击：3 秒没杀到怪就断
     if (G.drop) { G.drop.t += dt; hero.inv = Math.max(hero.inv, .2); if (G.drop.t >= DROP_T && !G.drop.land) { G.drop.land = 1; G.shake = Math.max(G.shake, .7); SFX.play('pon');
         for (let i = 0; i < 40; i++) { const a = R(0, PI * 2), v = R(40, 130) * K; parts.push({ x: hero.x, y: hero.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .4 - 10 * K, t: 0, T: R(.4, .8), col: i % 3 ? '#c8b088' : '#e8dcc0', g: 0 }); }
-        banner(MAP.name || '哥布林森林', 2.4); } if (G.drop.t > DROP_T + .8) G.drop = null; }
+        banner((MAP.name || '哥布林森林') + (MAP.wx ? ' · ' + MAP.wx : ''), 2.4); } if (G.drop.t > DROP_T + .8) G.drop = null; }
     if (G.banner) { G.banner.left -= dt; if (G.banner.left <= 0) G.banner = null; }
     G.shake = Math.max(0, G.shake - dt);
     if (G.winT != null && (G.winT -= dt) <= 0 && !G.over && !G.vic) { G.vic = 1; G.paused = true; clearSave(); return UI.victory(vicStats(), () => { G.paused = false; G.lock = false; G.winT = null; banner('', 0); fieldEnd([]); setDoors([{ k: 'boss', lbl: '下一章', name: '下一章', btn: '前往' }], () => { G.fe = null; G.over = 'win'; UI.nextChapter(); }); { const d = G.fe.doors[0]; d.x = G.fe.pr.x + 110 * K; d.y = G.fe.pr.y + 20 * K; } }); }

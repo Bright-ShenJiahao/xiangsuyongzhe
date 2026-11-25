@@ -277,14 +277,14 @@ window.DATA = {
   stationMap: { 2: 'fieldmist', 3: 'fieldrain', 4: 'deep4', 5: 'deep5', 6: 'deep6' },   // 11/26 1 晴（field）/ 2 薄雾 / 3 雨；   // 11/25 第几站用哪张地图（没写的用 field）
   maps: [
     { id: 'field', name: '哥布林森林', img: 'art/map/forest_sun.webp', w: 2508, h: 1412,   // 11/21 哥布林森林扩图版：图 1672×941，世界按 1.5 倍算（forest / forest2 / 打谷场 field 都留着）
-      open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
+      open: true, wx: '晴', foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
       // 11/23 地图氛围（原图像素）：火 = 营火锅 + 两支火把；光 = 左上林间光柱；叶 = 从树冠带落下；萤 = 两侧草丛和底部灌木
       amb: { fires: [[903, 184, 1.4, 'fire', 30], [60, 793, 1, 'torch', 62], [1612, 793, 1, 'torch', 62]], rays: [[150, 20, 300, 360], [470, 40, 240, 300]], leaf: [0, 1672, 0, 160], flies: [[0, 240, 300, 600], [1380, 240, 1672, 600], [0, 820, 1672, 941]] },
       desc: '游戏里的第一站。密林深处的哥布林营地，哥布林从林子里一波波涌出来。',
       // 能走的地面（地图像素）：y0–y1 之间，每一行的左右边界见 pts [y, 左, 右]（11/21 改回原图；加大版 field_big 和 tools/extend_map.py 留着）
       ground: {"y0":412,"y1":1282,"pts":[[412,675,2078],[495,570,2160],[600,450,2212],[720,278,2280],[840,158,2362],[945,38,2475],[1230,30,2478],[1282,90,2430]]}, grade: [['saturate', .94]] },
     // 11/26 森林深处（第 4–6 站）：同一构图三种光线（黄昏 / 夜 / 深夜），可走区域是一个多边形（原图像素 1672×941，js/mech.js 的 simple 模式）
-    ...[['deep4', 'forest_d4'], ['deep5', 'forest_d5'], ['deep6', 'forest_d6']].map(([id, img]) => ({ id, name: '森林深处', img: 'art/map/' + img + '.webp', w: 2508, h: 1412, hidden: true, boss: 'gob_king', time: 120,
+    ...[['deep4', 'forest_d4', '黄昏'], ['deep5', 'forest_d5', '夜'], ['deep6', 'forest_d6', '深夜']].map(([id, img, wx]) => ({ wx, id, name: '森林深处', img: 'art/map/' + img + '.webp', w: 2508, h: 1412, hidden: true, boss: 'gob_king', time: 120,
       foes: ['goblin', 'gob_blade', 'gob_archer'], desc: '森林深处的林间空地。', grade: [['saturate', .94]],
       ground: { y0: 427, y1: 1275, pts: [[427, 0, 2508], [1275, 0, 2508]] },
       zone: { simple: true, start: [836, 700], main: [[445,285],[1355,285],[1640,620],[1640,700],[1605,850],[75,850],[32,700],[32,622]] } })),
@@ -317,7 +317,7 @@ window.DATA = {
 // b = { weapon, attrs: {str, agi, int, con, end}（含底子 3 点）, item, habit }
 // 11/26 外围天气版（第 2 站薄雾 / 第 3 站雨）：和 field 同构图，营火和火把位置不变；晴天光柱已画进 forest_sun，雾雨不要光柱
 (function () { const f = window.DATA.maps.find(m => m.id === 'field');
-  [['fieldmist', 'forest_mist'], ['fieldrain', 'forest_rain']].forEach(([id, img]) => window.DATA.maps.push(Object.assign({}, f, { id, img: 'art/map/' + img + '.webp', hidden: true, open: false, amb: Object.assign({}, f.amb, { rays: [] }) }))); })();
+  [['fieldmist', 'forest_mist'], ['fieldrain', 'forest_rain']].forEach(([id, img]) => window.DATA.maps.push(Object.assign({}, f, { id, img: 'art/map/' + img + '.webp', hidden: true, open: false, wx: id === 'fieldrain' ? '雨' : '薄雾', amb: Object.assign({}, f.amb, { rays: [] }, id === 'fieldrain' ? { rain: 1, leaf: null, flies: null } : {}) }))); })();
 window.DATA.calc = function (b) {
   const DATA = window.DATA;
   const fx = {}, add = o => { for (const k in (o || {})) fx[k] = (fx[k] || 0) + o[k]; };
