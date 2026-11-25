@@ -1390,3 +1390,9 @@ body:not(.touch) #bRoll .pips { font-size: 9px; bottom: 3px; letter-spacing: 2px
 .eqD .slot.eqghost { cursor: default; }
 
 .eqD .slot canvas.ghost, .eqD .slot img.ghost { opacity: .35 !important; filter: grayscale(.5); }
+
+/* 11/25 选人界面：战斗演示（透明底，直接叠在羊皮纸上，小人居中） */
+.pnSec.st { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.pnSec.st .stage { position: relative; flex: 1 1 auto; min-height: 130px; overflow: hidden; }
+#prep .stage canvas { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; image-rendering: pixelated; }
+@media (orientation: portrait) { #prep .pnew { grid-template-rows: 26vh auto !important; } }

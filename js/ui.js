@@ -257,6 +257,54 @@
     const hs = SPR.heroSet(P.hero, P.weapon), swing = heroSwing > 0, n = swing ? 'atk' : 'idle', i = swing ? Math.floor((.6 - heroSwing) / .6 * SPR.count(hs, 'atk')) : Math.floor(t * 3) % Math.max(1, SPR.count(hs, 'idle'));
     SPR.drawHero(g, n, i, W / 2, H * .9, false, u, { w: P.weapon, c: P.hero });   // 备战页预览：拿选中的起手兵器
   }
+  // ---------- 选人界面·战斗演示：小人每隔一会儿放一次当前选的起手技能（画法照 js/skills.js） ----------
+  const DM = { fx: [], shots: [], clock: 0, casted: 0, key: '' };
+  const DPI = Math.PI, DYS = 1.35;
+  function demoCast(id, c, u, hx, hy) {
+    const y = hy - 14 * u;
+    if (id === 'sword') DM.fx.push({ k: 'slash', x: hx, y, a: 0, t: 0, T: .2, r: 52, half: 1.18 });
+    else if (id === 'whirl') DM.fx.push({ k: 'ring', x: hx, y, t: 0, T: .3, r: 40, col: '#e8ecf4' });
+    else if (id === 'spear') DM.fx.push({ k: 'thrust', x: hx, y, a: 0, L: 82, w: 14, t: 0, T: .2 });
+    else if (id === 'sweep') DM.fx.push({ k: 'slash', x: hx, y, a: 0, t: 0, T: .22, r: 48, half: 1.4, wood: true });
+    else if (id === 'bow') DM.shots.push({ k: 'arrow', x: hx, y, vx: 320 * u, vy: 0, t: 0, T: .7 });
+    else if (id === 'fan') { for (let i = 0; i < 5; i++) { const a = (i - 2) * .25; DM.shots.push({ k: 'arrow', x: hx, y, vx: 300 * u * Math.cos(a), vy: 300 * u * Math.sin(a) / DYS * .35, t: 0, T: .35 }); } }
+    else if (id === 'staff') DM.shots.push({ k: 'fire', x: hx + Math.min(150 * u, c.width * .5 - 34 * u), y: hy, t: 0, T: .5, r: 30, boom: 1 });
+    else if (id === 'nova') DM.fx.push({ k: 'frost', x: hx, y: hy - 8 * u, t: 0, T: .45, r: 44 });
+  }
+  function demoFx(g, u, dt) {
+    for (const o of DM.fx) {
+      o.t += dt; const p = o.t / o.T;
+      if (o.k === 'slash') { const C3 = o.wood ? ['#f0e0c0', '#c8a070', '#8a5a2a'] : ['#ffffff', '#fff2b0', '#f0c04c']; for (let k = 0; k < 3; k++) { const r = (o.r - k * 4) * u; for (let a = -o.half; a <= o.half; a += .04) { const t = (a + o.half) / (2 * o.half); if (t > p * 1.6) continue; if (p > .6 && (Math.floor(a * 40) % 2)) continue; g.fillStyle = C3[k]; const q = k === 0 ? 2 * u : u; g.fillRect(o.x + rd(Math.cos(o.a + a) * r), o.y + rd(Math.sin(o.a + a) * r / DYS), q, q); } } }
+      else if (o.k === 'thrust') { const L = o.L * u * Math.min(1, p * 2.2); for (let d = 0; d < L; d += u) { const k = d / (o.L * u); g.fillStyle = k > .85 ? '#ffffff' : p > .6 ? '#f0c04c' : '#fff2b0'; g.fillRect(o.x + rd(d), o.y, k > .85 ? 2 * u : u, k > .85 ? 2 * u : u); if (d % (3 * u) < u && p < .5) { const w = o.w * u * .5; g.fillStyle = 'rgba(255,240,180,.6)'; g.fillRect(o.x + rd(d), o.y + rd(w), u, u); g.fillRect(o.x + rd(d), o.y - rd(w), u, u); } } }
+      else if (o.k === 'frost') { const r = o.r * u * (.3 + p * .8); for (let a = 0; a < DPI * 2; a += .05) { if (p > .6 && Math.floor(a * 20) % 2) continue; g.fillStyle = p < .4 ? '#ffffff' : '#8ad8ff'; g.fillRect(o.x + rd(Math.cos(a) * r), o.y + rd(Math.sin(a) * r / DYS), 2 * u, 2 * u); } if (p < .35) { g.fillStyle = 'rgba(160,220,255,.25)'; g.beginPath(); g.ellipse(o.x, o.y, r, r / DYS, 0, 0, 7); g.fill(); } }
+      else if (o.k === 'ring') { const r = o.r * u * (.6 + p * .8); for (let a = 0; a < DPI * 2; a += .05) { g.fillStyle = p < .5 ? '#fff2c0' : (o.col || '#c8a066'); g.fillRect(o.x + rd(Math.cos(a) * r), o.y + rd(Math.sin(a) * r / DYS), 2 * u, 2 * u); } }
+      else if (o.k === 'boom') { const r = o.r * u * (.5 + p * .7); for (let a = 0; a < DPI * 2; a += .06) { if (Math.floor(a * 10 + o.t * 30) % 3 === 0) continue; g.fillStyle = p < .4 ? '#fff2a0' : p < .7 ? '#ff9a30' : '#a03a18'; g.fillRect(o.x + rd(Math.cos(a) * r), o.y + rd(Math.sin(a) * r / DYS), 2 * u, 2 * u); } if (p < .3) { g.fillStyle = 'rgba(255,230,140,.35)'; g.beginPath(); g.ellipse(o.x, o.y, r * .8, r * .8 / DYS, 0, 0, 7); g.fill(); } }
+    }
+    DM.fx = DM.fx.filter(o => o.t < o.T);
+    for (const o of DM.shots) {
+      o.t += dt;
+      if (o.k === 'arrow') { o.x += o.vx * dt; o.y += o.vy * dt; const S = SPR.sets.gob_archer, f = SPR.frame('gob_archer', 'arrow'); if (f && S) { g.save(); g.translate(o.x, o.y); g.rotate(Math.atan2(o.vy, o.vx)); const q = u * .5 * (S.sk || 1); g.drawImage(S.base, f.x, f.y, f.w, f.h, -f.w * q / 2, -f.h * q / 2, f.w * q, f.h * q); g.restore(); } else { g.fillStyle = '#8a5a2a'; g.fillRect(o.x, o.y, 6 * u, u); } }
+      else if (o.k === 'fire') { const p = o.t / o.T, hh = (1 - p) * Math.min(120, o.y / u - 12); for (let j = 0; j < 5; j++) { g.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; g.fillRect(o.x - q / 2 - rd(j * 3 * u * (1 - p)), o.y - rd((hh + j * 7) * u) - q / 2, q, q); } if (o.t >= o.T && o.boom) { o.boom = 0; DM.fx.push({ k: 'boom', x: o.x, y: o.y, t: 0, T: .35, r: o.r }); } }
+    }
+    DM.shots = DM.shots.filter(o => o.t < o.T);
+  }
+  function drawDemo(dt) {
+    const c = $('demoCv'), r = c.getBoundingClientRect(); if (!r.width || !r.height) return;
+    const W = rd(r.width), H = rd(r.height); if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+    const g = c.getContext('2d'); g.clearRect(0, 0, W, H); g.imageSmoothingEnabled = false;
+    const id = P.sk ? SK2[P.weapon] : P.weapon, key = P.hero + P.weapon + P.sk; if (DM.key !== key) { DM.key = key; DM.clock = 0; DM.casted = 0; DM.fx = []; DM.shots = []; }
+    DM.clock += dt;
+    const u = Math.max(2, Math.min(3, Math.floor(H / 70))), hx = W / 2, hy = H / 2 + 20 * u, F = SKF.get(id), CAST = 2.6, T = DM.clock % CAST;
+    let n, i;
+    if (T < .02) DM.casted = 0;
+    if (T < .25) { const q = SKF.pick(F, 'wu', T); if (q) { n = q[0]; i = q[1]; } }
+    else if (T < .25 + F.hitT) { if (!DM.casted) { DM.casted = 1; demoCast(id, c, u, hx, hy); } const q = SKF.pick(F, 'hit', T - .25); if (q) { n = q[0]; i = q[1]; } }
+    else { const q = SKF.pick(F, 'rc', T - .25 - F.hitT); if (q) { n = q[0]; i = q[1]; } }
+    const hs = SPR.heroSet(P.hero, P.weapon); if (!n) { n = 'idle'; i = Math.floor(DM.clock * 3) % Math.max(1, SPR.count(hs, P.weapon + '.idle') || SPR.count(hs, 'idle')); }
+    g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(hx, hy, u * 9, u * 3, 0, 0, 7); g.fill();
+    try { SPR.drawHero(g, n, i, hx, hy, false, u, { w: P.weapon, c: P.hero }); } catch (e) {}
+    demoFx(g, u, dt);
+  }
   function drawMenuBg(t) {   // 备战页背景：游戏里的打谷场，压暗
     const W = cv.width, H = cv.height; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#120c18'; ctx.fillRect(0, 0, W, H);
     if (fieldImg.complete && fieldImg.naturalWidth) { const s = Math.max(W / fieldImg.width, H / fieldImg.height) * 1.04, dw = fieldImg.width * s, dh = fieldImg.height * s; ctx.imageSmoothingEnabled = true; ctx.drawImage(fieldImg, (W - dw) / 2 + Math.sin(t * .2) * W * .01, (H - dh) / 2, dw, dh); }
@@ -453,7 +501,7 @@
   function loop(now) {
     const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
     if (screen === 'battle') { BATTLE.frame(dt); if (tipT > 0) tipT -= dt; }
-    else if (screen === 'prep') { drawMenuBg(T); drawHeroPreview(T, dt); }
+    else if (screen === 'prep') { drawMenuBg(T); drawHeroPreview(T, dt); drawDemo(dt); }
     else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#07101b'; ctx.fillRect(0, 0, cv.width, cv.height); }
     requestAnimationFrame(loop);
   }
