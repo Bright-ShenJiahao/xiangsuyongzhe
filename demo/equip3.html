@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>装备·武器三阶·附魔（局外）</title>
+<style>@font-face{font-family:WenKai;src:url(art/font/kai.woff2?v=6) format("woff2");font-display:block}
+html,body{margin:0;background:#1a120a;font-family:WenKai,"Songti SC",serif;color:#e8d8b0}
+#w{width:min(1000px,96vw);margin:10px auto;background:#241a10;border:2px solid #8a6a3a;border-radius:6px;padding:12px}
+.note{font-size:13px;color:#b09a70;margin:0 0 10px}
+.cols{display:grid;grid-template-columns:1.05fr 1fr;gap:12px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.pn{background:#1b130b;border:1px solid #4a3a22;padding:10px;position:relative}
+h4{margin:0 0 8px;font-size:17px;font-weight:400;color:#f0c870}h4 small{font-size:12px;color:#9a8a68;margin-left:8px}
+/* 装备格：方形 + 名字在格子下方（A）+ 剪影调淡（B） */
+.eqD{display:grid;grid-template-columns:repeat(3,92px);grid-template-areas:"m h o" "m a o" "c a b" ". e .";gap:8px 10px;justify-content:center}
+.sw{display:flex;flex-direction:column;align-items:center;gap:2px}
+.slot{position:relative;width:100%;height:100%;min-height:78px;border:2px solid #6a5230;border-radius:4px;background:linear-gradient(#2c2013,#1d140b);display:flex;align-items:center;justify-content:center;cursor:pointer;box-sizing:border-box}
+.slot:hover,.slot.sel{border-color:#f0c870;box-shadow:0 0 8px rgba(240,200,110,.45)}
+.slot canvas{width:44px;height:44px;image-rendering:pixelated}
+.slot canvas.sil{opacity:.3}
+.slot .ic{width:46px;height:46px;border-radius:6px;background:#a8743a;color:#fff3d8;display:flex;align-items:center;justify-content:center;font-size:26px;text-shadow:1px 1px 0 #3a2410}
+.slot.big{min-height:170px}
+.slot.ghost .ic{opacity:.3}
+.nm{font-size:14px;line-height:1.1;color:#f4e4b8;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;margin-top:3px}
+.nm.em{color:#bba880}
+/* 详情栏（C） */
+#det{margin-top:10px;min-height:54px;border:1px solid #6a5230;background:#120c06;padding:8px 10px;font-size:15px;line-height:1.5}
+#det b{color:#f0c870;font-weight:400;font-size:17px}#det em{font-style:normal;color:#9ad08a}#det i{font-style:normal;color:#b09a70}
+.bag{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.cell{aspect-ratio:1;border:2px solid #4e3c22;border-radius:4px;background:#1d140b;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.cell:hover{border-color:#f0c870}.cell .ic{width:70%;height:70%;border-radius:6px;background:#a8743a;color:#fff3d8;display:flex;align-items:center;justify-content:center;font-size:24px;text-shadow:1px 1px 0 #3a2410}
+.lk{opacity:.5;font-size:20px}
+/* 悬停提示：和技能提示同款 */
+#tt{position:fixed;z-index:9;display:none;width:min(300px,86vw);background:#1c120a;border:2px solid #c8a060;padding:10px 12px;font-size:14px;line-height:1.55;box-shadow:0 4px 14px #000a;pointer-events:none}
+#tt h5{margin:0 0 4px;font-size:18px;font-weight:400;color:#fff0c8}#tt h5 span{font-size:13px;color:#b09a70;margin-left:6px}
+#tt .g{color:#9ad08a}#tt .r{color:#e88a7a}#tt .d{color:#9a8a68;font-size:13px}#tt hr{border:0;border-top:1px solid #4a3a22;margin:6px 0}
+.tr1{color:#cfd8e0}.tr2{color:#7fc8ff}.tr3{color:#ffb84a}
+.stk{position:absolute;right:3px;bottom:1px;font-size:13px;color:#fff;text-shadow:1px 1px 0 #000}
+.cell.sel{border-color:#fff0a8;box-shadow:0 0 10px rgba(255,230,120,.6)}
+.btnrow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.btnrow button{background:#3a2a16;color:#f0d8a0;border:1px solid #8a6a3a;border-radius:4px;padding:5px 10px;font:inherit;font-size:14px;cursor:pointer}.btnrow button:hover{border-color:#f0c870}.btnrow button:disabled{opacity:.4;cursor:default}
+.aff{display:inline-block;margin:2px 6px 0 0;padding:1px 8px;border:1px solid #6a5230;background:#2c2013;cursor:default}.aff.rep{cursor:pointer;border-color:#ff9a70;color:#ffc0a0}
+.wk{display:flex;gap:6px;margin-bottom:8px}.wk button{background:#2c2013;color:#cdb98a;border:1px solid #4a3a22;padding:3px 12px;font:inherit;cursor:pointer}.wk button.on{border-color:#f0c870;color:#fff0c8}
+#dlg{margin-top:10px;display:none;border:1px solid #6a5230;background:#120c06;padding:8px 10px;font-size:15px;line-height:1.7}#dlg b{color:#f0c870;font-weight:400}
+</style></head><body>
+<div id="w"><p class="note">局外演示（示例数值）：武器三阶 · 附魔石 · 合成 · 通关结算台词。点背包里的石头选中，再点主手武器附魔；点背包里的武器换上。词条数 = 武器阶数；石头档位只决定词条强弱。</p>
+<div class="wk" id="wk"></div>
+<div class="cols">
+<div class="pn"><h4>装备栏<small>点一下卸下（主手不能卸）</small></h4><div class="eqD" id="eq"></div><div id="det">移到格子上看说明</div>
+<div class="btnrow"><button id="m1">2 低阶 → 1 中阶</button><button id="m2">2 中阶 → 1 高阶</button><button id="fin">通关结算预览</button></div><div id="dlg"></div></div>
+<div class="pn"><h4>物品栏<small>石头先点选，再点主手</small></h4><div class="bag" id="bag"></div></div>
+</div></div><div id="tt"></div>
+<script>
+const SIL={helm:['................','.....######.....','....########....','...##########...','...##########...','...##########...','...###....###...','...###....###...','...##......##...','...##......##...'],armor:['..###......###..','.####......####.','.#####....#####.','.##############.','.##############.','..############..','..############..','..############..','..############..','...##########...','...##########...','...##########...','....########....'],belt:['################','################','#######..#######','#######..#######','################','################'],boots:['..####....####..','..####....####..','..####....####..','..####....####..','..####....####..','.#####....#####.','#######..#######','#######..#######'],acc:['.......##.......','......####......','.....######.....','......####......','....########....','...###....###...','..###......###..','..##........##..','..##........##..','..###......###..','...###....###...','....########....'],main:['.......##.......','......####......','......####......','......####......','......####......','......####......','......####......','......####......','......####......','....########....','.......##.......','.......##.......','......####......'],off:['..############..','.##############.','.##############.','.##############.','.##############.','.##############.','..############..','..############..','...##########...','....########....','.....######.....','......####......']};
+const SLOTS=[['main','主手','m',1],['helm','头盔','h'],['off','副手','o',1],['armor','铠甲','a',1],['acc','配饰','c'],['boots','鞋子','b'],['belt','腰带','e']];
+const FAM={sword:['铁剑','精钢剑','传说之剑','剑'],spear:['铁枪','精钢枪','传说之枪','枪'],bow:['木弓','复合弓','传说之弓','弓'],staff:['木杖','秘银杖','传说之杖','杖']},WD=[0,15,30],WP=[1,3,8];
+const GEAR={ironhelm:{n:'铁盔',s:'helm',g:'盔',t:1,st:'物防 +1 · 物理伤害 +3%'},hat:{n:'法帽',s:'helm',g:'帽',t:1,st:'魔防 +1 · 法术伤害 +3%'},plate:{n:'重甲',s:'armor',g:'甲',t:1,st:'物防 +2 · 生命 +10'},robe:{n:'法袍',s:'armor',g:'袍',t:1,st:'魔防 +2 · 生命 +10'},wshield:{n:'木盾',s:'off',g:'盾',t:1,st:'物防 +3'},rune:{n:'符文盾',s:'off',g:'符',t:1,st:'魔防 +3'},belt:{n:'皮带',s:'belt',g:'带',t:1,st:'生命 +12'},boots:{n:'皮靴',s:'boots',g:'靴',t:1,st:'敏捷 +1'},ring:{n:'铜戒',s:'acc',g:'戒',t:1,st:'智力 +1'}};
+const AFF=[['暴击率',[2,4,7],'%'],['暴击伤害',[8,16,28],'%'],['出手速度',[3,6,10],'%'],['范围',[3,6,10],'%'],['对精英伤害',[4,8,14],'%']];
+const SN=['','低阶','中阶','高阶'],$=id=>document.getElementById(id),tt=$('tt');
+let fam='sword',eq={main:{k:'w',tier:1,aff:[]}},bag=[{k:'w',tier:2,aff:[]},{k:'w',tier:3,aff:[]},{k:'g',id:'wshield'},{k:'g',id:'plate'},{k:'g',id:'ironhelm'},{k:'g',id:'ring'}],st={1:3,2:1,3:0},sel=0,rep=null;
+const wn=w=>FAM[fam][w.tier-1],wcol=w=>'tr'+w.tier;
+function affTxt(a){return a.map(x=>`${AFF[x[0]][0]} +${AFF[x[0]][1][x[1]-1]}${AFF[x[0]][2]}（${SN[x[1]]}）`)}
+function wTip(w){return `<h5 class="${wcol(w)}">${wn(w)}<span>${FAM[fam][3]} · ${w.tier} 阶</span></h5><div class="g">招式伤害 +${WD[w.tier-1]}%</div>`+(w.aff.length?affTxt(w.aff).map(t=>`<div class="g">✦ ${t}</div>`).join(''):'')+`<div class="d">附魔 ${w.aff.length}/${w.tier}</div>`}
+function sil(k){const c=document.createElement('canvas');c.width=c.height=16;c.className='sil';const g=c.getContext('2d'),r=SIL[k],dy=(16-r.length)>>1;g.fillStyle='#d8b878';r.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch=='#')g.fillRect(x,y+dy,1,1)}));return c}
+function show(h,e){tt.innerHTML=h;tt.style.display='block';const w=tt.offsetWidth,hh=tt.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-6)x=e.clientX-w-12;if(y+hh>innerHeight-6)y=innerHeight-hh-6;tt.style.left=Math.max(6,x)+'px';tt.style.top=y+'px'}
+const hide=()=>{tt.style.display='none'};
+function detW(w){return `<b class="${wcol(w)}">${wn(w)}</b> <i>· ${w.tier} 阶 · 招式伤害 +${WD[w.tier-1]}%　附魔 ${w.aff.length}/${w.tier}</i><br>`+(rep!=null?w.aff.map((a,i)=>`<span class="aff rep" data-r="${i}">替换：${affTxt([a])[0]}</span>`).join('')+'<br><i>附魔已满：点一个词条覆盖它（重抽这一条）</i>':w.aff.map(a=>`<span class="aff">✦ ${affTxt([a])[0]}</span>`).join('')||'<i>还没有词条</i>')}
+function rolled(w){const used=new Set(w.aff.map(a=>a[0])),pool=AFF.map((_,i)=>i).filter(i=>!used.has(i));const arr=pool.length?pool:AFF.map((_,i)=>i);return arr[Math.random()*arr.length|0]}
+function enchant(w,repl){if(!sel||!st[sel])return;const n=[rolled(w),sel];if(repl!=null)w.aff[repl]=n;else w.aff.push(n);st[sel]--;if(!st[sel])sel=0;rep=null;render($('det').dataset.msg='')}
+function render(){const E=$('eq');E.innerHTML='';
+ for(const [k,nm,ar,big] of SLOTS){const w=document.createElement('div');w.className='sw';w.style.gridArea=ar;const s=document.createElement('div');s.className='slot'+(big?' big':'');const it=eq[k];
+  let label=nm,cls='nm em';
+  if(k=='main'){const m=eq.main;s.innerHTML=`<div class="ic">${FAM[fam][3]}</div>`;label=wn(m);cls='nm '+wcol(m);
+    s.onmousemove=e=>{show(wTip(m),e);$('det').innerHTML=detW(m);bindRep()};s.onclick=()=>{if(sel){if(m.aff.length<m.tier)enchant(m);else{rep=1;render();$('det').innerHTML=detW(m);bindRep()}}}}
+  else{if(it){const d=GEAR[it.id];s.innerHTML=`<div class="ic">${d.g}</div>`;label=d.n;cls='nm';s.onclick=()=>{bag.push(it);delete eq[k];render()};s.onmousemove=e=>{show(`<h5>${d.n}<span>${nm}</span></h5><div class="g">${d.st}</div><div class="d">点一下卸下</div>`,e);$('det').innerHTML=`<b>${d.n}</b> <i>· ${nm}　${d.st}</i>`}}else{s.appendChild(sil(k));s.onmousemove=e=>{show(`<h5>${nm}<span>空</span></h5><div class="d">商人、宝箱、精英掉落、奇遇</div>`,e);$('det').innerHTML=`<b>${nm}</b> <i>· 空</i>`}}}
+  s.onmouseleave=hide;const l=document.createElement('div');l.className=cls;l.textContent=label;w.append(s,l);E.appendChild(w)}
+ const B=$('bag');B.innerHTML='';const cells=[];
+ for(const t of [1,2,3])if(st[t])cells.push({st:t});
+ for(const b of bag)cells.push({it:b});
+ for(let i=0;i<18;i++){const c=document.createElement('div');c.className='cell';const x=cells[i];
+  if(x&&x.st){const t=x.st;c.innerHTML=`<div class="ic" style="background:${['','#7a8a96','#4a8ad0','#d08a2a'][t]}">石</div><span class="stk">${st[t]}</span>`;if(sel==t)c.classList.add('sel');
+   c.onclick=()=>{sel=sel==t?0:t;rep=null;render()};c.onmousemove=e=>{show(`<h5>附魔石<span>${SN[t]}</span></h5><div class="g">给武器随机添加 1 个词条</div><div class="d">词条强度：${SN[t]}　·　点选后再点主手武器</div>`,e);$('det').innerHTML=`<b>附魔石</b> <i>· ${SN[t]}　×${st[t]}　点选，再点主手武器</i>`};c.onmouseleave=hide}
+  else if(x&&x.it){const b=x.it;if(b.k=='w'){c.innerHTML=`<div class="ic ${wcol(b)}" style="color:#fff">${FAM[fam][3]}</div>`;c.onclick=()=>{const old=eq.main;eq.main=b;bag.splice(bag.indexOf(b),1);bag.push(old);hide();render()};
+    c.onmousemove=e=>{show(wTip(b)+'<hr><div class="d">点一下换上（旧武器回物品栏，词条跟着武器）</div>',e);$('det').innerHTML=detW(b)};c.onmouseleave=hide}
+   else{const d=GEAR[b.id];c.innerHTML=`<div class="ic">${d.g}</div>`;c.onclick=()=>{const old=eq[d.s];eq[d.s]=b;bag.splice(bag.indexOf(b),1);if(old)bag.push(old);hide();render()};c.onmousemove=e=>{show(`<h5>${d.n}<span>${SLOTS.find(q=>q[0]==d.s)[1]}（未装备）</span></h5><div class="g">${d.st}</div><div class="d">点一下装备</div>`,e);$('det').innerHTML=`<b>${d.n}</b> <i>· 未装备　${d.st}</i>`};c.onmouseleave=hide}}
+  else if(i>=14){c.innerHTML='<span class="lk">🔒</span>'}
+  B.appendChild(c)}
+ $('m1').disabled=st[1]<2;$('m2').disabled=st[2]<2;
+}
+function bindRep(){document.querySelectorAll('[data-r]').forEach(e=>e.onclick=()=>enchant(eq.main,+e.dataset.r))}
+$('m1').onclick=()=>{st[1]-=2;st[2]++;if(sel==1&&!st[1])sel=0;render()};$('m2').onclick=()=>{st[2]-=2;st[3]++;if(sel==2&&!st[2])sel=0;render()};
+$('fin').onclick=()=>{let g=0,w=0;for(const x of [eq.main,...Object.values(eq).filter(q=>q.k=='g'),...bag]){if(x.k=='w')g+=WP[x.tier-1]+x.aff.length;else g+=GEAR[x.id].t}const sc=st[1]*1+st[2]*2+st[3]*5;
+ const d=$('dlg');d.style.display='block';d.innerHTML=`<b>士兵：</b>"勇者回来了！身上的装备我都收下了，一共 <b>${g}</b> 水晶，记在账上。"<br><b>大法师：</b>"你带回来的书和石头，我替你处理了，共 <b>${sc}</b> 水晶。下次再来。"<br><i style="color:#9a8a68">（回塔顶时自动结算，不能留到下一局。命没用完读档继续则全部保留；真死全丢。）</i>`};
+$('wk').innerHTML=Object.keys(FAM).map(k=>`<button data-f="${k}">${FAM[k][3]}系</button>`).join('');
+$('wk').onclick=e=>{const f=e.target.dataset.f;if(f){fam=f;[...$('wk').children].forEach(b=>b.classList.toggle('on',b.dataset.f==f));render()}};$('wk').children[0].classList.add('on');
+render();
+</script></body></html>
