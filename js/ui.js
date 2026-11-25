@@ -115,7 +115,7 @@
       const anims = [];
       // 11/23 手办按游戏里战斗小人的身高缩放（普通哥布林 = 1），保留大小关系
       const fh = (st, n) => { const f = st && SPR.sets[st] && SPR.frame(st, n); return f ? f.h * (SPR.sets[st].sk || 1) : 0; }, GREF = fh('goblin', 'idle0') || 40;
-      const gameH = (set, k) => { const h = k === 'm' || k === 'f' || k === 'p' ? fh(SPR.heroSet(k, k === 'p' ? 'staff' : 'sword'), (k === 'p' ? 'staff' : 'sword') + '.idle') : fh(set || k, 'idle0'); return h ? h / GREF : 1; };
+      const gameH = (set, k) => { const h = k === 'm' || k === 'f' || k === 'p' || k === 'e' ? fh(SPR.heroSet(k, k === 'p' ? 'staff' : 'sword'), (k === 'p' ? 'staff' : 'sword') + '.idle') : fh(set || k, 'idle0'); return h ? h / GREF : 1; };
       const add = (set, names, name, note, tier, lab, figK) => { const e = document.createElement('div'); e.className = 'fig ' + tier; e.dataset.k = figK; const st = document.createElement('div'); st.className = 'fst';
         const fr = FIG[figK] && FIG[figK].every(x => x.c.complete) ? FIG[figK] : (set ? names.map(n => Array.isArray(n) ? SPR.crop(set, n[0], n[1]) : SPR.crop(set, n)).filter(Boolean) : []); if (fr === FIG[figK]) e.classList.add('big');
 
@@ -178,7 +178,7 @@
   const build = () => ({ book1: store.get('book1') || null, book2: store.get('book2') || null, title: store.get('title') || null, hero: P.hero, weapon: P.weapon, skill: P.sk ? SK2[P.weapon] : P.weapon, attrs: attrsOf(), item: store.get('item') || P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
   function openPrep(fresh) {
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
-      const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.sk = store.get('wsk') === '1' ? 1 : 0; P.hero = store.get('hero') === 'f' ? 'f' : 'm';
+      const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.sk = store.get('wsk') === '1' ? 1 : 0; P.hero = ['f', 'e'].includes(store.get('hero')) ? store.get('hero') : 'm';
       P.free = {}; P.habitOpts = shuffle(DATA.habits).slice(0, 3).map(h => h.id); P.itemOpts = shuffle(DATA.startItems).slice(0, 3).map(i => i.id);
       P.habit = null; P.item = null;   // 11/22 开局宝物删除   // 11/22 现实习惯删除：永远不选
  P.hrr = 0;
@@ -192,7 +192,7 @@
     // 人物（男主 / 女主）：不锁兵器，各一个被动
     const cs = $('cSel'); cs.innerHTML = '';
     for (const h of DATA.heroes.filter(x => !x.locked)) { const b = document.createElement('button'); b.className = h.id === P.hero ? 'on' : ''; const cr = SPR.crop(SPR.heroSet(h.id, P.weapon), P.weapon + '.idle', 0); if (cr) b.appendChild(cr.c);
-      b.insertAdjacentHTML('beforeend', `<span>${h.name}</span><small>${h.perk}</small>`); b.onclick = () => { P.hero = h.id; store.set('hero', h.id); renderPrep(); }; cs.appendChild(b); }
+      b.insertAdjacentHTML('beforeend', `<span${h.name.length > 3 ? ' style="font-size:.8em;letter-spacing:-.05em"' : ''}>${h.name}</span><small>${h.perk}</small>`); b.onclick = () => { P.hero = h.id; store.set('hero', h.id); renderPrep(); }; cs.appendChild(b); }
     { const h = DATA.heroes.find(x => x.id === P.hero), c0 = DATA.calc(build()), W0 = DATA.weapons[P.weapon];   // 11/22 角色卡（铃兰式：人物 + 属性 + 兵器槽）
       $('pPort').src = `art/portrait/${P.hero}.webp`;
       const PL = (ic, n, v) => `<div><span>${piH(ic, 1)}${n}</span><b>${v}</b></div>`, dmgA = W0.type === 'agi' ? 'agi' : W0.type === 'int' ? 'int' : 'str';
@@ -557,6 +557,6 @@
   const UIPRE = ['map.webp', 'panel.png', 'card.png', 'q0.png', 'q1.png', 'q2.png', 'q3.png', 'slot.png', 'slot_sel.png', 'slot_lock.png', 'cell.png', 'btn.png', 'btn_gold.png', 'tab.png', 'tab_on.png', 'bar.png', 'pause.png', 'divider.png']
     .concat(Object.keys(window.UIART || {}).filter(k => (window.UIART[k][0] || 0) < 60).map(k => k + '.png'));
   const preUI = () => Promise.all([...new Set(UIPRE)].map(f => new Promise(ok => { const im = new Image(); im.onload = im.onerror = ok; im.src = 'art/ui2/' + f; (window.__ui = window.__ui || []).push(im); })));
-  Promise.all([SPR.load(), preUI(), document.fonts ? document.fonts.load('20px WenKai').catch(() => {}) : 0, ...['m', 'f', 'p'].map(k => new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = 'art/portrait/' + k + '.webp'; }))]).then(() => { prog(1); document.getElementById('tload').classList.add('done'); $('bStart').disabled = false; contShow(); show('title'); requestAnimationFrame(loop); titleGate(); })
+  Promise.all([SPR.load(), preUI(), document.fonts ? document.fonts.load('20px WenKai').catch(() => {}) : 0, ...['m', 'f', 'p', 'e'].map(k => new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = 'art/portrait/' + k + '.webp'; }))]).then(() => { prog(1); document.getElementById('tload').classList.add('done'); $('bStart').disabled = false; contShow(); show('title'); requestAnimationFrame(loop); titleGate(); })
     .catch(e => { console.error(e); document.getElementById('ttx').textContent = '载入失败，请刷新'; });
 })();
