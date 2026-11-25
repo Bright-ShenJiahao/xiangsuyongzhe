@@ -20,7 +20,7 @@ const PL = [[[1356, 548], [778, 493], [773, 562], [1356, 618]], [[1652, 585], [1
 function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
 const ok = (x, y) => PL.some(p => inPoly(x, y, p));
 function move(o, dx, dy) { if (ok(o.x + dx, o.y + dy)) { o.x += dx; o.y += dy; return; } if (ok(o.x + dx, o.y)) o.x += dx; else if (ok(o.x, o.y + dy)) o.y += dy; }
-let VW = 1, VH = 1, SC = 1, zoom = 1.5, showMask = false;
+let VW = 1, VH = 1, SC = 1, zoom = 1.2, showMask = false;
 function fit() { cv.width = innerWidth; cv.height = innerHeight; VW = innerWidth; VH = innerHeight;
   // 视野宽 = 图宽 / zoom；手机竖屏按高度算，保证至少看到同样的高度
   SC = Math.max(VW / SW, VH / SH); }
