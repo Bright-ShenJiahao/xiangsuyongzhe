@@ -327,6 +327,7 @@
     for (let i = pend.length - 1; i >= 0; i--) { pend[i].t -= dt; if (pend[i].t <= 0) { pend[i].fn(); pend.splice(i, 1); } }
     if (hero.dead) return;
     let c = hero.cs;
+    if (!c && G.ready > 0) return;
     if (!c) { if (hero.gap > 0) { hero.gap -= dt; return; } const i = readySlot(); if (i < 0) return; const sk = RUN.slots[i], S = DATA.skills[sk.id], T = skillT(S, sk); c = hero.cs = { i, sk, S, ph: 'wu', t: 0, dur: T.wu, rc: T.rc, a: aimNow(), mul: 1, cr: 0, ar: 0 }; faceTo(c.a);
       G.castN = (G.castN || 0) + 1; if (OB('sanji') && G.castN % 3 === 0) c.mul *= 1 + .4 * OB('sanji');
       if (OB('jingshou') && hero.stillT >= 1) { c.mul *= 1 + .25 * OB('jingshou'); hero.stillT = 0; }
@@ -392,7 +393,7 @@
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();
     G.wi = -1; Object.assign(G, { firstArm: true, wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], stT: 0, thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
-    if (G.st > 1 && (RUN.cryStn || 1) < G.st) { RUN.cryStn = G.st; addCrystal(2 + G.st, hero.x, hero.y); } saveRun();   /* 每站只给一次，续关 / 重进不重复给 */ nextPhase(); banner(G.W.boss ? '首领战！' : `第 ${G.st} 站`, 1.6); G.paused = false;
+    if (G.st > 1 && (RUN.cryStn || 1) < G.st) { RUN.cryStn = G.st; addCrystal(2 + G.st, hero.x, hero.y); } saveRun();   /* 每站只给一次，续关 / 重进不重复给 */ nextPhase(); G.ready = 2.2; hero.cs = null; banner(G.W.boss ? '首领战！' : `第 ${G.st} 站 · 准备`, 2); G.paused = false;   // 11/25 开战前 2 秒准备：不刷怪、不出招
   }
   // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
   function nextPhase() {
@@ -445,6 +446,7 @@
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
   function spawner(dt) {
     if (G.winT != null || !G.waveOn) return;
+    if (G.ready > 0) { G.ready -= dt; return; }
     if (G.pr) return princessTick(dt);   // 公主现身期间：不刷怪、不计时
     const alive = foes.filter(z => !z.dead && !z.flee && !z.T.boss);
     if (G.W.boss) {   // 首领波：王出场，旁边零星补哥布林
