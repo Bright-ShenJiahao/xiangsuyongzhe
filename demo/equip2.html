@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>装备栏改版（局外）</title>
+<style>@font-face{font-family:WenKai;src:url(art/font/kai.woff2?v=6) format("woff2");font-display:block}
+html,body{margin:0;background:#1a120a;font-family:WenKai,"Songti SC",serif;color:#e8d8b0}
+#w{width:min(1000px,96vw);margin:10px auto;background:#241a10;border:2px solid #8a6a3a;border-radius:6px;padding:12px}
+.note{font-size:13px;color:#b09a70;margin:0 0 10px}
+.cols{display:grid;grid-template-columns:1.05fr 1fr;gap:12px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.pn{background:#1b130b;border:1px solid #4a3a22;padding:10px;position:relative}
+h4{margin:0 0 8px;font-size:17px;font-weight:400;color:#f0c870}h4 small{font-size:12px;color:#9a8a68;margin-left:8px}
+/* 装备格：方形 + 名字在格子下方（A）+ 剪影调淡（B） */
+.eqD{display:grid;grid-template-columns:repeat(3,92px);grid-template-areas:"m h o" "m a o" "c a b" ". e .";gap:8px 10px;justify-content:center}
+.sw{display:flex;flex-direction:column;align-items:center;gap:2px}
+.slot{position:relative;width:100%;height:100%;min-height:78px;border:2px solid #6a5230;border-radius:4px;background:linear-gradient(#2c2013,#1d140b);display:flex;align-items:center;justify-content:center;cursor:pointer;box-sizing:border-box}
+.slot:hover,.slot.sel{border-color:#f0c870;box-shadow:0 0 8px rgba(240,200,110,.45)}
+.slot canvas{width:44px;height:44px;image-rendering:pixelated}
+.slot canvas.sil{opacity:.3}
+.slot .ic{width:46px;height:46px;border-radius:6px;background:#a8743a;color:#fff3d8;display:flex;align-items:center;justify-content:center;font-size:26px;text-shadow:1px 1px 0 #3a2410}
+.slot.big{min-height:170px}
+.slot.ghost .ic{opacity:.3}
+.nm{font-size:14px;line-height:1.1;color:#f4e4b8;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;margin-top:3px}
+.nm.em{color:#bba880}
+/* 详情栏（C） */
+#det{margin-top:10px;min-height:54px;border:1px solid #6a5230;background:#120c06;padding:8px 10px;font-size:15px;line-height:1.5}
+#det b{color:#f0c870;font-weight:400;font-size:17px}#det em{font-style:normal;color:#9ad08a}#det i{font-style:normal;color:#b09a70}
+.bag{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.cell{aspect-ratio:1;border:2px solid #4e3c22;border-radius:4px;background:#1d140b;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.cell:hover{border-color:#f0c870}.cell .ic{width:70%;height:70%;border-radius:6px;background:#a8743a;color:#fff3d8;display:flex;align-items:center;justify-content:center;font-size:24px;text-shadow:1px 1px 0 #3a2410}
+.lk{opacity:.5;font-size:20px}
+/* 悬停提示：和技能提示同款 */
+#tt{position:fixed;z-index:9;display:none;width:min(300px,86vw);background:#1c120a;border:2px solid #c8a060;padding:10px 12px;font-size:14px;line-height:1.55;box-shadow:0 4px 14px #000a;pointer-events:none}
+#tt h5{margin:0 0 4px;font-size:18px;font-weight:400;color:#fff0c8}#tt h5 span{font-size:13px;color:#b09a70;margin-left:6px}
+#tt .g{color:#9ad08a}#tt .r{color:#e88a7a}#tt .d{color:#9a8a68;font-size:13px}#tt hr{border:0;border-top:1px solid #4a3a22;margin:6px 0}
+</style></head><body>
+<div id="w"><p class="note">局外演示：名字挪到格子下方放大 + 剪影调淡 + 底部详情栏。鼠标移到任何格子（装备格、空格、背包物品）看提示；点背包物品装备，点装备格卸下。数值是示例。</p>
+<div class="cols">
+<div class="pn"><h4>装备栏<small>点一下卸下</small></h4><div class="eqD" id="eq"></div><div id="det">移到格子上看说明</div></div>
+<div class="pn"><h4>物品栏<small>点一下装备</small></h4><div class="bag" id="bag"></div></div>
+</div></div><div id="tt"></div>
+<script>
+const SIL={helm:['................','.....######.....','....########....','...##########...','...##########...','...##########...','...###....###...','...###....###...','...##......##...','...##......##...'],armor:['..###......###..','.####......####.','.#####....#####.','.##############.','.##############.','..############..','..############..','..############..','..############..','...##########...','...##########...','...##########...','....########....'],belt:['################','################','#######..#######','#######..#######','################','################'],boots:['..####....####..','..####....####..','..####....####..','..####....####..','..####....####..','.#####....#####.','#######..#######','#######..#######'],acc:['.......##.......','......####......','.....######.....','......####......','....########....','...###....###...','..###......###..','..##........##..','..##........##..','..###......###..','...###....###...','....########....'],main:['.......##.......','......####......','......####......','......####......','......####......','......####......','......####......','......####......','......####......','....########....','.......##.......','.......##.......','......####......'],off:['..############..','.##############.','.##############.','.##############.','.##############.','.##############.','..############..','..############..','...##########...','....########....','.....######.....','......####......']};
+const SLOTS=[['main','主手','m',1],['helm','头盔','h'],['off','副手','o',1],['armor','铠甲','a',1],['acc','配饰','c'],['boots','鞋子','b'],['belt','腰带','e']];
+const HINT={main:'拿在主手的武器。',off:'盾牌或副手物品；双手武器占用时不能装。',helm:'头部防具，提高物防。',armor:'身体防具，提高生命和物防。',belt:'腰带，提高生命或负重。',boots:'鞋子，提高移速或闪避。',acc:'戒指、护符等配饰。'};
+const ITEMS={shield:{n:'木盾',s:'off',g:'盾',st:[['物防','+3'],['闪避','+2%']],src:'商人 / 宝箱'},helm:{n:'皮盔',s:'helm',g:'盔',st:[['物防','+2'],['生命','+6']],src:'宝箱 / 精英掉落'},ring:{n:'铜戒',s:'acc',g:'戒',st:[['暴击率','+3%']],src:'商人 / 奇遇'},boots:{n:'皮靴',s:'boots',g:'靴',st:[['移速','+6%']],src:'商人'}};
+let eq={main:{n:'法杖',g:'杖',st:[['法术伤害','+10%']]}},bag=['shield','helm','ring','boots'];
+const $=id=>document.getElementById(id),tt=$('tt');
+function sil(k){const c=document.createElement('canvas');c.width=c.height=16;c.className='sil';c.dataset.k=k;const g=c.getContext('2d'),r=SIL[k],dy=(16-r.length)>>1;g.fillStyle='#d8b878';r.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch=='#')g.fillRect(x,y+dy,1,1)}));return c}
+function show(h,e){tt.innerHTML=h;tt.style.display='block';const w=tt.offsetWidth,hh=tt.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-6)x=e.clientX-w-12;if(y+hh>innerHeight-6)y=innerHeight-hh-6;tt.style.left=Math.max(6,x)+'px';tt.style.top=y+'px'}
+const hide=()=>{tt.style.display='none';$('det').innerHTML='移到格子上看说明'};
+function itemTip(it,slotName,cmp){return `<h5>${it.n}<span>${slotName}</span></h5>`+it.st.map(a=>`<div class="g">${a[0]} ${a[1]}</div>`).join('')+(cmp||'')}
+function render(){const E=$('eq');E.innerHTML='';
+ for(const [k,nm,ar,big] of SLOTS){const w=document.createElement('div');w.className='sw';w.style.gridArea=ar;const s=document.createElement('div');s.className='slot'+(big?' big':'');const it=eq[k];
+  const two=k=='off'&&eq.main&&eq.main.two;
+  if(it){s.innerHTML=`<div class="ic">${it.g}</div>`;s.onclick=()=>{if(k=='main')return;bag.push(it.id);delete eq[k];render()}}else{s.appendChild(sil(k));}
+  s.onmousemove=e=>{let h,d;if(it){h=itemTip(it,nm,k=='main'?'':'<div class="d">点一下卸下</div>');d=`<b>${it.n}</b> <i>· ${nm}</i>　`+it.st.map(a=>`<em>${a[0]} ${a[1]}</em>`).join('　')}else{h=`<h5>${nm}<span>空</span></h5><div class="d">${HINT[k]}</div><hr><div class="d">获得途径：商人、宝箱、精英掉落、奇遇</div>`;d=`<b>${nm}</b> <i>· 空　${HINT[k]}</i>`}
+   show(h,e);$('det').innerHTML=d};s.onmouseleave=hide;
+  const l=document.createElement('div');l.className='nm'+(it?'':' em');l.textContent=it?it.n:nm;w.append(s,l);E.appendChild(w)}
+ const B=$('bag');B.innerHTML='';
+ for(let i=0;i<18;i++){const c=document.createElement('div');c.className='cell';const id=bag[i];
+  if(id){const it=Object.assign({id},ITEMS[id]);c.innerHTML=`<div class="ic">${it.g}</div>`;
+   const sn=SLOTS.find(x=>x[0]==it.s)[1];
+   c.onclick=()=>{const old=eq[it.s];eq[it.s]=it;bag.splice(i,1);if(old&&old.id)bag.push(old.id);hide();render()};
+   c.onmousemove=e=>{const cur=eq[it.s];const cmp='<hr>'+(cur?`<div class="d">替换 ${cur.n}</div>`:`<div class="g">装备后：${sn}栏 空 → ${it.n}</div>`)+`<div class="d">点一下装备　·　来源：${it.src}</div>`;show(itemTip(it,sn+'（未装备）',cmp),e);
+    $('det').innerHTML=`<b>${it.n}</b> <i>· ${sn}（未装备）</i>　`+it.st.map(a=>`<em>${a[0]} ${a[1]}</em>`).join('　')+`<br><i>${cur?'替换 '+cur.n:'装备到空的'+sn+'栏'}　来源：${it.src}</i>`};
+   c.onmouseleave=hide}
+  else if(i>=14){c.innerHTML='<span class="lk">🔒</span>';c.onmousemove=e=>{show('<h5>未解锁的格子<span>背包</span></h5><div class="d">等级提升或买背包后解锁。</div>',e);$('det').innerHTML='<b>未解锁</b> <i>· 升级或购买背包后开放</i>'};c.onmouseleave=hide}
+  B.appendChild(c)}
+}
+render();
+</script></body></html>
