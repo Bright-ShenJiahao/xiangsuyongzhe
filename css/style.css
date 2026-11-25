@@ -1396,3 +1396,24 @@ body:not(.touch) #bRoll .pips { font-size: 9px; bottom: 3px; letter-spacing: 2px
 .pnSec.st .stage { position: relative; flex: 1 1 auto; min-height: 130px; overflow: hidden; }
 #prep .stage canvas { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; image-rendering: pixelated; }
 @media (orientation: portrait) { #prep .pnew { grid-template-rows: 26vh auto !important; } }
+
+/* 11/25 装备栏改版：名字在格子下方、剪影调淡、悬停提示 + 详情栏、未解锁格子 */
+.eqD { grid-template-columns: repeat(3, 92px) !important; grid-auto-rows: minmax(70px, auto) !important; gap: 4px 10px !important; margin: 0 0 6px !important; }
+@media (max-width: 760px), (orientation: portrait) { .eqD { grid-template-columns: repeat(3, 76px) !important; grid-auto-rows: minmax(62px, auto) !important; gap: 3px 8px !important; } }
+.eqD .sw { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.eqD .sw .slot { flex: 1; width: 100%; min-height: 48px; box-sizing: border-box; }
+.eqD .sw .slot .pi, .eqD .sw .slot canvas, .eqD .sw .slot img { max-height: 70%; }
+.eqD .slot .sil { opacity: .3 !important; width: 52% !important; }
+.eqD .nm { font-size: 14px; line-height: 1.1; color: #f4e4b8; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; text-align: center; }
+.eqD .nm.em { color: #bba880; }
+.eqD .slot u { display: none; }
+.eqDet { margin-top: 6px; min-height: 44px; border: 1px solid #6a5230; background: rgba(10, 6, 2, .55); padding: 8px 10px; font-size: 15px; line-height: 1.5; color: #e8d8b0; }
+.eqDet b { color: #f0c870; font-weight: 400; font-size: 17px; } .eqDet em { font-style: normal; color: #9ad08a; } .eqDet i { font-style: normal; color: #b09a70; }
+.eqTT { position: fixed; z-index: 99; display: none; width: min(300px, 86vw); background: #1c120a; border: 2px solid #c8a060; padding: 10px 12px; font-size: 14px; line-height: 1.55; box-shadow: 0 4px 14px #000a; pointer-events: none; color: #e8d8b0; }
+.eqTT h5 { margin: 0 0 4px; font-size: 18px; font-weight: 400; color: #fff0c8; } .eqTT h5 span { font-size: 13px; color: #b09a70; margin-left: 6px; }
+.eqTT .g { color: #9ad08a; } .eqTT .d { color: #9a8a68; font-size: 13px; } .eqTT hr { border: 0; border-top: 1px solid #4a3a22; margin: 6px 0; }
+.bag > div.lk { background: url(../art/ui2/slot_lock.png) 0 0 / 100% 100% !important; border: 0 !important; border-image: none !important; opacity: .55; cursor: default !important; position: relative; }
+.bag > div.lk[data-tip]:hover::after { content: attr(data-tip); position: absolute; left: 50%; bottom: 105%; transform: translateX(-50%); white-space: nowrap; background: #1c120a; border: 1px solid #c8a060; color: #e8d8b0; font-size: 13px; padding: 3px 8px; z-index: 5; pointer-events: none; }
+.bagN { font-size: 14px; color: #c8b890; margin-left: 4px; } .bagN.warn { color: #ff8a70; animation: bagW 1s steps(2) infinite; } @keyframes bagW { 50% { opacity: .55; } }
+
+.lo .bag.gear { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }

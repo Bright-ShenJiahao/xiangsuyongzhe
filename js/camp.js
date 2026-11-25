@@ -37,6 +37,7 @@
     if (o.kind === 'item') { const g = r.gear.indexOf(null); if (g >= 0) { r.gear[g] = { kind: 'item', id: o.id }; B().recompute(); return true; } }   // 11/23 宝物格有空就直接生效
     const i = r.bag.indexOf(null); if (i < 0) { toast('物品栏满了，先腾出点位置'); return false; }
     r.bag[i] = o.kind === 'book' ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : o.kind === 'oath' ? { kind: 'oath', id: o.id, lv: 1, mv: !!DATA.oaths[o.id].mv } : { kind: o.kind, id: o.id }; if (inFight()) r.bag[i].fresh = 1;
+    { const free = r.bag.filter(x => !x).length; if (free <= 2) toast(free ? `物品栏快满了，只剩 ${free} 格——不要的可以丢弃` : '物品栏已经满了！再拿东西要先丢弃'); }   /* 11/25 快满提前提醒 */
     return true;
   }
   // 点锁着的技能格：花铜钱解锁（第 4 格第 2 站起 50，第 5 格第 5 站起 78，每站涨 7%；第 4 / 8 站打完也会免费开）
@@ -76,10 +77,11 @@
       if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); if (o.kind === 'book') { d.appendChild(UI.skIcon(o.id)); d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else { d.appendChild(iconEl(th)); if (o.kind === 'item' && ITEM(o.id).d) d.insertAdjacentHTML('beforeend', `<b class="lvb">${o.lv || 1}</b>`); if (o.up && Date.now() - o.up < 4000) d.classList.add('put'); } if (o.fresh && inFight()) d.insertAdjacentHTML('beforeend', '<em class="nw">新</em>'); }
       if (sel && sel.t === t && sel.i === i) d.classList.add('sel');
       d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); grid.appendChild(d); });
+    const lockCells = (grid, n, tip) => { for (let k = 0; k < n; k++) { const d = document.createElement('div'); d.className = 'lk'; d.dataset.tip = tip; grid.appendChild(d); } };
     L.insertAdjacentHTML('beforeend', `<h4>宝物 ${r.gear.filter(Boolean).length}/${r.gear.length} <small>放在这里就生效</small></h4>`);
-    const gg = document.createElement('div'); gg.className = 'bag gear'; L.appendChild(gg); cell(gg, r.gear, 'g');
-    Rt.insertAdjacentHTML('beforeend', '<h4>物品栏 <small>收纳，不生效；拖到左边格子才生效</small></h4>');
-    const bg = document.createElement('div'); bg.className = 'bag'; Rt.appendChild(bg); cell(bg, r.bag, 'b');
+    const gg = document.createElement('div'); gg.className = 'bag gear'; L.appendChild(gg); cell(gg, r.gear, 'g'); lockCells(gg, 1, '未解锁的宝物格：以后开放');
+    { const nb = r.bag.filter(Boolean).length, tot = r.bag.length; Rt.insertAdjacentHTML('beforeend', `<h4>物品栏 <span class="bagN${tot - nb <= 2 ? ' warn' : ''}">${nb}/${tot}</span> <small>拖到左边才生效 · 不要的点开丢弃</small></h4>`); }
+    const bg = document.createElement('div'); bg.className = 'bag'; Rt.appendChild(bg); cell(bg, r.bag, 'b'); lockCells(bg, 4, '未解锁的物品格：以后开放');
     { const now = {}; let k = 0; L.querySelectorAll('.slots > div, .oathrow > div:not(.gap), .gear > div').forEach((el, i) => { el.style.setProperty('--k', k++); const key = i, v = el.classList.contains('has') ? el.innerHTML : ''; now[key] = v; if (prevFill && v && prevFill[key] !== v) el.classList.add('put'); }); prevFill = now; }
     // 11/23 详情改成跟着格子弹出：电脑悬停就看，点一下带按钮；手机点一下弹在格子上方
     if (sel) { const el = box.querySelector(`[data-t="${sel.t}"][data-i="${sel.i}"]`) || box.querySelector('.slot.sel'); if (el) popAt(el, sel.t === 'L' ? info => lockInfo(info, sel.i, box) : info => fillInfo(info, box, true), box); }
@@ -111,7 +113,7 @@
     if (!withBtn) return; const cs = sel;
     const btns = document.createElement('div'); btns.className = 'lob'; info.appendChild(btns);
     const btn = (label, fn, gold) => { const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.textContent = label; b.onclick = e => { e.stopPropagation(); info.remove(); fn(); }; btns.appendChild(b); };
-    const F = inFight(); if (F) btns.insertAdjacentHTML('beforeend', '<small class="dim">战斗中：卸下、卖要等站末</small>');
+    const F = inFight(); if (F) btns.insertAdjacentHTML('beforeend', '<small class="dim">战斗中：卸下要等站末（丢弃随时可以）</small>');
     if (cs.t === 's') { if (!F && r.slots.filter(Boolean).length > 1) btn('卸下', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = { kind: 'book', id: cur.id, lv: cur.lv, xp: cur.xp }; r.slots[cs.i] = null; sel = null; loadout(box); }); }
     else {
       if (cur.kind === 'book') btn('装上', () => { const j = r.slots.slice(0, r.open).indexOf(null); if (j < 0) return toast('技能格满了：拖到一个技能格上替换'); pick({ t: 's', i: j }, box); }, true);
@@ -119,7 +121,8 @@
       if (cur.kind === 'item' && cs.t === 'b') btn('放上', () => { const j = r.gear.indexOf(null); if (j < 0) return toast('宝物格满了：拖到一件宝物上替换'); r.gear[j] = cur; r.bag[cs.i] = null; sel = null; B().recompute(); loadout(box); }, true);
       if (cs.t === 'g' && !F) btn('收进物品栏', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = cur; r.gear[cs.i] = null; sel = null; B().recompute(); loadout(box); });
       if (cur.kind === 'use') btn('吃掉', () => { learn(cur); A[cs.i] = null; sel = null; loadout(box); }, true);
-      if (!F && t.sell != null) btn(`卖掉 ${t.sell}`, () => { r.coins += t.sell; A[cs.i] = null; sel = null; B().recompute(); loadout(box); refreshCoin(); });
+      if (cs.t === 'b' || (cs.t === 'g' && !F)) { const b = document.createElement('button'); b.className = 'btn mini'; b.textContent = '丢弃'; let arm = 0;   /* 11/25 局内不能卖，只能丢；带回去才能卖给大法师 */
+        b.onclick = e => { e.stopPropagation(); if (!arm) { arm = 1; b.textContent = '再点一次：永久丢弃'; b.classList.add('gold'); setTimeout(() => { if (b.isConnected) { arm = 0; b.textContent = '丢弃'; b.classList.remove('gold'); } }, 3000); return; } info.remove(); A[cs.i] = null; sel = null; B().recompute(); toast(`丢弃了 ${t.name}`); loadout(box); }; btns.appendChild(b); }
     }
   }
   // ---------- 属性页：升级攒的属性点手动加；这次结算 / 暂停里加的点，离开前都能退 ----------
@@ -228,8 +231,8 @@
       const g = document.createElement('div'); g.className = 'cards' + (rep.field ? ' shelf' : ''); body.appendChild(g);
       loot.forEach((o, i) => { const t = thing(o), d = card(t, o);
         btnTo(d, o.kind === 'book' ? '学会' : o.kind === 'use' ? '吃掉' : '收下', () => { if (learn(o)) { if (rep.pickOne) loot = []; else loot.splice(i, 1); render(); } }, true);
-        if (!rep.pickOne && t.sell != null) btnTo(d, `卖 ${t.sell}`, () => { r.coins += t.sell; loot.splice(i, 1); render(); }); g.appendChild(d); });
-      body.insertAdjacentHTML('beforeend', rep.pickOne ? '<p class="dim center">只能选一本，选了另外两本就消失</p>' : '<p class="dim center">没处理的战利品，出发时自动卖掉换铜钱（技能书卖不了，不拿就没了）</p>');
+        if (!rep.pickOne) btnTo(d, '丢弃', () => { loot.splice(i, 1); render(); }); g.appendChild(d); });
+      body.insertAdjacentHTML('beforeend', rep.pickOne ? '<p class="dim center">只能选一本，选了另外两本就消失</p>' : '<p class="dim center">没处理的战利品出发时就没了；局内不能卖，带回去才能卖给大法师</p>');
     } else if (tab === 'xiu') {
       if (!r.xiu) { body.innerHTML = '<p class="dim center">暂无修炼机会<br><small>打怪攒经验，每升一级得一次修炼</small></p>'; return; }
       const fx = B().hero().fx, nOpt = 3 + (fx.xiuOpt || 0), rrMax = Math.max(0, 2 + (fx.xiuReroll || 0) + MLm('reroll'));
@@ -281,7 +284,7 @@
     return L;
   }
   $('cGo').onclick = () => {
-    commit(); const r = R(); if (!rep.pickOne) for (const o of loot) r.coins += thing(o).sell || 0; loot = [];   // 没处理的自动卖掉
+    commit(); const r = R(); loot = [];   // 11/25 没处理的直接丢掉（不再自动卖）
     $('camp').classList.remove('on'); document.body.classList.remove('shopOn'); if (rep.after) rep.after(); else B().nextWave();
   };
 
@@ -308,21 +311,37 @@
   function equipPanel(box) {
     const G = gearLoad(), wp = R().weapon || 'sword', W = DATA.weapons[wp], two = wp !== 'sword', worn = new Set(Object.values(G.eq)), it = id => DATA.gear[id];
     if (two) G.eq.off = null;
-    const cellOf = (key, label, area) => {   // 装备格：用技能栏同款 .slot
-      let inner = `<canvas class="sil" data-sil="${key}" width="16" height="16"></canvas>`, cls = 'slot', dim = false;
-      if (key === 'main') { cls += ' has full'; inner = '<span data-ic="' + wp + '"></span><span>' + W.name + '</span>'; }
-      else if (key === 'off' && two) { cls += ' eqghost'; inner = '<span class="ghost" data-ic="' + wp + '"></span>'; }
-      else if (G.eq[key]) { cls += ' has full'; inner = gearIcon(it(G.eq[key])) + '<span>' + it(G.eq[key]).name + '</span>'; }
-      return `<div class="${cls}${dim ? ' eqdim' : ''}" data-s="${key}" style="grid-area:${area}"><u>${label}</u>${inner}</div>`;
+    const HINT = { main: '本局拿的兵器，局内不能换。', off: '盾牌等副手；双手武器占着副手时放不了。', helm: '头部防具。', armor: '身体防具。', belt: '腰带。', boots: '鞋子。', acc: '戒指、护符等配饰。' };
+    const SN = { main: '主手', off: '副手', helm: '头盔', armor: '铠甲', belt: '腰带', boots: '鞋子', acc: '配饰' };
+    const cellOf = (key, label, area) => {   // 11/25 改版：名字在格子下方（放大描边）、剪影调淡、悬停有提示和详情栏
+      let inner = `<canvas class="sil" data-sil="${key}" width="16" height="16"></canvas>`, cls = 'slot', nm = label, em = ' em';
+      if (key === 'main') { cls += ' has full'; inner = '<span data-ic="' + wp + '"></span>'; nm = W.name; em = ''; }
+      else if (key === 'off' && two) { cls += ' eqghost'; inner = '<span class="ghost" data-ic="' + wp + '"></span>'; nm = '（占用）'; }
+      else if (G.eq[key]) { cls += ' has full'; inner = gearIcon(it(G.eq[key])); nm = it(G.eq[key]).name; em = ''; }
+      return `<div class="sw" style="grid-area:${area}"><div class="${cls}" data-s="${key}">${inner}</div><div class="nm${em}">${nm}</div></div>`;
     };
-    const cells = Math.max(16, G.bag.length);
-    box.innerHTML = `<div class="lo gearlo"><div class="lol"><h4>装备栏 <small>头盔 铠甲 腰带 鞋子 配饰；点一下卸下</small></h4><div class="eqD">` +
+    const cells = Math.max(16, G.bag.length) + 4;
+    box.innerHTML = `<div class="lo gearlo"><div class="lol"><h4>装备栏 <small>点一下卸下</small></h4><div class="eqD">` +
       cellOf('main', '主手', 'm') + cellOf('helm', '头盔', 'h') + cellOf('off', '副手', 'o') + cellOf('armor', '铠甲', 'a') + cellOf('acc', '配饰', 'c') + cellOf('boots', '鞋子', 'b') + cellOf('belt', '腰带', 'e') +
-      `</div><p class="eqMsg">${eqMsg}</p></div><div class="lor"><h4>物品栏 <small>点一下装备</small></h4><div class="bag">` +
-      Array.from({ length: cells }, (_, i) => { const id = G.bag[i]; if (!id) return '<div></div>'; const w = worn.has(id); return `<div class="has full eqI${w ? ' eqdim' : ''}" data-i="${id}" title="${it(id).name}（${it(id).tag}）">${gearIcon(it(id))}<i style="color:#ffd860">${w ? '已装' : ''}</i><em class="bk" style="font-style:normal;font-size:10px;color:#fff3d0;position:absolute;left:3px;bottom:0">${it(id).name}</em></div>`; }).join('') + `</div></div></div>`;
+      `</div><div class="eqDet" id="eqDet">${eqMsg}</div></div><div class="lor"><h4>物品栏 <small>点一下装备</small></h4><div class="bag">` +
+      Array.from({ length: cells }, (_, i) => { const id = G.bag[i]; if (i >= cells - 4) return '<div class="lk" data-tip="未解锁的物品格：以后开放"></div>'; if (!id) return '<div></div>'; const w = worn.has(id); return `<div class="has full eqI${w ? ' eqdim' : ''}" data-i="${id}">${gearIcon(it(id))}<i style="color:#ffd860">${w ? '已装' : ''}</i></div>`; }).join('') + `</div></div></div>`;
     for (const e of box.querySelectorAll('[data-ic]')) { const n = UI.icon(e.dataset.ic); if (e.classList.contains('ghost')) n.classList.add('ghost'); e.replaceWith(n); }
     drawSil(box);
-    const redo = m => { eqMsg = m; equipPanel(box); };
+    // 悬停提示（和技能提示同款的小框）+ 底部详情栏
+    let tt = document.getElementById('eqTT'); if (!tt) { tt = document.createElement('div'); tt.id = 'eqTT'; tt.className = 'eqTT'; document.body.appendChild(tt); } tt.style.display = 'none';
+    const det = $('eqDet'), hideT = () => { tt.style.display = 'none'; det.innerHTML = eqMsg; };
+    const showT = (e, html, d) => { tt.innerHTML = html; tt.style.display = 'block'; const w = tt.offsetWidth, h = tt.offsetHeight; let x = e.clientX + 16, y = e.clientY + 16; if (x + w > innerWidth - 6) x = e.clientX - w - 12; if (y + h > innerHeight - 6) y = innerHeight - h - 6; tt.style.left = Math.max(6, x) + 'px'; tt.style.top = y + 'px'; det.innerHTML = d; };
+    const attr = d => d.st ? d.st.map(a => `<div class="g">${a[0]} ${a[1]}</div>`).join('') : '<div class="d">属性数值：待定</div>';
+    for (const e of box.querySelectorAll('.eqD .slot')) { const k = e.dataset.s, id = k === 'main' ? null : G.eq[k], d = id && it(id);
+      e.onmousemove = ev => { if (k === 'main') showT(ev, `<h5>${W.name}<span>主手</span></h5><div class="d">${HINT.main}</div>`, `<b>${W.name}</b> <i>· 主手　${HINT.main}</i>`);
+        else if (k === 'off' && two) showT(ev, `<h5>副手<span>被占用</span></h5><div class="d">${HINT.off}</div>`, `<b>副手</b> <i>· 被双手武器占用</i>`);
+        else if (d) showT(ev, `<h5>${d.name}<span>${SN[k]}</span></h5>${attr(d)}<hr><div class="d">点一下卸下</div>`, `<b>${d.name}</b> <i>· ${SN[k]}　点一下卸下</i>`);
+        else showT(ev, `<h5>${SN[k]}<span>空</span></h5><div class="d">${HINT[k]}</div><hr><div class="d">获得途径：商人、宝箱、精英掉落、奇遇</div>`, `<b>${SN[k]}</b> <i>· 空　${HINT[k]}</i>`); };
+      e.onmouseleave = hideT; }
+    for (const e of box.querySelectorAll('.eqI')) { const id = e.dataset.i, d = it(id); e.onmousemove = ev => { const cur = G.eq[d.slot] ? it(G.eq[d.slot]) : null, cmp = worn.has(id) ? '<div class="d">已经装备在身上</div>' : cur ? `<div class="d">替换 ${cur.name}</div>` : `<div class="g">装备后：${d.tag}栏 空 → ${d.name}</div>`;
+      showT(ev, `<h5>${d.name}<span>${d.tag}${worn.has(id) ? '' : '（未装备）'}</span></h5>${attr(d)}<hr>${cmp}<div class="d">点一下装备</div>`, `<b>${d.name}</b> <i>· ${d.tag}${worn.has(id) ? '' : '（未装备）'}</i>　${cur && !worn.has(id) ? '替换 ' + cur.name : worn.has(id) ? '已装备' : '装备到空的' + d.tag + '栏'}`); }; e.onmouseleave = hideT; }
+    for (const e of box.querySelectorAll('.lk')) { e.onmousemove = ev => showT(ev, `<h5>未解锁的格子<span>物品栏</span></h5><div class="d">以后开放。</div>`, '<b>未解锁</b> <i>· 以后开放</i>'); e.onmouseleave = hideT; }
+    const redo = m => { eqMsg = m; hideT(); equipPanel(box); };
     for (const e of box.querySelectorAll('.eqD .slot')) e.onclick = () => { const k = e.dataset.s; if (k === 'main') return redo('主手就是本局的兵器，局内不能换。'); if (k === 'off' && two) return redo('双格武器占着副手，只有拿剑才能放盾。'); if (!G.eq[k]) return; G.eq[k] = null; gearSave(G); redo('已卸下，回到物品栏。'); };
     for (const e of box.querySelectorAll('.eqI')) e.onclick = () => { const id = e.dataset.i, d = DATA.gear[id]; if (worn.has(id)) return; if (d.slot === 'off' && two) return redo('现在拿的是双格武器，副手用不了盾。'); G.eq[d.slot] = id; gearSave(G); redo(d.name + '已装备。'); };
   }
@@ -330,6 +349,7 @@
   // ---------- 暂停页 = 备战 ----------
   let ptab = 'ji';
   function pauseRender() {
+    { const t = document.getElementById('eqTT'); if (t) t.style.display = 'none'; }
     const tb = $('pTabs'); tb.innerHTML = '';
     for (const [k, n] of [['ji', '技能'], ['shu', '属性'], ['zhuang', '装备']]) { const b = document.createElement('button'); b.className = k === ptab ? 'on' : ''; const dn = k === 'shu' ? R().pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : '');
       b.onclick = () => { if (k === ptab) return; const d = ['ji', 'shu', 'zhuang'].indexOf(k) > ['ji', 'shu', 'zhuang'].indexOf(ptab) ? 'slideR' : 'slideL'; if (ptab === 'shu' && k !== 'shu') commit(); ptab = k; sel = null; pauseRender(); const pb = $('pBody'); pb.classList.remove('slideL', 'slideR'); void pb.offsetWidth; pb.classList.add(d); }; tb.appendChild(b); }
