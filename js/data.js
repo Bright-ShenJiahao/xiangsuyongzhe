@@ -274,9 +274,9 @@ window.DATA = {
   },
   meleeBooks: ['sword', 'whirl', 'spear', 'sweep', 'storm', 'leap', 'rising', 'hundred', 'flash'],
   // 地图：第一版只开打谷场
-  stationMap: { 4: 'deep4', 5: 'deep5', 6: 'deep6' },   // 11/25 第几站用哪张地图（没写的用 field）
+  stationMap: { 2: 'fieldmist', 3: 'fieldrain', 4: 'deep4', 5: 'deep5', 6: 'deep6' },   // 11/26 1 晴（field）/ 2 薄雾 / 3 雨；   // 11/25 第几站用哪张地图（没写的用 field）
   maps: [
-    { id: 'field', name: '哥布林森林', img: 'art/map/forest3.webp', w: 2508, h: 1412,   // 11/21 哥布林森林扩图版：图 1672×941，世界按 1.5 倍算（forest / forest2 / 打谷场 field 都留着）
+    { id: 'field', name: '哥布林森林', img: 'art/map/forest_sun.webp', w: 2508, h: 1412,   // 11/21 哥布林森林扩图版：图 1672×941，世界按 1.5 倍算（forest / forest2 / 打谷场 field 都留着）
       open: true, foes: ['goblin', 'gob_blade', 'gob_archer'], boss: 'gob_king', time: 120,
       // 11/23 地图氛围（原图像素）：火 = 营火锅 + 两支火把；光 = 左上林间光柱；叶 = 从树冠带落下；萤 = 两侧草丛和底部灌木
       amb: { fires: [[903, 184, 1.4, 'fire', 30], [60, 793, 1, 'torch', 62], [1612, 793, 1, 'torch', 62]], rays: [[150, 20, 300, 360], [470, 40, 240, 300]], leaf: [0, 1672, 0, 160], flies: [[0, 240, 300, 600], [1380, 240, 1672, 600], [0, 820, 1672, 941]] },
@@ -315,6 +315,9 @@ window.DATA = {
 
 // 备战配置 → 勇者数值（备战页显示、战斗开局都用这一份，避免两边算得不一样）
 // b = { weapon, attrs: {str, agi, int, con, end}（含底子 3 点）, item, habit }
+// 11/26 外围天气版（第 2 站薄雾 / 第 3 站雨）：和 field 同构图，营火和火把位置不变；晴天光柱已画进 forest_sun，雾雨不要光柱
+(function () { const f = window.DATA.maps.find(m => m.id === 'field');
+  [['fieldmist', 'forest_mist'], ['fieldrain', 'forest_rain']].forEach(([id, img]) => window.DATA.maps.push(Object.assign({}, f, { id, img: 'art/map/' + img + '.webp', hidden: true, open: false, amb: Object.assign({}, f.amb, { rays: [] }) }))); })();
 window.DATA.calc = function (b) {
   const DATA = window.DATA;
   const fx = {}, add = o => { for (const k in (o || {})) fx[k] = (fx[k] || 0) + o[k]; };
