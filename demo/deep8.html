@@ -93,7 +93,7 @@ function objDraw() { const im = (k, x, y, s) => { const I = OI[k]; if (I.complet
   if (opened && !CHEST.open) { g.fillStyle = '#ffd23a'; g.font = 'bold 26px system-ui'; g.textAlign = 'center'; g.fillText('!', CHEST.x, CHEST.y - 50 + Math.sin(T * 6) * 4); }
   im(opened ? 'thorn_dead' : 'thorn', 1338, 262, .5); im(CHEST.open ? 'chest_open' : 'chest', CHEST.x, CHEST.y + 14, .34); }
 // 阵风：8 秒一轮，前 1 秒提示，后 2 秒吸
-let eyeO = 0, windT = 0; const WIND_R = 150, WIND_F = 210;
+let windT = 0; const WIND_R = 150, WIND_F = 210;
 const windPhase = () => { const t = windT % 8; return t < 5 ? 0 : t < 6 ? 1 : t < 8 ? 2 : 0; };
 const K = {}; addEventListener('keydown', e => { K[e.code] = 1; if (e.code === 'Space') doRoll(); if (e.code === 'KeyJ') push(); }); addEventListener('keyup', e => K[e.code] = 0);
 let joy = null, EDIT = false, paint = null, camX = 0, camY = 0;
@@ -151,11 +151,13 @@ function loop(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; 
   if (showMask) { g.fillStyle = 'rgba(80,255,80,.32)'; for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) if (GRID[j * GW + i]) g.fillRect(i * CS, j * CS, CS, CS);
     g.fillStyle = 'rgba(255,40,40,.35)'; g.beginPath(); g.ellipse(PIT.x, PIT.y, PIT.rx * .85, PIT.ry * .85, 0, 0, 7); g.fill(); for (const p of PIL) { g.beginPath(); g.ellipse(p.bx, p.by, p.rx, p.ry, 0, 0, 7); g.fill(); }
     if (!opened) { g.beginPath(); LOG.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.fill(); } }
-  { const wq = windPhase(), op = wq ? 1 : 0; eyeO += (op - eyeO) * Math.min(1, dt * (op ? 1.6 : .8)); const e = Math.max(eyeO, .12), ex = PIT.x, ey = PIT.y + 4;
-    const gl = g.createRadialGradient(ex, ey, 4, ex, ey, 90); gl.addColorStop(0, `rgba(255,150,40,${.35 * eyeO})`); gl.addColorStop(1, 'rgba(255,150,40,0)'); g.fillStyle = gl; g.beginPath(); g.ellipse(ex, ey, 90, 50, 0, 0, 7); g.fill();
-    const ax = Math.max(-3, Math.min(3, (hero.x - ex) / 60)), ay = Math.max(-2, Math.min(2, (hero.y - ey) / 60));
-    for (const dx of [-26, 26]) { g.fillStyle = `rgba(255,${170 + 40 * eyeO | 0},60,${.25 + .75 * e})`; g.beginPath(); g.ellipse(ex + dx, ey, 15 * e + 3, 9 * e + 1.5, 0, 0, 7); g.fill();
-      g.fillStyle = `rgba(30,10,0,${.9 * e})`; g.beginPath(); g.ellipse(ex + dx + ax, ey + ay, 3.2 * e, 8 * e, 0, 0, 7); g.fill(); }
+  { const SP = [[1500, 500], [105, 340], [1470, 740], [120, 640], [1330, 40]], C = 16, ci = Math.floor(T / C), ph = (T % C) / C, sp = SP[ci % SP.length];
+    let al = ph < .2 ? ph / .2 : ph > .8 ? (1 - ph) / .2 : 1; al *= .55 + .25 * Math.sin(T * .9); if ((T * 1.7) % 7 < .22) al *= .15;   // 偶尔眨眼
+    if (al > .02) { const ex = sp[0], ey = sp[1], ax = Math.max(-3, Math.min(3, (hero.x - ex) / 200)), ay = Math.max(-2, Math.min(2, (hero.y - ey) / 200));
+      const gl = g.createRadialGradient(ex, ey, 4, ex, ey, 120); gl.addColorStop(0, `rgba(255,160,50,${.22 * al})`); gl.addColorStop(1, 'rgba(255,160,50,0)'); g.fillStyle = gl; g.beginPath(); g.ellipse(ex, ey, 120, 70, 0, 0, 7); g.fill();
+      for (const dx of [-34, 34]) { g.fillStyle = `rgba(255,185,70,${.85 * al})`; g.beginPath(); g.ellipse(ex + dx, ey, 20, 11, dx > 0 ? -.12 : .12, 0, 7); g.fill(); g.fillStyle = `rgba(30,8,0,${.9 * al})`; g.beginPath(); g.ellipse(ex + dx + ax, ey + ay, 3.5, 10, 0, 0, 7); g.fill(); }
+      for (let i = 0; i < 5; i++) { const mx = ex + Math.sin(T * .3 + i * 1.7) * 70, my = ey + (i - 2) * 16; const mg = g.createRadialGradient(mx, my, 2, mx, my, 70); mg.addColorStop(0, `rgba(20,40,70,${.2 * al})`); mg.addColorStop(1, 'rgba(20,40,70,0)'); g.fillStyle = mg; g.beginPath(); g.ellipse(mx, my, 70, 26, 0, 0, 7); g.fill(); } } }
+  {
     const nr = Math.hypot(hero.x - PIT.x, (hero.y - PIT.y) * 1.6); if (nr < 160) { g.strokeStyle = `rgba(255,70,50,${.5 * (1 - nr / 160)})`; g.lineWidth = 3; g.beginPath(); g.ellipse(PIT.x, PIT.y, PIT.rx, PIT.ry, 0, 0, 7); g.stroke(); } }
   objDraw();
   // 阵风提示 / 吸
