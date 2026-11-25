@@ -477,7 +477,7 @@
   const warns = [];
   function warnSpawn(o) { const p = spawnPos(); warns.push(Object.assign({ x: p.x, y: p.y, t: 0 }, o)); }
   function warnTick(dt) {
-    for (let i = warns.length - 1; i >= 0; i--) { const w = warns[i]; w.t += dt; if (w.t >= .55) { warns.splice(i, 1); const z = spawn(w.type, w, w.tier); if (w.routeElite) z.routeElite = true; if (!w.tier && !DATA.enemies[w.type].boss && Math.random() < .15 * HT('mob')) spawn(w.type);   /* 热度：怪物数量 +15%/级 */ } }
+    for (let i = warns.length - 1; i >= 0; i--) { const w = warns[i]; w.t += dt; if (w.t >= (w.tier || DATA.enemies[w.type].boss ? 1.5 : .55)) { warns.splice(i, 1); const z = spawn(w.type, w, w.tier); if (w.routeElite) z.routeElite = true; if (!w.tier && !DATA.enemies[w.type].boss && Math.random() < .15 * HT('mob')) spawn(w.type);   /* 热度：怪物数量 +15%/级 */ } }
   }
   // 一波结算：铜钱、经验、回血、战利品（固定书、精英 / 小头目掉落）
   function waveEnd() {
@@ -914,7 +914,7 @@
       z.x += z.kbx * dt * 8; z.y += z.kby * dt * 8; z.kbx *= .8; z.kby *= .8; clampG(z, 4 * K);
     }
     if (ESK) ESK.tick(dt, foes);
-    if (MECH && MECH.on() && !G.over) MECH.tick(dt); if (!G.over) propsTick(dt);
+    if (MECH && MECH.on() && !G.over) MECH.tick(dt); if (!G.over) { propsTick(dt); wildlifeTick(dt); }
     const L = foes.filter(z => !z.dead && !z.T.ghost), m0 = 9 * K;   // 互相推开，别叠成一坨
     for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j], dx = b.x - a.x, dy = (b.y - a.y) * YS, d = Math.hypot(dx, dy), m = a.T.boss || b.T.boss ? m0 * 2.2 : m0; if (d > 0 && d < m) { const p = (m - d) / 2 / d; if (!a.T.boss) { a.x -= dx * p; a.y -= dy * p / YS; } if (!b.T.boss) { b.x += dx * p; b.y += dy * p / YS; } } }
     for (let i = foes.length - 1; i >= 0; i--) { const z = foes[i]; if ((z.dead && z.deadT > (z.T.boss ? 3 : 1.3)) || (z.flee && (z.fleeT = (z.fleeT || 0) + dt) > 1.6)) foes.splice(i, 1); }
@@ -985,6 +985,7 @@
     G.kx = (G.kx || 0) * .82; G.ky = (G.ky || 0) * .82; ctx.setTransform(1, 0, 0, 1, sh - rd(G.kx * u), -rd(G.ky * u));
     if (MIMG.complete && MIMG.naturalWidth) { const k = MIMG.naturalWidth / MAPW; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(MIMG, cam.x * k, cam.y * k, Wm * k, Hm * k, 0, 0, W, H); ctx.imageSmoothingEnabled = false; }
     else { ctx.fillStyle = '#6a4a2a'; ctx.fillRect(0, 0, W, H); }
+    wildlifeDraw();
     for (const b of burns) { const a = 1 - b.t / b.T; ctx.fillStyle = `rgba(40,20,10,${.35 * a})`; ctx.beginPath(); ctx.ellipse(X(b.x), Y(b.y), b.r * u, b.r * u * .55, 0, 0, 7); ctx.fill(); }
     for (const o of tele) {   // 地面预警：虚线边 + 慢慢填满，最后闪
       const p = o.t / o.T, blink = p > .7 && (Math.floor(o.t * 16) % 2), col = o.mine ? (blink ? '#ffffff' : '#ffd86a') : blink ? '#fff2c0' : '#d8402a';
@@ -1084,7 +1085,7 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (G.drop) dropFx();
     if (joy.on) { const dpr = W / innerWidth; ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.arc(joy.sx * dpr, joy.sy * dpr, 40 * dpr, 0, 7); ctx.fill(); const jx = joy.x - joy.sx, jy = joy.y - joy.sy, d = Math.hypot(jx, jy), k = Math.min(1, 40 / (d || 1)); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc((joy.sx + jx * k) * dpr, (joy.sy + jy * k) * dpr, 18 * dpr, 0, 7); ctx.fill(); }
-    UI.hud({ fe: !!G.fe, combo: G.combo || 0, comboT: G.comboT || 0, roll: hero.rollN >= 1 ? 0 : Math.max(0, hero.rollCd) / (hero.rollMax || 1.5), rollT: hero.rollN >= 1 ? 0 : Math.max(0, hero.rollCd), rollN: hero.rollN, rollN0: hero.rollN0, lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
+    UI.hud({ wx: MAP.wx, fe: !!G.fe, combo: G.combo || 0, comboT: G.comboT || 0, roll: hero.rollN >= 1 ? 0 : Math.max(0, hero.rollCd) / (hero.rollMax || 1.5), rollT: hero.rollN >= 1 ? 0 : Math.max(0, hero.rollCd), rollN: hero.rollN, rollN0: hero.rollN0, lvUp: G.lvUpT > 0, hp: hero.hp, maxHp: hero.maxHp, lv: G.lv, xp: G.xp, need: G.lv >= DATA.econ.maxLv ? 0 : need(), kills: G.kills, st: G.st, sts: DATA.stations.length, wi: G.wi, left: G.W && !G.W.boss ? Math.max(0, G.T - G.wt) : null, bossWave: !!(G.W && G.W.boss), coins: RUN.coins, slots: RUN.slots, open: RUN.open, next: nextSlot(), xiu: RUN.xiu, bossOut: G.bossOut, boss: G.boss && !G.boss.dead ? G.boss.hp / G.boss.maxHp : null, banner: G.banner ? G.banner.t : '' });
   }
   // 蓄力类前摇：脚下画金色预警（瞬光斩半圆、贯星箭长线、跃龙击圆圈 + 地裂）
   function chargePreview() {
@@ -1125,10 +1126,37 @@
     5: [['archer', 1520, 75], ['catapult', 1630, 142]],
     6: [['mage', 1510, 70], ['catapult', 1630, 142], ['archer', 1578, 104]],
   };
+  function wildlifeTick(dt) {
+    for (const b of G.birds || []) {
+      b.t += dt;
+      if (!b.fly && ([hero, ...foes.filter(z => !z.dead)].some(z => Math.hypot(z.x-b.x,z.y-b.y)<120) || fx.some(z => ['boom','rock','burst'].includes(z.k) && Math.hypot(z.x-b.x,z.y-b.y)<220) || (G.cp || []).some(z => z.k==='hit' && Math.hypot(z.x-b.x,z.y-b.y)<220))) { b.fly=true; b.t=0; }
+      if (b.fly && b.t>14+b.wait) { b.fly=false; b.t=0; }
+    }
+  }
+  function wildlifeDraw() {
+    const q=MAPW/1672;
+    for (const b of G.birds || []) {
+      if (b.fly && b.t>3) continue;
+      const im=pim((G.st<=3?'crow':'bat') + (b.fly ? Math.floor(b.t*10)%3 : 0));
+      if (!im.complete || !im.naturalWidth) continue;
+      ctx.save(); ctx.globalAlpha=b.fly?Math.max(0,1-b.t/3):Math.min(1,b.t*2);
+      const x=b.x+(b.fly?b.dir*b.t*240:0), y=b.y-(b.fly?b.t*180:0);
+      ctx.translate(X(x),Y(y)); ctx.scale(b.dir,1); const h=32*q*s;
+      ctx.drawImage(im,-h*im.naturalWidth/im.naturalHeight/2,-h,h*im.naturalWidth/im.naturalHeight,h); ctx.restore();
+    }
+    const warning=warns.some(w => w.tier || DATA.enemies[w.type].boss) || (G.bossT>0 && G.bossT<=1.5);
+    if (!warning) return;
+    const pts=G.st<=3?[[220,130],[548,128],[768,120],[1022,126],[1226,145]]:[[120,350],[1560,350]];
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    for (const [x,y] of pts) { const r=65*q*s, g=ctx.createRadialGradient(X(x*q),Y(y*q),0,X(x*q),Y(y*q),r); g.addColorStop(0,'rgba(255,25,10,.65)');g.addColorStop(1,'rgba(255,0,0,0)');ctx.fillStyle=g;ctx.fillRect(X(x*q)-r,Y(y*q)-r,r*2,r*2); }
+    ctx.restore();
+  }
   function initProps() {
     const q = MAPW / 1672, deep = !!MAP.zone;
     G.props = (PDEF[G.st] || []).filter(d => deep ? G.st >= 4 : G.st <= 3).map(([k, x, y]) => ({ k, x: x * q, y: y * q, hp: PROP_HP[k], brk: 0, hitT: 0 }));
     G.cl = deep ? (CDEF[G.st] || []).map(([k, x, y], i) => ({ k, x: x * q, y: y * q, cd: 3 + i * 1.7, st: 'idle', t: 0 })) : [];
+    G.birds = G.st<=6 ? [[310,75],[600,95],[980,65],[1450,145]].map(([x,y],i)=>({x:x*q,y:y*q,t:1,fly:false,dir:i%2?1:-1,wait:i*2})) : [];
+    try { SEEN.add('place:' + G.st); } catch(e) {}
     G.cp = [];   // 飞行中的石头 / 箭 / 魔弹
   }
   function propHit(x, y, r) {

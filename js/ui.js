@@ -86,12 +86,18 @@
 
   // 11/24 图鉴大分类：角色 / 技能书 / 宝物 / 印记 / 称号（收集式，没拿到的显示？？？）
   function codexTop(row, bar, cur) { const P0 = row.parentNode; P0.querySelectorAll('.cxtop').forEach(x => x.remove()); const top = document.createElement('div'); top.className = 'cxtop';
-    for (const [k, n] of [['char', '角色'], ['book', '技能书'], ['item', '宝物'], ['oath', '印记'], ['title', '称号'], ['find', '发现']]) { const b = document.createElement('button'); b.textContent = n; b.className = k === cur ? 'on' : '';
+    for (const [k, n] of [['char', '角色'], ['book', '技能书'], ['item', '宝物'], ['oath', '印记'], ['title', '称号'], ['find', '发现'], ['place', '地点']]) { const b = document.createElement('button'); b.textContent = n; b.className = k === cur ? 'on' : '';
       b.onclick = () => { if (k === cur) return; if (k === 'char') return document.querySelector('[data-panel="codex"]').click(); cur = k; top.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); bar.style.display = 'none'; const sd = row.querySelector('.cxside'); if (sd) sd.style.display = 'none'; codexList(k); }; top.appendChild(b); }
     (bar.style.display === 'none' ? row : bar).insertAdjacentElement('beforebegin', top); }
   function codexList(k) { const body = $('tpBody'), g = document.createElement('div'); g.className = 'cxlist'; let got = 0, tot = 0;
     const card = (has, ic, name, sub, desc) => { tot++; if (has) got++; const e = document.createElement('div'); e.className = 'cxi' + (has ? '' : ' lock'); const i = document.createElement('div'); i.className = 'ic'; if (ic) i.appendChild(ic); e.appendChild(i);
       e.insertAdjacentHTML('beforeend', `<div><b>${has ? name : '？？？'}</b><small>${sub}</small><p>${has ? desc : '还没拿到过'}</p></div>`); g.appendChild(e); };
+    if (k === 'place') for (let n=1;n<=6;n++) {
+      const m=DATA.maps.find(m=>m.id===((DATA.stationMap||{})[n]||'field')), has=SEEN.has('place:'+n);
+      const im=new Image(); if(has) im.src=m.img; im.style.cssText='width:100%;height:100%;object-fit:cover';
+      card(has,has?im:null,m.name,'第 '+n+' 站'+(has?' · '+m.wx:''),['阳光照亮森林外围的营地。','薄雾笼罩林间的道路。','雨水落在营地与树冠上。','黄昏照进森林深处的空地。','夜色笼罩古老的石门。','深夜的林间仍有火光。'][n-1]);
+      if(!has) g.lastChild.querySelector('.ic').textContent='？';
+    }
     if (k === 'book') for (const sys of ['剑', '枪', '弓', '法杖']) { g.insertAdjacentHTML('beforeend', `<div class="cxh">— ${sys} —</div>`); for (const [id, S] of Object.entries(DATA.skills)) if (S.sys === sys) card(SEEN.has('s:' + id), skIcon(id), S.name, `${S.sys} · ${DATA.tierName[S.tier]} · ${S.dt === 'magic' ? '魔法' : '物理'}`, `${S.desc}${['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<br><span class="lv">Lv${x.slice(1)}：${S[x]}</span>`).join('')}`); }
     if (k === 'item') for (const it of DATA.startItems.slice().sort((a, b) => DATA.itemTier(a) - DATA.itemTier(b))) { const tr = DATA.itemTier(it); card(SEEN.has('i:' + it.id), pi(it.id), it.name, '宝物 · ' + DATA.tierName[DATA.itemTier(it)], typeof it.d === 'function' ? it.d(1) : (it.desc || '')); g.lastChild.classList.add('t' + tr); }
     if (k === 'oath') for (const [id, O] of Object.entries(DATA.oaths)) { const ic = pi('oath/' + id); ic.classList.add('oimg'); card(SEEN.has('o:' + id), ic, O.name, O.mv ? '身法印记' : '誓约印记', O.d(DATA.oathLv[4]) + '<br><span class="lv">（满级效果）</span>'); }
@@ -356,6 +362,7 @@
     set('lvTxt', 'text', ''); if (HC.lvb !== h.lv) { if (HC.lvb != null && h.lv > HC.lvb) { const r = $('xpRow'), b = $('lvBox'); for (const e of [r, b]) { e.classList.remove('up'); void e.offsetWidth; e.classList.add('up'); } } HC.lvb = h.lv; $('lvBox').innerHTML = '<i>LV</i>' + pxNum(h.lv, '#ffe08a'); } { const w = h.need ? (h.xp / h.need * 100).toFixed(1) + '%' : '100%'; set('xpBar', 'w', w); set('xpBar2', 'w', w); }
     document.body.classList.toggle('fe', !!h.fe);
     set('clock', 'html', h.bossWave ? '<em>⌛</em><b>首领战</b>' : `<em>⌛</em><b>${pxNum(h.left == null ? '00:00' : mmss(h.left), h.left != null && h.left < 5.5 ? '#ff8a6a' : '#f4ecd8')}</b>`);
+    { const em=$('clock').querySelector('em'); if(em) { em.textContent=''; const c=document.createElement('canvas'); c.width=16;c.height=16;c.style.cssText='width:18px;height:18px;image-rendering:pixelated;vertical-align:middle'; c.title=h.wx||'';c.setAttribute('aria-label',h.wx||'');const g=c.getContext('2d'), night=/夜/.test(h.wx||'');g.fillStyle=night?'#a9bfe8':'#ffd56a';g.fillRect(4,3,8,8);if(night){g.clearRect(7,1,7,7);if(h.wx==='深夜'){g.fillStyle='#d9e8ff';g.fillRect(12,2,2,2);}}else if(h.wx!=='晴'){g.fillStyle=h.wx==='黄昏'?'#ee9977':'#b5c8cb';g.fillRect(1,8,14,4);if(h.wx==='雨'){g.fillStyle='#78bafa';for(let x=3;x<15;x+=4)g.fillRect(x,13,1,3);}if(h.wx==='薄雾'){g.fillRect(2,14,12,1);}}else{g.fillRect(7,0,2,2);g.fillRect(0,6,2,2);g.fillRect(14,6,2,2);g.fillRect(7,13,2,2);}em.appendChild(c); } }
     // 11/22 右侧击倒 / 连击（群侠式）：连击到 10 / 25 / 50 / 100 放大闪一下，3 秒没杀到就断
     if (HC.k !== h.kills) { HC.k = h.kills; set('kN', 'html', pxNum(h.kills, '#f4ecd8')); }
     { const c = h.combo, col = c >= 100 ? '#ff4a6a' : c >= 50 ? '#ff7040' : c >= 25 ? '#ffb050' : c >= 10 ? '#ffe08a' : '#8a5a2a'; if (HC.c !== c) { HC.c = c; set('cN', 'html', c > 1 ? pxNum(c, col) : ''); } }
