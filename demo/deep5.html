@@ -20,16 +20,16 @@ canvas{display:block;image-rendering:pixelated}
 <script src="js/data.js"></script><script src="js/sprites.js"></script>
 <script>
 // 11/25 局外 demo：哈迪斯式不规则房间。整张图 1672×941（坐标 = 原图像素），只有多边形里能走；镜头跟随，视野约 1/1.5 张图
-const cv = document.getElementById('c'), g = cv.getContext('2d'), BG = new Image(); BG.src = 'art/map/deep5.webp?v=3';
+const cv = document.getElementById('c'), g = cv.getContext('2d'), BG = new Image(); BG.src = 'art/map/deep5.webp?v=4';
 const MW = 2174, MH = 941, SW = 1672, SH = 941;   // 整张约 2 屏，镜头 1 屏 = 原图大小
-const PL = [[[321, 441], [366, 519], [366, 529], [376, 535], [409, 594], [450, 643], [534, 676], [588, 682], [677, 671], [725, 652], [766, 607], [856, 452], [784, 409], [733, 407], [709, 393], [655, 393], [645, 386], [645, 367], [633, 367], [630, 388], [563, 387], [562, 367], [460, 367], [458, 388], [440, 395], [399, 395], [383, 410], [366, 410], [348, 424], [335, 426]], [[1237, 420], [1258, 459], [1261, 477], [1329, 599], [1373, 635], [1445, 659], [1464, 658], [1490, 636], [1530, 551], [1542, 537], [1586, 539], [1600, 556], [1618, 606], [1642, 634], [1661, 640], [1709, 625], [1746, 588], [1818, 463], [1831, 453], [1835, 436], [1801, 407], [1763, 388], [1746, 388], [1733, 377], [1586, 368], [1566, 358], [1543, 333], [1513, 313], [1455, 307], [1446, 289], [1419, 295], [1410, 349], [1361, 395], [1346, 401], [1281, 401], [1267, 410], [1249, 410]], [[817, 337], [1265, 337], [1273, 570], [817, 577]], [[645, 405], [829, 405], [829, 533], [645, 533]], [[1257, 405], [1437, 405], [1437, 533], [1257, 533]]];
+const PL = [[[291, 432], [343, 518], [343, 529], [354, 535], [390, 600], [435, 654], [479, 676], [527, 690], [587, 697], [686, 685], [739, 664], [785, 613], [886, 441], [804, 395], [748, 393], [722, 377], [662, 377], [650, 368], [650, 349], [646, 368], [561, 371], [558, 349], [494, 349], [493, 369], [446, 369], [422, 380], [380, 379], [360, 396], [342, 396], [321, 412], [309, 413]], [[1203, 420], [1226, 465], [1229, 485], [1250, 524], [1261, 533], [1304, 619], [1352, 658], [1432, 685], [1455, 683], [1482, 660], [1527, 565], [1540, 550], [1587, 553], [1602, 571], [1621, 625], [1648, 657], [1671, 664], [1724, 647], [1765, 606], [1844, 469], [1858, 459], [1863, 439], [1834, 420], [1824, 406], [1800, 399], [1783, 386], [1765, 386], [1750, 374], [1718, 369], [1643, 371], [1587, 363], [1566, 353], [1538, 323], [1505, 302], [1444, 297], [1436, 276], [1403, 284], [1393, 343], [1358, 381], [1323, 400], [1251, 400], [1236, 410], [1216, 410]], [[874, 374], [1199, 374], [1205, 543], [874, 548]], [[750, 423], [883, 423], [883, 516], [750, 516]], [[1193, 423], [1324, 423], [1324, 516], [1193, 516]]];
 function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
 // 11/25 可走范围 = 8 像素一格的格子图；默认由多边形生成，可以在「编辑」模式里用画笔改
 const CS = 8, GW = Math.ceil(MW / CS), GH = Math.ceil(MH / CS); let GRID = new Uint8Array(GW * GH);
 function gridFromPoly() { for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) GRID[j * GW + i] = PL.some(p => inPoly(i * CS + 4, j * CS + 4, p)) ? 1 : 0; }
 function enc() { let o = '', c = GRID[0], n = 0; for (const v of GRID) { if (v === c) n++; else { o += n + ','; c = v; n = 1; } } return GW + 'x' + GH + ':' + GRID[0] + ':' + o + n; }
 function dec(s) { const [, f, r] = s.split(':'); let c = +f, k = 0; for (const n of r.split(',')) { GRID.fill(c, k, k + +n); k += +n; c ^= 1; } }
-try { const sv = localStorage.getItem('deep5-grid-v3'); sv ? dec(sv) : gridFromPoly(); } catch (e) { gridFromPoly(); }
+try { const sv = localStorage.getItem('deep5-grid-v4'); sv ? dec(sv) : gridFromPoly(); } catch (e) { gridFromPoly(); }
 const ok = (x, y) => { const i = x / CS | 0, j = y / CS | 0; return i >= 0 && j >= 0 && i < GW && j < GH && GRID[j * GW + i] === 1; };
 function move(o, dx, dy) { if (ok(o.x + dx, o.y + dy)) { o.x += dx; o.y += dy; return; } if (ok(o.x + dx, o.y)) o.x += dx; else if (ok(o.x, o.y + dy)) o.y += dy; }
 let VW = 1, VH = 1, SC = 1, zoom = 1.5, showMask = false;
@@ -37,7 +37,7 @@ function fit() { cv.width = innerWidth; cv.height = innerHeight; VW = innerWidth
   // 视野宽 = 图宽 / zoom；手机竖屏按高度算，保证至少看到同样的高度
   SC = Math.max(VW / SW, VH / SH); }
 addEventListener('resize', fit); fit();
-const hero = { x: 539, y: 469, fx: 1, roll: 0, rcd: 0, rx: 0, ry: 0 }, foes = [];
+const hero = { x: 529, y: 469, fx: 1, roll: 0, rcd: 0, rx: 0, ry: 0 }, foes = [];
 const R = (a, b) => a + Math.random() * (b - a);
 function spawnFoes(n) { const T = ['gob_shield', 'gob_archer', 'gob_wolf']; for (let i = 0; i < n; i++) { let x, y, k = 0; do { const p = PL[Math.random() * PL.length | 0]; x = R(...[Math.min(...p.map(q => q[0])), Math.max(...p.map(q => q[0]))]); y = R(...[Math.min(...p.map(q => q[1])), Math.max(...p.map(q => q[1]))]); } while ((!ok(x, y) || Math.hypot(x - hero.x, y - hero.y) < 200) && ++k < 200); foes.push({ x, y, t: T[i % 3], sp: R(55, 85) }); } }
 spawnFoes(6);
@@ -51,7 +51,7 @@ function doRoll() { if (hero.rcd > 0) return; const [x, y] = input(); hero.rx = 
 document.getElementById('bMask').onclick = e => { showMask = !showMask; e.target.textContent = showMask ? '隐藏可走范围' : '显示可走范围'; };
 document.getElementById('bFoe').onclick = () => spawnFoes(5);
 let camX = 0, camY = 0; const E = id => document.getElementById(id);
-function save() { try { localStorage.setItem('deep5-grid-v3', enc()); } catch (e) {} E('edOut').value = enc(); }
+function save() { try { localStorage.setItem('deep5-grid-v4', enc()); } catch (e) {} E('edOut').value = enc(); }
 function doPaint(e) { const x = (e.clientX - VW / 2) / SC + camX, y = (e.clientY - VH / 2) / SC + camY, r = +E('brush').value, v = e.shiftKey ? 0 : +document.querySelector('input[name=em]:checked').value, ci = x / CS | 0, cj = y / CS | 0;
   for (let j = cj - r; j <= cj + r; j++) for (let i = ci - r; i <= ci + r; i++) if (i >= 0 && j >= 0 && i < GW && j < GH && (i - ci) ** 2 + (j - cj) ** 2 <= r * r) GRID[j * GW + i] = v; }
 E('bEd').onclick = () => { EDIT = true; showMask = true; E('ed').style.display = 'block'; E('edOut').value = enc(); };

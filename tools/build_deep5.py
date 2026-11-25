@@ -21,14 +21,15 @@ def surf2(im):
     m=cv2.erode(m,np.ones((15,15),np.uint8))
     c,_=cv2.findContours(m,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE); c=max(c,key=cv2.contourArea)
     return cv2.approxPolyDP(c,4,True)[:,0].tolist()
-K=.8
+K=.88
 def sc(im): return im.resize((round(im.width*K),round(im.height*K)),Image.LANCZOS)
 (Li,_),(Ri,_),(Si,so)=key('c91c9caf-image.png'),key('e02b91af-image.png'),key('12a544f2-image.png')
 for n,im in (('L5',Li),('R5',Ri),('S5',Si)): im.save(n+'.png')
-Li,Ri,Si=sc(Li),sc(Ri),sc(Si)
+KS=.58
+Li,Ri=sc(Li),sc(Ri); Si=Si.resize((round(Si.width*KS),round(Si.height*KS)),Image.LANCZOS)
 sL,sR=surf2(Li),surf2(Ri)
 # stone polys in original image coords -> crop -> scale
-def sp(pts): return [[(x-so[0])*K,(y-so[1])*K] for x,y in pts]
+def sp(pts): return [[(x-so[0])*KS,(y-so[1])*KS] for x,y in pts]
 top=sp([(545,300),(1105,300),(1115,592),(545,600)]); stL=sp([(330,385),(560,385),(560,545),(330,545)]); stR=sp([(1095,385),(1320,385),(1320,545),(1095,545)])
 W,H=2174,941
 b1=np.array(Image.open(U+'bc053283-image.png').convert('RGB')).astype(float); b2=np.array(Image.open(U+'6aeab8b3-image.png').convert('RGB')).astype(float)
@@ -36,7 +37,7 @@ A=np.zeros((H,W,3)); A[:,:1672]=b1; ov=160; R=b2[:,1672-(W-1672)-ov:]; t=np.lins
 A[:,1672-ov:1672]=A[:,1672-ov:1672]*(1-t)+R[:,:ov]*t; A[:,1672:]=R[:,ov:]
 cv_=Image.fromarray(A.astype(np.uint8)).convert('RGBA')
 cy=lambda s:np.mean([p[1] for p in s])
-tuck=322*K; tot=Li.width+Si.width-2*tuck+Ri.width; xL=int((W-tot)/2); xS=int(xL+Li.width-tuck); xR=int(xS+Si.width-tuck)
+tuck=322*KS; tot=Li.width+Si.width-2*tuck+Ri.width; xL=int((W-tot)/2); xS=int(xL+Li.width-tuck); xR=int(xS+Si.width-tuck)
 yL=int(470-cy(sL)); yS=int(470-np.mean([p[1] for p in stL])); yR=int(470-cy(sR))
 cv_.alpha_composite(Li,(xL,yL)); cv_.alpha_composite(Ri,(xR,yR)); cv_.alpha_composite(Si,(xS,yS))
 polys=[[[x+xL,y+yL] for x,y in sL],[[x+xR,y+yR] for x,y in sR]]+[[[x+xS,y+yS] for x,y in p] for p in (top,stL,stR)]
