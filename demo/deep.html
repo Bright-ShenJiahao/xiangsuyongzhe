@@ -9,27 +9,23 @@ canvas{display:block;image-rendering:pixelated}
 #tg button{background:#2a2116;color:#ffd77a;border:2px solid #d9b45a;border-radius:6px;padding:5px 9px;font-size:13px}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="hud">森林深处 · 地图试验<br>WASD / 方向键移动 · 空格翻滚<br>手机：左半屏拖动移动，右半屏点一下翻滚</div>
-<div id="tg"><button id="bMask">显示可走范围</button><button id="bZoom">镜头：1.5 屏</button><button id="bFoe">再来 5 只</button></div>
+<div id="hud">森林深处 · 拼接地图试验（3 块大空地）<br>WASD / 方向键移动 · 空格翻滚<br>手机：左半屏拖动移动，右半屏点一下翻滚</div>
+<div id="tg"><button id="bMask">显示可走范围</button><button id="bFoe">再来 5 只</button></div>
 <script src="js/data.js"></script><script src="js/sprites.js"></script>
 <script>
 // 11/25 局外 demo：哈迪斯式不规则房间。整张图 1672×941（坐标 = 原图像素），只有多边形里能走；镜头跟随，视野约 1/1.5 张图
-const cv = document.getElementById('c'), g = cv.getContext('2d'), BG = new Image(); BG.src = 'art/map/deep1.webp?v=1';
-const MW = 1672, MH = 941;
-const POLY = {"main":[[548,455],[600,400],[650,360],[700,348],[780,345],[810,328],[850,345],[930,358],[990,395],[1048,470],[1045,520],[1010,560],[1000,610],[960,640],[880,660],[780,668],[680,660],[615,650],[595,610],[560,545]],
-"log":[[95,598],[620,543],[625,612],[95,668]],"log2":[[1015,505],[1195,483],[1200,532],[1020,560]],
-"p1":[[1165,470],[1190,432],[1240,417],[1300,425],[1340,470],[1330,520],[1290,545],[1200,545],[1170,512]],
-"root":[[1218,540],[1262,540],[1278,662],[1238,672]],"p2":[[1185,705],[1225,672],[1300,662],[1350,680],[1372,720],[1342,752],[1260,762],[1200,752]]};
-const PL = Object.values(POLY);
+const cv = document.getElementById('c'), g = cv.getContext('2d'), BG = new Image(); BG.src = 'art/map/deep2.webp?v=1';
+const MW = 2350, MH = 1250, SW = 1672, SH = 941;   // 整张约 2 屏，镜头 1 屏 = 原图大小
+const PL = [[[1356, 548], [778, 493], [773, 562], [1356, 618]], [[1652, 585], [1418, 563], [1412, 612], [1646, 640]], [[298, 455], [350, 400], [400, 360], [450, 348], [530, 345], [560, 328], [600, 345], [680, 358], [740, 395], [798, 470], [795, 520], [760, 560], [750, 610], [710, 640], [630, 660], [530, 668], [430, 660], [365, 650], [345, 610], [310, 545]], [[1265, 565], [1290, 527], [1340, 512], [1400, 520], [1440, 565], [1430, 615], [1390, 640], [1300, 640], [1270, 607]], [[2073, 560], [2021, 505], [1971, 465], [1921, 453], [1841, 450], [1811, 433], [1771, 450], [1691, 463], [1631, 500], [1573, 575], [1576, 625], [1611, 665], [1621, 715], [1661, 745], [1741, 765], [1841, 773], [1941, 765], [2006, 755], [2026, 715], [2061, 650]], [[508, 616], [552, 616], [568, 793], [528, 807]], [[1356, 928], [778, 873], [773, 942], [1356, 998]], [[296, 880], [348, 825], [398, 785], [448, 773], [528, 770], [558, 753], [598, 770], [678, 783], [738, 820], [796, 895], [793, 945], [758, 985], [748, 1035], [708, 1065], [628, 1085], [528, 1093], [428, 1085], [363, 1075], [343, 1035], [308, 970]], [[1270, 940], [1310, 907], [1385, 897], [1435, 915], [1457, 955], [1427, 987], [1345, 997], [1285, 987]]];
 function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
 const ok = (x, y) => PL.some(p => inPoly(x, y, p));
 function move(o, dx, dy) { if (ok(o.x + dx, o.y + dy)) { o.x += dx; o.y += dy; return; } if (ok(o.x + dx, o.y)) o.x += dx; else if (ok(o.x, o.y + dy)) o.y += dy; }
 let VW = 1, VH = 1, SC = 1, zoom = 1.5, showMask = false;
 function fit() { cv.width = innerWidth; cv.height = innerHeight; VW = innerWidth; VH = innerHeight;
   // 视野宽 = 图宽 / zoom；手机竖屏按高度算，保证至少看到同样的高度
-  SC = Math.max(VW / (MW / zoom), VH / (MH / zoom)); }
+  SC = Math.max(VW / SW, VH / SH); }
 addEventListener('resize', fit); fit();
-const hero = { x: 800, y: 520, fx: 1, roll: 0, rcd: 0, rx: 0, ry: 0 }, foes = [];
+const hero = { x: 560, y: 520, fx: 1, roll: 0, rcd: 0, rx: 0, ry: 0 }, foes = [];
 const R = (a, b) => a + Math.random() * (b - a);
 function spawnFoes(n) { const T = ['gob_shield', 'gob_archer', 'gob_wolf']; for (let i = 0; i < n; i++) { let x, y, k = 0; do { const p = PL[Math.random() * PL.length | 0]; x = R(...[Math.min(...p.map(q => q[0])), Math.max(...p.map(q => q[0]))]); y = R(...[Math.min(...p.map(q => q[1])), Math.max(...p.map(q => q[1]))]); } while ((!ok(x, y) || Math.hypot(x - hero.x, y - hero.y) < 200) && ++k < 200); foes.push({ x, y, t: T[i % 3], sp: R(55, 85) }); } }
 spawnFoes(6);
@@ -41,7 +37,6 @@ function input() { let x = (K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.Arrow
   const d = Math.hypot(x, y); return d > 1 ? [x / d, y / d] : [x, y]; }
 function doRoll() { if (hero.rcd > 0) return; const [x, y] = input(); hero.rx = x || hero.fx; hero.ry = y; const d = Math.hypot(hero.rx, hero.ry); hero.rx /= d; hero.ry /= d; hero.roll = .28; hero.rcd = .8; }
 document.getElementById('bMask').onclick = e => { showMask = !showMask; e.target.textContent = showMask ? '隐藏可走范围' : '显示可走范围'; };
-document.getElementById('bZoom').onclick = e => { zoom = zoom === 1.5 ? 1 : zoom === 1 ? 2 : 1.5; e.target.textContent = '镜头：' + zoom + ' 屏'; fit(); };
 document.getElementById('bFoe').onclick = () => spawnFoes(5);
 let cam = { x: hero.x, y: hero.y }, last = performance.now(), T = 0;
 function fr(set, names) { const S = SPR.sets[set]; if (!S || !S.f) return null; for (const n of names) if (S.f[n]) return n; return S.f.idle0 ? 'idle0' : Object.keys(S.f)[0]; }
