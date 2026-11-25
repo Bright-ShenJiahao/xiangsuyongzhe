@@ -1441,3 +1441,5 @@ html body .oathrow .oic { border-radius: 50%; }
 .wimg { width: 82%; max-height: 82%; object-fit: contain; image-rendering: auto; pointer-events: none; } .wimg.ghost { opacity: .3; filter: grayscale(.5); }
 .eqD .slot .wimg { width: 70%; max-height: 70%; }
 .eqD .slot[data-s=main] .wimg, .eqD .slot[data-s=off] .wimg { width: 92%; max-height: 92%; }
+
+.stnI { width: 78%; image-rendering: pixelated; pointer-events: none; }

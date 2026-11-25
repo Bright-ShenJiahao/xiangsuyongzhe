@@ -290,7 +290,7 @@
 
   // ---------- 装备页（暂停页里的一页，11/25）：主手＝本局兵器；副手可放盾；长枪/弓/法杖占两格 ----------
   let eqMsg = '起手只有一把兵器，其余格子都空着。';
-  const gearIcon = it => it.img ? `<img src="${it.img}" alt="" style="width:62%;image-rendering:pixelated">` : `<b class="gl">${it.g}</b>`;
+  const gearIcon = (it, id, t) => `<img src="art/ui2/g_${id}${t}.png?v=1" alt="" style="width:78%;image-rendering:pixelated">`;
   // 空装备格的像素剪影（16×16，# 为填充）
   const SIL = {
     helm: ['................', '.....######.....', '....########....', '...##########...', '...##########...', '...##########...', '...###....###...', '...###....###...', '...##......##...', '...##......##...'],
@@ -321,7 +321,7 @@
       let inner = `<canvas class="sil" data-sil="${key}" width="16" height="16"></canvas>`, cls = 'slot', nm = label, em = ' em';
       if (key === 'main') { cls += ' has full'; inner = wIcon(wp, mt); nm = WN(wp, mt); em = ' tr' + mt; }
       else if (key === 'off' && two) { cls += ' eqghost'; inner = wIcon(wp, mt, 'ghost'); nm = '（占用）'; }
-      else if (E[key]) { const D = DATA.gear[E[key].id]; cls += ' has full'; inner = gearIcon(D); nm = gname(E[key]); em = ' tr' + E[key].t; }
+      else if (E[key]) { const D = DATA.gear[E[key].id]; cls += ' has full'; inner = gearIcon(D, E[key].id, E[key].t); nm = gname(E[key]); em = ' tr' + E[key].t; }
       return `<div class="sw" style="grid-area:${area}"><div class="${cls}" data-s="${key}">${inner}</div><div class="nm${em}">${nm}</div></div>`;
     };
     const stoneKs = [1, 2, 3].filter(t => r.stones[t] > 0), cells = Math.max(16, stoneKs.length + r.gbag.length) + 4;
@@ -331,8 +331,8 @@
       `</div><div class="eqDet" id="eqDet">${eqMsg}</div></div>` +
       `<div class="lor"><h4>物品栏 <span class="bagN${r.gbag.length >= 14 ? ' warn' : ''}">${r.gbag.length}/16</span> <small>拖附魔石到主手武器 · 通关自动卖</small></h4><div class="eqBtns" style="margin:0 0 6px"><button class="btn mini" data-m="1" ${r.stones[1] >= 2 ? '' : 'disabled'}>2 低阶 → 1 中阶</button><button class="btn mini" data-m="2" ${r.stones[2] >= 2 ? '' : 'disabled'}>2 中阶 → 1 高阶</button></div><div class="bag">` +
       Array.from({ length: cells }, (_, i) => { const x = list[i]; if (i >= cells - 4) return '<div class="lk" data-tip="未解锁的物品格：以后开放"></div>'; if (!x) return '<div></div>';
-        if (x.st) return `<div class="has full eqS${eqSel === x.st ? ' sel' : ''}" data-st="${x.st}"><b class="stn s${x.st}">石</b><i class="stk">${r.stones[x.st]}</i></div>`;
-        const it = x.it; return `<div class="has full eqI tr${it.t}" data-i="${x.i}">${it.k === 'w' ? wIcon(wp, it.t) : gearIcon(DATA.gear[it.id])}</div>`; }).join('') + `</div></div></div>`;
+        if (x.st) return `<div class="has full eqS${eqSel === x.st ? ' sel' : ''}" data-st="${x.st}"><img class="stnI" src="art/ui2/g_stone${x.st}.png?v=1" alt=""><i class="stk">${r.stones[x.st]}</i></div>`;
+        const it = x.it; return `<div class="has full eqI tr${it.t}" data-i="${x.i}">${it.k === 'w' ? wIcon(wp, it.t) : gearIcon(DATA.gear[it.id], it.id, it.t)}</div>`; }).join('') + `</div></div></div>`;
     for (const e of box.querySelectorAll('[data-ic]')) { const n = UI.icon(e.dataset.ic); if (e.classList.contains('ghost')) n.classList.add('ghost'); e.replaceWith(n); }
     drawSil(box);
     let tt = document.getElementById('eqTT'); if (!tt) { tt = document.createElement('div'); tt.id = 'eqTT'; tt.className = 'eqTT'; document.body.appendChild(tt); } tt.style.display = 'none';
