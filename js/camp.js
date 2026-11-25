@@ -308,7 +308,7 @@
   }
   // 11/25 装备状态在本局里（RUN.eq / gbag / stones），通关自动卖，真死全丢
   function GS() { const r = R(); if (!r.eq) r.eq = {}; if (!r.eq.main) r.eq.main = { t: 1, aff: [] }; if (!r.gbag) r.gbag = []; if (!r.stones) r.stones = { 1: 0, 2: 0, 3: 0 }; return r; }
-  const wIcon = (wp, t, cls) => `<img class="wimg${cls ? ' ' + cls : ''}" src="art/ui2/w_${wp}${t}.png?v=1" alt="">`;
+  const wIcon = (wp, t, cls) => `<img class="wimg${cls ? ' ' + cls : ''}" src="art/ui2/w_${wp}${t}.png?v=2" alt="">`;
   const WN = (wp, t) => DATA.weaponNames[wp][t - 1], gname = it => (it.k === 'w' || !it.id) ? WN(R().weapon || 'sword', it.t) : DATA.gear[it.id].names[it.t - 1];
   const affTxt = a => a.map(x => `${DATA.affixes[x[0]][0]} +${DATA.affixes[x[0]][1][x[1] - 1]}%（${DATA.stoneNames[x[1]]}）`);
   const statTxt = (D, t) => Object.entries(D.st[t - 1]).map(([k, v]) => `${DATA.statLabel[k]} +${k.startsWith('dmg') ? Math.round(v * 100) + '%' : v}`);
