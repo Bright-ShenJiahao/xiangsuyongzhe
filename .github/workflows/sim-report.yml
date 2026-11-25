@@ -1,0 +1,24 @@
+# 11/26 把某次 sim 运行的结果重新汇总，完整打印到日志里（方便直接读）。改 run_id 再推一次就会重跑。
+name: sim-report
+on:
+  push:
+    branches: [preview]
+    paths: ['.github/workflows/sim-report.yml', 'tools/sim/report.js']
+env:
+  RUN_ID: '45705382412'
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    permissions: { actions: read, contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*'
+          path: out
+          merge-multiple: true
+          run-id: ${{ env.RUN_ID }}
+          github-token: ${{ github.token }}
+      - run: ls -la out && node tools/sim/report.js > /dev/null && cat out/report.md && echo ---- && head -c 600 out/weights.json | cut -c1-300 && node -e "const l=require('./out/train_log.json');console.log(l.map(x=>x.gen+':'+x.mean+'/'+x.max).join(' '))"
