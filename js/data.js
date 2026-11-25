@@ -284,7 +284,7 @@ window.DATA = {
       // 能走的地面（地图像素）：y0–y1 之间，每一行的左右边界见 pts [y, 左, 右]（11/21 改回原图；加大版 field_big 和 tools/extend_map.py 留着）
       ground: {"y0":412,"y1":1282,"pts":[[412,675,2078],[495,570,2160],[600,450,2212],[720,278,2280],[840,158,2362],[945,38,2475],[1230,30,2478],[1282,90,2430]]}, grade: [['saturate', .94]] },
     // 11/25 森林深处（第 4–6 站）：整图 + 二维可走区域 + 机关（js/mech.js），坐标全是原图像素 1672×941
-    { id: 'deep', name: '森林深处', img: 'art/map/deep8.webp', w: 2508, h: 1412, zoom: 1.2, hidden: true, boss: 'gob_king', time: 120,
+    { id: 'deep', name: '森林深处', img: 'art/map/deep8.webp', w: 2508, h: 1412, hidden: true, boss: 'gob_king', time: 120,
       foes: ['goblin', 'gob_blade', 'gob_archer'], desc: '森林深处的断崖平台。', grade: [['saturate', .94]],
       ground: { y0: 192, y1: 1050, pts: [[192, 0, 2508], [1050, 0, 2508]] },
       zone: { start: [360, 580], boneAt: [912, 488], boneBase: 556,
