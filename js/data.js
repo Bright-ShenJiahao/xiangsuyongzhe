@@ -43,6 +43,7 @@ window.DATA = {
   // 11/23 誓约印记：普通 8 + 身法 6。v = Lv1 数值，等级倍率 oathLv；同名合并升级，最高 Lv5
   oathLv: [1, 1.4, 1.7, 1.9, 2.0],
   oaths: {
+    traveler: { name: '旅人步', ch: '旅', mv: 1, d: () => '普通翻滚；闪避 +1%' },
     xianfeng: { name: '先锋之誓', ch: '旗', v: .20, d: m => `每站开打头 10 秒，技能伤害 +${Math.round(20 * m)}%` },
     sanji: { name: '三击之誓', ch: '三', v: .40, d: m => `每放到第 3 招，这一招伤害 +${Math.round(40 * m)}%` },
     jingshou: { name: '静守之誓', ch: '盾', v: .25, d: m => `站着不动 1 秒后，下一招伤害 +${Math.round(25 * m)}%` },
@@ -50,20 +51,20 @@ window.DATA = {
     tulong: { name: '屠龙之誓', ch: '龙', v: .12, d: m => `对精英和首领伤害 +${Math.round(12 * m)}%；打倒精英回复 ${Math.round(5 * m)}% 生命` },
     jifeng: { name: '疾风之誓', ch: '风', v: .08, d: m => `出手快 ${Math.round(8 * m)}%` },
     lianzhan: { name: '连斩之誓', ch: '连', v: .12, d: m => `连击到 30 后，6 秒内伤害 +${Math.round(12 * m)}%` },
-    pozhu: { name: '破竹之誓', ch: '竹', v: .04, d: m => `击倒敌人时 ${Math.round(4 * m)}% 几率：下一招不用前摇` },
-    youlong: { name: '游龙步', ch: '龙', mv: 1, d: m => `翻滚距离 +${Math.round(15 * m)}%；满格翻滚时把附近的铜钱吸过来` },
-    canying: { name: '残影步', ch: '影', mv: 1, d: m => `满格翻滚后 1 秒内：闪避 +${Math.round(15 * m)}%，下一次受击伤害 −${Math.round(20 * m)}%` },
-    qingyu: { name: '轻羽步', ch: '羽', mv: 1, d: m => `翻滚每格回得快 ${Math.round(8 * m)}%；连续跑 2 秒后移速 +${Math.round(6 * m)}%` },
+    pozhu: { name: '破竹之誓', ch: '竹', v: .5, d: m => `每击杀15只，下一招前摇减少${Math.round(50 * m)}%` },
+    youlong: { name: '疾风步', ch: '龙', mv: 1, d: m => `翻滚距离 +${Math.round(15 * m)}%；满格翻滚时把附近的铜钱吸过来` },
+    canying: { name: '幻影步', ch: '影', mv: 1, d: m => `满格翻滚后 1 秒内：闪避 +${Math.round(15 * m)}%，下一次受击伤害 −${Math.round(20 * m)}%` },
+    qingyu: { name: '羽落步', ch: '羽', mv: 1, d: m => `翻滚回格时间减少 ${Math.round(8 * m)}%；连续跑 2 秒后移速 +${Math.round(6 * m)}%` },
     erduan: { name: '二段滚', ch: '二', mv: 1, d: m => `翻滚 +1 次；三格全满时翻滚，带一层护盾挡下一次伤害` },
     zhendi: { name: '震地步', ch: '震', mv: 1, d: m => `满格翻滚：路上的怪被推开，落地让身边的怪僵直 ${(.2 * m).toFixed(2)} 秒（同一只 2 秒一次）` },
     jinghua: { name: '净化步', ch: '净', mv: 1, d: m => `满格翻滚：清掉方向颠倒、减速、持续掉血，并回复 ${Math.round(1 * m)}% 生命` },
-    anying: { name: '暗影步', ch: '暗', mv: 1, d: m => `怪出招前一刻翻滚：化成黑影 ${(.8 * m).toFixed(1)} 秒（无敌、穿怪、移速 +30%），慢动作 0.3 秒，原地留假身吸引怪 1.5 秒` },
+    anying: { name: '流光步', ch: '暗', mv: 1, d: m => `怪出招前一刻翻滚：化成黑影 ${(.8 * m).toFixed(1)} 秒（无敌、穿怪、移速 +30%），慢动作 0.3 秒，原地留假身吸引怪 1.5 秒` },
   },
   // 开局宝物（备战页随机三选一，放进物品栏）。fx：生效的加成
   startItems: [
     { id: 'amulet', name: '护身符', icon: '🧿', desc: '生命上限 +20', fx: { hp: 20 }, price: 26 },
     { id: 'boots', name: '轻便靴', icon: '👢', desc: '移动速度 +10%', fx: { move: .1 }, price: 24 },
-    { id: 'purse', name: '钱袋', icon: '💰', desc: '开局铜钱 +30', fx: { coin: 30 }, price: 24 },
+    { id: 'purse', name: '钱袋', icon: '💰', desc: '每站铜钱 +4；物件铜钱 +25%；每站首碎奖励', fx: { waveCoin: 4, propCoin: .25, firstBreak: 1 }, price: 24 },
     { id: 'whet', name: '磨刀石', icon: '🪨', desc: '所有伤害 +10%', fx: { dmg: .1 }, price: 26 },
     { id: 'magnet', name: '磁石', icon: '🧲', desc: '吸铜钱的范围变大，每站铜钱 +3', fx: { waveCoin: 3 }, price: 24 },
     { id: 'bento', name: '便当', icon: '🍱', desc: '每波开始回复 6% 生命', fx: { waveHeal: .06 }, price: 43 },
@@ -71,12 +72,12 @@ window.DATA = {
     { id: 'clover', name: '四叶草', icon: '🍀', desc: '物理、魔法暴击率 +8%', fx: { crit: .08 }, price: 40 },
     { id: 'cloak', name: '斗篷', icon: '🧥', fx: { eva: .04 }, d: m => `闪避 +${Math.round(4 * m)}%（物理、魔法攻击都能躲）`, price: 34 },
     { id: 'blade_oil', name: '锋刃油', icon: '🗡️', fx: { critMulP: .2 }, d: m => `物理暴击伤害 +${Math.round(20 * m)}%`, price: 36 },
-    { id: 'mana_lens', name: '法力透镜', icon: '🔮', fx: { critM: .05 }, d: m => `魔法暴击率 +${Math.round(5 * m)}%`, price: 36 },
+    { id: 'mana_lens', name: '法力透镜', icon: '🔮', fx: { manaLens: 1 }, d: () => '魔法暴击后，下一招魔法范围 +15%', price: 36 },
     // 11/23 新宝物（同名合并升级，倍率同誓约印记；fx 随等级涨，cost 固定）
     { id: 'curse_crown', name: '诅咒王冠', fx: { dmg: .15 }, cost: { take: .15 }, d: m => `所有伤害 +${Math.round(15 * m)}%<br><span class="bad">受到伤害 +15%</span>`, price: 42 },
     { id: 'berserk', name: '狂战士项链', fx: { low: .20 }, cost: { healMul: -.3 }, d: m => `生命低于 30% 时，伤害 +${Math.round(20 * m)}%<br><span class="bad">受到治疗 −30%</span>`, price: 38 },
     { id: 'glass_sword', name: '玻璃剑', fx: { dmg: .20 }, cost: { hpMul: -.2 }, d: m => `所有伤害 +${Math.round(20 * m)}%<br><span class="bad">生命上限 −20%</span>`, price: 44 },
-    { id: 'heavy_armor', name: '沉重铠甲', fx: { take: -.10 }, cost: { move: -.1 }, cap: { take: -.2 }, d: m => `受到伤害 −${Math.min(20, Math.round(10 * m))}%<br><span class="bad">移速 −10%</span>`, price: 40 },
+    { id: 'heavy_armor', name: '铁壁护符', fx: { take: -.08 }, d: () => '受到伤害 −8%', price: 40 },
     { id: 'greed_bag', name: '贪婪钱袋', fx: { coinMul: .15 }, cost: { take: .15 }, d: m => `铜钱获得 +${Math.round(15 * m)}%<br><span class="bad">受到伤害 +15%</span>`, price: 36 },
     { id: 'guild', name: '商会徽章', fx: { shop: -.08 }, cost: { freeRoll: 1 }, d: m => `商店价格 −${Math.round(8 * m)}%；翻一翻货架第一次免费`, price: 34 },
     { id: 'piggy', name: '存钱罐', fx: { interest: .05, icap: 6 }, d: m => `每站结束按身上铜钱给 ${Math.round(5 * m)}% 利息（最多 ${Math.round(6 * m)}）`, price: 30 },
@@ -115,7 +116,7 @@ window.DATA = {
     { id: 'gamer', name: '网瘾少年', good: '经验 +20%', bad: '生命上限 −10%', line: '越玩越会玩。', fx: { xp: .2, hpMul: -.1 } },
     { id: 'otaku', name: '宅', good: '每波铜钱 +4', bad: '移速 −8%', line: '不想动，钱自己过来。', fx: { waveCoin: 4, move: -.08 } },
   ],
-  slotsMax: 5, slotsOpen: 3, bagSize: 16, gearSize: 5, oathSize: 3,
+  slotsMax: 5, slotsOpen: 3, bagSize: 16, gearSize: 5, oathSize: 4,
   // 技能书（11/21 第二批定稿，文档：剑 / 枪 / 弓 / 法杖的技能书）。
   // 出招：技能栏 1→2→3 严格轮流；每招 wu 前摇（能走，前摇中翻滚 = 这招作废）→ 出手 → rc 后摇（站定，翻滚可取消）。
   //   hold：占时型持续多久（这段时间不轮到下一招，能走，翻滚不取消）。没有各自冷却。
@@ -124,8 +125,8 @@ window.DATA = {
   skills: {
     // ---- 剑（力量，物理）----
     sword: { name: '新月斩', brief: '身前大扇面横扫', rg: 87, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .4, dmg: 6, desc: '身前 135° 大扇面一刀。', l3: '扇面扩大 +25%', l5: '反手再补一刀', l7: '斩完飞出一道新月风刃' },
-    whirl: { name: '旋风斩', brief: '原地转一圈', rg: 70, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .45, dmg: 4, desc: '原地转一圈，打身边一整圈。', l3: '打中的怪减速', l5: '连转两圈', l7: '转完留下小旋风' },
-    guard: { name: '守护之刃', brief: '召唤飞剑绕身转', rg: 90, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .5, rc: .3, dmg: 4, frame: 'big', desc: '每次召唤 1 把大飞剑绕身转（最多 2 把），碰 8 次才碎。', l3: '最多 3 把', l5: '碰到的怪流血', l7: '碎掉时飞向敌人' },
+    whirl: { name: '风刃环', brief: '原地转一圈', rg: 70, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .45, dmg: 6, desc: '原地转一圈，打身边一整圈。', l3: '打中的怪减速', l5: '连转两圈', l7: '转完留下小旋风' },
+    guard: { name: '守护之刃', brief: '召唤飞剑绕身转', rg: 90, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .5, rc: .3, dmg: 2, frame: 'big', desc: '每次召唤 1 把大飞剑绕身转（最多 2 把），碰 8 次才碎。', l3: '最多 3 把', l5: '碰到的怪流血', l7: '碎掉时飞向敌人' },
     wave: { name: '裂风刃', brief: '飞出新月风刃', rg: 220, sys: '剑', w: 'sword', tier: 2, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .5, dmg: 7, desc: '朝最近的敌人射出新月风刃，穿透 3 只。', l3: '扇形 3 道', l5: '穿透不限', l7: '飞到尽头再飞回来' },
     phantom: { name: '幻影斩击', brief: '风刃直线 + 留残影', rg: 130, sys: '剑', w: 'sword', tier: 2, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .5, dmg: 9, desc: '瞬间斩出一条直线，尽头留下残影转身斩一圈。', l3: '残影停留 2 秒，跟着你出剑招', l5: '直线留伤痕，怪流血', l7: '两端各留一个残影' },
     flash: { name: '断罪一击', brief: '蓄力挥出大半圆', rg: 110, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .8, rc: .5, dmg: 20, crit: .3, charge: true, desc: '蓄力后向前砍出一个大半圆，暴击率 +30%。蓄力时翻滚就作废。', l3: '蓄力缩短到 0.5 秒', l5: '半圆扩大 +30%', l7: '挥剑后飞出巨大剑芒' },
@@ -133,19 +134,19 @@ window.DATA = {
     holysword: { name: '圣剑审判', brief: '天降剑雨砸怪群', rg: 220, sys: '剑', w: 'sword', tier: 4, icon: 'sword', type: 'str', dt: 'phys', wu: 1, rc: .8, dmg: 12, frame: 'big', desc: '天上落下十几把剑砸向怪最多的地方。', l3: '剑数 +50%', l5: '剑插地形成剑阵', l7: '最后落下一把巨剑' },
     // ---- 枪（力量，物理）----
     spear: { name: '疾风突刺', brief: '直线突刺穿透一排', rg: 130, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .25, rc: .45, dmg: 7, desc: '朝最近的敌人长直线突刺，穿透一排。', l3: '长度 +25%', l5: '连刺两下', l7: '枪芒继续往前飞' },
-    sweep: { name: '横扫千军', brief: '横扫击晕', rg: 81, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .35, rc: .4, dmg: 5, desc: '枪杆横扫身前 160°，把怪击晕 0.3 秒。', l3: '扇面扩大 +25%', l5: '眩晕加时到 0.6 秒', l7: '反手再扫回来' },
+    sweep: { name: '裂阵横扫', brief: '横扫击晕', rg: 81, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .35, rc: .4, dmg: 5, desc: '枪杆横扫身前 160°，把怪击晕 0.3 秒。', l3: '扇面扩大 +25%', l5: '眩晕加时到 0.6 秒', l7: '反手再扫回来' },
     javelin: { name: '穿刺投枪', brief: '投枪钉地减速', rg: 240, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .4, rc: .4, dmg: 10, frame: 'big', desc: '把枪投向最近的敌人，穿透 2 只后钉在地上，钉中的怪减速。', l3: '穿透 4 只', l5: '钉地处炸开一圈', l7: '一次投 2 支' },
-    hundred: { name: '幻影连刺', brief: '原地快刺 6 下', rg: 130, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .2, rc: .4, hold: 1, dmg: 3, desc: '原地朝前方快刺 6 下（占 1 秒，能慢慢走）。', l3: '刺 9 下', l5: '每下都穿透', l7: '最后一刺放出粗枪芒' },
+    hundred: { name: '扇影连刺', brief: '扇形六道枪影', rg: 130, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .2, rc: .4, dmg: 3, desc: '原地朝前方快刺 6 下（占 1 秒，能慢慢走）。', l3: '刺 9 下', l5: '每下都穿透', l7: '最后一刺放出粗枪芒' },
     rising: { name: '龙牙上挑', brief: '上挑浮空一排', rg: 116, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .3, rc: .45, dmg: 6, frame: 'big', desc: '向前上挑，前方一条宽直线的怪全部浮空 0.6 秒，落地再伤。', l3: '直线变长变宽 +25%', l5: '浮空的怪受伤 +30%', l7: '落地砸出冲击' },
     drill: { name: '螺旋贯穿', brief: '慢速钻头穿透', rg: 200, sys: '枪', w: 'spear', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .6, rc: .5, dmg: 3, desc: '刺出一道旋转枪芒缓慢向前，持续搅伤路上的怪。', l3: '枪芒变粗 +30%', l5: '两边的怪被吸向中线', l7: '走到尽头爆炸' },
     leap: { name: '震地跃击', brief: '跃起砸地 + 地裂', rg: 87, sys: '枪', w: 'spear', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .7, rc: .5, dmg: 16, frame: 'big', desc: '跃起砸地：一圈冲击 + 四道地裂。', l3: '地裂 6 道', l5: '中心冲击把怪击飞', l7: '0.5 秒后再震一次' },
-    dragon: { name: '龙魂之枪', brief: '苍龙盘旋撞怪', rg: 220, sys: '枪', w: 'spear', tier: 4, icon: 'spear', type: 'str', dt: 'phys', wu: 1, rc: .8, hold: 4, dmg: 6, frame: 'big', desc: '枪化苍龙在场上盘旋 4 秒撞击怪。', l3: '龙更大', l5: '每秒喷龙息', l7: '结束时俯冲重击' },
+    dragon: { name: '龙魂之枪', brief: '苍龙盘旋撞怪', rg: 220, sys: '枪', w: 'spear', tier: 4, icon: 'spear', type: 'str', dt: 'phys', wu: 1, rc: .8, hold: 4, dmg: 5, frame: 'big', desc: '枪化苍龙在场上盘旋 4 秒撞击怪。', l3: '龙更大', l5: '每秒喷龙息', l7: '结束时俯冲重击' },
     // ---- 弓（敏捷，物理）----
     bow: { name: '速射', brief: '射最近的怪', rg: 207, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .2, rc: .35, dmg: 4, desc: '射最近的敌人，能穿过 1 只。出手最快。', l3: '穿透 +1', l5: '一次射 2 支', l7: '命中后分裂 3 支小箭' },
-    fan: { name: '散射箭', brief: '扇形射 5 箭', rg: 108, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .3, rc: .4, dmg: 3, desc: '朝前方扇形射出 5 支短程箭，近身伤害高。', l3: '7 支', l5: '击退', l7: '0.3 秒后再补一轮' },
+    fan: { name: '扇射', brief: '扇形射 5 箭', rg: 108, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .3, rc: .4, dmg: 5, desc: '朝前方扇形射出 5 支短程箭，近身伤害高。', l3: '7 支', l5: '击退', l7: '0.3 秒后再补一轮' },
     homing: { name: '精灵追踪箭', brief: '追踪羽箭会弹射', rg: 234, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .3, rc: .4, dmg: 4, desc: '射出 3 支会追踪的羽箭，命中后弹到下一只怪。', l3: '5 支', l5: '命中减速', l7: '弹 2 次' },
     rain: { name: '箭雨', brief: '怪最密处落箭雨', rg: 216, sys: '弓', w: 'bow', tier: 2, icon: 'bow', type: 'agi', dt: 'phys', wu: .45, rc: .45, dmg: 3, frame: 'big', desc: '朝天一箭，0.6 秒后在怪最密处落下箭雨 1.5 秒。', l3: '范围 +25%', l5: '持续 2.5 秒且减速', l7: '同时落两片' },
-    barrage: { name: '连射', brief: '连射精英和首领', rg: 216, sys: '弓', w: 'bow', tier: 2, icon: 'bow', type: 'agi', dt: 'phys', wu: .2, rc: .35, hold: .8, dmg: 4, desc: '锁定一只（优先精英），0.8 秒连射 5 箭。', l3: '7 箭', l5: '每箭叠易伤', l7: '最后一箭贯穿全屏' },
+    barrage: { name: '连射', brief: '连射精英和首领', rg: 216, sys: '弓', w: 'bow', tier: 2, icon: 'bow', type: 'agi', dt: 'phys', wu: .4, rc: .5, dmg: 4, desc: '锁定一只（优先精英），0.8 秒连射 5 箭。', l3: '7 箭', l5: '每箭叠易伤', l7: '最后一箭贯穿全屏' },
     pierce: { name: '穿甲重矢', brief: '蓄力贯穿一条线', rg: 234, sys: '弓', w: 'bow', tier: 3, icon: 'bow', type: 'agi', dt: 'phys', wu: .7, rc: .5, dmg: 22, charge: true, desc: '蓄力后射出贯穿全屏的巨箭，推开沿途的怪。', l3: '蓄力缩短到 0.45 秒', l5: '箭变粗 +50%', l7: '沿途接连爆炸' },
     cyclone: { name: '旋风箭', brief: '慢速龙卷风', rg: 180, sys: '弓', w: 'bow', tier: 3, icon: 'bow', type: 'agi', dt: 'phys', wu: .5, rc: .5, dmg: 2, desc: '射出缓慢的旋风箭，把沿途的怪卷着往前带。', l3: '旋风变大', l5: '尽头炸开', l7: '同时两道' },
     starfall: { name: '星陨之弓', brief: '流星群砸怪', rg: 234, sys: '弓', w: 'bow', tier: 4, icon: 'bow', type: 'agi', dt: 'phys', wu: 1, rc: .8, hold: 3, dmg: 10, frame: 'big', desc: '光箭化作流星群，3 秒内砸向怪群。', l3: '流星 +50%', l5: '落点留火坑', l7: '最后落下巨大陨星' },
@@ -153,9 +154,9 @@ window.DATA = {
     staff: { name: '火球术', brief: '火球落地爆炸', rg: 198, sys: '法杖', w: 'staff', tier: 1, icon: 'fire', type: 'int', dt: 'magic', wu: .4, rc: .4, dmg: 9, desc: '砸向怪最密处爆炸，点燃。', l3: '爆炸范围 +25%', l5: '留下火海 2 秒', l7: '一次砸 2 颗' },
     nova: { name: '霜冻新星', brief: '身边炸开寒气', rg: 52, sys: '法杖', w: 'staff', tier: 1, icon: 'nova', type: 'int', dt: 'magic', wu: .3, rc: .45, dmg: 8, frame: 'big', desc: '以自己为中心炸开寒气，叠 1 层缓滞（叠满 4 层冻结）。', l3: '范围 +25%', l5: '一次叠 2 层', l7: '飞出 8 根冰刺' },
     chain: { name: '闪电链', brief: '闪电链弹射', rg: 180, sys: '法杖', w: 'staff', tier: 1, icon: 'fire', type: 'int', dt: 'magic', wu: .3, rc: .4, dmg: 6, desc: '劈中最近的怪再弹 3 只，打缓滞的怪伤害翻倍。', l3: '弹 5 只', l5: '弹跳不衰减', l7: '同时两道' },
-    pillar: { name: '圣光柱', brief: '圣光柱砸目标', rg: 216, sys: '法杖', w: 'staff', tier: 2, icon: 'fire', type: 'int', dt: 'magic', wu: .4, rc: .4, dmg: 12, desc: '0.5 秒后在怪脚下降下光柱。', l3: '同时 2 道', l5: '光柱停留 1.5 秒', l7: '打中回复生命' },
+    pillar: { name: '圣光惩戒', brief: '圣光柱砸目标', rg: 216, sys: '法杖', w: 'staff', tier: 2, icon: 'fire', type: 'int', dt: 'magic', wu: .4, rc: .4, dmg: 12, desc: '0.5 秒后在怪脚下降下光柱。', l3: '同时 2 道', l5: '光柱停留 1.5 秒', l7: '打中回复生命' },
     orbs: { name: '暗影黑雾', brief: '怪堆里放黑雾', rg: 198, sys: '法杖', w: 'staff', tier: 2, icon: 'nova', type: 'int', dt: 'magic', wu: .3, rc: .3, dmg: 4, desc: '在怪最密的地方放一团黑雾 5 秒（最多 2 团），雾里的怪每 0.5 秒受魔法伤害并减速。', l3: '黑雾变大 +25%', l5: '雾里的怪被诅咒', l7: '雾散时炸开' },
-    thunder: { name: '雷霆之怒', brief: '连劈 4 道落雷', rg: 216, sys: '法杖', w: 'staff', tier: 3, icon: 'fire', type: 'int', dt: 'magic', wu: .6, rc: .5, dmg: 14, frame: 'big', desc: '依次劈下 4 道落雷，打缓滞的怪伤害翻倍。', l3: '6 道', l5: '留下雷区', l7: '最后一道巨大天雷' },
+    thunder: { name: '雷霆之怒', brief: '连劈 4 道落雷', rg: 216, sys: '法杖', w: 'staff', tier: 3, icon: 'fire', type: 'int', dt: 'magic', wu: .6, rc: .5, dmg: 6, frame: 'big', desc: '依次劈下 4 道落雷，打缓滞的怪伤害翻倍。', l3: '覆盖范围扩大', l5: '留下雷区', l7: '最后一道巨大天雷' },
     blizzard: { name: '暴风雪', brief: '跟着走的暴风雪', rg: 80, sys: '法杖', w: 'staff', tier: 3, icon: 'nova', type: 'int', dt: 'magic', wu: .4, rc: .4, hold: 2.5, dmg: 4, frame: 'big', desc: '2.5 秒内周围不断落下冰锥叠缓滞，跟着你走。', l3: '范围 +25%', l5: '持续 3.5 秒', l7: '结束时冻住的怪碎裂' },
     abyss: { name: '深渊之门', brief: '深渊之门吸怪', rg: 216, sys: '法杖', w: 'staff', tier: 4, icon: 'nova', type: 'int', dt: 'magic', wu: 1, rc: .8, hold: 4, dmg: 6, frame: 'big', desc: '打开深渊之门 4 秒，吸怪并用触手抽打。', l3: '吸引范围 +30%', l5: '周围的怪被诅咒', l7: '关门大爆炸' },
   },
@@ -379,15 +380,15 @@ window.DATA = {
 window.DATA.calc = function (b) {
   const DATA = window.DATA;
   const fx = {}, add = o => { for (const k in (o || {})) fx[k] = (fx[k] || 0) + o[k]; };
-  for (const e of (b.items || [b.item])) { const id = e && e.id || e, it = DATA.startItems.find(i => i.id === id) || {}, m = DATA.oathLv[Math.min(5, (e && e.lv) || 1) - 1];
+  for (const e of (b.items || [b.item])) { const id = e && e.id || e, it = DATA.startItems.find(i => i.id === id) || {}, m = 1;
     const f = {}; for (const k in (it.fx || {})) { f[k] = it.fx[k] * (it.d ? m : 1); if (it.cap && it.cap[k] != null) f[k] = it.cap[k] < 0 ? Math.max(it.cap[k], f[k]) : Math.min(it.cap[k], f[k]); } add(f); add(it.cost); } add(b.gfx); add((DATA.habits.find(h => h.id === b.habit) || {}).fx);
   const A = {}; for (const a of DATA.attrs) A[a.id] = (b.attrs && b.attrs[a.id] || 0) + (b.train && b.train[a.id] || 0) + (fx[a.id] || 0);
   const W = DATA.weapons[b.weapon] || DATA.weapons.sword, type = W.type || 'str';
   const out = {
     A, fx,
-    dmg: (1 + .06 * A[type]) * (1 + (fx.dmg || 0)),        // 起手兵器那一系的伤害倍率
-    spd: 1 + .02 * A.agi + (fx.spd || 0),                    // 出手速度倍率（冷却 ÷ 它）
-    area: Math.min(1.6, Math.max(.8, 1 + .02 * A.int + (fx.area || 0))),
+    dmg: 1 + .06 * A[type] + (fx.dmg || 0),        // 起手兵器那一系的伤害倍率
+    spd: Math.min(1.3, 1 + .02 * A.agi + (fx.spd || 0)),                    // 出手速度倍率（冷却 ÷ 它）
+    area: Math.min(1.25, Math.max(.8, 1 + .02 * A.int + (fx.area || 0))),
     move: 1 + (fx.move || 0),
     // 11/24 暴击分物理 / 魔法：暴击率 1% 起（物理 + 敏捷 1%/点，魔法 + 智力 1%/点，上限 60%）；暴击伤害 150% 起（物理 + 力量 2%/点，魔法 + 智力 2%/点）
     critP: Math.min(.6, Math.max(0, .01 + .01 * A.agi + (fx.crit || 0) + (fx.critP || 0))), critM: Math.min(.6, Math.max(0, .01 + .01 * A.int + (fx.crit || 0) + (fx.critM || 0))),
@@ -405,8 +406,31 @@ window.DATA.calc = function (b) {
 window.DATA.setOf = function (slots) { const n = {}; for (const x of slots || []) { const S = x && window.DATA.skills[x.id]; if (S) n[S.sys] = (n[S.sys] || 0) + 1; } const on = {}; for (const [sys, L] of Object.entries(window.DATA.sets)) { let t = null; for (const tier of L) if ((n[sys] || 0) >= tier[0]) t = tier; if (t) on[sys] = t; } return { n, on }; };   // 11/24 羁绊统计
 window.DATA.SYSK = { '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff' };
 // 能掉 / 能卖的宝物：武器专属的只在带了这一系技能时出
-window.DATA.itemPool = function (run) { const S = window.DATA.skills, has = new Set([...run.slots, ...run.bag].filter(x => x && (x.kind === 'book' || !x.kind) && S[x.id]).map(x => window.DATA.SYSK[S[x.id].sys])); return window.DATA.startItems.filter(i => i.id !== 'purse' && (!i.w || has.has(i.w))); };
+window.DATA.itemPool = function (run) { const S = window.DATA.skills, has = new Set([...run.slots, ...run.bag].filter(x => x && (x.kind === 'book' || !x.kind) && S[x.id]).map(x => window.DATA.SYSK[S[x.id].sys])); const owned = new Set([...(run.gear || []), ...run.bag].filter(x => x && x.kind === 'item').map(x => x.id)); return window.DATA.startItems.filter(i => !owned.has(i.id) && (!i.w || has.has(i.w))); };
 window.DATA.bookPool = function (own, st, rich) {
   const S = window.DATA.skills, ids = Object.keys(S).filter(id => !own.has(id) && S[id].tier < 4 && (S[id].tier < 3 || st >= 4 || rich));
   const w = id => [0, 3, 2, 1][S[id].tier]; return ids.flatMap(id => Array(w(id)).fill(id));   // 初阶 3 : 中阶 2 : 高阶 1
 };
+
+
+// v2 审核：每站四波，中场固定一只精英。
+DATA.stations.forEach((st, i) => {
+  const elite = st.waves.flatMap(w => w.ex || []).find(e => e[0] === 'elite');
+  for (const w of st.waves) if (w.ex) w.ex = w.ex.filter(e => e[0] !== 'elite');
+  const middle = Object.assign({}, st.waves[1]); delete middle.ex;
+  st.waves.splice(2, 0, middle);
+  st.waves[1] = Object.assign({}, st.waves[1], { ex: [...(st.waves[1].ex || []), ['elite', elite?.[1] || 'gob_blade']] });
+  const t = DATA.phaseT[i]; t.splice(2, 0, t[1]);
+});
+
+// v2 单次释放的同目标命中上限；投射物/延迟攻击共享计数。
+Object.assign(DATA.skills.guard, { hitCap: 6, desc: '飞剑绕身，共享6次命中，每次2；重放替换。' });
+Object.assign(DATA.skills.fan, { hitCap: 2, desc: '扇形5箭，同目标最多2箭，每箭5。' });
+Object.assign(DATA.skills.hundred, { hitCap: 3, desc: '扇形6道枪影，同目标最多3道。' });
+Object.assign(DATA.skills.wave, { hitCap: 2, desc: '三道风刃，同目标最多2道；每次释放同目标最多触发一次效果。' });
+Object.assign(DATA.skills.thunder, { hitCap: 4, desc: '四雷各6，寒滞加成整次只算一次。' });
+Object.assign(DATA.skills.dragon, { hitCap: 6, hold: 3, desc: '盘旋3秒，每0.5秒一跳，每跳5，同目标最多6跳；Lv7收尾4。' });
+Object.assign(DATA.skills.holysword, { hitCap: 2, desc: '天降剑雨，同目标最多2剑×12，末击12。' });
+
+DATA.oaths.erduan.retired = true; DATA.oaths.jinghua.retired = true;
+DATA.oathPool = w => Object.keys(DATA.oaths).filter(id => !DATA.oaths[id].retired && id !== 'traveler' && (!DATA.oaths[id].w || DATA.oaths[id].w === w));
