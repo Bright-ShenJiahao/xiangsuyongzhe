@@ -757,7 +757,7 @@
   // 11/22 路线（月圆之夜式牌库）：每站打完抽 3 张；选了不打仗的卡（宝箱 / 篝火 / 特价商店 / 奇遇）当场结算，不占站数，然后再抽 3 张只有战斗的卡
   function showRoute(combatOnly) {
     const n = G.st + 1, go = route => { if (RUN.robElite && route === 'fight') { route = 'elite'; G.eliteType = 'gob_blade'; } RUN.robElite = 0; G.st++; G.wi = -1; G.route = route; nextWave(); };
-    if (n >= DATA.stations.length) { const bc = [{ k: 'boss', av: 'gob_king', name: '哥布林王', sub: '首领', desc: '森林的尽头是哥布林王座。', btn: '挑战' }]; if (G.fe) { setDoors(bc, () => { G.fe = null; go('boss'); }); const d = G.fe.doors[0]; d.gate = 1; d.born = G.t; d.nb = G.t + 1.3; d.lbl = '哥布林王'; d.y += (cv.height > cv.width ? 135 : 100) * K; return; } return UI.route({ st: n, cards: bc }, () => go('boss')); }
+    if (n >= DATA.stations.length) { const bc = [{ k: 'boss', av: 'gob_king', name: '哥布林王', sub: '首领', desc: '森林的尽头是哥布林王座。', btn: '挑战' }]; if (G.fe) { setDoors(bc, () => { G.fe = null; go('boss'); }); const d = G.fe.doors[0]; d.gate = 1; d.born = G.t; d.nb = G.t + 1.3; d.lbl = '哥布林王'; return; } return UI.route({ st: n, cards: bc }, () => go('boss')); }
     const S = DATA.stations[n - 1], info = stationInfo(n), main = info.fresh[0] || info.all[info.all.length - 1];
     const fight = { k: 'fight', av: main, name: S.name, sub: `第 ${n} 站 · Lv${n}`, desc: info.fresh.length ? '会出现：' + info.fresh.map(EN).join('、') : '这一段的老对手。', btn: '前往' };
     const pool = shuffle(info.all.filter(t => !DATA.enemies[t].ranged)), mk = et => ({ k: 'elite', av: et, et, name: '精英 · ' + DATA.enemies[et].name, sub: `第 ${n} 站 · Lv${n}`, desc: '后两段各多一只精英。铜钱 +50%，精英必掉技能书。', btn: '挑战' });
