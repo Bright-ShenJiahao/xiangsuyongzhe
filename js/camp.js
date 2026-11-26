@@ -181,7 +181,7 @@
       L.appendChild(row);
     }
     const hp = DATA.heroes.find(x => x.id === r.hero) || {};
-    const g = (t, rows) => `<h5>${t}</h5><div class="stats big">${rows.map(([ic, n, v]) => `<span>${UI.piH(ic, 1)}${n}</span><b>${v}</b>`).join('')}</div>`;
+    const g = (t, rows) => `<h5>${t}</h5><div class="stats big">${rows.map(([ic, n, v]) => { const m = String(v).match(/<small>(.*?)<\/small>/), note = m ? ` title="${m[1]}"` : '', val = String(v).replace(/\s*<small>.*?<\/small>/, ''); return `<span${note}>${UI.piH(ic, 1)}${n}${m ? ' <sup>ⓘ</sup>' : ''}</span><b${note}>${val}</b>`; }).join('')}</div>`;   // 11/27 小注释改为悬停提示
     Rt.innerHTML = `<h4>勇者</h4><div class="rcols"><div>` +
       g('进攻', [['str', '剑 · 枪伤害', pct(.06 * c.A.str + (c.fx.dmg || 0))], ['agi', '弓伤害', pct(.06 * c.A.agi + (c.fx.dmg || 0))], ['int', '法杖伤害', pct(.06 * c.A.int + (c.fx.dmg || 0))], ['str', '当前招式总增伤', pct((B().skillInfo(r.slots.find(Boolean)).dmg / Math.max(1, SK[r.slots.find(Boolean).id].dmg)) - 1)], ['spd', '出手速度', pct(h.m.spd - 1)], ['area', '范围', pct(h.m.area - 1)], ['crit', '物理暴击', `${Math.round(c.critP * 100)}% <small>伤害 ${Math.round(c.critMulP * 100)}%</small>`], ['star', '魔法暴击', `${Math.round(c.critM * 100)}% <small>伤害 ${Math.round(c.critMulM * 100)}%</small>`]]) + '</div><div>' +
       g('防御', [['hp', '生命', `${Math.ceil(h.hp)} / ${h.maxHp}`], ['guard', '物防', `${c.pdef} <small>受物理 ×${c.pIn.toFixed(2)}</small>`], ['star', '魔防', `${c.mdef} <small>受魔法 ×${c.mIn.toFixed(2)}</small>`], ['guard', '百分比减伤', `${Math.round(Math.max(0, -Math.max(-.3, h.fx.take || 0)) * 100)}%`], ['guard', '护盾', `${Math.ceil(h.mShield || 0)}`], ['move', '闪避', `${Math.round(h.eva * 100)}% <small>物理、魔法都能躲</small>`]]) +

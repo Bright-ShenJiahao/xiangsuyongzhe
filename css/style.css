@@ -1494,3 +1494,4 @@ html body .oathrow .oic { border-radius: 50%; }
 .attr2 .lor .stats span, .attr2 .lor .stats b { font-size: 15px; line-height: 1.5; }
 .attr2 .lor .stats small { display: block; font-size: 11px; opacity: .65; line-height: 1.1; text-align: right; }
 @media (orientation: portrait), (max-width: 760px) { .attr2 { grid-template-columns: 1fr !important; } .attr2 .arow .an b { font-size: 17px; } .attr2 .arow .an em { font-size: 21px; } .attr2 .arow .ad i { font-size: 13px; } .attr2 .arow .ad { padding-left: 0; } }
+.attr2 .lor sup { font-size: 10px; opacity: .55; cursor: help; }
