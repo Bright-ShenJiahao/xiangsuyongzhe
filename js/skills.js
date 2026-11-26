@@ -5,11 +5,11 @@ window.SKILLS = (A) => {
   const raw = A; let active = null; A = Object.assign({}, raw, { hurt: (z, d, from, kb, sid, o = {}) => raw.hurt(z, d, from, kb, sid, Object.assign({ cast: active }, o)), fireball: (x, y, t, r, cb) => { const token = active; return raw.fireball(x, y, t, r, cb && (() => withCast(token, cb))); } });
   const withCast = (token, fn) => { const prev = active; active = token; try { return fn(); } finally { active = prev; } };
   const { K, YS, PI } = A, R = (a, b) => a + Math.random() * (b - a);
-  let projs = [], zones = [], swords = [], orbs = [], ghosts = [], later = [], marks = [], followers = [], ch = null;
+  let projs = [], zones = [], swords = [], orbs = [], ghosts = [], later = [], marks = [], followers = [], actors = [], ch = null;
   const H = () => A.hero(), F = () => A.foes().filter(z => !z.dead && !z.flee);
   const D2 = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * YS) / K;
   const P = (x, y, a, d) => ({ x: x + Math.cos(a) * d * K, y: y + Math.sin(a) * d * K / YS });
-  const wait = (t, fn) => { const token = active; later.push({ t, fn: () => withCast(token, fn) }); };
+  const wait = (t, fn) => { const token = active; later.push({ t, cast: token, fn: () => withCast(token, fn) }); };
   const area = () => A.hero().m.area, MR = 1.45;   // 11/24 近身招式射程 ×1.45（近战加强）
   // ---------- 命中判定 ----------
   const inCircle = (z, c, r) => D2(z, c) < r + 6 * (z.k || 1);
@@ -130,8 +130,92 @@ window.SKILLS = (A) => {
       end: () => { if (c.L >= 7) { A.fx({ k: 'boom', x: p.x, y: p.y, t: 0, T: .5, r: 60, col: 'dark' }); A.shake(.4); for (const z of F()) if (D2(z, p) < 60) { if (!z.tier && !z.T.boss && z.hp < z.maxHp * .15) A.hurt(z, 9999, p, 0, c.sid); else A.hurt(z, c.d * 5, p, 16, c.sid, { dt: 'magic' }); } } } }; },
   };
 
+  // 两个新技能池沿用现有投射物、区域和命中特效；定时实体也共享本次释放的记录。
+  function actor(o) { o.cast = active; o.t = 0; o.ti = o.every || 0; o.ticks = 0; actors.push(o); return o; }
+  function clearPoolSkill(sid) { actors = actors.filter(o => o.sid !== sid); zones = zones.filter(o => o.sid !== sid); projs = projs.filter(o => o.sid !== sid); later = later.filter(o => o.cast?.sid !== sid); }
+  const puff = (p, r, col = '#bfe8ff') => A.fx({ k: 'ring', x: p.x, y: p.y, t: 0, T: .3, r, col });
+  const packet = (c, a, d, opts = {}) => shoot({ x: H().x, y: H().y - 12 * K, a, v: 320, life: .9, r: 8, pierce: 0, d, sid: c.sid, look: 'shadow', ...opts });
+  const eliteTarget = () => F().sort((a,b) => Number(!!(b.tier || b.T.boss)) - Number(!!(a.tier || a.T.boss)) || D2(a,H()) - D2(b,H()))[0];
+  function explodeBomb(o, secondary = false) {
+    if (o.dead) return; o.dead = true;
+    withCast(o.cast, () => { for (let i=0;i<4;i++) A.fx({ k:'line',x:o.x,y:o.y,a:i*PI/2,L:105,w:18,t:0,T:.35,col:'#ffb060' });
+      hitAll(z => [0,1,2,3].some(i => inLine(z,o,i*PI/2,105,24)), o.d, { sid:o.sid,extra:secondary,kb:0 });
+      for (const other of actors) if (other.kind==='bomb'&&!other.dead&&other!==o&&[0,1,2,3].some(i=>inLine(other,o,i*PI/2,105,24))) explodeBomb(other,true);
+    });
+  }
+  function poisonCloud(c, p, duration, damage, maxTicks, opts = {}) {
+    const o = actor({ kind:'poison',sid:c.sid,x:p.x,y:p.y,r:46*area(),T:duration,every:.5,maxTicks,
+      tick: q => { puff(q,q.r,'rgba(130,210,80,.35)'); hitAll(z=>inCircle(z,q,q.r),damage,{sid:c.sid,dot:true,poisonTag:1,hitGroup:opts.group||'base',maxHits:maxTicks,extra:!!opts.extra,kb:0}); }, ...opts }); return o;
+  }
+  function venomDot(c, z, secondary = false) {
+    actor({kind:'venom',sid:c.sid,target:z,x:z.x,y:z.y,T:3,every:.5,maxTicks:6,last:{x:z.x,y:z.y},
+      tick:o=>{if(z.dead){o.dead=true;return;}const moving=D2(z,o.last)>.5;A.hurt(z,c.d*2/3+(moving?c.d/3:0),z,0,c.sid,{dot:true,poisonTag:1,extra:secondary,hitGroup:'poison',maxHits:6});o.last={x:z.x,y:z.y};}});
+  }
+  Object.assign(C, {
+    g_fast(c) { for(let i=0;i<9;i++)wait(i*.05,()=>{const z=near();packet(c,z?A.ang(H(),z):c.a,c.d);}); },
+    g_spread(c) { for(let i=0;i<8;i++)packet(c,c.a+(i-3.5)*.15,c.d,{life:.5}); },
+    g_bomb(c) { for(let i=0;i<3;i++)wait(i*.3,()=>actor({kind:'bomb',sid:c.sid,x:H().x,y:H().y,T:1.5,d:c.d,end:o=>explodeBomb(o)})); },
+    g_head(c) { const z=eliteTarget(),a=z?A.ang(H(),z):c.a,h=H(); A.fx({k:'line',x:h.x,y:h.y-12*K,a,L:1200,w:12,t:0,T:.2,col:'#fff6a0'});hitAll(q=>inLine(q,h,a,1200,18),c.d,{sid:c.sid,forceCrit:true,kb:8}); },
+    g_clear(c) { const h={x:H().x,y:H().y},p=dense(40,220)||h;for(let i=0;i<4;i++)wait(i*.1,()=>{const q=P(h.x,h.y,c.a+PI/2,(i-1.5)*8);A.fx({k:'line',x:q.x,y:q.y,a:c.a,L:220,w:32,t:0,T:.16,col:'#80d8f0'});hitAll(z=>inLine(z,q,c.a,220,44),c.d,{sid:c.sid,kb:2});});wait(.4,()=>{puff(p,60,'#ffe08a');hitAll(z=>inCircle(z,p,60),c.d*1.5,{sid:c.sid,finisher:true,kb:8});}); },
+    g_chomp(c) { const h={x:H().x,y:H().y};actor({kind:'burger',sid:c.sid,x:h.x,y:h.y,T:3,eaten:0,r:18,
+      update:(o,dt)=>{const d=Math.sin(o.t*PI/1.5)*95;o.x=h.x+Math.cos(c.a)*d*K;o.y=h.y+Math.sin(c.a)*d*K/YS;A.clamp(o);for(const z of F())if(o.eaten<5&&!z.tier&&!z.T.boss&&inCircle(z,o,o.r)){A.hurt(z,z.hp,o,0,c.sid,{execute:true,maxHits:5,hitGroup:'swallow'});o.eaten++;if(o.eaten===5)o.r=28;}},}); },
+    g_missile(c) { const z=eliteTarget();packet(c,z?A.ang(H(),z):c.a,c.d,{home:z,v:170,r:10,life:2,look:'beam',onHit:(p,target)=>{const q={x:target.x,y:target.y};puff(q,42,'#ffb060');hitAll(t=>t!==target&&inCircle(t,q,42),c.d,{sid:c.sid,extra:true,kb:0});}}); },
+    g_claw(c) { const p=dense(80,240)||H(),hit=[];actor({kind:'claw',sid:c.sid,x:p.x,y:p.y,T:.6,r:80});hitAll(z=>inCircle(z,p,80),c.d,{sid:c.sid,cc:['air',.4],kb:0,on:z=>hit.push(z)});wait(.4,()=>{puff(p,80,'#e8c8a0');for(const z of hit)if(!z.dead)A.hurt(z,c.d*8/15,p,8,c.sid,{finisher:true});}); },
+    g_tank(c) { const p={x:H().x,y:H().y};actor({kind:'tank',sid:c.sid,x:p.x,y:p.y,origin:p,T:3,every:.5,maxTicks:6,
+      update:o=>{const d=40*Math.sin(o.t*PI/1.5);o.x=p.x+Math.cos(c.a)*d*K;o.y=p.y+Math.sin(c.a)*d*K/YS;A.clamp(o);for(const z of F())if(inCircle(z,o,20))A.hurt(z,c.d,o,4,c.sid,{hitGroup:'body',maxHits:1});},
+      tick:o=>{for(let i=0;i<4;i++)shoot({x:o.x,y:o.y-12*K,a:i*PI/2,v:220,life:1,r:8,pierce:0,d:c.d*1.5,sid:c.sid,look:'beam',o:{hitGroup:'shell',maxHits:3}});}});
+      for(let i=0;i<4;i++){const q=P(p.x,p.y,i*PI/2,58);actor({kind:'brick',sid:c.sid,x:q.x,y:q.y,T:3,hp:4,contact:new Set(),update:(o,dt)=>{for(const z of F())if(!z.tier&&!z.T.boss&&inCircle(z,o,17)){A.push(z,A.ang(o,z),4);o.hp-=dt;if(o.hp<=0){o.dead=true;puff(o,16,'#c88c58');}}}});} },
+    g_ko(c) { const p=dense(65,240)||H();actor({kind:'ko',sid:c.sid,x:p.x,y:p.y,T:.65});A.tele({k:'circle',x:p.x,y:p.y,r:70,t:0,T:.3});wait(.3,()=>{puff(p,70,'#ffe08a');hitAll(z=>inCircle(z,p,70),c.d,{sid:c.sid,kb:12});}); },
+    g_marble(c) { const token=active;token.marbleHit=new Map();const add=(a,small=false)=>actor({kind:'marble',sid:c.sid,x:H().x,y:H().y,T:3,rx:0,ry:0,vx:Math.cos(a)*170,vy:Math.sin(a)*170,r:small?5:11,small,
+      update:(o,dt)=>{o.rx+=o.vx*dt;o.ry+=o.vy*dt;let bounce=false;if(Math.abs(o.rx)>90){o.rx=Math.sign(o.rx)*90;o.vx*=-1.05;bounce=true;}if(Math.abs(o.ry)>90){o.ry=Math.sign(o.ry)*90;o.vy*=-1.05;bounce=true;}o.vx=Math.max(-350,Math.min(350,o.vx));o.vy=Math.max(-350,Math.min(350,o.vy));o.x=H().x+o.rx*K;o.y=H().y+o.ry*K/YS;
+        if(bounce&&c.L>=5&&!small&&(token.smallMarbles||0)<4){token.smallMarbles=(token.smallMarbles||0)+1;const q=add(Math.atan2(o.vy,o.vx)+.8,true);q.rx=o.rx;q.ry=o.ry;q.T=Math.max(.1,3-o.t);}
+        for(const z of F())if(inCircle(z,o,o.r)&&A.now()-(token.marbleHit.get(z)??-99)>=.5){const ok=A.hurt(z,c.d*(small?.5:1),o,0,c.sid,{extra:small});if(ok!==false)token.marbleHit.set(z,A.now());}}});add(c.a); },
+    u_palm(c) { const h=H(),L=145*area();A.fx({k:'line',x:h.x,y:h.y,a:c.a,L,w:40,t:0,T:.3,col:'#bfe8ff'});hitAll(z=>inLine(z,h,c.a,L,45),c.d,{sid:c.sid,kb:28}); },
+    u_fist(c) { const h=H();A.fx({k:'thrust',x:h.x,y:h.y-10*K,a:c.a,L:130*area(),w:32,t:0,T:.3});hitAll(z=>inLine(z,h,c.a,130*area(),35),c.d,{sid:c.sid,cc:['air',.6],kb:12}); },
+    u_titan(c) { const p=dense(60,220)||H();A.tele({k:'circle',x:p.x,y:p.y,r:65,t:0,T:.3});wait(.3,()=>{A.fx({k:'pillar',x:p.x,y:p.y,t:0,T:.35,r:30,col:'#c8a070'});puff(p,65,'#c8a070');hitAll(z=>inCircle(z,p,65),c.d,{sid:c.sid,kb:18});}); },
+    u_sweep(c) { const h=H(),r=65*area();A.fx({k:'slash',x:h.x,y:h.y,a:c.a,t:0,T:.25,r,half:PI*.8});hitAll(z=>inFan(z,h,c.a,r,PI*.8),c.d,{sid:c.sid,cc:['stun',.6],kb:8}); },
+    u_rift(c) { const h=H(),L=200*area();A.fx({k:'line',x:h.x,y:h.y,a:c.a,L,w:26,t:0,T:.4,col:'#c8a070'});hitAll(z=>inLine(z,h,c.a,L,32),c.d,{sid:c.sid,kb:14}); },
+    u_stomp(c) { for(let i=0;i<3;i++)wait(i*.3,()=>{const h=H(),r=(42+i*24)*area();puff(h,r,'#c8a070');hitAll(z=>inCircle(z,h,r),c.d,{sid:c.sid,cc:['stun',.4],kb:10});}); },
+    u_knives(c) { for(let i=0;i<3;i++)packet(c,c.a+(i-1)*.1,c.d,{look:'sword',life:.7,r:7}); },
+    u_ring(c) { for(let i=0;i<12;i++)packet(c,i*PI/6,c.d,{look:'crescent',v:220,life:.55,pierce:99,r:9}); },
+    u_daggers(c) { const p=dense(55,220)||H();actor({kind:'daggers',sid:c.sid,x:p.x,y:p.y,r:55*area(),T:2,every:.25,maxTicks:8,tick:o=>{for(let i=0;i<4;i++){const q=P(o.x,o.y,R(0,2*PI),R(0,o.r));A.fx({k:'icicle',x:q.x,y:q.y,t:0,T:.2});}hitAll(z=>inCircle(z,o,o.r),c.d,{sid:c.sid,kb:2});}}); },
+    u_poison(c) { poisonCloud(c,dense(45,210)||H(),3,c.d,6); },
+    u_venom(c) { for(let i=0;i<7;i++)packet(c,c.a+(i-3)*.14,c.d,{look:'feather',life:.7,onHit:(p,z)=>venomDot(c,z)}); },
+    u_plague(c) { const z=eliteTarget()||near();if(!z)return;const spawnMist=o=>{if(o.mist)return;o.mist=true;poisonCloud(c,{x:z.x,y:z.y},2,c.d,4,{group:'mist',extra:true});};
+      actor({kind:'plague',sid:c.sid,target:z,x:z.x,y:z.y,T:4,every:.5,maxTicks:8,
+        update:o=>{o.x=z.x;o.y=z.y;if(z.dead){spawnMist(o);o.dead=true;}},tick:o=>{if(z.dead)return;A.hurt(z,c.d,z,0,c.sid,{dot:true,poisonTag:1});for(const q of F())if(q!==z&&D2(q,z)<65&&A.now()-(q.poisonInfectedAt??-99)>=3){q.poisonInfectedAt=A.now();actor({kind:'venom',sid:c.sid,target:q,x:q.x,y:q.y,T:2,every:.5,maxTicks:4,tick:v=>{if(q.dead){v.dead=true;return;}A.hurt(q,c.d,q,0,c.sid,{extra:true,dot:true,poisonTag:1,hitGroup:'spread',maxHits:8});}});}if(z.dead)spawnMist(o);},end:o=>{if(z.dead)spawnMist(o);}}); },
+    u_bash(c) { const h=H(),r=75*area();puff(h,r,'#b0d8f0');hitAll(z=>inFan(z,h,c.a,r,PI*.6),c.d,{sid:c.sid,kb:28,cc:['stun',.5]}); },
+    u_wall(c) { actor({kind:'shield',sid:c.sid,x:H().x,y:H().y,a:c.a,T:1.5,update:o=>{const p=P(H().x,H().y,o.a,36);o.x=p.x;o.y=p.y;for(const z of F())if(!z.tier&&!z.T.boss&&inCircle(z,o,24))A.push(z,A.ang(o,z),5);}}); },
+    u_bulwark(c) { const hit=[],h={x:H().x,y:H().y};puff(h,100,'#b0d8f0');hitAll(z=>inCircle(z,h,100),c.d,{sid:c.sid,kb:30,on:z=>{hit.push({z,x:z.x,y:z.y});A.push(z,A.ang(h,z),18);}});wait(.12,()=>{for(const {z,x,y} of hit)if(!z.dead&&(F().some(q=>q!==z&&D2(q,z)<23)||Math.hypot(z.x-x,(z.y-y)*YS)<2*K))A.hurt(z,c.d*6/25,h,0,c.sid,{finisher:true});}); },
+  });
+  function poolTick(dt) {
+    for(let i=actors.length-1;i>=0;i--){const o=actors[i];if(!o)continue;withCast(o.cast,()=>{o.t+=dt;o.ti-=dt;if(!o.dead&&o.update)o.update(o,dt);if(o.tick&&!o.dead)while(o.ti<=1e-7&&(!o.maxTicks||o.ticks<o.maxTicks)){o.ti+=o.every;o.ticks++;o.tick(o);}});if(o.dead||o.t>=o.T){actors.splice(i,1);if(o.end)withCast(o.cast,()=>o.end(o));}}
+  }
+  function interceptShot(p,dt) {
+    if(p.k!=='arrow')return false;const q={x:p.x+p.vx*dt,y:(p.gy??p.y)+p.vy*dt};
+    for(const o of actors)if(!o.dead&&(o.kind==='shield'||o.kind==='brick')&&inCircle(q,o,o.kind==='shield'?30:18)){
+      if(o.kind==='shield')withCast(o.cast,()=>{const z=p.from;if(z&&!z.dead){bolt([{x:o.x,y:o.y},{x:z.x,y:z.y-12*K}],'#bfe8ff');A.hurt(z,p.dmg*2,o,0,o.sid,{extra:true,dt:p.dtype||'phys',hitGroup:'reflect',maxHits:99});}});
+      else {o.hp--;if(o.hp<=0){o.dead=true;puff(o,16,'#c88c58');}}return true;
+    }return false;
+  }
+  function drawPool(ctx,X,Y,u) {
+    const rect=(x,y,w,h,col)=>{ctx.fillStyle=col;ctx.fillRect(Math.round(x),Math.round(y),Math.max(1,w*u),Math.max(1,h*u));};
+    const tokenBoxes=new Set();for(const o of actors){if(o.dead)continue;const x=X(o.x),y=Y(o.y)-8*u;
+      if(o.kind==='burger'){const b=o.eaten===5?1.5:1;ctx.save();ctx.translate(x,y);ctx.scale(b,b);rect(-13*u,-13*u,26,7,'#bc7b38');rect(-15*u,-6*u,30,4,'#65a84c');rect(-14*u,-2*u,28,5,'#793e2e');rect(-13*u,3*u,26,5,'#d39754');for(let i=0;i<4;i++)rect((-9+i*6)*u,-12*u,2,1,'#fff0b0');ctx.restore();}
+      else if(o.kind==='tank'){rect(x-16*u,y-12*u,7,27,'#303c38');rect(x+9*u,y-12*u,7,27,'#303c38');rect(x-10*u,y-10*u,20,24,'#4e8460');rect(x-6*u,y-5*u,12,12,'#8cac80');rect(x-2*u,y-21*u,4,19,'#c0c8a8');}
+      else if(o.kind==='brick'){for(let i=0;i<3;i++)for(let j=0;j<2;j++)rect(x+(i*10-15)*u,y+(j*6-6)*u,9,5,j?'#86512f':'#be8151');}
+      else if(o.kind==='shield'){ctx.save();ctx.translate(x,y);ctx.rotate(o.a+PI/2);rect(-25*u,-3*u,50,7,'rgba(160,210,240,.35)');rect(-24*u,-3*u,48,1,'#c8e8f8');ctx.restore();}
+      else if(o.kind==='bomb'){rect(x-6*u,y-5*u,12,11,'#35445c');rect(x-3*u,y-8*u,5,3,'#d8d0a0');rect(x+u,y-10*u,2,2,Math.floor(o.t*10)%2?'#ffb060':'#fff0b0');}
+      else if(o.kind==='marble'){if(!tokenBoxes.has(o.cast)){tokenBoxes.add(o.cast);ctx.strokeStyle='rgba(180,205,230,.3)';ctx.lineWidth=u;ctx.strokeRect(X(H().x-90*K),Y(H().y-90*K/YS),180*u,180*u/YS);}rect(x-o.r*u/2,y-o.r*u/2,o.r,o.r,'#8390a0');rect(x-o.r*u/2,y-o.r*u/2,o.r*.7,o.r*.5,'#e0e8f4');}
+      else if(o.kind==='ko'){ctx.fillStyle='#ffe08a';ctx.font=`bold ${24*u}px Pix,monospace`;ctx.textAlign='center';ctx.fillText('K.O.',x,y-20*u*(1-Math.min(1,o.t/.3)));}
+      else if(o.kind==='claw'){ctx.strokeStyle='#d0dce4';ctx.lineWidth=2*u;ctx.beginPath();ctx.moveTo(x,y-60*u);ctx.lineTo(x,y-20*u);ctx.lineTo(x-18*u,y-8*u);ctx.moveTo(x,y-20*u);ctx.lineTo(x+18*u,y-8*u);ctx.stroke();}
+      else if(o.kind==='poison'||o.kind==='plague'){ctx.strokeStyle='rgba(130,210,80,.35)';ctx.lineWidth=u;ctx.beginPath();ctx.ellipse(x,Y(o.y),(o.r||28)*u,(o.r||28)*u/YS,0,0,2*PI);ctx.stroke();for(let j=0;j<5;j++)rect(x+Math.cos(j*1.4+o.t)*20*u,Y(o.y)+Math.sin(j*1.4+o.t)*10*u,1,2,'rgba(130,210,80,.35)');}
+    }
+  }
+
   // ---------- 每帧 ----------
   function tick(dt) {
+    poolTick(dt);
     for (let i = later.length - 1; i >= 0; i--) if ((later[i].t -= dt) <= 0) { const f = later[i].fn; later.splice(i, 1); f(); }
     const h = H(), fs = F();
     // 飞行物
@@ -188,6 +272,7 @@ window.SKILLS = (A) => {
     if (ch && ch.gate) { const p = ch.gate; ctx.fillStyle = 'rgba(40,10,60,.55)'; ctx.beginPath(); ctx.ellipse(X(p.x), Y(p.y), 26 * u, 26 * u / YS, 0, 0, 7); ctx.fill(); ctx.strokeStyle = '#b07bff'; ctx.lineWidth = u; ctx.stroke(); }
   }
   function drawOver(ctx, X, Y, u) {
+    drawPool(ctx,X,Y,u);
     for (const f of followers) if (f.snow) { const h = H(); ctx.strokeStyle = 'rgba(200,230,255,.35)'; ctx.lineWidth = u; ctx.beginPath(); ctx.ellipse(X(h.x), Y(h.y), f.snow * u, f.snow * u / YS, 0, 0, 7); ctx.stroke(); }
     const pix = (x, y, c, q = 1) => { ctx.fillStyle = c; ctx.fillRect(x, y, q * u, q * u); };
     for (const g of ghosts) { const a = Math.max(0, 1 - g.t / g.T) * .55; ctx.globalAlpha = a; SPR.drawHero(ctx, g.spun ? 'atk' : 'idle', g.spun ? 1 : 0, X(g.x), Y(g.y), g.f < 0, u, { w: 'sword', white: .8 }); ctx.globalAlpha = 1; }
@@ -206,10 +291,10 @@ window.SKILLS = (A) => {
   }
   return {
     // 出手：返回 null = 没敌人；返回 channel 对象 = 占时型
-    cast(c) { if (!F().length) return null; active = { hits: new Map(), effects: new Set(), thunderBonus: false, bonus: c.bonus || 0, career: c.career }; const token = active; const r = C[c.S.kind || c.sk.id](c); if (r && r.hold) { const channel = Object.assign({ ti: r.every, cast: token, scale: area(), elapsed: 0 }, r); if (['storm', 'dragon', 'blizzard', 'starfall', 'abyss'].includes(c.sk.id)) { if (r.snow || r.spin || c.sk.id === 'dragon') followers = followers.filter(f => !f.follow); channel.follow = !!(r.snow || r.spin || c.sk.id === 'dragon'); followers.push(channel); active = null; return true; } ch = channel; active = null; return ch; } if (c.S.sys === '剑' && c.sk.id !== 'phantom') for (const g of ghosts) if (g.mimic && g.spun && g.t < g.T) withCast(g.cast, () => ghostSpin(g)); active = null; return true; },
+    cast(c) { if (!F().length) return null; if (c.S.poolV2) clearPoolSkill(c.sid); active = { hits: new Map(), effects: new Set(), thunderBonus: false, bonus: c.bonus || 0, career: c.career, sid: c.sid }; const token = active; const r = C[c.S.kind || c.sk.id](c); if (r && r.hold) { const channel = Object.assign({ ti: r.every, cast: token, scale: area(), elapsed: 0 }, r); if (['storm', 'dragon', 'blizzard', 'starfall', 'abyss'].includes(c.sk.id)) { if (r.snow || r.spin || c.sk.id === 'dragon') followers = followers.filter(f => !f.follow); channel.follow = !!(r.snow || r.spin || c.sk.id === 'dragon'); followers.push(channel); active = null; return true; } ch = channel; active = null; return ch; } if (c.S.sys === '剑' && c.sk.id !== 'phantom') for (const g of ghosts) if (g.mimic && g.spun && g.t < g.T) withCast(g.cast, () => ghostSpin(g)); active = null; return true; },
     chEnd() { if (ch && ch.end) withCast(ch.cast, ch.end); ch = null; }, ch: () => ch,
     extraShot(p) { const prev = active; active = null; try { return shoot({ ...p, o: { ...p.o, extra: true, jobExtra: true } }); } finally { active = prev; } },
-    has: id => !!C[id], tick, drawUnder, drawOver,
-    reset() { projs = []; zones = []; swords = []; orbs = []; ghosts = []; later = []; marks = []; followers = []; active = null; ch = null; },
+    interceptShot, has: id => !!C[id], tick, drawUnder, drawOver,
+    reset() { projs = []; zones = []; swords = []; orbs = []; ghosts = []; later = []; marks = []; followers = []; actors = []; active = null; ch = null; },
   };
 };

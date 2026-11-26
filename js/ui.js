@@ -29,8 +29,8 @@
   // 像素图标（art/ui，尺寸见 js/uiart.js）：k = 放大倍数
   // 11/22 技能书：同一系共用一本（剑 / 枪 / 弓 / 法杖）；技能图标：每个技能单独一张 art/ui2/sk/<id>.png
   const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_wand', nova: 'bk_wand', wand: 'bk_wand', staff: 'bk_wand', axe: 'bk_axe' };
-  const SYSBK = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand' };
-  const bookOf = id => pi(SYSBK[(DATA.skills[id] || {}).sys] || 'bk_sword'), skIcon = id => { const im = pi('sk/' + id); im.classList.add('skic'); return im; };
+  const SYSBK = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '光枪': 'bk_bow', '通用': 'bk_sword' };
+  const bookOf = id => pi(SYSBK[(DATA.skills[id] || {}).sys] || 'bk_sword'), skIcon = id => { const im = pi('sk/' + (DATA.skills[id]?.reuseIcon || id)); im.classList.add('skic'); return im; };
   function pi(name, k = 2) { if (name === 'oath/traveler') name = 'oath/qingyu'; if (name === 'end') name = 'amulet';   // 11/23 耐力用护身符图标，和物防的盾分开
     const im = new Image(); im.className = 'pi'; im.alt = ''; im.draggable = false; im.src = 'art/ui2/' + name + '.png'; const s = (window.UIART || {})[name]; if (s) { im.width = s[0] * k; im.height = s[1] * k; } return im; }
   const piH = (name, k) => pi(name, k).outerHTML;
@@ -100,7 +100,7 @@
       card(has,has?im:null,m.name,'第 '+n+' 站'+(has?' · '+m.wx:''),['阳光照亮森林外围的营地。','晨雾里，精灵旧水闸的决口淌着浅河。','午后的集散场，精灵树被一棵棵运走。','黄昏照进森林深处的空地。','精灵的圣泉被抽干，只剩泥滩。','精灵村落被烧成废墟，月光漏下来。','精灵的草场成了哥布林的驯兽场。','精灵森林里冒起了哥布林的炉烟。','精灵王宫的大殿，王座上坐着哥布林。'][n-1]);
       if(!has) g.lastChild.querySelector('.ic').textContent='？';
     }
-    if (k === 'book') for (const sys of ['剑', '枪', '弓', '法杖']) { g.insertAdjacentHTML('beforeend', `<div class="cxh">— ${sys} —</div>`); for (const [id, S] of Object.entries(DATA.skills)) if (S.sys === sys) card(SEEN.has('s:' + id), skIcon(id), S.name, `${S.sys} · ${DATA.tierName[S.tier]} · ${S.dt === 'magic' ? '魔法' : '物理'}`, `${S.desc}${['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<br><span class="lv">Lv${x.slice(1)}：${S[x]}</span>`).join('')}`); }
+    if (k === 'book') for (const sys of ['剑', '枪', '弓', '法杖', '光枪', '通用']) { g.insertAdjacentHTML('beforeend', `<div class="cxh">— ${sys} —</div>`); for (const [id, S] of Object.entries(DATA.skills)) if (S.sys === sys) card(SEEN.has('s:' + id), skIcon(id), S.name, `${S.sys} · ${DATA.tierName[S.tier]} · ${S.dt === 'magic' ? '魔法' : '物理'}`, `${S.desc}${['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<br><span class="lv">Lv${x.slice(1)}：${S[x]}</span>`).join('')}`); }
     if (k === 'item') for (const it of DATA.startItems.slice().sort((a, b) => DATA.itemTier(a) - DATA.itemTier(b))) { const tr = DATA.itemTier(it); card(SEEN.has('i:' + it.id), pi(it.id), it.name, '宝物 · ' + DATA.tierName[DATA.itemTier(it)], typeof it.d === 'function' ? it.d(1) : (it.desc || '')); g.lastChild.classList.add('t' + tr); }
     if (k === 'oath') for (const [id, O] of Object.entries(DATA.oaths)) { const ic = pi('oath/' + id); ic.classList.add('oimg'); card(SEEN.has('o:' + id), ic, O.name, O.mv ? '身法印记' : '誓约印记', O.d(DATA.oathLv[4]) + '<br><span class="lv">（满级效果）</span>'); }
     if (k === 'find') for (const e of EGG.LIST) { const has = EGG.has(e.id) || SEEN.all(), el = document.createElement('div'); tot++; if (has) got++; el.className = 'cxi' + (has ? '' : ' lock'); el.innerHTML = `<div class="ic tt">${has ? `<img src="art/meta/egg_${e.id}.png" width="40" height="40" style="object-fit:contain" onerror="this.outerHTML='?'">` : '?'}</div><div><b>${has ? e.name : '？？？'}</b><small>${e.where}的小发现</small><p>${has ? e.text : '还没发现'}</p></div>`; g.appendChild(el); }
@@ -180,7 +180,7 @@
   const build = () => ({ book1: store.get('book1') || null, book2: store.get('book2') || null, title: store.get('title') || null, hero: P.hero, weapon: P.weapon, skill: P.sk ? SK2[P.weapon] : P.weapon, attrs: attrsOf(), item: store.get('item') || P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
   function openPrep(fresh) {
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
-      const w = store.get('weapon'); P.weapon = DATA.weapons[w] ? w : 'sword'; P.sk = store.get('wsk') === '1' ? 1 : 0; P.hero = ['f', 'e'].includes(store.get('hero')) ? store.get('hero') : 'm';
+      const w = store.get('weapon'); P.weapon = DATA.weapons[w] && !DATA.weapons[w].hidden ? w : 'sword'; P.sk = store.get('wsk') === '1' ? 1 : 0; P.hero = ['f', 'e'].includes(store.get('hero')) ? store.get('hero') : 'm';
       P.free = {}; P.habitOpts = shuffle(DATA.habits).slice(0, 3).map(h => h.id); P.itemOpts = shuffle(DATA.startItems).slice(0, 3).map(i => i.id);
       P.habit = null; P.item = null;   // 11/22 开局宝物删除   // 11/22 现实习惯删除：永远不选
  P.hrr = 0;
@@ -202,7 +202,7 @@
         <div class="pills">${PL('hp', '生命', c0.hp)}${PL(dmgA, W0.name + '伤害', pct(c0.dmg - 1))}${PL('guard', '物防 / 魔防', c0.pdef + ' / ' + c0.mdef)}${PL('move', '移速', pct(c0.move - 1))}${PL('crit', '暴击率', Math.round(c0.critP * 100) + '% / ' + Math.round(c0.critM * 100) + '%')}${PL('move', '闪避', Math.round(c0.eva * 100) + '%')}${PL('xp', '经验', pct(c0.xp - 1))}</div>`; }
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
-    for (const [id, w] of Object.entries(DATA.weapons)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; P.sk = 0; store.set('weapon', id); store.set('wsk', '0'); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
+    for (const [id, w] of Object.entries(DATA.weapons).filter(([,w]) => !w.hidden)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; P.sk = 0; store.set('weapon', id); store.set('wsk', '0'); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
     const W = DATA.weapons[P.weapon], AT = DATA.attrs.find(a => a.id === W.type);   // 11/25 起手技能：每种兵器 2 个初级技能二选一
     $('wDesc').innerHTML = [P.weapon, SK2[P.weapon]].map((id, k) => { const S = DATA.skills[id] || {}; return `<div class="skI${P.sk === k ? ' on' : ''}" data-k="${k}" title="${['l3', 'l5', 'l7'].filter(q => S[q]).map(q => 'Lv' + q.slice(1) + '：' + S[q]).join('\n')}"><div class="skIc">${skIcon(id).outerHTML}</div><div class="skIb"><div class="skIt"><b>${S.name || id}</b><em>${S.dt === 'magic' ? '魔法' : '物理'}</em></div><p>${S.brief || S.desc || ''}</p></div></div>`; }).join('');
     for (const e of $('wDesc').children) e.onclick = () => { P.sk = +e.dataset.k; store.set('wsk', String(P.sk)); renderPrep(); };
@@ -371,7 +371,7 @@
     { const c = h.combo, big = c >= 100 ? 4 : c >= 50 ? 3 : c >= 25 ? 2 : c >= 10 ? 1 : 0; set('combo', 'cls', 'cb' + big + (c > 1 ? ' on' : '') + (h.comboT < 1 && c > 1 ? ' fade' : ''));
       if (c && c !== HC.lastC) { HC.lastC = c; const e = $('cN'); e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); } }
     set('clock', 'cls', 'clock' + (h.left != null && h.left < 5.5 && !h.bossWave ? ' warn' : ''));
- FX.coin(h.coins); FX.combo(h.combo);
+ FX.coin(h.coins); FX.combo(h.combo); let gc = document.getElementById('gunCombo'); if (!gc) { gc = document.createElement('div'); gc.id='gunCombo'; gc.style.cssText='position:absolute;left:12px;top:105px;color:#8fe8ff;font:14px Pix,monospace;text-shadow:1px 1px #000'; $('hud').appendChild(gc); } gc.textContent=h.gunCombo ? '光枪连击 '+h.gunCombo+'/'+h.gunComboMax : '';
     const sk = JSON.stringify([h.slots, h.open, h.next]);
     if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.classList.add('tr', 't' + DATA.skills[s.id].tier); d.appendChild(careerIcon(s)); if (s.job) { d.title = JOBS.name(s); d.insertAdjacentHTML('beforeend', `<i>${s.job.final ? '终' : s.job.progress + '/' + JOBS.PROGRESS_MAX}</i>`); } else { const L = BATTLE.profL(s); if (L) d.insertAdjacentHTML('beforeend', `<i>${L}</i>`); } } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');

@@ -35,7 +35,7 @@
       const A = O.mv ? r.mv : r.oath, j = A.indexOf(null); if (j >= 0) { A[j] = { kind: 'oath', id: o.id, lv: 1, mv: !!O.mv }; B().recompute(); return true; } }
     if (o.kind === 'manual') { const free = r.bag.indexOf(null); if (free < 0) { toast('物品栏满了，先腾出一格'); return false; } r.bag[free] = { kind: 'manual', id: o.id }; B().saveCareer(); return true; }
     if (o.kind === 'use') { const c = USE(o.id), h = B().hero(); B().healHero(h.maxHp * c.heal); toast(`吃掉${c.name}，回复生命`); return true; }
-    if (o.kind === 'book') { const j = r.slots.findIndex((s, k) => !s && k < r.open); if (j >= 0) { r.slots[j] = { id: o.id, lv: 1, xp: o.xp || 0 }; toast(`${SK[o.id].name} 自动装上第 ${j + 1} 格` + (r.tipP ? '' : ' · 按 P 调整顺序')); r.tipP = 1; return true; } }   // 技能栏有空位就直接装上
+    if (o.kind === 'book') { const j = r.slots.findIndex((s, k) => !s && k < r.open); if (j >= 0 && DATA.canEquipCommon(r.slots,o,j)) { r.slots[j] = { id: o.id, lv: 1, xp: o.xp || 0 }; toast(`${SK[o.id].name} 自动装上第 ${j + 1} 格` + (r.tipP ? '' : ' · 按 P 调整顺序')); r.tipP = 1; return true; } }   // 技能栏有空位就直接装上
     if (o.kind === 'item' && [...r.gear, ...r.bag].some(x => x && x.kind === 'item' && x.id === o.id)) { toast('已拥有这件宝物'); return false; }
     if (o.kind === 'item') { const g = r.gear.indexOf(null); if (g >= 0) { r.gear[g] = { kind: 'item', id: o.id }; B().recompute(); return true; } }   // 11/23 宝物格有空就直接生效
     const i = r.bag.indexOf(null); if (i < 0) { toast('物品栏满了，先腾出点位置'); return false; }
@@ -164,7 +164,7 @@
     const hp = DATA.heroes.find(x => x.id === r.hero) || {};
     const g = (t, rows) => `<h5>${t}</h5><div class="stats big">${rows.map(([ic, n, v]) => `<span>${UI.piH(ic, 1)}${n}</span><b>${v}</b>`).join('')}</div>`;
     Rt.innerHTML = `<h4>勇者</h4>` +
-      g('进攻', [['str', '剑 · 枪伤害', pct(.06 * c.A.str + (c.fx.dmg || 0))], ['agi', '弓伤害', pct(.06 * c.A.agi + (c.fx.dmg || 0))], ['int', '法杖伤害', pct(.06 * c.A.int + (c.fx.dmg || 0))], ['str', '当前招式总增伤', pct((B().skillInfo(r.slots.find(Boolean)).dmg / SK[r.slots.find(Boolean).id].dmg) - 1)], ['spd', '出手速度', pct(h.m.spd - 1)], ['area', '范围', pct(h.m.area - 1)], ['crit', '物理暴击', `${Math.round(c.critP * 100)}% <small>伤害 ${Math.round(c.critMulP * 100)}%</small>`], ['star', '魔法暴击', `${Math.round(c.critM * 100)}% <small>伤害 ${Math.round(c.critMulM * 100)}%</small>`]]) +
+      g('进攻', [['str', '剑 · 枪伤害', pct(.06 * c.A.str + (c.fx.dmg || 0))], ['agi', '弓伤害', pct(.06 * c.A.agi + (c.fx.dmg || 0))], ['int', '法杖伤害', pct(.06 * c.A.int + (c.fx.dmg || 0))], ['str', '当前招式总增伤', pct((B().skillInfo(r.slots.find(Boolean)).dmg / Math.max(1, SK[r.slots.find(Boolean).id].dmg)) - 1)], ['spd', '出手速度', pct(h.m.spd - 1)], ['area', '范围', pct(h.m.area - 1)], ['crit', '物理暴击', `${Math.round(c.critP * 100)}% <small>伤害 ${Math.round(c.critMulP * 100)}%</small>`], ['star', '魔法暴击', `${Math.round(c.critM * 100)}% <small>伤害 ${Math.round(c.critMulM * 100)}%</small>`]]) +
       g('防御', [['hp', '生命', `${Math.ceil(h.hp)} / ${h.maxHp}`], ['guard', '物防', `${c.pdef} <small>受物理 ×${c.pIn.toFixed(2)}</small>`], ['star', '魔防', `${c.mdef} <small>受魔法 ×${c.mIn.toFixed(2)}</small>`], ['guard', '百分比减伤', `${Math.round(Math.max(0, -Math.max(-.3, h.fx.take || 0)) * 100)}%`], ['guard', '护盾', `${Math.ceil(h.mShield || 0)}`], ['move', '闪避', `${Math.round(h.eva * 100)}% <small>物理、魔法都能躲</small>`]]) +
       g('其他', [['clover', '幸运', `${r.luck || 0} <small>掉落 ${pct(.05 * (r.luck || 0))} · 价格 ${pct(-.03 * (r.luck || 0))}</small>`], ['move', '移速', pct(c.move - 1)], ['xp', '经验', pct(c.xp * (r.hero === 'm' ? 1.1 : 1) - 1)]]);
     L.insertAdjacentHTML('beforeend', `<p class="dim">人物被动：${hp.name || ''} · ${hp.perk || '无'}</p><p class="dim">生效宝物：${items.length ? items.map(e => (DATA.startItems.find(i => i.id === e.id) || {}).name + '').join('、') : '无'}</p>`);
@@ -215,6 +215,7 @@
         || (eq(sel) && !eq(p) && b && b.fresh);               // 装备格 → 物品栏里的新东西：等于用新的替换
       if (!ok) { toast('战斗中只能调顺序、填空格、用新拿到的替换；其他打完这一站再整理'); sel = null; return loadout(box); }
     }
+    const proposed = r.slots.slice(); if (p.t === 's') proposed[p.i] = a; if (sel.t === 's') proposed[sel.i] = b; if (DATA.commonMasters(proposed) > 1) { toast('一套技能槽最多装备1个通用宗师（职业书内也计入）'); sel=null; return loadout(box); }
     // 同一招合并 = 升级
     if (a && b && !a.job && !b.job && a.id === b.id && (a.kind === 'book' || !a.kind) && (b.kind === 'book' || !b.kind)) { b.xp = Math.min(DATA.prof[6], Math.max(b.xp || 0, DATA.prof[Math.min(6, JOBS.level(b))])); put(sel, null); toast(`${SK[b.id].name} 熟练度提升`); }
     else {
@@ -293,7 +294,7 @@
     // 货架：3 件宝物 + 2 本书（新书 22，已有的升 Lv2 34，再往上 52）。开技能格改成在「技能」页点锁
     const r = R(), P = DATA.price, items = shuffle(DATA.itemPool(r)).slice(0, 3 + MLm('shelf')).map(i => ({ kind: 'item', id: i.id, price: i.price || 25 }));
     const lvOf = id => { const h = JOBS.skills(r).find(s => s.id === id); return h ? JOBS.level(h) : 0; };
-    const own = new Set(Object.keys(SK).filter(id => lvOf(id) || loot.some(o => o.kind === 'book' && o.id === id))), pool = DATA.bookPool(own, rep.st), books = [];   // 已经有的书不再出；按品阶抽，价格 22 / 34 / 52
+    const own = new Set(Object.keys(SK).filter(id => lvOf(id) || loot.some(o => o.kind === 'book' && o.id === id))), pool = DATA.bookPool(own, rep.st).filter(id => SK[id].w !== 'gun' || JOBS.skills(r).some(s => SK[s.id].w === 'gun')), books = [];   // 已经有的书不再出；按品阶抽，价格 22 / 34 / 52
     while (books.length < 1 && pool.length) { const id = pool[Math.random() * pool.length | 0]; if (!books.some(b => b.id === id)) books.push({ kind: 'book', id, lv: 1, xp: 0, price: DATA.tierPrice[SK[id].tier] }); if (pool.every(i => books.some(b => b.id === i))) break; }
     const ok0 = DATA.oathPool(r.weapon); if (rep.rift) { const pk0 = () => ({ kind: 'oath', id: ok0[Math.random() * ok0.length | 0], price: 46 }), costI = shuffle(DATA.itemPool(r).filter(i => i.cost)).slice(0, 1).map(i => ({ kind: 'item', id: i.id, price: Math.round((i.price || 40) * 1.3) }));
       return [pk0(), pk0(), { kind: 'oup', id: 'oup', price: 52 }, ...costI]; }

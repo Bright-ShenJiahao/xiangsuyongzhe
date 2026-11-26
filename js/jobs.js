@@ -53,6 +53,7 @@ window.JOBS = (() => {
     const families = final ? [a.job.families[0], b.job.families[0]] : [family(DATA.skills[a.id])];
     const origin = final ? [...a.job.origins, ...b.job.origins] : children.map(() => families[0]);
     const book = { kind: 'book', id: children[0].id, lv: 7, xp: children[0].xp, job: { final, families, children, origins: origin, progress: 0 } };
+    if (ra.a === 'slots' || rb.a === 'slots') { const next = r.slots.slice(); if (ra.a === 'slots') next[ra.i] = null; if (rb.a === 'slots') next[rb.i] = null; if (DATA.commonMasters(next.concat(book)) > 1) return false; }
     r[ra.a][ra.i] = book; r[rb.a][rb.i] = null;
     if (ra.a === 'bag' && rb.a === 'slots') { r.slots[rb.i] = book; r.bag[ra.i] = null; }
     r.careerCount = final ? 2 : (r.careerCount || 0) + 1;
@@ -125,7 +126,7 @@ JOBS.combat = A => {
     return c;
   }
   function hit(c, z, o) {
-    if (!c || o.extra || !c.book.job) return;
+    if (!c || o.extra) return; if (c.S.w === 'gun') combo(c); if (!c.book.job) return;
     if (['phantom','flash'].includes(c.sk.id) && z.breakN && !o.noEffects) { c.release.detonated ||= new Set(); if (!c.release.detonated.has(z)) { c.release.detonated.add(z); burst(c, z); } }
     if (c.release.targets.has(z) && !(c.family === 'common' && c.index % 2 === 1 && !c.release.wave)) return;
     c.release.targets.add(z); const first = !c.release.firstHit; c.release.firstHit = true; const f = final(c);

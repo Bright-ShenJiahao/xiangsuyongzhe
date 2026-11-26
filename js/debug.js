@@ -19,6 +19,13 @@
   B('发装备', () => { CAMP.giveGear(); });
   B('选人页', () => { try { BATTLE.stop(); } catch (e) {} for (const id of ['levelup', 'pause', 'result', 'camp']) { const e = document.getElementById(id); if (e) e.classList.remove('on'); } UI.openPrep(true); });
   B('直接开打', () => { if (window.UI) UI.startBattle(); });
+  const poolSel = document.createElement('select'); poolSel.id = 'poolSkillDebug'; poolSel.style.cssText = 'font:inherit;background:#1c2a1c;color:#8fe8ff;max-width:190px;padding:4px';
+  for (const sys of ['光枪','通用']) { const group=document.createElement('optgroup');group.label=sys;for(const id of DATA.newPoolIds.filter(id=>DATA.skills[id].sys===sys)){const o=document.createElement('option');o.value=id;o.textContent=DATA.skills[id].name;group.appendChild(o);}poolSel.appendChild(group); } box.appendChild(poolSel);
+  const preparePool = id => { UI.startBattle({weapon:DATA.skills[id].w==='gun'?'gun':'sword',book1:id,hero:'m'}); BATTLE.debug.god(); BATTLE.debug.skill(id); for(let i=0;i<4;i++)BATTLE.debug.spawn('goblin'); };
+  poolSel.onchange=()=>preparePool(poolSel.value);
+  B('演练所选技能',()=>preparePool(poolSel.value));
+  B('释放所选技能一次',()=>{if(!BATTLE.active())preparePool(poolSel.value);BATTLE.debug.cast(poolSel.value);});
+  for (const [label,ids] of [['光枪转职演练',['g_fast','g_spread']],['通用转职演练',['u_palm','u_sweep']]]) B(label,()=>{UI.startBattle({weapon:label.startsWith('光枪')?'gun':'sword',book1:ids[0],hero:'m'});const r=BATTLE.run();r.slots[0]={id:ids[0],lv:7,xp:DATA.prof[6]};r.slots[1]={id:ids[1],lv:7,xp:DATA.prof[6]};BATTLE.careerChanged();UI.togglePause(true);});
   // 11/23 演练场：一键进入要看的场景（自动开一局、无敌、给钱给书）
   const sel = document.createElement('select'); sel.style.cssText = 'font:inherit;background:#1c2a1c;color:#ffd860;border:1px solid #4a8a3a;padding:3px';
   const SC = [['演练场 ▸', ''], ['跳到第 2 站', 'st2'], ['跳到第 3 站', 'st3'], ['跳到第 4 站', 'st4'], ['跳到第 5 站', 'st5'], ['跳到第 6 站', 'st6'], ['跳到第 7 站', 'st7'], ['跳到第 8 站', 'st8'], ['跳到第 9 站', 'st9'], ['站末结算场地', 'fe'], ['地精商店', 'shop'], ['休整：宝箱', 'chest'], ['休整：篝火', 'fire'], ['公主中途光球', 'pr'], ['通关结算', 'win'], ['败北结算', 'lose'], ...['rift_mer', 'fairy', 'knight', 'gamble', 'rift', 'kid', 'altar', 'feather'].map(id => ['奇遇：' + id, 'ev:' + id])];
