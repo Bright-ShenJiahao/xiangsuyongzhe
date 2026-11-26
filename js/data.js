@@ -155,7 +155,7 @@ window.DATA = {
     chain: { name: '闪电链', brief: '闪电链弹射', rg: 180, sys: '法杖', w: 'staff', tier: 1, icon: 'fire', type: 'int', dt: 'magic', wu: .3, rc: .4, dmg: 6, desc: '劈中最近的怪再弹 3 只，打缓滞的怪伤害翻倍。', l3: '弹 5 只', l5: '弹跳不衰减', l7: '同时两道' },
     pillar: { name: '圣光柱', brief: '圣光柱砸目标', rg: 216, sys: '法杖', w: 'staff', tier: 2, icon: 'fire', type: 'int', dt: 'magic', wu: .4, rc: .4, dmg: 12, desc: '0.5 秒后在怪脚下降下光柱。', l3: '同时 2 道', l5: '光柱停留 1.5 秒', l7: '打中回复生命' },
     orbs: { name: '暗影黑雾', brief: '怪堆里放黑雾', rg: 198, sys: '法杖', w: 'staff', tier: 2, icon: 'nova', type: 'int', dt: 'magic', wu: .3, rc: .3, dmg: 4, desc: '在怪最密的地方放一团黑雾 5 秒（最多 2 团），雾里的怪每 0.5 秒受魔法伤害并减速。', l3: '黑雾变大 +25%', l5: '雾里的怪被诅咒', l7: '雾散时炸开' },
-    thunder: { name: '雷霆万钧', brief: '连劈 4 道落雷', rg: 216, sys: '法杖', w: 'staff', tier: 3, icon: 'fire', type: 'int', dt: 'magic', wu: .6, rc: .5, dmg: 14, frame: 'big', desc: '依次劈下 4 道落雷，打缓滞的怪伤害翻倍。', l3: '6 道', l5: '留下雷区', l7: '最后一道巨大天雷' },
+    thunder: { name: '雷霆之怒', brief: '连劈 4 道落雷', rg: 216, sys: '法杖', w: 'staff', tier: 3, icon: 'fire', type: 'int', dt: 'magic', wu: .6, rc: .5, dmg: 14, frame: 'big', desc: '依次劈下 4 道落雷，打缓滞的怪伤害翻倍。', l3: '6 道', l5: '留下雷区', l7: '最后一道巨大天雷' },
     blizzard: { name: '暴风雪', brief: '跟着走的暴风雪', rg: 80, sys: '法杖', w: 'staff', tier: 3, icon: 'nova', type: 'int', dt: 'magic', wu: .4, rc: .4, hold: 2.5, dmg: 4, frame: 'big', desc: '2.5 秒内周围不断落下冰锥叠缓滞，跟着你走。', l3: '范围 +25%', l5: '持续 3.5 秒', l7: '结束时冻住的怪碎裂' },
     abyss: { name: '深渊之门', brief: '深渊之门吸怪', rg: 216, sys: '法杖', w: 'staff', tier: 4, icon: 'nova', type: 'int', dt: 'magic', wu: 1, rc: .8, hold: 4, dmg: 6, frame: 'big', desc: '打开深渊之门 4 秒，吸怪并用触手抽打。', l3: '吸引范围 +30%', l5: '周围的怪被诅咒', l7: '关门大爆炸' },
   },
