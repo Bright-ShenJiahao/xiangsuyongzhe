@@ -88,6 +88,7 @@
     m.dmg = (1 + (c.fx.dmg || 0)) * (1 + .03 * (G.lv - 1)) * (1 + (TT().dmg || 0)); m.spd = c.spd; m.area = c.area; m.move = c.move;
     hero.critP = c.critP; hero.critM = c.critM; hero.critMulP = c.critMulP; hero.critMulM = c.critMulM; hero.eva = c.eva + (RUN.hero === 'e' ? .08 : 0); hero.pIn = c.pIn; hero.mIn = c.mIn; hero.xpMul = c.xp * (RUN.hero === 'm' ? 1.1 : 1); hero.rollMax = 3; hero.rollN0 = 2; if (hero.rollN == null || hero.rollN > hero.rollN0) hero.rollN = hero.rollN0; /* 11/24 翻滚 2 格（二段滚 3 格），每格 1.5 秒回 */ hero.A = c.A; hero.fx = c.fx;   // 人物被动：男主经验 +10%，女主翻滚冷却 −20%（11/23 修：hero.A / hero.fx 之前被注释吞掉了）   // 11/26 戈拉斯尔：自带闪避 +8%
     hero.ob = {}; while (RUN.oath.length < DATA.oathSize) RUN.oath.push(null); RUN.oath.forEach((o, i) => { if (o && DATA.oaths[o.id] && (!DATA.oaths[o.id].w || DATA.heldWeapons(RUN).has(DATA.oaths[o.id].w))) hero.ob[o.id] = DATA.oathLv[Math.min(5, o.lv || 1) - 1] * (i === 0 ? 1 : .5); }); for (const o of RUN.mv || []) if (o && DATA.oaths[o.id]) hero.ob[o.id] = DATA.oathLv[Math.min(5, o.lv || 1) - 1]; if (OB('traveler')) hero.eva += .01;
+    { const rn = hero.rune; if (rn && rn.t > 0) { if (rn.k === 'rage') m.dmg *= 1.25; if (rn.k === 'haste') m.spd *= 1.3; if (rn.k === 'wind') m.move *= 1.3; } }   /* 11/27 符文（10 秒，可超上限） */
     m.spd *= 1 + .08 * OB('jifeng'); hero.rollMax *= 1 - .08 * OB('qingyu'); hero.rollMul = 1 + .15 * OB('youlong');
     { const st = DATA.setOf(RUN.slots), F = {}; for (const t of Object.values(st.on)) for (const [k, v] of Object.entries(t[1])) F[k] = (F[k] || 0) + v; hero.setF = F;   // 11/24 流派羁绊
       if (F.dmg) m.dmg *= 1 + F.dmg; if (hero.fx) for (const k of ['sspd_bow', 'srng_bow', 'sdmg_staff']) if (F[k]) hero.fx[k] = (hero.fx[k] || 0) + F[k];
@@ -1268,9 +1269,18 @@
       for (let i = 0; i < 12; i++) parts.push({ x: p.x, y: p.y, vx: R(-70, 70) * K, vy: R(-90, -20) * K, t: 0, T: R(.4, .8), col: i % 3 ? '#8a6038' : '#c8a070', g: 220 * K });
       const n = Math.round((p.k === 'barrel' ? 2 + G.st : p.k === 'crate' ? 3 + G.st : 4 + G.st) * (1 + (hero.fx.propCoin || 0))); if (hero.fx.firstBreak && !G.purseBreak) { G.purseBreak = true; G.gi.push({ kind: 'use', id: 'meat', x: p.x, y: p.y, t: 0 }); }
       if (Math.random() < (p.k === 'barrel' ? .7 : .85)) for (let i = 0, m = 1 + (Math.random() < .5); i < m; i++) G.gc.push({ x: p.x, y: p.y, v: n, t: 0, h: 0, vh: 90, vx: R(-20, 20) * K });
-      if (p.k === 'crate' && Math.random() < .12) { const h = healHero(hero.maxHp * .06); if (h > 0) nums.push({ x: p.x, y: p.y - 40 * K, txt: '+' + Math.round(h), t: 0, col: '#7ee27e' }); } }
+      { const rr = p.k === 'barrel' ? .08 : p.k === 'crate' ? .15 : .40; G.runes = G.runes || []; if (Math.random() < rr) G.runes.push({ k: RUNES[Math.random() * RUNES.length | 0], x: p.x + R(-14, 14) * K, y: p.y + R(-6, 6) * K, t: 0 });   // 11/27 符文掉落
+        if (Math.random() < (p.k === 'barrel' ? .02 : p.k === 'crate' ? .03 : .06)) G.gi.push({ kind: 'book', x: p.x, y: p.y, t: 0 }); } }
   }
-  function propsTick(dt) {
+  const RUNES = ['rage', 'haste', 'wind', 'guard', 'heal'], RUNE_C = { rage: '#ff5a4a', haste: '#ffd84a', wind: '#5ab8ff', guard: '#d8e4f0', heal: '#6ee27a' }, RUNE_N = { rage: '狂暴符文 · 伤害 +25%', haste: '急速符文 · 出手 +30%', wind: '疾风符文 · 移速 +30%', guard: '守护符文 · 护盾', heal: '回复符文' };
+  function runeTick(dt) { if (hero.rune && hero.rune.t > 0 && (hero.rune.t -= dt) <= 0) { hero.rune = null; recompute(); }
+    if (!G.runes) return; for (const r of G.runes) { r.t += dt; if (r.t > .3 && !hero.dead && Math.hypot(r.x - hero.x, (r.y - hero.y) * YS) < 22 * K) { r.got = 1; SFX.play('lv');
+        if (r.k === 'heal') { const h = healHero(hero.maxHp * .08); if (h > 0) nums.push({ x: hero.x, y: hero.y - 50 * K, txt: '+' + Math.round(h), t: 0, col: '#7ee27e' }); }
+        else if (r.k === 'guard') hero.mShield = Math.max(hero.mShield || 0, hero.maxHp * .1);
+        else { hero.rune = { k: r.k, t: 10 }; recompute(); }
+        nums.push({ x: hero.x, y: hero.y - 70 * K, txt: RUNE_N[r.k], t: 0, col: RUNE_C[r.k] }); } }
+    G.runes = G.runes.filter(r => !r.got && r.t < 8); }
+  function propsTick(dt) { runeTick(dt);
     if (!G.props) return;
     for (const p of G.props) { if (p.hitT > 0) p.hitT -= dt; if (!p.brk && p.hp < 50 && hero.roll > 0 && Math.hypot(p.x - hero.x, (p.y - hero.y) * YS) < 26 * K) propHit(p.x, p.y, 9999); }
     const live = G.waveOn && !G.fe && !G.over && !(G.ready > 0) && !hero.dead && !G.winT;
@@ -1306,6 +1316,8 @@
   }
   function propsEntries() {
     const L = [], im = (n, x, y, sc = 1, a = 1) => { const I = pim(n); if (!okI(I)) return; ctx.save(); ctx.imageSmoothingEnabled = false; ctx.globalAlpha = a; const w = I.naturalWidth * u * sc, h = I.naturalHeight * u * sc; ctx.drawImage(I, rd(X(x) - w / 2), rd(Y(y) - h), w, h); ctx.restore(); };
+    for (const r of G.runes || []) L.push({ y: r.y, d: () => { const x = X(r.x), y = Y(r.y) - (14 + 4 * Math.sin(G.t * 4 + r.x)) * u, a = r.t > 6 ? (Math.floor(r.t * 8) % 2 ? .4 : 1) : 1; ctx.save(); ctx.globalAlpha = a; ctx.globalCompositeOperation = 'lighter'; const gr = ctx.createRadialGradient(x, y, 0, x, y, 14 * u); gr.addColorStop(0, '#fff'); gr.addColorStop(.35, RUNE_C[r.k]); gr.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 14 * u, 0, 7); ctx.fill(); ctx.restore(); } });
+    if (hero.rune && hero.rune.t > 0) L.push({ y: 99998, d: () => { const x = X(hero.x), y = Y(hero.y) - 62 * u, f = hero.rune.t / 10; if (hero.rune.t < 3 && Math.floor(G.t * 6) % 2) return; ctx.save(); ctx.strokeStyle = RUNE_C[hero.rune.k]; ctx.lineWidth = 2.5 * u; ctx.beginPath(); ctx.arc(x, y, 6 * u, -Math.PI / 2, -Math.PI / 2 + f * 2 * Math.PI); ctx.stroke(); ctx.fillStyle = RUNE_C[hero.rune.k]; ctx.beginPath(); ctx.arc(x, y, 3 * u, 0, 7); ctx.fill(); ctx.restore(); } });
     for (const p of G.props || []) { const fa = p.brk ? Math.max(0, Math.min(1, 3 - (G.t - (p.bt || 0)))) : 1; if (!fa) continue;   /* 11/27 残骸 2 秒后 1 秒淡出消失 */
       L.push({ y: p.y, d: () => { if (!p.brk) shadow(p.x, p.y, p.k === 'banner' || p.k === 'rack' ? 22 : 13);
       if (p.k === 'brazier') { im('brazier_b', p.x, p.y); const [sx, sy] = [X(p.x), Y(p.y) - 26 * u], r = (30 + 4 * Math.sin(G.t * 9 + p.x)) * u; ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r); g.addColorStop(0, 'rgba(255,170,70,.35)'); g.addColorStop(1, 'rgba(255,90,20,0)'); ctx.fillStyle = g; ctx.fillRect(sx - r, sy - r, 2 * r, 2 * r); ctx.restore(); }

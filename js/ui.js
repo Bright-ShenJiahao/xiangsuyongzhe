@@ -31,10 +31,10 @@
   const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_wand', nova: 'bk_wand', wand: 'bk_wand', staff: 'bk_wand', axe: 'bk_axe' };
   const SYSBK = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '光枪': 'bk_bow', '通用': 'bk_sword', '圣典':'bk_wand', '镰刀':'bk_sword' };
   const bookOf = id => pi(SYSBK[(DATA.skills[id] || {}).sys] || 'bk_sword'), skIcon = id => { const im = pi('sk/' + id), ru = DATA.skills[id]?.reuseIcon; if (ru) im.onerror = () => { im.onerror = null; im.src = 'art/ui2/sk/' + ru + '.png'; };   /* 11/27 优先用自己的正式图标，缺图才借用 */ im.classList.add('skic'); return im; };
-  function pi(name, k = 2) { const item=DATA.startItems.find(i=>i.id===name);if(item?.reuseIcon)name=item.reuseIcon;
-    if(name.startsWith('oath/')&&!['traveler','xianfeng','sanji','jingshou','fanji','tulong','jifeng','lianzhan','pozhu','youlong','canying','qingyu','zhendi','anying'].includes(name.slice(5)))name='oath/qingyu';
-    if (name === 'oath/traveler') name = 'oath/qingyu'; if (name === 'end') name = 'amulet';   // 11/23 耐力用护身符图标，和物防的盾分开
-    const im = new Image(); im.className = 'pi'; im.alt = ''; im.draggable = false; im.src = 'art/ui2/' + name + '.png'; const s = (window.UIART || {})[name]; if (s) { im.width = s[0] * k; im.height = s[1] * k; } return im; }
+  function pi(name, k = 2) { const item=DATA.startItems.find(i=>i.id===name), fb=item?.reuseIcon;   /* 11/27 先用自己的正式图标，缺图才借用 */
+    const fbo = name.startsWith('oath/') ? 'oath/qingyu' : fb;
+    if (name === 'end') name = 'amulet';   // 11/23 耐力用护身符图标，和物防的盾分开
+    const im = new Image(); im.className = 'pi'; im.alt = ''; im.draggable = false; im.src = 'art/ui2/' + name + '.png'; if (fbo) im.onerror = () => { im.onerror = null; im.src = 'art/ui2/' + fbo + '.png'; }; const s = (window.UIART || {})[name]; if (s) { im.width = s[0] * k; im.height = s[1] * k; } return im; }
   const piH = (name, k) => pi(name, k).outerHTML;
   function careerIcon(book) { if (!book?.job) return skIcon(book.id); const w = document.createElement('span'); w.className = `careerIcon ${book.job.final?'final':''}`; w.title = JOBS.name(book); const fam=book.job.families,img=new Image();img.className='careerEmblem';img.alt=JOBS.name(book);img.src='art/jobs/'+(book.job.final?JOBS.key(fam).replace('|','-'):fam[0])+'.png';w.appendChild(img); /* 11/27 正式职业纹章 */ if(!book.job.final){const bar=document.createElement('i');bar.className='careerProgress';bar.style.setProperty('--p',`${Math.max(0,Math.min(100,100*(book.job.progress||0)/JOBS.PROGRESS_MAX))}%`);w.appendChild(bar);}return w; }
 
@@ -106,8 +106,8 @@
       if(!has) g.lastChild.querySelector('.ic').textContent='？';
     }
     if (k === 'book') for (const sys of ['剑', '枪', '弓', '法杖', '光枪', '通用', '圣典', '镰刀']) { g.insertAdjacentHTML('beforeend', `<div class="cxh">— ${sys} —</div>`); for (const [id, S] of Object.entries(DATA.skills)) if (S.sys === sys) card(SEEN.has('s:' + id), own('art/ui2/sk/' + id + '.png'), S.name, `${S.sys} · ${DATA.tierName[S.tier]} · ${S.dt === 'magic' ? '魔法' : '物理'}`, `${S.desc}${['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<br><span class="lv">Lv${x.slice(1)}：${S[x]}</span>`).join('')}`); }
-    if (k === 'item') for (const it of DATA.startItems.slice().sort((a, b) => DATA.itemTier(a) - DATA.itemTier(b))) { const tr = DATA.itemTier(it); card(SEEN.has('i:' + it.id), it.reuseIcon ? ph() : pi(it.id), it.name, '宝物 · ' + DATA.tierName[DATA.itemTier(it)], typeof it.d === 'function' ? it.d(1) : (it.desc || '')); g.lastChild.classList.add('t' + tr); }
-    if (k === 'oath') for (const [id, O] of Object.entries(DATA.oaths)) { const ic = OWN_OATH.includes(id) ? pi('oath/' + id) : ph(); ic.classList.add('oimg'); card(SEEN.has('o:' + id), ic, O.name, O.mv ? '身法印记' : '誓约印记', O.d(DATA.oathLv[4]) + '<br><span class="lv">（满级效果）</span>'); }
+    if (k === 'item') for (const it of DATA.startItems.slice().sort((a, b) => DATA.itemTier(a) - DATA.itemTier(b))) { const tr = DATA.itemTier(it); card(SEEN.has('i:' + it.id), own('art/ui2/' + it.id + '.png'), it.name, '宝物 · ' + DATA.tierName[DATA.itemTier(it)], typeof it.d === 'function' ? it.d(1) : (it.desc || '')); g.lastChild.classList.add('t' + tr); }
+    if (k === 'oath') for (const [id, O] of Object.entries(DATA.oaths)) { const ic = own('art/ui2/oath/' + id + '.png'); ic.classList.add('oimg'); card(SEEN.has('o:' + id), ic, O.name, O.mv ? '身法印记' : '誓约印记', O.d(DATA.oathLv[4]) + '<br><span class="lv">（满级效果）</span>'); }
     if (k === 'job' && window.JOBS) { const FN = { sword: '剑', spear: '枪', bow: '弓', staff: '法杖', gun: '光枪', common: '通用', tome: '圣典', scythe: '镰刀' };
       g.insertAdjacentHTML('beforeend', '<div class="cxh">— 一转 —</div>'); for (const [f, [n, d]] of Object.entries(JOBS.careers)) card(SEEN.has('j:' + f), own('art/jobs/' + f + '.png'), n, `一转 · ${FN[f] || f}系两本 Lv7 合成`, d);
       g.insertAdjacentHTML('beforeend', '<div class="cxh">— 最终职业 —</div>'); for (const [key, [n, d]] of Object.entries(JOBS.finals)) card(SEEN.has('j:' + key), own('art/jobs/' + key.replace('|', '-') + '.png'), n, '最终职业 · ' + key.split('|').map(f => FN[f] || f).join(' + '), d); }
