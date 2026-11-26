@@ -220,7 +220,6 @@ function mirrorPanel() { const r = saveRun(), L = $('pl'); $('pt').textContent =
   $('panel').style.display = 'flex'; }
 const MIR = [IM('art/hub/mirror0.png'), IM('art/hub/mirror1.png')];
 function mirrorDraw(o) { const t = T, ready = careerReady(saveRun()), im = MIR[(o.glow || 0) > .3 ? 1 : 0]; g.save(); g.imageSmoothingEnabled = true;
-  g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(o.x + 6, o.y + 2, 40, 10, 0, 0, Math.PI * 2); g.fill();
   if (im.complete && im.naturalWidth) g.drawImage(im, o.x - im.naturalWidth / 2, o.y + 6 - im.naturalHeight);
   if (ready) { const b = Math.sin(t * 4) * 4; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffd84a'; g.strokeStyle = '#3a1d02'; g.lineWidth = 4; g.strokeText('!', o.x, o.y - 182 + b); g.fillText('!', o.x, o.y - 182 + b); }
   g.restore(); g.imageSmoothingEnabled = false; if (o.ring > 0) ringAt(o.x, o.y + 6, 44, 14, o.ring); }
@@ -235,7 +234,7 @@ function ringAt(x, y, rx, ry, p) { g.save(); g.lineWidth = 5; g.strokeStyle = 'r
 /* 11/25 摆放调试页（palace.html?edit）：拖人物 / 传送阵 / 誓约石 / 时空门 / 勇者出生点；松手自动存到本机，正常进宫殿会用这个布局。空白处拖动 = 平移画面 */
 const EDIT = QS.has('edit');
 const DRAG = () => [...NPC.map(n => ({ k: n.id, o: n, l: n.name })), ...SPOT.map(o => ({ k: o.id, o, l: o.id === 'tp' ? '传送阵' : o.id === 'mirror' ? '勇者之镜' : '誓约石' })), { k: 'portal', o: PORTAL, l: '时空门' }, { k: 'hero', o: hero, l: '勇者出生点' }];
-const LAY0 = { mirror: [268, 425], p: [423, 318], m: [912, 710], c: [210, 710], s: [380, 890], s6: [742, 890], s3: [380, 995], s4: [742, 995], s5: [380, 1100], s2: [742, 1100], tp: [210, 257], oath: [912, 493], portal: [878, 300], hero: [561, 1100] };   /* 11/25 用户摆的位置，左右上下对齐后的默认布局 */
+const LAY0 = { p: [405, 333], m: [912, 710], c: [210, 710], s: [380, 890], s2: [742, 1100], s3: [380, 995], s4: [742, 995], s5: [380, 1100], s6: [742, 890], mirror: [123, 612], tp: [208, 283], oath: [972, 380], portal: [878, 300], hero: [561, 1100] };   /* 11/25 用户摆的位置，左右上下对齐后的默认布局 */
 try { const Ly = Object.assign({}, LAY0, JSON.parse(LS.get('layout2') || '{}')); for (const it of DRAG()) if (Ly[it.k]) { it.o.x = Ly[it.k][0]; it.o.y = Ly[it.k][1]; } if (Ly.hero) { cam.x = hero.x; cam.y = hero.y; } } catch (e) {}
 const layoutNow = () => { const r = {}; for (const it of DRAG()) r[it.k] = [Math.round(it.o.x), Math.round(it.o.y)]; return r; };
 let EP = null, EBOX = null;
