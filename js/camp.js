@@ -144,12 +144,18 @@
     const pairs=[];for(const a of books.filter(b=>!b.job&&JOBS.level(b)>=7))for(const b of books)if(JOBS.canPair(r,a,b)&&!pairs.some(x=>x.a===b&&x.b===a))pairs.push({kind:'pair',a,b,label:`${SK[a.id].name} + ${SK[b.id].name} → ${JOBS.careers[JOBS.family(SK[a.id])][0]}`});
     return pairs;
   }
+  function openCareer() {
+    const choices=careerChoices();if(!choices.length)return false;
+    chooseCareer(choices[0].kind==='final'?'最终转职':'转职',choices,item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged();careerAnimation(merged);sel=null;setTimeout(()=>{if($('pause').classList.contains('on'))pauseRender();careerButton();},0);return true;});
+    return true;
+  }
   function careerButton() {
-    if(!JOBS?.books||!B()?.run?.()){document.getElementById('careerEntry')?.remove();return;}
-    const choices=careerChoices();if(!choices.length){document.getElementById('careerEntry')?.remove();return;}
-    const btn=document.getElementById('careerEntry')||document.createElement('button');btn.id='careerEntry';btn.className='btn gold career-entry';{ const c0=choices[0], fam=c0.kind==='final'?JOBS.key([c0.a.job.families[0],c0.b.job.families[0]]).replace('|','-'):JOBS.family(SK[c0.a.id]); btn.innerHTML=`<img src="art/jobs/${fam}.png" alt=""><span>${c0.kind==='final'?'最终转职':'转职'}</span><img src="art/jobs/${fam}.png" alt="">`; btn.dataset.kind=c0.kind; }
-    btn.onclick=()=>chooseCareer(btn.dataset.kind==='final'?'最终转职':'转职',careerChoices(),item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged(); careerAnimation(merged); sel=null; setTimeout(()=>{ if ($('pause').classList.contains('on')) pauseRender(); careerButton(); },0); return true;});
-    if(btn.parentNode!==$('pHome').parentNode)$('pHome').parentNode.insertBefore(btn,$('pRe').nextSibling);
+    const old=document.getElementById('careerEntry');
+    if(!JOBS?.books||!B()?.run?.()){if(old?._blink)clearInterval(old._blink);old?.remove();return;}
+    const choices=careerChoices();if(!choices.length){if(old?._blink)clearInterval(old._blink);old?.remove();return;}
+    const btn=old||document.createElement('button');btn.id='careerEntry';btn.className='btn gold career-entry';const final=choices[0].kind==='final',base=final?'art/ui2/btn_final.png':'art/ui2/btn_career.png',on=final?'art/ui2/btn_final_on.png':'art/ui2/btn_career_on.png';
+    btn.innerHTML='';const im=document.createElement('img');im.alt=final?'最终转职':'转职';im.src=base;im.style.cssText='width:74px;height:74px;object-fit:contain;image-rendering:pixelated';btn.style.cssText='width:80px;height:80px;min-width:0;padding:2px';im.onerror=()=>{im.remove();btn.style.cssText='';btn.textContent=final?'最终转职':'转职';};btn.appendChild(im);if(btn._blink)clearInterval(btn._blink);btn._blink=setInterval(()=>{if(!im.isConnected){clearInterval(btn._blink);return;}im.src=im.src.endsWith(base)?on:base;},650);
+    btn.onclick=()=>openCareer();if(btn.parentNode!==$('pHome').parentNode)$('pHome').parentNode.insertBefore(btn,$('pRe').nextSibling);
   }
   const careerColor=book=>book?.job?.final?'#ffd36a':({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e',tome:'#ffe6a2',scythe:'#bb8bdf'})[book?.job?.families?.[0]]||'#fff';
   function careerAnimation(book){
@@ -435,5 +441,5 @@
   function pauseOpen() { prevFill = null; UI.newDot(false); sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); careerButton(); }
 
   const setPz = () => document.documentElement.style.setProperty('--pz', Math.max(1, Math.min(1.5, innerWidth * .8 / 1000, innerHeight * .94 / 640)).toFixed(3)); setPz(); addEventListener('resize', setPz);
-  window.CAMP = { careerReady: () => { try { return !!(JOBS?.books && B()?.run?.() && careerChoices().length); } catch (e) { return false; } }, giveGear, learn, rollXiu, open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
+  window.CAMP = { careerReady: () => { try { return !!(JOBS?.books && B()?.run?.() && careerChoices().length); } catch (e) { return false; } }, openCareer, careerInfo: () => { const c=careerChoices()[0]; return c ? {label:c.label,kind:c.kind,crest:'art/jobs/'+(c.kind==='final'?JOBS.key([c.a.job.families[0],c.b.job.families[0]]).replace('|','-'):JOBS.family(SK[c.a.id]))+'.png'} : null; }, giveGear, learn, rollXiu, open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
 })();

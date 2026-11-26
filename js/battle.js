@@ -114,9 +114,9 @@
 
   // ---------- 输入 ----------
   function bindInput() {
-    addEventListener('keydown', e => { keys[e.code] = 1; if (!G || G.over) return; if (e.code === 'Space') { roll(); e.preventDefault(); } if (e.code === 'KeyP' || e.code === 'Escape') UI.togglePause(); });
+    addEventListener('keydown', e => { keys[e.code] = 1; if (!G || G.over) return; if (e.code === 'KeyE' && G.fe?.careerGlyph && CAMP?.careerReady?.() && SKUL(G.fe.careerGlyph,28)) { CAMP.openCareer?.(); e.preventDefault(); } if (e.code === 'Space') { roll(); e.preventDefault(); } if (e.code === 'KeyP' || e.code === 'Escape') UI.togglePause(); });
     addEventListener('keyup', e => { keys[e.code] = 0; });
-    cv.addEventListener('pointerdown', e => { if (!running()) return; joy.on = true; joy.id = e.pointerId; joy.sx = joy.x = e.clientX; joy.sy = joy.y = e.clientY; });
+    cv.addEventListener('pointerdown', e => { if (!running()) return; const cg=G.fe?.careerGlyph,rect=cv.getBoundingClientRect(); if(cg&&CAMP?.careerReady?.()&&SKUL(cg,34)&&Math.hypot(e.clientX-(rect.left+X(cg.x)*rect.width/W),e.clientY-(rect.top+Y(cg.y)*rect.height/H))<32*u){CAMP.openCareer?.();return;} joy.on = true; joy.id = e.pointerId; joy.sx = joy.x = e.clientX; joy.sy = joy.y = e.clientY; });
     addEventListener('pointermove', e => { if (joy.on && e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } });
     const up = e => { if (e.pointerId === joy.id) joy.on = false; }; addEventListener('pointerup', up); addEventListener('pointercancel', up);
     addEventListener('blur', () => { if (running()) UI.softPause(); for (const k in keys) keys[k] = 0; joy.on = false; });
@@ -409,7 +409,7 @@
   // 11/24 技能也能打到小咕噜：给技能看的敌人列表里多一个替身，打中就掉钱逃跑（不会死）
   const TP = { thiefP: 1, dead: false, hp: 1e9, maxHp: 1e9, kbx: 0, kby: 0, flash: 0, T: { name: '小咕噜', r: 10, pdef: 0, mdef: 0, ghost: true, hp: 1, spd: 0 } };
   function thiefHit() { const T = G && G.thief; if (!T || T.hurt > 0) return; T.hurt = .4; if (T.bag) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`打中小咕噜！${T.bag} 铜钱掉了出来`); RUN.thief = (RUN.thief || 0) + 1; T.bag = 0; } T.st = 'run'; T.n = 9; }
-  const API = { K, YS, PI, now: () => G.t, clamp: o => clampG(o), hero: () => hero, foes: () => G && G.thief && G.thief.hurt <= 0 ? (TP.x = G.thief.x, TP.y = G.thief.y, foes.concat([TP])) : foes, ang, aimNow, face: faceTo, spinFace: () => { hero.f = Math.floor(G.t * 12) % 2 ? 1 : -1; },
+  const API = { K, YS, PI, now: () => G.t, clamp: o => clampG(o), hero: () => hero, foes: () => G && G.thief && G.thief.hurt <= 0 ? (TP.x = G.thief.x, TP.y = G.thief.y, foes.concat([TP])) : foes, ang, aimNow, face: faceTo, moveDir: () => moveDir(), spinFace: () => { hero.f = Math.floor(G.t * 12) % 2 ? 1 : -1; },
     hurt: (z, d, from, kb, sid, o) => hurt(z, d, from, kb, sid, o), fx: o => fx.push(o), tele: o => tele.push(Object.assign({ mine: true }, o)), shake: v => { G.shake = Math.max(G.shake, v); },
     mark: (kind,z,c) => {const result=JC.mark(kind,z,c?.career);if(c?.career)JC.hit(c.career,z,{});return result;}, detonate: (kind,z,c) => JC.detonate(kind,z,c?.career),
     summon: z=>JC.summon(z), drain: n=>{hero.hp=Math.max(1,hero.hp-n);},
@@ -456,7 +456,16 @@
   // 一站 3 波，每波固定 30 秒（不再有清场）。怪分 5 批出（0 / 15% / 30% / 45% / 60% 时），每只出现前地上先亮 0.55 秒的圈。
   // 场上打光了就提前出下一批；全出完还没到时间，就一直零星补哥布林，场上不空。时间到：剩下的怪逃走。首领波不限时。
   const STN = () => DATA.stations[G.st - 1], ITEMS = () => DATA.itemPool(RUN);
-  function nextWave() {   // 进下一站（第 1 段）；站打完 → 路线卡
+  function careerReminder() {
+    if(!window.CAMP?.careerReady?.())return;
+    document.getElementById('careerReminder')?.remove();const info=CAMP.careerInfo?.();if(!info)return;
+    const card=document.createElement('div');card.id='careerReminder';const phone=matchMedia('(max-width:760px), (pointer:coarse)').matches;
+    card.style.cssText='position:fixed;z-index:140;left:50%;top:42%;transform:translate(-50%,-50%);width:min(420px,88vw);box-sizing:border-box;padding:14px 16px;text-align:center;color:#fff2c7;background:linear-gradient(135deg,#21172aee,#44321dee);border:2px solid #e8bd65;box-shadow:0 6px 28px #0009;font:14px Pix,monospace;cursor:pointer';
+    const img=document.createElement('img');img.src=info.crest;img.alt='';img.style.cssText='width:52px;height:52px;image-rendering:pixelated;object-fit:contain;display:block;margin:0 auto 7px';
+    const title=document.createElement('b');title.textContent='✦ 可以转职了！✦';const desc=document.createElement('div');desc.textContent=info.label;desc.style.cssText='margin:8px 0;color:#ffe08a';
+    const tip=document.createElement('small');tip.textContent=phone?'点右上角暂停，点「转职」':'按 P 打开备战页，点「转职」';
+    card.append(img,title,desc,tip);img.onerror=()=>img.remove();card.onclick=()=>card.remove();document.body.appendChild(card);setTimeout(()=>card.remove(),3000);
+  }  function nextWave() {   // 进下一站（第 1 段）；站打完 → 路线卡
     RUN.dmgW = {};
     if (G.wi >= STN().waves.length - 1) return stationEnd();
     applyStationMap(); G.wi = -1; Object.assign(G, { firstArm: true, wk: 0, wx: 0, wElite: 0, wMini: 0, drops: [], gi: [], gc: [], stT: 0, purseBreak: false, thief: null, cf: 0, maxCombo: 0, cleared: false, endT: null, timeout: false });
@@ -464,7 +473,7 @@
   }
   // 11/22 一站内换段：不停顿、不结算，只换一批怪并加压（击杀 / 经验 / 掉落一直累计到站末）
   function nextPhase() {
-    G.wi++; G.wave++; const W = STN().waves[G.wi], PT = DATA.phaseT[G.st - 1] || [30, 30, 30];
+    G.wi++; G.wave++; const W = STN().waves[G.wi], PT = DATA.phaseT[G.st - 1] || [30, 30, 30]; if(G.wi===0)careerReminder();
     Object.assign(G, { W, wt: 0, T: W.boss ? 0 : PT[G.wi] || DATA.waveT, waveOn: true, q: [] });
     if (W.boss) { G.bossT = 2.2; G.trickle = 6; banner('首领战！', 2); return; }
     const all = shuffle(Object.entries(DATA.codes).flatMap(([k, c]) => Array(Math.round((W[k] || 0) * DATA.countMul)).fill(c)));
@@ -578,7 +587,7 @@
     for (const o of [...RUN.bag, ...RUN.gear]) if (o) delete o.fresh;   // 站末：「新拿到」标记清掉
     G.paused = false; G.waveOn = false; const g = MAP.ground, cy = (g.y0 + g.y1) / 2 - 10 * K, [gl, gr] = ground(cy), cx = (gl + gr) / 2, ly = cy + 88 * K, n = loot.length;   // 11/23 位置按地图固定
     G.fe = { t: 0, items: loot.map((o, i) => Object.assign({ x: cx + (i - (n - 1) / 2) * 30 * K, y: ly, st: 0 }, o)),
-      pr: { x: cx, y: cy, near: 0, orbs: null, cr: null, said: 0, arm: dist(hero, { x: cx, y: cy }) > 40 }, mer: { x: gl + 40 * K, y: cy + 10 * K, st: 0 }, doors: [], warn: 0 };
+      pr: { x: cx, y: cy, near: 0, orbs: null, cr: null, said: 0, arm: dist(hero, { x: cx, y: cy }) > 40 }, mer: { x: gl + 40 * K, y: cy + 10 * K, st: 0 }, doors: [], warn: 0, careerGlyph: CAMP?.careerReady?.() ? { x: cx - 34*K, y: cy + 54*K } : null };
     if (G.st === 1) G.fe.sign = { x: cx + ((n - 1) / 2 + 1.6) * 30 * K, y: ly + 6 * K };
     stationEnd();
   }
@@ -744,6 +753,7 @@
     ctx.fillStyle = '#3a2814'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(tx, bx + 5 * u, by + 3 * u); ctx.textAlign = 'center'; }
   function fieldDraw() {
     const f = G.fe; if (!f) return; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    if(f.careerGlyph&&CAMP?.careerReady?.()){const q=f.careerGlyph,x=X(q.x),y=Y(q.y),info=CAMP.careerInfo?.();ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.55+.35*Math.sin(G.t*4);ctx.strokeStyle=hero.jobColor||'#ffd86c';ctx.lineWidth=3*u;ctx.beginPath();ctx.arc(x,y,22*u,0,PI*2);ctx.stroke();ctx.beginPath();ctx.arc(x,y,15*u,0,PI*2);ctx.stroke();ctx.fillStyle='rgba(255,210,80,.18)';ctx.beginPath();ctx.arc(x,y,19*u,0,PI*2);ctx.fill();ctx.restore();label('转职',x,y-43*u,'#ffe08a',9);if(info){const im=IMG[info.crest]||(IMG[info.crest]=Object.assign(new Image(),{src:info.crest}));if(im.complete&&im.naturalWidth)ctx.drawImage(im,x-12*u,y-12*u,24*u,24*u);}label('E / 点击',x,y+25*u,'#fff0cc',6);}
     const label = (t, x, y, col, sz) => { ctx.font = `${Math.round((sz || 6) * u)}px WenKai, Pix, serif`; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#1a1008'; ctx.strokeText(t, x, y); ctx.fillStyle = col || '#fff3d0'; ctx.fillText(t, x, y); };
     const ring = (o, r, p, col, dy) => { if (p <= 0) return; ctx.strokeStyle = col; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.arc(X(o.x), Y(o.y) - (dy || 0) * u, r * u, -PI / 2, -PI / 2 + PI * 2 * Math.min(1, p)); ctx.stroke(); };
     for (const d of f.doors) { const c = d.c, k = c.k, rs = c.rest, ev = k === 'event', bo = k === 'boss', el = k === 'elite';   // 11/23 传送门：纯代码画的旋涡，只写类型

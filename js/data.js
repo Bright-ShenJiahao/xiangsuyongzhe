@@ -5,10 +5,10 @@ window.DATA = {
   weapons: {
     gun: { name: '游戏机光枪', skill: '连发快枪', start: 'g_fast', icon: 'bow', type: 'agi', hidden: true, desc: '隐藏数码武器；通过掉落或debug取得。', dmg: 1, cd: .7, range: 240 },
     common: { name: '通用', skill: '震荡掌', start: 'u_palm', icon: 'sword', type: 'str', hidden: true, desc: '通用技能池，不作为正常起手兵器。', dmg: 6, cd: .9, range: 180 },
-    sword: { name: '剑', skill: '新月斩', icon: 'sword', type: 'str', desc: '身前大扇面横扫，近身最稳。', cd: .8, dmg: 6, range: 52, arc: 1.35 },
-    spear: { name: '枪', skill: '疾风突刺', icon: 'spear', type: 'str', desc: '朝前方长直线突刺，穿透一整排。', cd: .9, dmg: 7, range: 82, width: 14 },
-    bow: { name: '弓', skill: '速射', icon: 'bow', type: 'agi', desc: '远程直线箭，射最近的敌人，能穿过一个。', cd: .55, dmg: 4, range: 153, pierce: 1 },
-    staff: { name: '法杖', skill: '火球术', icon: 'fire', type: 'int', desc: '砸向远处的敌群，落地炸开一圈。', cd: 1.5, dmg: 9, range: 135, boom: 30 },
+    sword: { name: '剑', skill: '新月斩', icon: 'sword', type: 'str', desc: '身前大扇面横扫，近身最稳。', cd: .8, dmg: 6, range: 52, arc: 1.35, sys: '剑' },
+    spear: { name: '枪', skill: '疾风突刺', icon: 'spear', type: 'str', desc: '朝前方长直线突刺，穿透一整排。', cd: .9, dmg: 7, range: 82, width: 14, sys: '枪' },
+    bow: { name: '弓', skill: '速射', icon: 'bow', type: 'agi', desc: '远程直线箭，射最近的敌人，能穿过一个。', cd: .55, dmg: 4, range: 153, pierce: 1, sys: '弓' },
+    staff: { name: '法杖', skill: '火球术', icon: 'fire', type: 'int', desc: '砸向远处的敌群，落地炸开一圈。', cd: 1.5, dmg: 9, range: 135, boom: 30, sys: '法杖' },
   },
   // 11/25 装备：本局有效，通关自动卖给士兵 / 大法师换水晶；三阶（t=1/2/3）。st=[各阶数值]，fx 进 calc，dmgP/dmgM 为物理 / 法术招式伤害
   gearSlots: { helm: '头盔', armor: '铠甲', belt: '腰带', boots: '鞋子', acc: '配饰' },
@@ -160,6 +160,9 @@ window.DATA = {
     flash: { name: '断罪一击', brief: '蓄力挥出大半圆', rg: 110, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .8, rc: .5, dmg: 20, crit: .3, charge: true, desc: '蓄力后向前砍出一个大半圆，暴击率 +30%。蓄力时翻滚就作废。', l3: '蓄力缩短到 0.5 秒', l5: '半圆扩大 +30%', l7: '挥剑后飞出巨大剑芒' },
     storm: { name: '剑刃风暴', brief: '持续旋转的剑刃风暴', rg: 87, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .4, rc: .4, hold: 2, dmg: 3, desc: '旋转 2 秒一路割过去，能走，翻滚不取消。', l3: '旋转时移速 +30%', l5: '持续 3 秒', l7: '结束时爆开一圈风刃' },
     holysword: { name: '圣剑审判', brief: '天降剑雨砸怪群', rg: 220, sys: '剑', w: 'sword', tier: 4, icon: 'sword', type: 'str', dt: 'phys', wu: 1, rc: .8, dmg: 12, frame: 'big', desc: '天上落下十几把剑砸向怪最多的地方。', l3: '剑数 +50%', l5: '剑插地形成剑阵', l7: '最后落下一把巨剑' },
+
+    huntingblade: { name: '猎杀之刃', brief: '飞剑锁精英刺击3次，破绽使末刺额外+12伤。', rg: 220, sys: '剑', w: 'sword', pose: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .6, rc: .6, dmg: 6, desc: '飞剑锁精英刺击3次，破绽使末刺额外+12伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果' },
+    sworddomain: { name: '剑刃领域', brief: '跟随领域持续3秒，内圈4伤、边缘2伤；结束发射12道7伤剑芒。', rg: 220, sys: '剑', w: 'sword', pose: 'sword', tier: 4, icon: 'sword', type: 'str', dt: 'phys', wu: .8, rc: .8, dmg: 4, desc: '跟随领域持续3秒，内圈4伤、边缘2伤；结束发射12道7伤剑芒。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 3, hitCap: 12, poolV2: true },
     // ---- 枪（力量，物理）----
     spear: { name: '疾风突刺', brief: '直线突刺穿透一排', rg: 130, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .25, rc: .45, dmg: 7, desc: '朝最近的敌人长直线突刺，穿透一排。', l3: '长度 +25%', l5: '连刺两下', l7: '枪芒继续往前飞' },
     sweep: { name: '裂阵横扫', brief: '横扫击晕', rg: 81, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .35, rc: .4, dmg: 5, desc: '枪杆横扫身前 160°，把怪击晕 0.3 秒。', l3: '扇面扩大 +25%', l5: '眩晕加时到 0.6 秒', l7: '反手再扫回来' },
@@ -167,8 +170,13 @@ window.DATA = {
     hundred: { name: '扇影连刺', brief: '扇形六道枪影', rg: 130, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .2, rc: .4, dmg: 3, desc: '原地朝前方快刺 6 下（占 1 秒，能慢慢走）。', l3: '刺 9 下', l5: '每下都穿透', l7: '最后一刺放出粗枪芒' },
     rising: { name: '龙牙上挑', brief: '上挑浮空一排', rg: 116, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .3, rc: .45, dmg: 6, frame: 'big', desc: '向前上挑，前方一条宽直线的怪全部浮空 0.6 秒，落地再伤。', l3: '直线变长变宽 +25%', l5: '浮空的怪受伤 +30%', l7: '落地砸出冲击' },
     drill: { name: '螺旋贯穿', brief: '慢速钻头穿透', rg: 200, sys: '枪', w: 'spear', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .6, rc: .5, dmg: 3, desc: '刺出一道旋转枪芒缓慢向前，持续搅伤路上的怪。', l3: '枪芒变粗 +30%', l5: '两边的怪被吸向中线', l7: '走到尽头爆炸' },
-    leap: { name: '震地跃击', brief: '跃起砸地 + 地裂', rg: 87, sys: '枪', w: 'spear', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .7, rc: .5, dmg: 16, frame: 'big', desc: '跃起砸地：一圈冲击 + 四道地裂。', l3: '地裂 6 道', l5: '中心冲击把怪击飞', l7: '0.5 秒后再震一次' },
+    leap: { name: '雷龙坠击', brief: '沿移动方向跃击并召雷', rg: 87, sys: '枪', w: 'spear', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .7, rc: .5, dmg: 16, frame: 'big', desc: '跃起砸地：一圈冲击 + 四道地裂。', l3: '地裂 6 道', l5: '中心冲击把怪击飞', l7: '0.5 秒后再震一次' },
     dragon: { name: '龙魂之枪', brief: '苍龙盘旋撞怪', rg: 220, sys: '枪', w: 'spear', tier: 4, icon: 'spear', type: 'str', dt: 'phys', wu: 1, rc: .8, hold: 4, dmg: 5, frame: 'big', desc: '枪化苍龙在场上盘旋 4 秒撞击怪。', l3: '龙更大', l5: '每秒喷龙息', l7: '结束时俯冲重击' },
+
+    meteorjavelins: { name: '流星枪雨', brief: '远处落下一排5支投枪，每支4伤，同目标最多2支。', rg: 220, sys: '枪', w: 'spear', pose: 'sword', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .4, rc: .5, dmg: 4, desc: '远处落下5支投枪，每支4伤，同目标最多3支。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hitCap: 3 },
+    returningthrust: { name: '回马枪', brief: '沿移动方向冲刺100格，回身枪芒造成12伤。', rg: 220, sys: '枪', w: 'spear', pose: 'sword', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .4, rc: .5, dmg: 12, desc: '沿移动方向冲刺100格，回身枪芒造成12伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果' },
+    knightcharge: { name: '骑士冲锋', brief: '沿移动方向冲锋140格，撞击5伤并以18伤重刺；挂失衡。', rg: 220, sys: '枪', w: 'spear', pose: 'sword', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .6, rc: .6, dmg: 5, desc: '沿移动方向冲锋140格，撞击5伤并以18伤重刺；挂失衡。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hitCap: 1 },
+
     // ---- 弓（敏捷，物理）----
     bow: { name: '速射', brief: '射最近的怪', rg: 207, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .2, rc: .35, dmg: 4, desc: '射最近的敌人，能穿过 1 只。出手最快。', l3: '穿透 +1', l5: '一次射 2 支', l7: '命中后分裂 3 支小箭' },
     fan: { name: '扇射', brief: '扇形射 5 箭', rg: 108, sys: '弓', w: 'bow', tier: 1, icon: 'bow', type: 'agi', dt: 'phys', wu: .3, rc: .4, dmg: 5, desc: '朝前方扇形射出 5 支短程箭，近身伤害高。', l3: '7 支', l5: '击退', l7: '0.3 秒后再补一轮' },
@@ -178,6 +186,9 @@ window.DATA = {
     pierce: { name: '穿甲重矢', brief: '蓄力贯穿一条线', rg: 234, sys: '弓', w: 'bow', tier: 3, icon: 'bow', type: 'agi', dt: 'phys', wu: .7, rc: .5, dmg: 22, charge: true, desc: '蓄力后射出贯穿全屏的巨箭，推开沿途的怪。', l3: '蓄力缩短到 0.45 秒', l5: '箭变粗 +50%', l7: '沿途接连爆炸' },
     cyclone: { name: '旋风箭', brief: '慢速龙卷风', rg: 180, sys: '弓', w: 'bow', tier: 3, icon: 'bow', type: 'agi', dt: 'phys', wu: .5, rc: .5, dmg: 2, desc: '射出缓慢的旋风箭，把沿途的怪卷着往前带。', l3: '旋风变大', l5: '尽头炸开', l7: '同时两道' },
     starfall: { name: '星陨之弓', brief: '流星群砸怪', rg: 234, sys: '弓', w: 'bow', tier: 4, icon: 'bow', type: 'agi', dt: 'phys', wu: 1, rc: .8, hold: 3, dmg: 10, frame: 'big', desc: '光箭化作流星群，3 秒内砸向怪群。', l3: '流星 +50%', l5: '落点留火坑', l7: '最后落下巨大陨星' },
+
+    falcondive: { name: '猎鹰', brief: '猎鹰直线俯冲穿梭3次，每次4伤。', rg: 220, sys: '弓', w: 'bow', pose: 'bow', tier: 2, icon: 'bow', type: 'agi', dt: 'phys', wu: .4, rc: .5, dmg: 4, desc: '猎鹰直线俯冲穿梭3次，每次4伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果' },
+    moonshower: { name: '月华流星', brief: '月亮跟随3秒，每0.5秒落月光箭，最后3支齐落。', rg: 220, sys: '弓', w: 'bow', pose: 'bow', tier: 4, icon: 'bow', type: 'agi', dt: 'phys', wu: .8, rc: .8, dmg: 4, desc: '月亮跟随3秒，每0.5秒落月光箭，最后3支齐落。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 3, hitCap: 6, poolV2: true },
     // ---- 法杖（智力，法术）----
     staff: { name: '火球术', brief: '火球落地爆炸', rg: 198, sys: '法杖', w: 'staff', tier: 1, icon: 'fire', type: 'int', dt: 'magic', wu: .4, rc: .4, dmg: 9, desc: '砸向怪最密处爆炸，点燃。', l3: '爆炸范围 +25%', l5: '留下火海 2 秒', l7: '一次砸 2 颗' },
     nova: { name: '霜冻新星', brief: '身边炸开寒气', rg: 52, sys: '法杖', w: 'staff', tier: 1, icon: 'nova', type: 'int', dt: 'magic', wu: .3, rc: .45, dmg: 8, frame: 'big', desc: '以自己为中心炸开寒气，叠 1 层缓滞（叠满 4 层冻结）。', l3: '范围 +25%', l5: '一次叠 2 层', l7: '飞出 8 根冰刺' },
@@ -187,6 +198,15 @@ window.DATA = {
     thunder: { name: '雷霆之怒', brief: '连劈 4 道落雷', rg: 216, sys: '法杖', w: 'staff', tier: 3, icon: 'fire', type: 'int', dt: 'magic', wu: .6, rc: .5, dmg: 6, frame: 'big', desc: '依次劈下 4 道落雷，打缓滞的怪伤害翻倍。', l3: '覆盖范围扩大', l5: '留下雷区', l7: '最后一道巨大天雷' },
     blizzard: { name: '暴风雪', brief: '跟着走的暴风雪', rg: 80, sys: '法杖', w: 'staff', tier: 3, icon: 'nova', type: 'int', dt: 'magic', wu: .4, rc: .4, hold: 2.5, dmg: 4, frame: 'big', desc: '2.5 秒内周围不断落下冰锥叠缓滞，跟着你走。', l3: '范围 +25%', l5: '持续 3.5 秒', l7: '结束时冻住的怪碎裂' },
     abyss: { name: '深渊之门', brief: '深渊之门吸怪', rg: 216, sys: '法杖', w: 'staff', tier: 4, icon: 'nova', type: 'int', dt: 'magic', wu: 1, rc: .8, hold: 4, dmg: 6, frame: 'big', desc: '打开深渊之门 4 秒，吸怪并用触手抽打。', l3: '吸引范围 +30%', l5: '周围的怪被诅咒', l7: '关门大爆炸' },
+
+    magicmissiles: { name: '魔法飞弹', brief: '连续发射4枚2伤魔弹，同目标最多4次。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 1, icon: 'fire', type: 'int', dt: 'magic', wu: .3, rc: .4, dmg: 2, desc: '连续发射4枚2伤魔弹，同目标最多4次。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hitCap: 4 },
+    fireburst: { name: '炎爆术', brief: '凝聚0.6秒后对目标造成18点火焰伤害。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 2, icon: 'fire', type: 'int', dt: 'magic', wu: .6, rc: .3, dmg: 18, desc: '凝聚0.6秒后对目标造成18点火焰伤害。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果' },
+    icewall: { name: '冰川之墙', brief: '横墙持续2秒并叠寒滞，碎裂造成8伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 2, icon: 'nova', type: 'int', dt: 'magic', wu: .4, rc: .5, dmg: 8, desc: '横墙持续2秒并叠寒滞，碎裂造成8伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 2 },
+    balllightning: { name: '球状闪电', brief: '电网持续2秒，每0.25秒造成2伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 2, icon: 'fire', type: 'int', dt: 'magic', wu: .4, rc: .5, dmg: 2, desc: '电网持续2秒，每0.25秒造成2伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 2, hitCap: 8 },
+    arcaneorb: { name: '奥术光球', brief: '奥术球持续1.8秒，每0.3秒造成3伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 2, icon: 'nova', type: 'int', dt: 'magic', wu: .4, rc: .5, dmg: 3, desc: '奥术球持续1.8秒，每0.3秒造成3伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 1.8, hitCap: 6 },
+    firestorm: { name: '烈焰风暴', brief: '向敌群吹出4段火浪，每段6伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 3, icon: 'fire', type: 'int', dt: 'magic', wu: .6, rc: .6, dmg: 6, desc: '向敌群吹出4段火浪，每段6伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hitCap: 4 },
+    gravitywell: { name: '重力漩涡', brief: '漩涡持续2秒，每0.25秒3伤，结束额外12伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 3, icon: 'nova', type: 'int', dt: 'magic', wu: .6, rc: .6, dmg: 3, desc: '漩涡持续2秒，每0.25秒3伤，结束额外12伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 2, hitCap: 8 },
+    mirrorbarrage: { name: '镜影弹幕', brief: '三分身持续3秒发射弹幕，弹幕36伤、收尾18伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 4, icon: 'nova', type: 'int', dt: 'magic', wu: .8, rc: .8, dmg: 2, desc: '三分身持续3秒发射弹幕，弹幕36伤、收尾18伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 3, hitCap: 36, finisherCap: 3, poolV2: true },
   },
   prof: [8, 20, 36, 56, 80, 110, 150],   // 熟练度：每格要的累计出手次数（7 格）
   tierName: ['', '初阶', '中阶', '高阶', '宗师'], tierPrice: [0, 22, 34, 52, 80],
@@ -436,7 +456,7 @@ window.DATA.SYSK = { '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'st
 // 能掉 / 能卖的宝物：武器专属的只在带了这一系技能时出
 window.DATA.itemPool = function (run) { const S = window.DATA.skills, has = new Set((window.JOBS ? JOBS.skills(run) : [...run.slots, ...run.bag]).filter(x => x && (x.kind === 'book' || !x.kind) && S[x.id]).map(x => window.DATA.SYSK[S[x.id].sys])); const owned = new Set([...(run.gear || []), ...run.bag].filter(x => x && x.kind === 'item').map(x => x.id)); return window.DATA.startItems.filter(i => !owned.has(i.id) && (!i.w || has.has(i.w))); };
 window.DATA.bookPool = function (own, st, rich) {
-  const S = window.DATA.skills, ids = Object.keys(S).filter(id => !own.has(id) && (S[id].tier < 4 || (S[id].poolV2 && st >= 8)) && (S[id].tier < 3 || st >= 4 || rich));
+  const S = window.DATA.skills, ids = Object.keys(S).filter(id => !S[id].debugOnly && !own.has(id) && (S[id].tier < 4 || (S[id].poolV2 && st >= 8)) && (S[id].tier < 3 || st >= 4 || rich));
   const w = id => [0, 3, 2, 1, 1][S[id].tier]; return ids.flatMap(id => Array(w(id)).fill(id));   // 初阶 3 : 中阶 2 : 高阶 1
 };
 
