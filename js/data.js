@@ -3,7 +3,7 @@
 window.DATA = {
   // 起手兵器（备战页四选一，不锁定：之后技能书什么系都会出）。type：吃哪项属性的加成
   weapons: {
-    sword: { name: '剑', skill: '半月斩', icon: 'sword', type: 'str', desc: '身前大扇面横扫，近身最稳。', cd: .8, dmg: 6, range: 52, arc: 1.35 },
+    sword: { name: '剑', skill: '新月斩', icon: 'sword', type: 'str', desc: '身前大扇面横扫，近身最稳。', cd: .8, dmg: 6, range: 52, arc: 1.35 },
     spear: { name: '枪', skill: '疾风刺', icon: 'spear', type: 'str', desc: '朝前方长直线突刺，穿透一整排。', cd: .9, dmg: 7, range: 82, width: 14 },
     bow: { name: '弓', skill: '疾矢', icon: 'bow', type: 'agi', desc: '远程直线箭，射最近的敌人，能穿过一个。', cd: .55, dmg: 4, range: 153, pierce: 1 },
     staff: { name: '法杖', skill: '火球术', icon: 'fire', type: 'int', desc: '砸向远处的敌群，落地炸开一圈。', cd: 1.5, dmg: 9, range: 135, boom: 30 },
@@ -123,13 +123,13 @@ window.DATA = {
   // l3 / l5 / l7 = 熟练度第 3 / 5 / 7 格的变化（说明用）
   skills: {
     // ---- 剑（力量，物理）----
-    sword: { name: '半月斩', brief: '身前大扇面横扫', rg: 87, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .4, dmg: 6, desc: '身前 135° 大扇面一刀。', l3: '扇面扩大 +25%', l5: '反手再补一刀', l7: '斩完飞出一道月牙剑气' },
+    sword: { name: '新月斩', brief: '身前大扇面横扫', rg: 87, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .4, dmg: 6, desc: '身前 135° 大扇面一刀。', l3: '扇面扩大 +25%', l5: '反手再补一刀', l7: '斩完飞出一道新月风刃' },
     whirl: { name: '旋风斩', brief: '原地转一圈', rg: 70, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .45, dmg: 4, desc: '原地转一圈，打身边一整圈。', l3: '打中的怪减速', l5: '连转两圈', l7: '转完留下小旋风' },
     guard: { name: '守护之刃', brief: '召唤飞剑绕身转', rg: 90, sys: '剑', w: 'sword', tier: 1, icon: 'sword', type: 'str', dt: 'phys', wu: .5, rc: .3, dmg: 4, frame: 'big', desc: '每次召唤 1 把大飞剑绕身转（最多 2 把），碰 8 次才碎。', l3: '最多 3 把', l5: '碰到的怪流血', l7: '碎掉时飞向敌人' },
-    wave: { name: '破空斩', brief: '飞出月牙剑气', rg: 220, sys: '剑', w: 'sword', tier: 2, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .5, dmg: 7, desc: '朝最近的敌人射出月牙剑气，穿透 3 只。', l3: '扇形 3 道', l5: '穿透不限', l7: '飞到尽头再飞回来' },
-    phantom: { name: '幻影斩', brief: '剑气直线 + 留残影', rg: 130, sys: '剑', w: 'sword', tier: 2, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .5, dmg: 9, desc: '瞬间斩出一条直线，尽头留下残影转身斩一圈。', l3: '残影停留 2 秒，跟着你出剑招', l5: '直线留伤痕，怪流血', l7: '两端各留一个残影' },
-    flash: { name: '瞬光斩', brief: '蓄力拔剑大半圆', rg: 110, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .8, rc: .5, dmg: 20, crit: .3, charge: true, desc: '蓄力后向前砍出一个大半圆，暴击率 +30%。蓄力时翻滚就作废。', l3: '蓄力缩短到 0.5 秒', l5: '半圆扩大 +30%', l7: '出刀后飞出巨大月牙剑气' },
-    storm: { name: '剑刃风暴', brief: '持续旋转的剑刃风暴', rg: 87, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .4, rc: .4, hold: 2, dmg: 3, desc: '旋转 2 秒一路割过去，能走，翻滚不取消。', l3: '旋转时移速 +30%', l5: '持续 3 秒', l7: '结束时爆开一圈剑气' },
+    wave: { name: '裂风刃', brief: '飞出新月风刃', rg: 220, sys: '剑', w: 'sword', tier: 2, icon: 'sword', type: 'str', dt: 'phys', wu: .3, rc: .5, dmg: 7, desc: '朝最近的敌人射出新月风刃，穿透 3 只。', l3: '扇形 3 道', l5: '穿透不限', l7: '飞到尽头再飞回来' },
+    phantom: { name: '幻影突袭', brief: '风刃直线 + 留残影', rg: 130, sys: '剑', w: 'sword', tier: 2, icon: 'sword', type: 'str', dt: 'phys', wu: .35, rc: .5, dmg: 9, desc: '瞬间斩出一条直线，尽头留下残影转身斩一圈。', l3: '残影停留 2 秒，跟着你出剑招', l5: '直线留伤痕，怪流血', l7: '两端各留一个残影' },
+    flash: { name: '断罪一击', brief: '蓄力挥出大半圆', rg: 110, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .8, rc: .5, dmg: 20, crit: .3, charge: true, desc: '蓄力后向前砍出一个大半圆，暴击率 +30%。蓄力时翻滚就作废。', l3: '蓄力缩短到 0.5 秒', l5: '半圆扩大 +30%', l7: '挥剑后飞出巨大剑芒' },
+    storm: { name: '剑刃风暴', brief: '持续旋转的剑刃风暴', rg: 87, sys: '剑', w: 'sword', tier: 3, icon: 'sword', type: 'str', dt: 'phys', wu: .4, rc: .4, hold: 2, dmg: 3, desc: '旋转 2 秒一路割过去，能走，翻滚不取消。', l3: '旋转时移速 +30%', l5: '持续 3 秒', l7: '结束时爆开一圈风刃' },
     holysword: { name: '圣剑审判', brief: '天降剑雨砸怪群', rg: 220, sys: '剑', w: 'sword', tier: 4, icon: 'sword', type: 'str', dt: 'phys', wu: 1, rc: .8, dmg: 12, frame: 'big', desc: '天上落下十几把剑砸向怪最多的地方。', l3: '剑数 +50%', l5: '剑插地形成剑阵', l7: '最后落下一把巨剑' },
     // ---- 枪（力量，物理）----
     spear: { name: '疾风刺', brief: '直线突刺穿透一排', rg: 130, sys: '枪', w: 'spear', tier: 1, icon: 'spear', type: 'str', dt: 'phys', wu: .25, rc: .45, dmg: 7, desc: '朝最近的敌人长直线突刺，穿透一排。', l3: '长度 +25%', l5: '连刺两下', l7: '枪芒继续往前飞' },
