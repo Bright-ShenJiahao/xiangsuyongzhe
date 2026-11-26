@@ -846,19 +846,31 @@
   const CI = {}; const CAMPI = n => CI[n] || (CI[n] = Object.assign(new Image(), { src: 'art/camp/' + n + '.png' }));
   const FXI = {}; const fxi = n => FXI[n] || (FXI[n] = Object.assign(new Image(), { src: 'art/fx/map/' + n + '.webp' })); const okI = i => i.complete && i.naturalWidth;
   function ambDraw(dt) {
-    const A = MAP.amb; if (!A) return; const q = MAPW / 1672, P = (x, y) => [X(x * q), Y(y * q)], t = G.t;
+    const A = MAP.amb; if (!A) return;
+    if (AMB.map !== MAP.id) { AMB.map = MAP.id; AMB.sparks.length = 0; }
+    const q = MAPW / (MIMG.naturalWidth || 1672), P = (x, y) => [X(x * q), Y(y * q)], t = G.t;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     { const sh = fxi('shaft'); if (okI(sh)) for (const [x, y, w, h] of A.rays || []) { const [sx, sy] = P(x, y); ctx.globalAlpha = .55 + .2 * Math.sin(t * .5 + x); ctx.drawImage(sh, sx - w * q * s * .2, sy, w * q * s * 1.2, h * q * s); } ctx.globalAlpha = 1; }
     for (const [x, y, w, h] of A.rays || []) { const [sx, sy] = P(x, y), L = h * q * s, Wd = w * q * s * .35; for (let i = 0; i < 3; i++) { const a = .12 + .05 * Math.sin(t * .6 + i * 2 + x), ox = (i - 1) * Wd * .7;
       const g = ctx.createLinearGradient(sx, sy, sx + L * .45, sy + L); g.addColorStop(0, `rgba(255,236,170,${a})`); g.addColorStop(1, 'rgba(255,236,170,0)'); ctx.fillStyle = g;
       ctx.beginPath(); ctx.moveTo(sx + ox, sy); ctx.lineTo(sx + ox + Wd * .5, sy); ctx.lineTo(sx + ox + L * .45 + Wd, sy + L); ctx.lineTo(sx + ox + L * .45 - Wd * .2, sy + L); ctx.fill(); } }
-    for (const [x, y, k] of A.fires) { const [sx, sy] = P(x, y - 14 * k), r = (26 + 4 * Math.sin(t * 9 + x) + 3 * Math.sin(t * 23 + y)) * k * s * q, g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
+    for (const [x, y, k] of A.fires) { const [sx, sy] = P(x, y - 14 * k), r = (A.slowFire ? 26 + 1.5 * Math.sin(t * 1.8 + x) + .7 * Math.sin(t * 4 + y) : 26 + 4 * Math.sin(t * 9 + x) + 3 * Math.sin(t * 23 + y)) * k * s * q, g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
       g.addColorStop(0, 'rgba(255,190,90,.38)'); g.addColorStop(.5, 'rgba(255,120,40,.12)'); g.addColorStop(1, 'rgba(255,80,20,0)'); ctx.fillStyle = g; ctx.fillRect(sx - r, sy - r, 2 * r, 2 * r);
       if (Math.random() < dt * 7 * k) AMB.sparks.push({ x: x + R(-4, 4) * k, y: y - 4, vx: R(-6, 6), vy: R(-38, -20), t: 0, T: R(.6, 1.2) }); }
+    // 裂缝沿原图石板缝叠加，仅视觉，不参与碰撞或伤害。
+    for (const points of A.cracks || []) {
+      const pulse = .24 + .10 * Math.sin(t * .9 + points[0][0]);
+      ctx.lineJoin = 'round';
+      for (const [width, alpha] of [[12, pulse * .22], [5, pulse * .45], [1.5, pulse]]) {
+        ctx.strokeStyle = `rgba(255,35,20,${alpha})`; ctx.lineWidth = width * q * s; ctx.beginPath();
+        points.forEach(([x, y], i) => { const [sx, sy] = P(x, y); if (i) ctx.lineTo(sx, sy); else ctx.moveTo(sx, sy); }); ctx.stroke();
+      }
+      if (Math.random() < dt * .45) { const [x, y] = points[Math.random() * points.length | 0]; AMB.sparks.push({ x, y, vx: R(-7, 7), vy: R(-22, -12), t: 0, T: R(.5, .9), red: true }); }
+    }
     ctx.globalCompositeOperation = 'source-over';
     for (const [x, y, k, kind, hh] of A.fires) { const im = fxi(kind); if (!okI(im)) continue; const fw = im.naturalWidth / 8, f = Math.floor(t * 12 + x) % 8, h = hh * q * s, w = h * fw / im.naturalHeight, [sx, sy] = P(x, y); ctx.drawImage(im, f * fw, 0, fw, im.naturalHeight, sx - w / 2, sy - h, w, h); }
     ctx.globalCompositeOperation = 'lighter';
-    for (const p of AMB.sparks) { p.t += dt; p.x += (p.vx + Math.sin(p.t * 6) * 8) * dt; p.y += p.vy * dt; const [sx, sy] = P(p.x, p.y), a = 1 - p.t / p.T; ctx.fillStyle = `rgba(255,${160 + 80 * a | 0},70,${a})`; ctx.fillRect(sx, sy, u, u); }
+    for (const p of AMB.sparks) { p.t += dt; p.x += (p.vx + Math.sin(p.t * 6) * 8) * dt; p.y += p.vy * dt; const [sx, sy] = P(p.x, p.y), a = 1 - p.t / p.T; ctx.fillStyle = p.red ? `rgba(255,45,25,${a * .7})` : `rgba(255,${160 + 80 * a | 0},70,${a})`; ctx.fillRect(sx, sy, u, u); }
     AMB.sparks = AMB.sparks.filter(p => p.t < p.T);
     if (AMB.flies.length < 16 && A.flies) { const [x0, y0, x1, y1] = A.flies[Math.random() * A.flies.length | 0]; AMB.flies.push({ x: R(x0, x1), y: R(y0, y1), ph: R(0, 7), t: 0, T: R(5, 9) }); }
     for (const f of AMB.flies) { f.t += dt; f.x += Math.sin(f.t * .8 + f.ph) * 10 * dt; f.y += Math.cos(f.t * .6 + f.ph * 2) * 7 * dt; const a = Math.min(1, f.t, f.T - f.t) * (.5 + .5 * Math.sin(f.t * 3 + f.ph)), [sx, sy] = P(f.x, f.y);
