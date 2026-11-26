@@ -674,7 +674,7 @@
     const M = f.mer; if (M.st < 0) { if (!SKUL(M, 30)) M.st = 0; } else if (SKUL(M, 24)) M.st += dt; else M.st = 0;   // 离开商店后要先走开才能再进
     if (M.st > .4) { M.st = -99; G.lock = true; CAMP.open({ st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], title: '矮人商人', tab: 'shang', only: 'shang', field: 1, goText: '离开 ▶', after: () => { G.lock = false; M.st = -1; M.dealT = G.t + 1.6; } }); return; }
     if (M.st < 0 && !SKUL(M, 24)) M.st = 0;
-    for (const d of f.doors) { if (Math.abs(d.x - hero.x) < 22 * K && Math.abs(d.y - hero.y) < 18 * K) d.st += dt; else d.st = 0;
+    for (const d of f.doors) { if (d.nb > G.t) d.st = 0; else if (Math.abs(d.x - hero.x) < 22 * K && Math.abs(d.y - hero.y) < 18 * K) d.st += dt; else d.st = 0;   // 金门还没开完不能进
       if (d.st > .35) { if ((RUN.xiu > 0 || f.items.length) && !f.warn) { f.warn = 1; d.st = -1; toastMsg(RUN.xiu > 0 ? '还有修炼没拿（去找露米娜），再走进门就出发' : '地上还有东西没捡，再走进门就出发'); return; }
         if (d.st > .35) { const c = d.c, sx = X(d.x), sy = Y(d.y) - 26 * u; f.doors = []; if (c.rest) { f.pick(c); return; }   /* 11/25 宝箱 / 篝火 / 商人 / 奇遇在当前界面就能完成：不碎屏，直接摆在地图上 */ G.lock = true; UI.FX.shatter(cv, sx, sy, () => { G.lock = false; f.pick(c); }); return; } } }
   }
@@ -690,6 +690,12 @@
     for (const d of f.doors) { const c = d.c, k = c.k, rs = c.rest, ev = k === 'event', bo = k === 'boss', el = k === 'elite';   // 11/23 传送门：纯代码画的旋涡，只写类型
       const col = bo ? [255, 200, 70] : el ? [225, 60, 200] : ev ? [150, 90, 255] : rs ? [60, 200, 255] : [255, 90, 50], [r0, g0, b0] = col, C = a => `rgba(${r0},${g0},${b0},${a})`;
       const near = Math.max(0, 1 - Math.hypot(d.x - hero.x, d.y - hero.y) / (70 * K)), sz = (bo ? 1.25 : 1) * (1 + near * .08) * 1.15, rw = 22 * u * sz, rh = 32 * u * sz, x = X(d.x), cy = Y(d.y) - rh + 2 * u, sp = (el ? 2.2 : 1.4) * (1 + near * 1.5);
+      if (d.gate) {   // 11/26 金门（art/src/gate.png → art/obj/gate0–5）：封印 → 链断 → 开一半 → 全开 → 光幕循环；开完才能走进去
+        const t = G.t - d.born, fr = t < .35 ? 0 : t < .6 ? 1 : t < .9 ? 2 : t < 1.2 ? 3 : 4 + (Math.floor(G.t / .35) & 1), gim = pim('gate' + fr), gx = X(d.x), gyb = Y(d.y) + 2 * u;
+        if (gim.complete && gim.naturalWidth) { const gw = gim.naturalWidth * u, gh = gim.naturalHeight * u;
+          if (fr >= 3) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const lg = ctx.createRadialGradient(gx, gyb - gh * .4, gh * .1, gx, gyb - gh * .4, gh * .9); lg.addColorStop(0, `rgba(255,205,80,${.28 + near * .2})`); lg.addColorStop(1, 'rgba(255,205,80,0)'); ctx.fillStyle = lg; ctx.fillRect(gx - gh, gyb - gh * 1.4, gh * 2, gh * 2); ctx.restore(); }
+          ctx.imageSmoothingEnabled = false; ctx.drawImage(gim, Math.round(gx - gw / 2), Math.round(gyb - gh), Math.round(gw), Math.round(gh)); label(d.lbl || c.lbl || '下一章', gx, gyb - gh - 4 * u, '#ffe08a', 9); }
+        ring({ x: d.x, y: d.y }, 10, d.st / .35, '#ffe08a'); continue; }
       { // 11/23 像素黑洞：先画在小画布上（每格 = 1 像素），再按像素放大
         const PW = 40, PH = 52, pc = portalCv(d), g = pc.getContext('2d'), im = g.createImageData(PW, PH), D = im.data, t = G.t * sp;   // 参考 cgwell：黑洞心 + 一圈翻腾的火焰边，边的颜色区分类型
         const hi = [Math.min(255, r0 * .4 + 160), Math.min(255, g0 * .4 + 160), Math.min(255, b0 * .4 + 170)];
@@ -751,7 +757,7 @@
   // 11/22 路线（月圆之夜式牌库）：每站打完抽 3 张；选了不打仗的卡（宝箱 / 篝火 / 特价商店 / 奇遇）当场结算，不占站数，然后再抽 3 张只有战斗的卡
   function showRoute(combatOnly) {
     const n = G.st + 1, go = route => { if (RUN.robElite && route === 'fight') { route = 'elite'; G.eliteType = 'gob_blade'; } RUN.robElite = 0; G.st++; G.wi = -1; G.route = route; nextWave(); };
-    if (n >= DATA.stations.length) { const bc = [{ k: 'boss', av: 'gob_king', name: '哥布林王', sub: '首领', desc: '森林的尽头是哥布林王座。', btn: '挑战' }]; if (G.fe) return setDoors(bc, () => { G.fe = null; go('boss'); }); return UI.route({ st: n, cards: bc }, () => go('boss')); }
+    if (n >= DATA.stations.length) { const bc = [{ k: 'boss', av: 'gob_king', name: '哥布林王', sub: '首领', desc: '森林的尽头是哥布林王座。', btn: '挑战' }]; if (G.fe) { setDoors(bc, () => { G.fe = null; go('boss'); }); const d = G.fe.doors[0]; d.gate = 1; d.born = G.t; d.nb = G.t + 1.3; d.lbl = '哥布林王'; d.y += (cv.height > cv.width ? 135 : 100) * K; return; } return UI.route({ st: n, cards: bc }, () => go('boss')); }
     const S = DATA.stations[n - 1], info = stationInfo(n), main = info.fresh[0] || info.all[info.all.length - 1];
     const fight = { k: 'fight', av: main, name: S.name, sub: `第 ${n} 站 · Lv${n}`, desc: info.fresh.length ? '会出现：' + info.fresh.map(EN).join('、') : '这一段的老对手。', btn: '前往' };
     const pool = shuffle(info.all.filter(t => !DATA.enemies[t].ranged)), mk = et => ({ k: 'elite', av: et, et, name: '精英 · ' + DATA.enemies[et].name, sub: `第 ${n} 站 · Lv${n}`, desc: '后两段各多一只精英。铜钱 +50%，精英必掉技能书。', btn: '挑战' });
@@ -889,7 +895,7 @@
         banner((MAP.name || '哥布林森林') + (MAP.wx ? ' · ' + MAP.wx : ''), 2.4); } if (G.drop.t > DROP_T + .8) G.drop = null; }
     if (G.banner) { G.banner.left -= dt; if (G.banner.left <= 0) G.banner = null; }
     G.shake = Math.max(0, G.shake - dt);
-    if (G.winT != null && (G.winT -= dt) <= 0 && !G.over && !G.vic) { G.vic = 1; G.paused = true; clearSave(); return UI.victory(vicStats(), () => { G.paused = false; G.lock = false; G.winT = null; banner('', 0); fieldEnd([]); setDoors([{ k: 'boss', lbl: '下一章', name: '下一章', btn: '前往' }], () => { G.fe = null; G.over = 'win'; UI.nextChapter(); }); { const d = G.fe.doors[0]; d.x = G.fe.pr.x + 110 * K; d.y = G.fe.pr.y + 20 * K; } }); }
+    if (G.winT != null && (G.winT -= dt) <= 0 && !G.over && !G.vic) { G.vic = 1; G.paused = true; clearSave(); return UI.victory(vicStats(), () => { G.paused = false; G.lock = false; G.winT = null; banner('', 0); fieldEnd([]); setDoors([{ k: 'boss', lbl: '下一章', name: '下一章', btn: '前往' }], () => { G.fe = null; G.over = 'win'; UI.nextChapter(); }); }); }
     if (hero.dead) hero.deadT += dt;
     else {
       if (hero.rollN < hero.rollN0) { hero.rollCd -= dt; if (hero.rollCd <= 0) { hero.rollN++; hero.rollCd = hero.rollN < hero.rollN0 ? hero.rollMax : 0; } } else hero.rollCd = 0;
