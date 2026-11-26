@@ -146,7 +146,7 @@
   }
   function openCareer() {
     const choices=careerChoices();if(!choices.length)return false;
-    chooseCareer(choices[0].kind==='final'?'最终转职':'转职',choices,item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged();careerAnimation(merged);sel=null;setTimeout(()=>{if($('pause').classList.contains('on'))pauseRender();careerButton();},0);return true;});
+    chooseCareer(choices[0].kind==='final'?'最终转职':'转职',choices,item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged();try{SEEN.add('j:'+(merged.job.final?JOBS.key(merged.job.families):merged.job.families[0]));}catch(e){}careerAnimation(merged);sel=null;setTimeout(()=>{if($('pause').classList.contains('on'))pauseRender();careerButton();},0);return true;});
     return true;
   }
   function careerButton() {
