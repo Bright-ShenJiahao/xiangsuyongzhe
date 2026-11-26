@@ -249,16 +249,16 @@
   $('aReset').onclick = () => { P.free = {}; renderPrep(); };
   $('pBack').onclick = () => show('title');
   const introSeen = () => store.get('introSeen') === '1';
-  function playIntro(go, hub) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game' + (hub ? '&hub' : '') + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+  function playIntro(go, hub) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game' + (hub ? '&hub' : '') + '&h=' + (store.get('hero') || 'm') + '&w=' + (store.get('weapon') || 'sword') + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
-  function playStory(go) { const f = $('introF'); f.src = 'demo/intro.html?game&hub&first&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+  function playStory(go) { const f = $('introF'); f.src = 'demo/intro.html?game&hub&first&h=' + (store.get('hero') || 'm') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
   /* 选人页点出发：整个界面（真的 DOM）被 SVG 滤镜越变越大的像素吃掉，塔顶已经在底下，然后勇者由像素聚拢召唤出来 */
   function pixelOut(done) { const pr = $('prep'); let svg = document.getElementById('pixF'); if (!svg) { document.body.insertAdjacentHTML('beforeend', '<svg id="pixF" width="0" height="0" style="position:absolute"><filter id="pixelate" filterUnits="userSpaceOnUse" x="0" y="0" width="4000" height="4000" color-interpolation-filters="sRGB"><feFlood id="pfF" x="0" y="0" width="1" height="1"/><feComposite id="pfC" width="1" height="1"/><feTile result="a"/><feComposite in="SourceGraphic" in2="a" operator="in"/><feMorphology id="pfM" operator="dilate" radius="0"/></filter></svg>'); svg = document.getElementById('pixF'); }
     const F = $('pfF') || document.getElementById('pfF'), C = document.getElementById('pfC'), M = document.getElementById('pfM'), t0 = performance.now(), D = 1100; pr.style.zIndex = 95; pr.style.filter = 'url(#pixelate)';
     const step = n => { const k = Math.min(1, (n - t0) / D), s = Math.max(2, Math.round(2 + 46 * k * k)); F.setAttribute('x', s / 2); F.setAttribute('y', s / 2); F.setAttribute('width', 1); F.setAttribute('height', 1); C.setAttribute('width', s); C.setAttribute('height', s); M.setAttribute('radius', s / 2); pr.style.opacity = k < .55 ? 1 : Math.max(0, 1 - (k - .55) / .45);
       if (k < 1) requestAnimationFrame(step); else { pr.style.filter = ''; pr.style.opacity = ''; pr.style.zIndex = ''; done(); } }; requestAnimationFrame(step); }
-  function playSummon(go) { const f = $('introF'); try { BGM.play(null, 150); } catch (e) {}   /* 首次召唤：圣咏戛然而止，安静地上战场 */ f.src = 'demo/intro.html?game&tw&first&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); f.style.display = 'block'; $('prep').style.zIndex = 95; let ready = false, started = false;
+  function playSummon(go) { const f = $('introF'); try { BGM.play(null, 150); } catch (e) {}   /* 首次召唤：圣咏戛然而止，安静地上战场 */ f.src = 'demo/intro.html?game&tw&first&h=' + (store.get('hero') || 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); f.style.display = 'block'; $('prep').style.zIndex = 95; let ready = false, started = false;
     const kick = () => { if (started || !ready) return; started = true; pixelOut(() => { try { f.contentWindow.postMessage('summon', '*'); } catch (e) {} }); };
     f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} ready = true; setTimeout(kick, 400); };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
@@ -333,7 +333,7 @@
   function mapFall(go) { const c = DATA.chapters[0]; worldMap(() => {}); $('wmap').classList.add('fall'); $('wmTitle').textContent = ''; $('wmHint').textContent = '';
     const wm = document.querySelector('#wmap .wm'), sc = $('wmScroll'); sc.scrollLeft = Math.max(0, c.x * sc.scrollWidth - sc.clientWidth / 2);
     const cv = document.createElement('canvas'); cv.className = 'wmFall'; cv.width = cv.height = 96; cv.style.left = c.x * 100 + '%'; cv.style.top = c.y * 100 + '%'; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
-    try { SPR.drawHero(g, 'idle', 0, 48, 88, false, 2, { w: store.get('weapon') || 'sword', c: store.get('hero') === 'f' ? 'f' : 'm' }); } catch (e) {} wm.appendChild(cv);
+    try { SPR.drawHero(g, 'idle', 0, 48, 88, false, 2, { w: store.get('weapon') || 'sword', c: store.get('hero') || 'm' }); } catch (e) {} wm.appendChild(cv);
     setTimeout(() => { const p = document.createElement('div'); p.className = 'wmPuff'; p.style.left = cv.style.left; p.style.top = cv.style.top; wm.appendChild(p); try { SFX.play('thud'); } catch (e) {} }, 1500); setTimeout(() => { try { SFX.play('fall'); } catch (e) {} }, 250);   /* 坠落带回声，1.5 秒落地闷响 */
     setTimeout(() => { cv.remove(); wm.querySelectorAll('.wmPuff').forEach(x => x.remove()); $('wmap').classList.remove('fall'); overlay('wmap', false); go(); }, 2300); }
   function startBattle(b, noFall) { if (!noFall && !(window.location.search.includes('nofall'))) return mapFall(() => startBattle(b, true));
@@ -492,20 +492,20 @@
   // 11/24 从 iframe（塔顶 / 宫殿）回来：把键盘焦点拿回主页面，不然方向键没反应
   function refocus() { try { document.activeElement && document.activeElement.blur(); } catch (e) {} try { window.focus(); document.body.tabIndex = -1; document.body.focus({ preventScroll: true }); } catch (e) {} }
   /* 11/25 传送阵：宫殿 ⇄ 高塔（同一个 iframe 换页面）；introDone 才是真正出发 */
-  function hubMsgs(f, go) { const on = e => { if (e.data === 'toTower') { f.src = 'demo/intro.html?game&visit&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); return; }
+  function hubMsgs(f, go) { const on = e => { if (e.data === 'toTower') { f.src = 'demo/intro.html?game&visit&h=' + (store.get('hero') || 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); return; }
       if (e.data === 'toPalace') { f.src = f.dataset.pal + '&v=' + Date.now(); return; }
       if (typeof e.data === 'string' && e.data.startsWith('panel:')) { const b = document.querySelector(`[data-panel="${e.data.slice(6)}"]`); if (b) b.click(); return; }   // 11/27 宫殿菜单：设置/帮助/图鉴
       if (e.data === 'toTitle') { removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); show('title'); return; }
       if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
   // 11/27 调试：带着当前存档进宫殿（和「继续游戏」同一流程）
   function enterHub() { try { BATTLE.saveNow(); BATTLE.stop(); } catch (e) {} for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; mapFall(() => { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, drop: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); }); } else { openPrep(true); startBattle(build()); } }); }
-  function openHub(qs, go) { const f = $('introF'); try { BGM.play('k1'); } catch (e) {} f.src = 'demo/palace.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + qs + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+  function openHub(qs, go) { const f = $('introF'); try { BGM.play('k1'); } catch (e) {} f.src = 'demo/palace.html?game&h=' + (store.get('hero') || 'm') + qs + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     f.dataset.pal = f.src.replace(/&v=\d+$/, ''); hubMsgs(f, go); }
   function playTower(r, go) { let seen; try { seen = new Set(JSON.parse(store.get('linesSeen') || '[]')); } catch (e) { seen = new Set(); }
     const L = pickLines(towerCtx(r), seen); for (const l of L) if (!l.rep) seen.add(l.id); store.set('linesSeen', JSON.stringify([...seen]));
     const sl = []; if (r.sellG) sl.push(['士兵甲', `勇者回来了！身上的装备我都替你收下了，折合 ${r.sellG} 水晶，记在账上。`]); if (r.sellB) sl.push(['大法师', `你带回来的书和石头，我替你处理了，共 ${r.sellB} 水晶。下次再来。`]);   /* 11/25 通关自动结算 */
     const say = [].concat(...L.map(l => l.say), sl), f = $('introF'); try { BGM.play('k1'); } catch (e) {}
-    f.src = 'demo/palace.html?game&cry=' + (r.cry || 0) + '&cont=' + (r.cont || 0) + '&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&L=' + encodeURIComponent(JSON.stringify(say)) + '&v=' + Date.now();   /* 11/24 死后回宫殿（塔顶开场只在第一次） */ f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+    f.src = 'demo/palace.html?game&cry=' + (r.cry || 0) + '&cont=' + (r.cont || 0) + '&h=' + (store.get('hero') || 'm') + '&L=' + encodeURIComponent(JSON.stringify(say)) + '&v=' + Date.now();   /* 11/24 死后回宫殿（塔顶开场只在第一次） */ f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     f.dataset.pal = f.src.replace(/&v=\d+$/, ''); hubMsgs(f, go); }
   $('rAgain').onclick = () => { BATTLE.stop(); overlay('result', false); const r = lastRes || {};
     if (!r.cont) return playTower(r, () => { openPrep(true); startBattle(build()); });   // 11/24 这局结束：回宫殿（男女已经跟着存档定了）
