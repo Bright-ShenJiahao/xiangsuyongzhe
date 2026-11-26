@@ -488,6 +488,8 @@
   /* 11/25 传送阵：宫殿 ⇄ 高塔（同一个 iframe 换页面）；introDone 才是真正出发 */
   function hubMsgs(f, go) { const on = e => { if (e.data === 'toTower') { f.src = 'demo/intro.html?game&visit&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); return; }
       if (e.data === 'toPalace') { f.src = f.dataset.pal + '&v=' + Date.now(); return; }
+      if (typeof e.data === 'string' && e.data.startsWith('panel:')) { const b = document.querySelector(`[data-panel="${e.data.slice(6)}"]`); if (b) b.click(); return; }   // 11/27 宫殿菜单：设置/帮助/图鉴
+      if (e.data === 'toTitle') { removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); show('title'); return; }
       if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
   function openHub(qs, go) { const f = $('introF'); try { BGM.play('k1'); } catch (e) {} f.src = 'demo/palace.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + qs + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     f.dataset.pal = f.src.replace(/&v=\d+$/, ''); hubMsgs(f, go); }

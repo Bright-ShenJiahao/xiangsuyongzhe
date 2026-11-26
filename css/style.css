@@ -1506,3 +1506,4 @@ html body .oathrow .oic { border-radius: 50%; }
 #careerEntry.career-entry img { width: 34px; height: 34px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
 #careerEntry.career-entry:hover { transform: translateY(-1px) scale(1.03); }
 @keyframes careerGlow { from { box-shadow: 0 0 0 3px #5a340a, 0 0 8px 2px rgba(255,200,80,.5), inset 0 -3px 0 rgba(90,50,0,.4); } to { box-shadow: 0 0 0 3px #5a340a, 0 0 22px 7px rgba(255,215,100,.95), inset 0 -3px 0 rgba(90,50,0,.4); } }
+#tpanel { z-index: 95; }   /* 11/27 宫殿菜单打开的面板要盖在宫殿 iframe 上 */

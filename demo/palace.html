@@ -19,6 +19,7 @@
 #panel .reel { display: flex; justify-content: center; padding: 20px 0; } #panel .reel .win { width: 140px; height: 110px; border: 3px solid #ffd77a; background: #1a0e06; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; } #panel .reel img.bk { width: 56px; height: 56px; }
 html,body{margin:0;height:100%;background:#0c0908;overflow:hidden;touch-action:none;color:#f3e6c8;font:14px system-ui,sans-serif;user-select:none}
 canvas{display:block}
+#mnBtn{position:fixed;right:10px;top:10px;z-index:30;width:42px;height:42px;font-size:24px;line-height:1;background:rgba(40,26,12,.85);color:#ffe2a0;border:2px solid #c89a52;border-radius:8px;cursor:pointer}#mnBox{position:fixed;right:10px;top:58px;z-index:30;display:none;flex-direction:column;gap:6px;background:rgba(30,20,10,.92);border:2px solid #c89a52;padding:8px;border-radius:8px}#mnBox button{min-width:120px;padding:8px 12px;font-size:15px;background:#3a2814;color:#ffe2a0;border:1px solid #c89a52;cursor:pointer}
 #hud{position:fixed;left:8px;top:8px;pointer-events:none;text-shadow:0 1px 2px #000;line-height:1.5}
 #act{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:none;gap:10px}
 #act button,#panel button{font:inherit;padding:10px 18px;background:#3a2814;border:2px solid #c9a15a;color:#ffe9a8;border-radius:6px}
@@ -34,11 +35,11 @@ canvas{display:block}
 .up button[disabled]{opacity:.4}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="hud"></div>
+<div id="hud"></div><button id="mnBtn" title="菜单">≡</button><div id="mnBox"><button data-m="set">设置</button><button data-m="help">帮助</button><button data-m="codex">图鉴</button><button data-m="home">回主界面</button></div>
 <div id="act"></div><div id="bub"></div>
 
 <div id="panel"><div><h3 id="pt" style="margin:0 0 6px"></h3><div id="pl"></div><div style="text-align:right;margin-top:10px"><button id="pc">关闭</button></div></div></div>
-<script src="js/slot.js"></script><script src="js/eggs.js"></script><script src="js/portal.js"></script><script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script src="js/slot.js"></script><script src="js/eggs.js"></script><script src="js/portal.js"></script><script src="js/data.js"></script><script src="js/sprites.js"></script><script src="js/jobs.js"></script>
 <script>
 // 11/24 宫殿据点灰盒（一张图）：最上空王座，公主站旁边、身边是时空门；中间大臣（钱+记录）和大法师；下面两排士兵；最下面大门走不出去。
 // 地面、柱子、红毯都是代码画的灰盒，只验证路线、距离、按钮。正式美术出一整张图替换。
@@ -183,7 +184,7 @@ function catDraw() { const c = CAT; let k;
 
 /* 11/25 法阵（传送阵）+ 誓约石：站上去转满一圈（2 秒）触发。传送阵 → 高塔；誓约石 → 热度面板（先花 100 水晶解锁） */
 const MI = f => IM('art/meta/' + f + '.png'), CIR = [0, 1, 2, 3, 4].map(k => MI('circle' + k)), STN = [0, 1, 2, 3].map(k => MI('stone' + k));
-const SPOT = [{ id: 'tp', x: 320, y: 495, r: 60, ring: 0, done: 0 }, { id: 'oath', x: 820, y: 520, r: 60, ring: 0, done: 0 }];
+const SPOT = [{ id: 'mirror', x: 561, y: 560, r: 55, ring: 0, done: 0 }, { id: 'tp', x: 320, y: 495, r: 60, ring: 0, done: 0 }, { id: 'oath', x: 820, y: 520, r: 60, ring: 0, done: 0 }];
 const heat = () => { try { return Object.assign({ mob: 0, dmg: 0, life: 0 }, JSON.parse(LS.get('heat') || '{}')); } catch (e) { return { mob: 0, dmg: 0, life: 0 }; } };
 function flashTo(cb) { let f = document.getElementById('wf'); if (!f) { f = document.createElement('div'); f.id = 'wf'; f.style.cssText = 'position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:50;transition:opacity .45s'; document.body.appendChild(f); } f.style.opacity = 1; setTimeout(cb, 520); }
 function oathPanel() { $('pt').textContent = `誓约石　（水晶 ${crystal}）`; const L = $('pl'); L.innerHTML = '';
@@ -196,9 +197,38 @@ function oathPanel() { $('pt').textContent = `誓约石　（水晶 ${crystal}�
 function spotStep(dt) { const open = $('panel').style.display === 'flex';
   for (const o of SPOT) { const d = Math.hypot(hero.x - o.x, (hero.y - o.y) * 1.6), inn = d < o.r && !open && !tpGo && !EDIT;
     if (!inn) { o.ring = 0; o.done = 0; o.glow = Math.max(0, (o.glow || 0) - dt * 2); continue; } o.glow = Math.min(1, (o.glow || 0) + dt * 3); if (hero.mv && o.id === 'tp' && false) continue;
-    if (!o.done) { o.ring += dt / 2; if (o.ring >= 1) { o.done = 1; o.ring = 0; if (o.id === 'oath') oathPanel(); else if (GAME) { tpGo = 1; flashTo(() => parent.postMessage('toTower', '*')); } else { msg = '传送阵：站 2 秒会传送到高塔（demo 里不动）'; msgT = 2.5; o.done = 0; } } } } }
+    if (!o.done) { o.ring += dt / 2; if (o.ring >= 1) { o.done = 1; o.ring = 0; if (o.id === 'mirror') mirrorPanel(); else if (o.id === 'oath') oathPanel(); else if (GAME) { tpGo = 1; flashTo(() => parent.postMessage('toTower', '*')); } else { msg = '传送阵：站 2 秒会传送到高塔（demo 里不动）'; msgT = 2.5; o.done = 0; } } } } }
+
+/* 11/27 右上角菜单 + 勇者之镜（只读查看本局构筑） */
+$('mnBtn').onclick = e => { e.stopPropagation(); const b = $('mnBox'); b.style.display = b.style.display === 'flex' ? 'none' : 'flex'; };
+for (const b of document.querySelectorAll('#mnBox button')) b.onclick = e => { e.stopPropagation(); $('mnBox').style.display = 'none'; const m = b.dataset.m; if (!GAME) { msg = '（demo 里不可用）'; msgT = 2; return; } if (m === 'home') { if (confirm('回到主界面？存档会保留，下次「继续游戏」还在宫殿。')) parent.postMessage('toTitle', '*'); } else parent.postMessage('panel:' + m, '*'); };
+function saveRun() { try { const S = JSON.parse(localStorage.getItem('pxyz.save1') || 'null'); return S && S.RUN ? S.RUN : null; } catch (e) { return null; } }
+function careerReady(r) { try { if (!r || !window.JOBS) return null; const bs = JOBS.books(r); if (!r.finalCareer) { const f = bs.filter(b => b.job && !b.job.final && (b.job.progress || 0) >= JOBS.PROGRESS_MAX); if (f.length >= 2) return '两本职业书都练满了，可以最终转职'; } for (const a of bs) for (const b of bs) if (a !== b && !a.job && !b.job && JOBS.level(a) >= 7 && JOBS.canPair(r, a, b)) return `『${DATA.skills[a.id].name}』+『${DATA.skills[b.id].name}』可以转职`; } catch (e) {} return null; }
+function mirrorPanel() { const r = saveRun(), L = $('pl'); $('pt').textContent = '勇者之镜'; L.innerHTML = '';
+  const add = (h, t) => { const d = document.createElement('div'); d.className = 'sec'; d.textContent = h; L.appendChild(d); const p = document.createElement('div'); p.style.cssText = 'margin:4px 0 10px;line-height:1.7;font-size:15px'; p.innerHTML = t; L.appendChild(p); };
+  if (!r) { add('', '还没有出发，镜子里什么也没有。'); $('panel').style.display = 'flex'; return; }
+  const cr = careerReady(r); if (cr) add('✦ 转职', `<b style="color:#c07a00">${cr}！</b><br>回到战场按 P（手机点右上角暂停），点「转职」。`);
+  const sk = s => { if (!s) return '<span style="opacity:.5">空</span>'; if (s.job) { let n = ''; try { n = JOBS.name(s); } catch (e) {} const kids = (s.job.children || []).map(c => (DATA.skills[c.id] || {}).name).join(' + '); return `<b>${n}</b>（${kids}）` + (s.job.final ? ' · 最终职业' : ` · 职业进度 ${Math.min(s.job.progress || 0, JOBS.PROGRESS_MAX)}/${JOBS.PROGRESS_MAX}`); } const S = DATA.skills[s.id] || {}; return `${S.name || s.id} Lv${s.lv || 1}`; };
+  add('技能栏', (r.slots || []).slice(0, r.open || 3).map((s, i) => `${i + 1}. ${sk(s)}`).join('<br>'));
+  const nm = (o, tbl) => o ? `${(tbl[o.id] || {}).name || o.id}${o.lv ? ' Lv' + o.lv : ''}` : null;
+  add('誓约印记', (r.oath || []).map(o => nm(o, DATA.oaths || {})).filter(Boolean).join('、') || '无');
+  add('身法', (r.mv || []).map(o => nm(o, DATA.oaths || {})).filter(Boolean).join('、') || '旅人步');
+  const items = (r.gear || []).filter(x => x && x.kind === 'item').map(x => ((DATA.startItems || []).find(i => i.id === x.id) || {}).name || x.id);
+  add('宝物', items.join('、') || '无');
+  if (r.attrs) add('属性', Object.entries(r.attrs).map(([k, v]) => `${((DATA.attrs || []).find(a => a.id === k) || {}).name || k} ${v + ((r.alloc || {})[k] || 0)}`).join('　'));
+  add('', '<small style="opacity:.6">镜子只能看。调整技能、换装备、转职，请回到战场按 P。</small>');
+  $('panel').style.display = 'flex'; }
+function mirrorDraw(o) { const t = T, x = o.x, y = o.y, ready = careerReady(saveRun()); g.save();
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x, y + 8, 34, 9, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#6a4416'; g.fillRect(x - 4, y - 30, 8, 36); g.fillRect(x - 18, y + 2, 36, 6);
+  g.lineWidth = 7; g.strokeStyle = '#d8a640'; const gr = g.createLinearGradient(x - 26, y - 120, x + 26, y - 30); gr.addColorStop(0, '#cfe6ff'); gr.addColorStop(.5 + .3 * Math.sin(t * 1.5), '#ffffff'); gr.addColorStop(1, '#7aa6d8'); g.fillStyle = gr;
+  g.beginPath(); g.ellipse(x, y - 75, 26, 42, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.lineWidth = 2; g.strokeStyle = '#fff3c4'; g.stroke();
+  if (o.glow > 0) { g.globalAlpha = o.glow * .5; g.fillStyle = '#fff6d0'; g.beginPath(); g.ellipse(x, y - 75, 32, 48, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
+  if (ready) { const b = Math.sin(t * 4) * 4; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffd84a'; g.strokeStyle = '#3a1d02'; g.lineWidth = 4; g.strokeText('!', x, y - 128 + b); g.fillText('!', x, y - 128 + b); }
+  g.restore(); if (o.ring > 0) ringAt(o.x, o.y + 6, 60, 20, o.ring); }
 let tpGo = 0;
-function spotDraw(o) { const t = T; if (o.id === 'tp') { const f = o.glow > .5 ? (Math.floor(t * 4) % 2 ? 2 : 3) : (o.glow > 0 ? 1 : 0), im = CIR[f]; if (im && im.complete && im.naturalWidth) { const w = 170; g.drawImage(im, o.x - w / 2, o.y + 30 - w * im.naturalHeight / im.naturalWidth * .62, w, w * im.naturalHeight / im.naturalWidth); } { g.save(); g.globalCompositeOperation = 'lighter'; g.translate(o.x, o.y + 8); g.scale(1, .38); const k = .5 + .5 * Math.sin(t * 2.2), gr = g.createRadialGradient(0, 0, 0, 0, 0, 95); gr.addColorStop(0, `rgba(255,224,140,${.14 + .10 * k + .25 * (o.glow || 0)})`); gr.addColorStop(.6, `rgba(255,200,110,${.06 + .05 * k})`); gr.addColorStop(1, 'rgba(255,190,100,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 95, 0, 7); g.fill(); g.restore(); }
+function spotDraw(o) { if (o.id === 'mirror') return mirrorDraw(o); const t = T; if (o.id === 'tp') { const f = o.glow > .5 ? (Math.floor(t * 4) % 2 ? 2 : 3) : (o.glow > 0 ? 1 : 0), im = CIR[f]; if (im && im.complete && im.naturalWidth) { const w = 170; g.drawImage(im, o.x - w / 2, o.y + 30 - w * im.naturalHeight / im.naturalWidth * .62, w, w * im.naturalHeight / im.naturalWidth); } { g.save(); g.globalCompositeOperation = 'lighter'; g.translate(o.x, o.y + 8); g.scale(1, .38); const k = .5 + .5 * Math.sin(t * 2.2), gr = g.createRadialGradient(0, 0, 0, 0, 0, 95); gr.addColorStop(0, `rgba(255,224,140,${.14 + .10 * k + .25 * (o.glow || 0)})`); gr.addColorStop(.6, `rgba(255,200,110,${.06 + .05 * k})`); gr.addColorStop(1, 'rgba(255,190,100,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 95, 0, 7); g.fill(); g.restore(); }
     if (o.ring > 0) ringAt(o.x, o.y + 6, 80, 26, o.ring); if (o.done && o.glow > .9) { const im4 = CIR[4]; if (im4 && im4.complete) { const w = 170; g.drawImage(im4, o.x - w / 2, o.y + 30 - w * im4.naturalHeight / im4.naturalWidth * .62, w, w * im4.naturalHeight / im4.naturalWidth); } } }
   else { const H = heat(), tot = H.mob + H.dmg + H.life, f = !owned.oath ? 0 : tot === 0 ? 1 : (Math.floor(t * (tot > 4 ? 3.5 : 1.3)) % 2 ? 3 : 2), im = STN[f];
     if (owned.oath && tot > 0) { g.save(); g.globalCompositeOperation = 'lighter'; const gr = g.createRadialGradient(o.x, o.y - 60, 0, o.x, o.y - 60, 40 + tot * 8); gr.addColorStop(0, `rgba(255,${120 - tot * 8},40,${.10 + tot * .03 + .05 * Math.sin(t * (2 + tot))})`); gr.addColorStop(1, 'rgba(255,80,20,0)'); g.fillStyle = gr; g.fillRect(o.x - 120, o.y - 180, 240, 240); g.restore(); } if (im && im.complete && im.naturalWidth) { const w = 150, h = w * im.naturalHeight / im.naturalWidth; g.drawImage(im, o.x - w / 2, o.y + 8 - h, w, h); } if (o.ring > 0) ringAt(o.x, o.y + 10, 60, 20, o.ring); } }
