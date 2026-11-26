@@ -1,3 +1,4 @@
+const BURGER=[0,1,2,3,4,5].map(i=>Object.assign(new Image(),{src:'art/obj/burger'+i+'.png'}));   // 11/27
 // 像素勇者 · 技能书的出手效果（11/21 第二批）。规则和数值见 js/data.js 的 DATA.skills 与设计文档。
 // battle.js 负责轮流、前摇 / 后摇、熟练度；这里只管「出手那一刻做什么」、持续类（占时型 channel）、飞行物、地面区域、召唤物和它们的画法。
 // 距离单位：像素格（和 battle.js 一样，1 格 = K 地图像素）；角度用 ang()（已把竖向压扁算进去）。
@@ -172,7 +173,7 @@ window.SKILLS = (A) => {
     g_head(c) { const z=eliteTarget(),a=z?A.ang(H(),z):c.a,h=H(); A.fx({k:'line',x:h.x,y:h.y-12*K,a,L:1200,w:12,t:0,T:.2,col:'#fff6a0'});hitAll(q=>inLine(q,h,a,1200,18),c.d,{sid:c.sid,forceCrit:true,kb:8}); },
     g_clear(c) { const h={x:H().x,y:H().y},p=dense(40,220)||h;for(let i=0;i<4;i++)wait(i*.1,()=>{const q=P(h.x,h.y,c.a+PI/2,(i-1.5)*8);A.fx({k:'line',x:q.x,y:q.y,a:c.a,L:220,w:32,t:0,T:.16,col:'#80d8f0'});hitAll(z=>inLine(z,q,c.a,220,44),c.d,{sid:c.sid,kb:2});});wait(.4,()=>{puff(p,60,'#ffe08a');hitAll(z=>inCircle(z,p,60),c.d*1.5,{sid:c.sid,finisher:true,kb:8});}); },
     g_chomp(c) { const h={x:H().x,y:H().y};actor({kind:'burger',sid:c.sid,x:h.x,y:h.y,T:3,eaten:0,r:18,
-      update:(o,dt)=>{const d=Math.sin(o.t*PI/1.5)*95;o.x=h.x+Math.cos(c.a)*d*K;o.y=h.y+Math.sin(c.a)*d*K/YS;A.clamp(o);for(const z of F())if(o.eaten<5&&!z.tier&&!z.T.boss&&inCircle(z,o,o.r)){A.hurt(z,z.hp,o,0,c.sid,{execute:true,maxHits:5,hitGroup:'swallow'});o.eaten++;if(o.eaten===5)o.r=28;}},}); },
+      update:(o,dt)=>{if(o.gulp>0)o.gulp-=dt;o.fl=Math.cos(c.a)*Math.cos(o.t*PI/1.5)<0;const d=Math.sin(o.t*PI/1.5)*95;o.x=h.x+Math.cos(c.a)*d*K;o.y=h.y+Math.sin(c.a)*d*K/YS;A.clamp(o);for(const z of F())if(o.eaten<5&&!z.tier&&!z.T.boss&&inCircle(z,o,o.r)){A.hurt(z,z.hp,o,0,c.sid,{execute:true,maxHits:5,hitGroup:'swallow'});o.eaten++;o.gulp=.25;if(o.eaten===5)o.r=28;}},}); },
     g_missile(c) { const z=eliteTarget();packet(c,z?A.ang(H(),z):c.a,c.d,{home:z,v:170,r:10,life:2,look:'beam',onHit:(p,target)=>{const q={x:target.x,y:target.y};puff(q,42,'#ffb060');hitAll(t=>t!==target&&inCircle(t,q,42),c.d,{sid:c.sid,extra:true,kb:0});}}); },
     g_claw(c) { const p=dense(80,240)||H(),hit=[];actor({kind:'claw',sid:c.sid,x:p.x,y:p.y,T:.6,r:80});hitAll(z=>inCircle(z,p,80),c.d,{sid:c.sid,cc:['air',.4],kb:0,on:z=>hit.push(z)});wait(.4,()=>{puff(p,80,'#e8c8a0');for(const z of hit)if(!z.dead)A.hurt(z,c.d*8/15,p,8,c.sid,{finisher:true});}); },
     g_tank(c) { const p={x:H().x,y:H().y};actor({kind:'tank',sid:c.sid,x:p.x,y:p.y,origin:p,T:3,every:.5,maxTicks:6,
@@ -342,7 +343,7 @@ window.SKILLS = (A) => {
       if(o.kind==='skeleton'){SPR.draw(ctx,'skeleton','walk'+(Math.floor(o.t*8)%4),0,x,Y(o.y),false,u,{});}
       else if(o.kind==='grave'){rect(x-7*u,y-13*u,14,18,'rgba(150,120,175,.35)');rect(x-5*u,y-15*u,10,3,'#b794cd');}
       else if(o.kind==='holy'){ctx.strokeStyle='rgba(255,225,140,.35)';ctx.lineWidth=u;ctx.beginPath();ctx.ellipse(x,Y(o.y),(o.r||25)*u,(o.r||25)*u/YS,0,0,2*PI);ctx.stroke();}
-      else if(o.kind==='burger'){const b=o.eaten===5?1.5:1;ctx.save();ctx.translate(x,y);ctx.scale(b,b);rect(-13*u,-13*u,26,7,'#bc7b38');rect(-15*u,-6*u,30,4,'#65a84c');rect(-14*u,-2*u,28,5,'#793e2e');rect(-13*u,3*u,26,5,'#d39754');for(let i=0;i<4;i++)rect((-9+i*6)*u,-12*u,2,1,'#fff0b0');ctx.restore();}
+      else if(o.kind==='burger'){const b=o.eaten===5?1.5:1,fi=o.gulp>0?(o.gulp>.12?4:5):Math.floor(o.t*10)%4,I=BURGER[fi];ctx.save();ctx.translate(x,y);ctx.scale(b*(o.fl?-1:1),b);ctx.imageSmoothingEnabled=false;if(I.complete&&I.naturalWidth){const w=I.naturalWidth*u,hh=I.naturalHeight*u;ctx.drawImage(I,-w/2,6*u-hh,w,hh);}else{rect(-13*u,-13*u,26,7,'#bc7b38');rect(-14*u,-2*u,28,5,'#793e2e');}ctx.restore();}   /* 11/27 汉堡吞吞怪像素帧：4 帧咀嚼 + 2 帧吞下 */
       else if(o.kind==='tank'){rect(x-16*u,y-12*u,7,27,'#303c38');rect(x+9*u,y-12*u,7,27,'#303c38');rect(x-10*u,y-10*u,20,24,'#4e8460');rect(x-6*u,y-5*u,12,12,'#8cac80');rect(x-2*u,y-21*u,4,19,'#c0c8a8');}
       else if(o.kind==='brick'){for(let i=0;i<3;i++)for(let j=0;j<2;j++)rect(x+(i*10-15)*u,y+(j*6-6)*u,9,5,j?'#86512f':'#be8151');}
       else if(o.kind==='shield'){ctx.save();ctx.translate(x,y);ctx.rotate(o.a+PI/2);rect(-25*u,-3*u,50,7,'rgba(160,210,240,.35)');rect(-24*u,-3*u,48,1,'#c8e8f8');ctx.restore();}
