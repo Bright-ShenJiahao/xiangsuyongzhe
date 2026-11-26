@@ -184,7 +184,7 @@ function catDraw() { const c = CAT; let k;
 
 /* 11/25 法阵（传送阵）+ 誓约石：站上去转满一圈（2 秒）触发。传送阵 → 高塔；誓约石 → 热度面板（先花 100 水晶解锁） */
 const MI = f => IM('art/meta/' + f + '.png'), CIR = [0, 1, 2, 3, 4].map(k => MI('circle' + k)), STN = [0, 1, 2, 3].map(k => MI('stone' + k));
-const SPOT = [{ id: 'mirror', x: 561, y: 560, r: 55, ring: 0, done: 0 }, { id: 'tp', x: 320, y: 495, r: 60, ring: 0, done: 0 }, { id: 'oath', x: 820, y: 520, r: 60, ring: 0, done: 0 }];
+const SPOT = [{ id: 'mirror', x: 205, y: 410, r: 55, ring: 0, done: 0 }, { id: 'tp', x: 320, y: 495, r: 60, ring: 0, done: 0 }, { id: 'oath', x: 820, y: 520, r: 60, ring: 0, done: 0 }];
 const heat = () => { try { return Object.assign({ mob: 0, dmg: 0, life: 0 }, JSON.parse(LS.get('heat') || '{}')); } catch (e) { return { mob: 0, dmg: 0, life: 0 }; } };
 function flashTo(cb) { let f = document.getElementById('wf'); if (!f) { f = document.createElement('div'); f.id = 'wf'; f.style.cssText = 'position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:50;transition:opacity .45s'; document.body.appendChild(f); } f.style.opacity = 1; setTimeout(cb, 520); }
 function oathPanel() { $('pt').textContent = `誓约石　（水晶 ${crystal}）`; const L = $('pl'); L.innerHTML = '';
@@ -218,15 +218,12 @@ function mirrorPanel() { const r = saveRun(), L = $('pl'); $('pt').textContent =
   if (r.attrs) add('属性', Object.entries(r.attrs).map(([k, v]) => `${((DATA.attrs || []).find(a => a.id === k) || {}).name || k} ${v + ((r.alloc || {})[k] || 0)}`).join('　'));
   add('', '<small style="opacity:.6">镜子只能看。调整技能、换装备、转职，请回到战场按 P。</small>');
   $('panel').style.display = 'flex'; }
-function mirrorDraw(o) { const t = T, x = o.x, y = o.y, ready = careerReady(saveRun()); g.save();
-  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x, y + 8, 34, 9, 0, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#6a4416'; g.fillRect(x - 4, y - 30, 8, 36); g.fillRect(x - 18, y + 2, 36, 6);
-  g.lineWidth = 7; g.strokeStyle = '#d8a640'; const gr = g.createLinearGradient(x - 26, y - 120, x + 26, y - 30); gr.addColorStop(0, '#cfe6ff'); gr.addColorStop(.5 + .3 * Math.sin(t * 1.5), '#ffffff'); gr.addColorStop(1, '#7aa6d8'); g.fillStyle = gr;
-  g.beginPath(); g.ellipse(x, y - 75, 26, 42, 0, 0, Math.PI * 2); g.fill(); g.stroke();
-  g.lineWidth = 2; g.strokeStyle = '#fff3c4'; g.stroke();
-  if (o.glow > 0) { g.globalAlpha = o.glow * .5; g.fillStyle = '#fff6d0'; g.beginPath(); g.ellipse(x, y - 75, 32, 48, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
-  if (ready) { const b = Math.sin(t * 4) * 4; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffd84a'; g.strokeStyle = '#3a1d02'; g.lineWidth = 4; g.strokeText('!', x, y - 128 + b); g.fillText('!', x, y - 128 + b); }
-  g.restore(); if (o.ring > 0) ringAt(o.x, o.y + 6, 60, 20, o.ring); }
+const MIR = [IM('art/hub/mirror0.png'), IM('art/hub/mirror1.png')];
+function mirrorDraw(o) { const t = T, ready = careerReady(saveRun()), im = MIR[(o.glow || 0) > .3 ? 1 : 0]; g.save(); g.imageSmoothingEnabled = true;
+  g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(o.x + 6, o.y + 2, 40, 10, 0, 0, Math.PI * 2); g.fill();
+  if (im.complete && im.naturalWidth) g.drawImage(im, o.x - im.naturalWidth / 2, o.y + 6 - im.naturalHeight);
+  if (ready) { const b = Math.sin(t * 4) * 4; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffd84a'; g.strokeStyle = '#3a1d02'; g.lineWidth = 4; g.strokeText('!', o.x, o.y - 152 + b); g.fillText('!', o.x, o.y - 152 + b); }
+  g.restore(); g.imageSmoothingEnabled = false; if (o.ring > 0) ringAt(o.x, o.y + 6, 44, 14, o.ring); }
 let tpGo = 0;
 function spotDraw(o) { if (o.id === 'mirror') return mirrorDraw(o); const t = T; if (o.id === 'tp') { const f = o.glow > .5 ? (Math.floor(t * 4) % 2 ? 2 : 3) : (o.glow > 0 ? 1 : 0), im = CIR[f]; if (im && im.complete && im.naturalWidth) { const w = 170; g.drawImage(im, o.x - w / 2, o.y + 30 - w * im.naturalHeight / im.naturalWidth * .62, w, w * im.naturalHeight / im.naturalWidth); } { g.save(); g.globalCompositeOperation = 'lighter'; g.translate(o.x, o.y + 8); g.scale(1, .38); const k = .5 + .5 * Math.sin(t * 2.2), gr = g.createRadialGradient(0, 0, 0, 0, 0, 95); gr.addColorStop(0, `rgba(255,224,140,${.14 + .10 * k + .25 * (o.glow || 0)})`); gr.addColorStop(.6, `rgba(255,200,110,${.06 + .05 * k})`); gr.addColorStop(1, 'rgba(255,190,100,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 95, 0, 7); g.fill(); g.restore(); }
     { g.save(); g.textAlign = 'center'; g.lineJoin = 'round'; g.globalAlpha = .75 + .25 * (o.glow || 0); g.font = 'bold 22px sans-serif'; g.lineWidth = 5; g.strokeStyle = '#2a1404'; g.strokeText('高塔传送阵', o.x, o.y - 58); g.fillStyle = '#ffe6a8'; g.fillText('高塔传送阵', o.x, o.y - 58); g.font = '16px sans-serif'; g.lineWidth = 4; g.strokeText('站上去前往高塔', o.x, o.y - 36); g.fillStyle = '#ffdca0'; g.fillText('站上去前往高塔', o.x, o.y - 36); g.restore(); }   // 11/27 标签
