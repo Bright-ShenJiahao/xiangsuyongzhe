@@ -22,10 +22,14 @@ def frames(path):
         cy=(o[0][0].start+o[0][0].stop)/2
         if rows and abs(cy-rows[-1][0])<90: rows[-1][1].append(o)
         else: rows.append([cy,[o]])
-    order=[o for _,r in rows for o in sorted(r,key=lambda o:o[0][1].start)]
-    out=[]
-    for s,lid in order:
-        m=((L==lid)&fg)[s]; im=Image.fromarray(np.dstack([a[s],np.where(m,255,0)]).astype(np.uint8),'RGBA'); out.append(im.crop(im.getbbox()))
+    cw=a.shape[1]/8; out=[]   # 每行按 8 格分列，同一格里的碎块（飞出去的方块、光束）并成一帧
+    for _,r in rows:
+        cells={}
+        for sl,lid in r: cells.setdefault(int(((sl[1].start+sl[1].stop)/2)//cw),[]).append((sl,lid))
+        for k in sorted(cells):
+            grp=cells[k]; y0=min(g[0][0].start for g in grp); y1=max(g[0][0].stop for g in grp); x0=min(g[0][1].start for g in grp); x1=max(g[0][1].stop for g in grp)
+            m=np.isin(L[y0:y1,x0:x1],[g[1] for g in grp])&fg[y0:y1,x0:x1]
+            im=Image.fromarray(np.dstack([a[y0:y1,x0:x1],np.where(m,255,0)]).astype(np.uint8),'RGBA'); out.append(im.crop(im.getbbox()))
     return out
 SC=42/125   # 所有武器同一比例（AI 图里阿远约 125px 高），人物大小一致
 def main(args):
