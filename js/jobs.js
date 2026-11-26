@@ -53,7 +53,7 @@ window.JOBS = (() => {
     'common|scythe': ['亡魂斗士','通用技能命中挂诅咒'],
   });
   const key = ws => ws.slice().sort((a, b) => order.indexOf(a) - order.indexOf(b)).join('|');
-  const family = s => ({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff', '元素法杖': 'staff', '光枪': 'gun', '游戏机光枪': 'gun', '通用': 'common', '普通': 'common', '圣典': 'tome', '镰刀': 'scythe' })[s?.sys] || ({ lightgun: 'gun', blaster: 'gun', general: 'common', normal: 'common' })[s?.w] || (order.includes(s?.w) ? s.w : null);
+  const family = s => ({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff', '元素法杖': 'staff', '掌机': 'gun', '掌机': 'gun', '通用': 'common', '普通': 'common', '圣典': 'tome', '镰刀': 'scythe' })[s?.sys] || ({ lightgun: 'gun', blaster: 'gun', general: 'common', normal: 'common' })[s?.w] || (order.includes(s?.w) ? s.w : null);
   const leaves = b => b?.job ? b.job.children : b && DATA.skills[b.id] ? [b] : [];
   const books = r => [...r.slots, ...r.bag].filter(b => b && (b.kind === 'book' || !b.kind) && DATA.skills[b.id]);
   const skills = r => books(r).flatMap(leaves);

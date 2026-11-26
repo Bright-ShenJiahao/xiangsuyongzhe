@@ -123,6 +123,6 @@
   const heroSet = (c, w) => c === 'm' && SETS.heroM2 && SETS.heroM2.f[(w || 'sword') + '.idle'] ? 'heroM2' : c === 'e' && SETS.heroE ? 'heroE' : c === 'p' && SETS.heroP ? 'heroP' : HF && (!w || w === 'sword') && SETS.hero31m ? (c === 'f' ? 'hero31f' : 'hero31m') : c !== 'f' && SETS.heroN && (!w || w === 'sword') ? 'heroN' : c === 'f' && SETS.heroF ? 'heroF' : SETS.herohd ? 'herohd' : 'hero';   // c = 'm' 男主 / 'f' 女主（女主暂时没有高清版）
   const heroK = () => 1;
   // 勇者拿哪种武器：o.w = sword / spear / bow / staff（11/21 四套武器图，key 是 hero:<武器>.<动作>）；没有这套就用剑
-  function drawHero(ctx, n, i, X, Y, flip, u, o = {}) { o = { ...o, w: o.w === 'gun' ? 'bow' : o.w === 'tome' ? 'staff' : o.w === 'common' || o.w === 'scythe' ? 'sword' : o.w }; const s = heroSet(o.c, o.w); if (o.w && SETS[s].f[o.w + '.' + n]) n = o.w + '.' + n; draw(ctx, s, n, i, X, Y, flip, u, o); }
+  function drawHero(ctx, n, i, X, Y, flip, u, o = {}) { o = { ...o, w: o.c === 'm' && SETS.heroM2?.f[o.w + '.idle'] ? o.w : o.w === 'gun' ? 'bow' : o.w === 'tome' ? 'staff' : o.w === 'common' || o.w === 'scythe' ? 'sword' : o.w }; const s = heroSet(o.c, o.w); if (o.w && SETS[s].f[o.w + '.' + n]) n = o.w + '.' + n; else if (!SETS[s].f[n]) n = SETS[s].f[o.w + '.atk'] ? o.w + '.atk' : 'atk'; draw(ctx, s, n, i, X, Y, flip, u, o); }
   window.SPR = { HD, load, setGrade, frame, count, draw, crop, sets: SETS, heroSet, heroK, drawHero };
 })();

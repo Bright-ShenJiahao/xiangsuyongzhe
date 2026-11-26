@@ -239,7 +239,7 @@
     const kbm = z.T.boss || z.tier === 'mini' ? 0 : z.tier === 'elite' ? .22 : .43;
     if (!o.extra && kbm && z.kbT <= 0) { z.kbx = Math.cos(a) * kb * kbm * K; z.kby = Math.sin(a) * kb * kbm * K / YS; z.kbT = .2; if (z.st === 'run') { z.st = 'hurt'; z.t = 0; } }
     if (!o.quiet) for (let i = 0; i < 3; i++) parts.push({ x: z.x, y: z.y - 14 * K, vx: (R(-30, 30) + Math.cos(a) * 30) * K, vy: R(-50, -10) * K, t: 0, T: R(.2, .4), col: i % 2 ? '#ffffff' : '#ffe9a8', g: 160 * K });
-    // 11/27 定格每次释放只触发一次（多段/连射不再一卡一卡），追加攻击不定格；光枪同弓、通用居中
+    // 11/27 定格每次释放只触发一次（多段/连射不再一卡一卡），追加攻击不定格；掌机同弓、通用居中
     if (!o.extra && !(token && token.hsDone)) { if (token) token.hsDone = 1; const w = S && S.w, hs = w === 'bow' || w === 'gun' ? .01 : w === 'staff' ? .045 : w === 'common' ? .03 : w ? .06 : .02; G.hitStop = Math.max(G.hitStop, (z.T.boss ? Math.max(.04, hs) : hs) * (crit ? 1.5 : 1)); }   // 11/24 定格按招式：近身重、弓几乎不停、法术居中
     z.jit = .18; SFX.play(crit ? 'crit' : 'hit');   // 受击横向抖动
     if(z.hp<=0)kill(z,!!o.extra); return true;
@@ -713,7 +713,7 @@
         label(p.t.split('：')[0], px, py + 10 * u, ok ? '#fff3d8' : '#888', 6.5); if (SKUL(p, 14) && p.t.includes('：')) say(x, y - 50 * u, [p.t + (ok ? '' : '（条件不够）')], 99); }
       return; }
     if (o.k === 'chest') { const im = img('chest'); if (!o.open && im.complete) ctx.drawImage(im, x - 14 * u, y - 24 * u, 28 * u, 28 * u); if (!o.open) { label('宝箱', x, y + 5 * u); ring(o, 14, o.st / .3, '#ffe08a'); }
-      if (o.books) for (const b of o.books) { const S = DATA.skills[b.id], bi = img(({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '圣典':'bk_wand', '镰刀':'bk_sword', '光枪': 'bk_bow', '通用': 'bk_sword' })[S.sys]), bx = X(b.x), by = Y(b.y) - 9 * u;
+      if (o.books) for (const b of o.books) { const S = DATA.skills[b.id], bi = img(({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '圣典':'bk_wand', '镰刀':'bk_sword', '掌机': 'bk_bow', '通用': 'bk_sword' })[S.sys]), bx = X(b.x), by = Y(b.y) - 9 * u;
         ctx.fillStyle = 'rgba(255,220,120,.3)'; ctx.beginPath(); ctx.arc(bx, by, 13 * u, 0, 7); ctx.fill(); if (bi.complete) ctx.drawImage(bi, bx - 10 * u, by - 10 * u, 20 * u, 20 * u); label(S.name, bx, by + 12 * u, ['#e6e2d6', '#e6e2d6', '#6ab8ff', '#c890ff', '#ffd84a'][S.tier]); ring(b, 15, b.st / .3, '#fff'); } }
     if (o.k === 'fire') {   // 11/23 篝火：官方美术（石圈木柴底座 + 8 帧火苗叠在木柴上）
       const gl = ctx.createRadialGradient(x, y - 10 * u, 0, x, y - 10 * u, 60 * u), fl = (.3 + .06 * Math.sin(G.t * 9)) * (o.out ? Math.max(0, 1 - (G.t - o.out) / .5) : 1); gl.addColorStop(0, `rgba(255,150,60,${fl})`); gl.addColorStop(1, 'rgba(255,150,60,0)'); ctx.fillStyle = gl; ctx.fillRect(x - 60 * u, y - 70 * u, 120 * u, 120 * u);
@@ -790,8 +790,8 @@
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; { const lg = ctx.createRadialGradient(x, Y(d.y), 0, x, Y(d.y), rw * 1.8); lg.addColorStop(0, C(.35 + near * .2)); lg.addColorStop(1, C(0)); ctx.fillStyle = lg; ctx.beginPath(); ctx.ellipse(x, Y(d.y), rw * 1.8, rw * .55, 0, 0, 7); ctx.fill(); } ctx.restore();
       const big = c.lbl ? c.lbl : bo ? '首领' : el ? '精英' : ev ? '奇遇' : rs ? '休整' : '战斗', sub = rs && !ev ? ({ chest: '宝箱', fire: '篝火', shop: '商人' })[k] : '';
       label(big, x, cy - rh * 1.12 - 2 * u, `rgb(${Math.min(255, r0 + 40)},${Math.min(255, g0 + 40)},${Math.min(255, b0 + 40)})`, 9); if (sub) label(sub, x, cy - rh * 1.12 + 8 * u, '#f4ecd8', 6); ring({ x: d.x, y: d.y }, 10, d.st / .35, '#ffe08a'); }
-    for (const o of f.items) { const im = img(o.kind === 'book' ? ({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '圣典':'bk_wand', '镰刀':'bk_sword', '光枪': 'bk_bow', '通用': 'bk_sword' })[DATA.skills[o.id].sys] : o.kind === 'manual' ? (o.id === 'master' ? 'bk_staff' : 'bk_sword') : o.id), x = X(o.x), y = Y(o.y) - 9 * u - rd((0 * Math.sin(G.t * 3 + o.x) * 2) * u);
-      ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + u, 9 * u, 3 * u, 0, 0, 7); ctx.fill(); if (o.kind === 'book') dspr('book_' + ({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff', '光枪': 'bow', '通用': 'sword' })[DATA.skills[o.id].sys], x, Y(o.y) + 2 * u); else if (o.kind === 'use') dspr('meat', x, Y(o.y) + 2 * u); else if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); ring(o, 12, o.st / .6, '#ffe08a', 9); }
+    for (const o of f.items) { const im = img(o.kind === 'book' ? ({ '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '圣典':'bk_wand', '镰刀':'bk_sword', '掌机': 'bk_bow', '通用': 'bk_sword' })[DATA.skills[o.id].sys] : o.kind === 'manual' ? (o.id === 'master' ? 'bk_staff' : 'bk_sword') : o.id), x = X(o.x), y = Y(o.y) - 9 * u - rd((0 * Math.sin(G.t * 3 + o.x) * 2) * u);
+      ctx.fillStyle = 'rgba(30,15,5,.4)'; ctx.beginPath(); ctx.ellipse(x, Y(o.y) + u, 9 * u, 3 * u, 0, 0, 7); ctx.fill(); if (o.kind === 'book') dspr('book_' + ({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff', '掌机': 'bow', '通用': 'sword' })[DATA.skills[o.id].sys], x, Y(o.y) + 2 * u); else if (o.kind === 'use') dspr('meat', x, Y(o.y) + 2 * u); else if (im.complete && im.naturalWidth) ctx.drawImage(im, x - 9 * u, y - 9 * u, 18 * u, 18 * u); ring(o, 12, o.st / .6, '#ffe08a', 9); }
     const P = f.pr, px = X(P.x), py = Y(P.y);
     ctx.save(); ctx.globalAlpha = .5 + .15 * Math.sin(G.t * 2); ctx.strokeStyle = '#c8a8ff'; ctx.lineWidth = 2 * u; ctx.setLineDash([4 * u, 4 * u]); ctx.beginPath(); ctx.ellipse(px, py + 30 * u, 62 * u, 62 * u / YS * .9, 0, 0, 7); ctx.stroke(); ctx.fillStyle = 'rgba(200,170,255,.07)'; ctx.fill(); ctx.restore();
     const gl = ctx.createRadialGradient(px, py - 20 * u, 0, px, py - 20 * u, 40 * u); gl.addColorStop(0, 'rgba(220,190,255,.5)'); gl.addColorStop(1, 'rgba(220,190,255,0)'); ctx.fillStyle = gl; ctx.fillRect(px - 40 * u, py - 60 * u, 80 * u, 80 * u);
@@ -958,10 +958,10 @@
       for (const r of AMB.rain) { r.y += r.v * dt * H / 800; r.x -= r.v * .22 * dt * H / 800; if (r.y > H + 20) { r.y = R(-80, -10); r.x = R(-60, W + 120); } ctx.strokeStyle = `rgba(190,210,235,${r.a})`; ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x + r.L * .22 * u * .5, r.y - r.L * u * .5); ctx.stroke(); }
       ctx.restore(); }
   }
-  const BKI = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '圣典':'bk_wand', '镰刀':'bk_sword', '光枪': 'bk_bow', '通用': 'bk_sword' };
+  const BKI = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '圣典':'bk_wand', '镰刀':'bk_sword', '掌机': 'bk_bow', '通用': 'bk_sword' };
   function slotOf(o) { if (o.kind === 'book') { const S = DATA.skills[o.id]; return { src: 'art/ui2/' + BKI[S.sys] + '.png', name: S.name, rare: S.tier >= 3 }; } const it = DATA.startItems.find(i => i.id === o.id) || {}; return { src: 'art/ui2/' + o.id + '.png', name: it.name || '宝物', em: it.icon, rare: (it.price || 0) >= 44 }; }
   function slotPool() { const P = []; for (const id in DATA.skills) P.push(slotOf({ kind: 'book', id })); for (const it of ITEMS()) P.push(slotOf({ kind: 'item', id: it.id })); return P; }
-  function gotFeed(o) { const k = o.kind === 'book' ? '一本技能书' : o.kind === 'item' ? '一件宝物' : ''; if (k) { try { const rc = cv.getBoundingClientRect(), q = rc.width / cv.width, ic = o.kind === 'book' ? 'art/drop/book_' + (({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff', '光枪': 'bow', '通用': 'sword' })[(DATA.skills[o.id] || {}).sys] || 'sword') + '.png' : 'art/drop/chest.png'; if (o.x != null) UI.FX.fly(ic, rc.left + X(o.x) * q, rc.top + Y(o.y) * q); } catch (e) {} UI.feed(`获得${k}，${UI.pTip()}`); UI.newDot(); } }
+  function gotFeed(o) { const k = o.kind === 'book' ? '一本技能书' : o.kind === 'item' ? '一件宝物' : ''; if (k) { try { const rc = cv.getBoundingClientRect(), q = rc.width / cv.width, ic = o.kind === 'book' ? 'art/drop/book_' + (({ '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff', '掌机': 'bow', '通用': 'sword' })[(DATA.skills[o.id] || {}).sys] || 'sword') + '.png' : 'art/drop/chest.png'; if (o.x != null) UI.FX.fly(ic, rc.left + X(o.x) * q, rc.top + Y(o.y) * q); } catch (e) {} UI.feed(`获得${k}，${UI.pTip()}`); UI.newDot(); } }
   function toastMsg(t) { UI.toast && UI.toast(t); }
   function bossIn() { if (G.bossOut) return; G.bossOut = true; G.boss = spawn(G.W.boss || MAP.boss); G.boss.cd = 2.5; banner('哥布林王 出现了！', 2.4); G.shake = .3; }
 
