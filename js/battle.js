@@ -225,7 +225,8 @@
     const kbm = z.T.boss || z.tier === 'mini' ? 0 : z.tier === 'elite' ? .22 : .43;
     if (!o.extra && kbm && z.kbT <= 0) { z.kbx = Math.cos(a) * kb * kbm * K; z.kby = Math.sin(a) * kb * kbm * K / YS; z.kbT = .2; if (z.st === 'run') { z.st = 'hurt'; z.t = 0; } }
     if (!o.quiet) for (let i = 0; i < 3; i++) parts.push({ x: z.x, y: z.y - 14 * K, vx: (R(-30, 30) + Math.cos(a) * 30) * K, vy: R(-50, -10) * K, t: 0, T: R(.2, .4), col: i % 2 ? '#ffffff' : '#ffe9a8', g: 160 * K });
-    { const w = S && S.w, hs = w === 'bow' ? .01 : w === 'staff' ? .045 : w ? .06 : .02; G.hitStop = Math.max(G.hitStop, (z.T.boss ? Math.max(.04, hs) : hs) * (crit ? 1.5 : 1)); }   // 11/24 定格按招式：近身重、弓几乎不停、法术居中
+    // 11/27 定格每次释放只触发一次（多段/连射不再一卡一卡），追加攻击不定格；光枪同弓、通用居中
+    if (!o.extra && !(token && token.hsDone)) { if (token) token.hsDone = 1; const w = S && S.w, hs = w === 'bow' || w === 'gun' ? .01 : w === 'staff' ? .045 : w === 'common' ? .03 : w ? .06 : .02; G.hitStop = Math.max(G.hitStop, (z.T.boss ? Math.max(.04, hs) : hs) * (crit ? 1.5 : 1)); }   // 11/24 定格按招式：近身重、弓几乎不停、法术居中
     z.jit = .18; SFX.play(crit ? 'crit' : 'hit');   // 受击横向抖动
     if (z.hp <= 0) kill(z); return true;
   }
@@ -938,6 +939,7 @@
   function update(dt) {
     { const dc = RUN.coins - (G.lastC == null ? RUN.coins : G.lastC); if (dc > 0) G.earned = (G.earned || 0) + dc; G.lastC = RUN.coins; }
     G.t += dt; hero.t += dt; if (G.lvUpT > 0) G.lvUpT -= dt;
+    if ((G.crT = (G.crT || 0) - dt) <= 0) { G.crT = 1; const ok = !!(window.CAMP && CAMP.careerReady && CAMP.careerReady()); if (ok && !G.crOk) { banner('可以转职了！打开备战页点「转职」', 3); SFX.play('lv'); UI.newDot(); } G.crOk = ok; }   // 11/27 转职提醒：条件刚满足时提示一次，暂停键亮红点
     if (G.comboT > 0 && (G.comboT -= dt) <= 0) G.combo = 0; coinTick(dt);   // 11/22 连击：3 秒没杀到怪就断
     if (G.drop) { G.drop.t += dt; hero.inv = Math.max(hero.inv, .2); if (G.drop.t >= DROP_T && !G.drop.land) { G.drop.land = 1; G.shake = Math.max(G.shake, .7); SFX.play('pon');
         for (let i = 0; i < 40; i++) { const a = R(0, PI * 2), v = R(40, 130) * K; parts.push({ x: hero.x, y: hero.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .4 - 10 * K, t: 0, T: R(.4, .8), col: i % 3 ? '#c8b088' : '#e8dcc0', g: 0 }); }

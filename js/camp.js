@@ -139,15 +139,15 @@
     const r=R(), books=JOBS.books(r), finals=[];
     if(!r.finalCareer) for(const a of books.filter(b=>b.job&&!b.job.final&&b.job.progress>=JOBS.PROGRESS_MAX)) for(const b of books.filter(q=>q!==a&&q.job&&!q.job.final&&q.job.progress>=JOBS.PROGRESS_MAX)) { const key=JOBS.key([a.job.families[0],b.job.families[0]]), name=JOBS.finals[key]?.[0]; if(name&&!finals.some(x=>x.a===b&&x.b===a)) finals.push({kind:'final',a,b,label:`${JOBS.name(a)} + ${JOBS.name(b)} → ${name}`}); }
     if(finals.length) return finals;
-    const pairs=[];for(const a of books.filter(b=>!b.job&&JOBS.level(b)>=7))for(const b of books)if(JOBS.canPair(r,a,b))pairs.push({kind:'pair',a,b,label:`${SK[a.id].name} + ${SK[b.id].name} → ${JOBS.careers[JOBS.family(SK[a.id])][0]}`});
+    const pairs=[];for(const a of books.filter(b=>!b.job&&JOBS.level(b)>=7))for(const b of books)if(JOBS.canPair(r,a,b)&&!pairs.some(x=>x.a===b&&x.b===a))pairs.push({kind:'pair',a,b,label:`${SK[a.id].name} + ${SK[b.id].name} → ${JOBS.careers[JOBS.family(SK[a.id])][0]}`});
     return pairs;
   }
   function careerButton() {
     if(!JOBS?.books||!B()?.run?.()){document.getElementById('careerEntry')?.remove();return;}
     const choices=careerChoices();if(!choices.length){document.getElementById('careerEntry')?.remove();return;}
-    const btn=document.getElementById('careerEntry')||document.createElement('button');btn.id='careerEntry';btn.className='btn gold career-entry';btn.textContent=choices[0].kind==='final'?'最终转职':'转职';btn.style.cssText='position:fixed;z-index:110;left:50%;bottom:82px;transform:translateX(-50%);min-width:190px;animation:careerPulse 1.3s ease-in-out infinite alternate';
+    const btn=document.getElementById('careerEntry')||document.createElement('button');btn.id='careerEntry';btn.className='btn gold career-entry';btn.textContent=choices[0].kind==='final'?'最终转职':'转职';
     btn.onclick=()=>chooseCareer(btn.textContent,careerChoices(),item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged(); careerAnimation(merged);return true;});
-    if(!btn.isConnected)document.body.appendChild(btn);
+    if(btn.parentNode!==$('pHome').parentNode)$('pHome').parentNode.insertBefore(btn,$('pRe').nextSibling);
   }
   const careerColor=book=>book?.job?.final?'#ffd36a':({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e'})[book?.job?.families?.[0]]||'#fff';
   function careerAnimation(book){
@@ -160,8 +160,8 @@
     if (cur.kind !== 'book') return;
     if (raw.job) {
       btn('调换招式顺序', () => chooseCareer('选择要前移的招式', raw.job.children.map((s,i) => ({ label: `${i+1}. ${SK[s.id].name}${i ? ' ↑' : '（移到末尾）'}`, i })), x => { const j = x.i ? x.i-1 : raw.job.children.length-1; JOBS.swap(raw,x.i,j); B().careerChanged(); sel=null; loadout(box); return true; }));
-      if (!raw.job.final && raw.job.progress >= JOBS.PROGRESS_MAX && !r.finalCareer) { const peers = JOBS.books(r).filter(b => b !== raw && b.job && !b.job.final && b.job.progress >= JOBS.PROGRESS_MAX); if (peers.length) btn('最终转职', () => chooseCareer('合成最终职业书', peers.map(b => ({ label: JOBS.finals[JOBS.key([raw.job.families[0],b.job.families[0]])][0] + '（与' + JOBS.name(b) + '合成）', book:b })), x => { if (!JOBS.merge(r,raw,x.book,true)) return false; B().careerChanged(); sel=null; loadout(box); return true; }),true); }
-    } else if (JOBS.level(raw) >= 7) { const peers = JOBS.books(r).filter(b => JOBS.canPair(r,raw,b)); if (peers.length) btn('转职', () => chooseCareer((r.careerCount ? '第二职业书' : '一转') + '：选择同系技能', peers.map(b => ({ label: `${SK[raw.id].name} + ${SK[b.id].name} → ${JOBS.careers[JOBS.family(SK[raw.id])][0]}`, book:b })), x => { if (!JOBS.merge(r,raw,x.book)) return false; B().careerChanged(); sel=null; loadout(box); return true; }),true); }
+      // 11/27 转职/最终转职统一走底部「转职」按钮
+    }
   }
   // ---------- 属性页：升级攒的属性点手动加；这次结算 / 暂停里加的点，离开前都能退 ----------
   function commit() { const r = R(); for (const k in r.tmp) r.alloc[k] = (r.alloc[k] || 0) + r.tmp[k]; r.tmp = {}; }
@@ -426,5 +426,6 @@
   }
   function pauseOpen() { prevFill = null; UI.newDot(false); sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); careerButton(); }
 
-  window.CAMP = { giveGear, learn, rollXiu, open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
+  const setPz = () => document.documentElement.style.setProperty('--pz', Math.max(1, Math.min(1.5, innerWidth * .8 / 1000, innerHeight * .94 / 640)).toFixed(3)); setPz(); addEventListener('resize', setPz);
+  window.CAMP = { careerReady: () => { try { return !!(JOBS?.books && B()?.run?.() && careerChoices().length); } catch (e) { return false; } }, giveGear, learn, rollXiu, open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
 })();
