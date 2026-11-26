@@ -1507,3 +1507,16 @@ html body .oathrow .oic { border-radius: 50%; }
 #careerEntry.career-entry:hover { transform: translateY(-1px) scale(1.03); }
 @keyframes careerGlow { from { box-shadow: 0 0 0 3px #5a340a, 0 0 8px 2px rgba(255,200,80,.5), inset 0 -3px 0 rgba(90,50,0,.4); } to { box-shadow: 0 0 0 3px #5a340a, 0 0 22px 7px rgba(255,215,100,.95), inset 0 -3px 0 rgba(90,50,0,.4); } }
 #tpanel { z-index: 95; }   /* 11/27 宫殿菜单打开的面板要盖在宫殿 iframe 上 */
+
+/* 11/27 圆形转职按钮（框 260x280，孔中心 130,150 直径 135） */
+#pause .cfoot { position: relative; }
+#careerEntry.career-round { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); width: 112px; height: 121px; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; z-index: 5; animation: none; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+#careerEntry.career-round:hover { transform: translateX(-50%) scale(1.06); }
+#careerEntry .cr-bg { position: absolute; left: 50%; top: 53.6%; width: 52%; height: 48%; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, #2a2238 0%, #0c0a12 75%); }
+#careerEntry .cr-emb { position: absolute; left: 50%; top: 53.6%; width: 46%; transform: translate(-50%, -50%); }
+#careerEntry .cr-fr { position: absolute; inset: 0; width: 100%; height: 100%; }
+#careerEntry .cr-on { animation: crBlink 1.3s ease-in-out infinite alternate; }
+@keyframes crBlink { from { opacity: 0; } to { opacity: 1; } }
+#careerEntry span { position: absolute; left: 0; right: 0; top: 75%; text-align: center; font-size: 14px; font-weight: bold; color: #fff8e0; letter-spacing: 2px; text-shadow: 0 1px 2px #000, 0 0 3px #000; }
+#careerEntry.final span { font-size: 12px; letter-spacing: 0; }
+@media (orientation: portrait), (max-width: 760px) { #careerEntry.career-round { position: relative; left: auto; bottom: auto; transform: none; display: block; margin: 0 calc(50% - 48px) !important; flex: 0 0 96px !important; width: 96px; height: 104px; } #careerEntry.career-round:hover { transform: none; } #pause .cfoot .career-round { order: -1; } }

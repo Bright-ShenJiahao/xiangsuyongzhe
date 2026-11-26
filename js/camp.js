@@ -154,7 +154,9 @@
     if(!JOBS?.books||!B()?.run?.()){if(old?._blink)clearInterval(old._blink);old?.remove();return;}
     const choices=careerChoices();if(!choices.length){if(old?._blink)clearInterval(old._blink);old?.remove();return;}
     const btn=old||document.createElement('button');btn.id='careerEntry';btn.className='btn gold career-entry';const final=choices[0].kind==='final',base=final?'art/ui2/btn_final.png':'art/ui2/btn_career.png',on=final?'art/ui2/btn_final_on.png':'art/ui2/btn_career_on.png';
-    btn.innerHTML='';const im=document.createElement('img');im.alt=final?'最终转职':'转职';im.src=base;im.style.cssText='width:74px;height:74px;object-fit:contain;image-rendering:pixelated';btn.style.cssText='width:80px;height:80px;min-width:0;padding:2px';im.onerror=()=>{im.remove();btn.style.cssText='';btn.textContent=final?'最终转职':'转职';};btn.appendChild(im);if(btn._blink)clearInterval(btn._blink);btn._blink=setInterval(()=>{if(!im.isConnected){clearInterval(btn._blink);return;}im.src=im.src.endsWith(base)?on:base;},650);
+    { const c0=choices[0], fam=final?JOBS.key([c0.a.job.families[0],c0.b.job.families[0]]).replace('|','-'):JOBS.family(SK[c0.a.id]);   // 11/27 圆形转职按钮：中间放要转出的职业纹章
+      btn.className='career-round'+(final?' final':''); btn.style.cssText=''; btn.title=final?'最终转职':'转职';
+      btn.innerHTML=`<i class="cr-bg"></i><img class="cr-emb" src="art/jobs/${fam}.png" alt=""><img class="cr-fr" src="${base}" alt=""><img class="cr-fr cr-on" src="${on}" alt=""><span>${final?'最终转职':'转职'}</span>`; if(btn._blink)clearInterval(btn._blink); }
     btn.onclick=()=>openCareer();if(btn.parentNode!==$('pHome').parentNode)$('pHome').parentNode.insertBefore(btn,$('pRe').nextSibling);
   }
   const careerColor=book=>book?.job?.final?'#ffd36a':({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e',tome:'#ffe6a2',scythe:'#bb8bdf'})[book?.job?.families?.[0]]||'#fff';
