@@ -206,8 +206,9 @@ window.SKILLS = (A) => {
   }
   return {
     // 出手：返回 null = 没敌人；返回 channel 对象 = 占时型
-    cast(c) { if (!F().length) return null; active = { hits: new Map(), effects: new Set(), thunderBonus: false, bonus: c.bonus || 0 }; const token = active; const r = C[c.S.kind || c.sk.id](c); if (r && r.hold) { const channel = Object.assign({ ti: r.every, cast: token, scale: area(), elapsed: 0 }, r); if (['storm', 'dragon', 'blizzard', 'starfall', 'abyss'].includes(c.sk.id)) { if (r.snow || r.spin || c.sk.id === 'dragon') followers = followers.filter(f => !f.follow); channel.follow = !!(r.snow || r.spin || c.sk.id === 'dragon'); followers.push(channel); active = null; return true; } ch = channel; active = null; return ch; } if (c.S.sys === '剑' && c.sk.id !== 'phantom') for (const g of ghosts) if (g.mimic && g.spun && g.t < g.T) withCast(g.cast, () => ghostSpin(g)); active = null; return true; },
+    cast(c) { if (!F().length) return null; active = { hits: new Map(), effects: new Set(), thunderBonus: false, bonus: c.bonus || 0, career: c.career }; const token = active; const r = C[c.S.kind || c.sk.id](c); if (r && r.hold) { const channel = Object.assign({ ti: r.every, cast: token, scale: area(), elapsed: 0 }, r); if (['storm', 'dragon', 'blizzard', 'starfall', 'abyss'].includes(c.sk.id)) { if (r.snow || r.spin || c.sk.id === 'dragon') followers = followers.filter(f => !f.follow); channel.follow = !!(r.snow || r.spin || c.sk.id === 'dragon'); followers.push(channel); active = null; return true; } ch = channel; active = null; return ch; } if (c.S.sys === '剑' && c.sk.id !== 'phantom') for (const g of ghosts) if (g.mimic && g.spun && g.t < g.T) withCast(g.cast, () => ghostSpin(g)); active = null; return true; },
     chEnd() { if (ch && ch.end) withCast(ch.cast, ch.end); ch = null; }, ch: () => ch,
+    extraShot(p) { const prev = active; active = null; try { return shoot({ ...p, o: { ...p.o, extra: true, jobExtra: true } }); } finally { active = prev; } },
     has: id => !!C[id], tick, drawUnder, drawOver,
     reset() { projs = []; zones = []; swords = []; orbs = []; ghosts = []; later = []; marks = []; followers = []; active = null; ch = null; },
   };

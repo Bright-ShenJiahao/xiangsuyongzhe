@@ -34,6 +34,8 @@
   function pi(name, k = 2) { if (name === 'oath/traveler') name = 'oath/qingyu'; if (name === 'end') name = 'amulet';   // 11/23 耐力用护身符图标，和物防的盾分开
     const im = new Image(); im.className = 'pi'; im.alt = ''; im.draggable = false; im.src = 'art/ui2/' + name + '.png'; const s = (window.UIART || {})[name]; if (s) { im.width = s[0] * k; im.height = s[1] * k; } return im; }
   const piH = (name, k) => pi(name, k).outerHTML;
+  function careerIcon(book) { if (!book?.job) return skIcon(book.id); const w = document.createElement('span'); w.className = 'careerIcon'; w.style.cssText = 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;height:100%;gap:1px;align-items:center;justify-items:center'; w.title = JOBS.name(book); for (const s of JOBS.leaves(book)) { const im = bookOf(s.id); im.style.cssText = 'width:100%;height:100%;max-height:32px;object-fit:contain'; w.appendChild(im); } return w; }
+
   function iconCanvas(name) { return pi(BOOK[name] || name); }
   function iconCanvasOld(name) { const c = document.createElement('canvas'); c.width = c.height = 16; const g = c.getContext('2d'); (ICON[name] || ICON.sword).forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); } })); return c; }
 
@@ -371,7 +373,7 @@
     set('clock', 'cls', 'clock' + (h.left != null && h.left < 5.5 && !h.bossWave ? ' warn' : ''));
  FX.coin(h.coins); FX.combo(h.combo);
     const sk = JSON.stringify([h.slots, h.open, h.next]);
-    if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.classList.add('tr', 't' + DATA.skills[s.id].tier); d.appendChild(skIcon(s.id)); { const L = BATTLE.profL(s); if (L) d.insertAdjacentHTML('beforeend', `<i>${L}</i>`); } } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
+    if (HC.sbar !== sk) { HC.sbar = sk; const bar = $('sbar'); bar.innerHTML = ''; h.slots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'sb' + (i >= h.open ? ' lock' : '') + (i === h.next ? ' nx' : ''); if (s && i < h.open) { d.classList.add('tr', 't' + DATA.skills[s.id].tier); d.appendChild(careerIcon(s)); if (s.job) { d.title = JOBS.name(s); d.insertAdjacentHTML('beforeend', `<i>${s.job.final ? '终' : s.job.progress + '/' + JOBS.PROGRESS_MAX}</i>`); } else { const L = BATTLE.profL(s); if (L) d.insertAdjacentHTML('beforeend', `<i>${L}</i>`); } } bar.appendChild(d); }); } set('bossName', 'text', h.bossName || '哥布林王');
     set('bossBox', 'show', h.boss != null); if (h.boss != null) set('bossBar', 'w', (h.boss * 100).toFixed(1) + '%');
     set('lvUp', 'cls', '');   // 11/22：升级字改成画在勇者头上，角落的不再显示
     // 右下角翻滚按钮：冷却时一圈暗色扇面倒转，中间显示剩余秒数
@@ -447,7 +449,7 @@
     const rec = [['用时', mmss(v.time), 0], ['击倒', v.kills, 1], ['最高连击', v.combo, 1], ['铜钱', v.coins, 1, '+'], ['受到伤害', v.taken, 1]];
     $('vRec').innerHTML = rec.map(([n, x, num, pre]) => `<div class="vr"><span>${n}</span><b data-v="${num ? x : ''}" data-p="${pre || ''}">${num ? (pre || '') + '0' : x}</b></div>`).join('');
     $('vDmg').innerHTML = Object.entries(v.dmg).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, d]) => `<div class="vbar"><span>${SKN(id)}</span><i><s data-w="${(d / tot * 100).toFixed(0)}"></s></i><em>${Math.round(d / tot * 100)}%</em></div>`).join('') || '<p class="vdim">—</p>';
-    $('vGrow').innerHTML = `<div class="vbar lv"><span>勇者 Lv${v.lv}</span><i><s data-w="${(v.xp * 100).toFixed(0)}"></s></i><em>${Math.round(v.xp * 100)}%</em></div>` + v.sk.map(k => `<div class="vbar sk"><span>${k.name} Lv${k.L}</span><i><s data-w="${(k.p * 100).toFixed(0)}"></s></i></div>`).join('');
+    $('vGrow').innerHTML = `<div class="vbar lv"><span>勇者 Lv${v.lv}</span><i><s data-w="${(v.xp * 100).toFixed(0)}"></s></i><em>${Math.round(v.xp * 100)}%</em></div>` + v.sk.map(k => `<div class="vbar sk"><span>${k.name}${k.L == null ? ' · 职业进度' : ' Lv' + k.L}</span><i><s data-w="${(k.p * 100).toFixed(0)}"></s></i></div>`).join('');
     const G2 = v.got.slice(-12); $('vGot').innerHTML = G2.length ? '' : '<p class="vdim">这一局没有拿到新东西</p>'; G2.forEach(o => { const c = document.createElement('span'); c.className = 'vic'; c.appendChild(o.kind === 'book' ? skIcon(o.id) : pi(o.kind === 'oath' ? 'oath/' + o.id : o.id)); $('vGot').appendChild(c); });
     $('vNew').innerHTML = '★ 新解锁：图鉴「哥布林王」';
     const V = $('vict'), st = V.querySelector('.vstamp'); st.classList.remove('on'); V.classList.remove('done'); overlay('vict', true);
@@ -459,7 +461,7 @@
       await w(300); if (skip) return; st.classList.add('on'); await w(180); V.classList.remove('shake'); void V.offsetWidth; V.classList.add('shake'); V.classList.add('done'); })();
     $('vGo').onclick = () => { overlay('vict', false); done(); };
   }
-  function nextChapter() { const w = document.createElement('div'); w.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:95;opacity:0;transition:opacity .4s'; document.body.appendChild(w); requestAnimationFrame(() => w.style.opacity = 1);
+  function nextChapter() { BATTLE.exportChapter(); const w = document.createElement('div'); w.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:95;opacity:0;transition:opacity .4s'; document.body.appendChild(w); requestAnimationFrame(() => w.style.opacity = 1);
     setTimeout(() => { worldMap(() => { BATTLE.stop(); overlay('wmap', false); show('title'); }, true); w.style.opacity = 0; setTimeout(() => w.remove(), 450); }, 450); }
   function result(r) { lastRes = r; if (r.cont && !r.win) { BATTLE.stop(); return $('rAgain').onclick(); }   // 11/24 还有命：不出结算页，直接回宫殿续关
   $('rAgain').textContent = '再来一局 ▶';
@@ -546,7 +548,7 @@
       if ((e.key === 'Enter' || e.key === ' ') && a && L.contains(a) && !a.matches('button, input')) { e.preventDefault(); e.stopImmediatePropagation(); a.click(); }
     }, true); }
   try { document.querySelector('#hud .hp').appendChild($('coins')); } catch (e) {}   /* 11/25 铜钱挪到血条下面、等级右边，和等级同一种框 */
-  window.UI = { openPrep, slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
+  window.UI = { openPrep, slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, careerIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   /* 11/25 加载完：只剩发光的 logo，玩家点一下（浏览器规定点过才能放 BGM）→ 「进入游戏」冒出来 */
   function titleGate() { const t = $('title'); if (t.dataset.gated) return; t.dataset.gated = 1; t.classList.add('gate');

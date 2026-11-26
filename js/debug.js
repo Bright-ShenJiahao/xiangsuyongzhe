@@ -13,6 +13,7 @@
   B('回血', () => UI.mod().debug.heal());
   B('本段胜利', () => UI.mod().debug.wave());
   B('本站胜利', () => UI.mod().debug.station());
+  B('转职演练', () => { if (!BATTLE.active()) UI.startBattle(); const r = BATTLE.run(); r.slots[0] = { id: 'sword', lv: 7, xp: DATA.prof[6] }; r.slots[1] = { id: 'whirl', lv: 7, xp: DATA.prof[6] }; BATTLE.careerChanged(); UI.togglePause(true); });
   B('给印记', () => UI.mod().debug.oath());
   B('直接胜利', () => UI.mod().debug.win());
   B('发装备', () => { CAMP.giveGear(); });

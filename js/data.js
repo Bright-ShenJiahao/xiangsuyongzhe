@@ -403,10 +403,10 @@ window.DATA.calc = function (b) {
   return out;
 };
 // 能掉 / 能买的书：还没拿到的；第一章初阶、中阶一直有，高阶第 4 站起（精英、小头目随时可能掉），宗师第一章不出
-window.DATA.setOf = function (slots) { const n = {}; for (const x of slots || []) { const S = x && window.DATA.skills[x.id]; if (S) n[S.sys] = (n[S.sys] || 0) + 1; } const on = {}; for (const [sys, L] of Object.entries(window.DATA.sets)) { let t = null; for (const tier of L) if ((n[sys] || 0) >= tier[0]) t = tier; if (t) on[sys] = t; } return { n, on }; };   // 11/24 羁绊统计
+window.DATA.setOf = function (slots) { const n = {}; for (const x of (window.JOBS ? slots.flatMap(JOBS.leaves) : slots || [])) { const S = x && window.DATA.skills[x.id]; if (S) n[S.sys] = (n[S.sys] || 0) + 1; } const on = {}; for (const [sys, L] of Object.entries(window.DATA.sets)) { let t = null; for (const tier of L) if ((n[sys] || 0) >= tier[0]) t = tier; if (t) on[sys] = t; } return { n, on }; };   // 11/24 羁绊统计
 window.DATA.SYSK = { '剑': 'sword', '枪': 'spear', '弓': 'bow', '法杖': 'staff' };
 // 能掉 / 能卖的宝物：武器专属的只在带了这一系技能时出
-window.DATA.itemPool = function (run) { const S = window.DATA.skills, has = new Set([...run.slots, ...run.bag].filter(x => x && (x.kind === 'book' || !x.kind) && S[x.id]).map(x => window.DATA.SYSK[S[x.id].sys])); const owned = new Set([...(run.gear || []), ...run.bag].filter(x => x && x.kind === 'item').map(x => x.id)); return window.DATA.startItems.filter(i => !owned.has(i.id) && (!i.w || has.has(i.w))); };
+window.DATA.itemPool = function (run) { const S = window.DATA.skills, has = new Set((window.JOBS ? JOBS.skills(run) : [...run.slots, ...run.bag]).filter(x => x && (x.kind === 'book' || !x.kind) && S[x.id]).map(x => window.DATA.SYSK[S[x.id].sys])); const owned = new Set([...(run.gear || []), ...run.bag].filter(x => x && x.kind === 'item').map(x => x.id)); return window.DATA.startItems.filter(i => !owned.has(i.id) && (!i.w || has.has(i.w))); };
 window.DATA.bookPool = function (own, st, rich) {
   const S = window.DATA.skills, ids = Object.keys(S).filter(id => !own.has(id) && S[id].tier < 4 && (S[id].tier < 3 || st >= 4 || rich));
   const w = id => [0, 3, 2, 1][S[id].tier]; return ids.flatMap(id => Array(w(id)).fill(id));   // 初阶 3 : 中阶 2 : 高阶 1

@@ -12,6 +12,8 @@
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
     // 出售：书半价（22 / 34 / 52 → 11 / 17 / 26），宝物拿基价的 35%
+    if (o.job) return { tier: o.job.final ? 4 : 3, icon: UI.careerIcon(o), name: JOBS.name(o), sub: o.job.final ? '最终职业书' : '职业书', desc: JOBS.desc(o) + '<br>' + JOBS.leaves(o).map(s => SK[s.id].name + ' Lv' + JOBS.level(s)).join(' → '), sell: null };
+    if (o.kind === 'manual') return { icon: UI.pi(o.id === 'master' ? 'bk_staff' : 'bk_sword'), name: JOBS.manuals[o.id].name, sub: '手册 · 使用时选择技能', desc: JOBS.manuals[o.id].desc, sell: 0 };
     if (o.kind === 'book') { const S = SK[o.id], st = DATA.setOf(R().slots), n = st.n[S.sys] || 0, L = DATA.sets[S.sys], nx = L && L.find(t => t[0] > n); return { tier: S.tier, icon: UI.bookOf(o.id), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc + (L ? `<br><small class="${st.on[S.sys] ? 'on' : 'off'}">${S.sys}系羁绊 ${n}/${nx ? nx[0] : 4}${nx ? '：' + nx[2] : '（已满）'}</small>` : ''), brief: S.brief, sell: null }; }   /* 11/25 技能书不能在营地卖：带回宫殿，死了还有命就能带回去，让大法师换水晶 */
     if (o.kind === 'oup') return { icon: UI.pi('reroll'), name: '印记升级 +1', sub: '裂缝里的符文', desc: '随机让一个已装备、未满级的誓约印记升 1 级', sell: 0 };
     if (o.kind === 'oath') { const O = DATA.oaths[o.id], L = Math.min(5, o.lv || 1), ic = UI.pi('oath/' + o.id); ic.classList.add('oimg');
@@ -24,13 +26,14 @@
   function learn(o, quiet) { if (o && ['book', 'item', 'oath'].includes(o.kind)) { const r0 = R(); (r0.got = r0.got || []).push({ kind: o.kind, id: o.id }); } try { if (o && o.id) SEEN.add({ book: 's:', item: 'i:', oath: 'o:' }[o.kind] + o.id); } catch (e) {}
     const r = R(); const toast = quiet ? () => {} : toast0;
     if (o.kind === 'book') {
-      const has = r.slots.find(s => s && s.id === o.id) || r.bag.find(b => b && b.kind === 'book' && b.id === o.id);
-      if (has) { has.lv += o.lv || 1; toast(`${SK[o.id].name} 升到 Lv${has.lv}`); return true; }
+      const has = JOBS.skills(r).find(s => s.id === o.id);
+      if (has) { if (JOBS.level(has) < 7) { has.xp = DATA.prof[Math.min(6, JOBS.level(has))]; toast(`${SK[o.id].name} 熟练度提升`); } else { r.coins += DATA.tierPrice[SK[o.id].tier]; toast('满级技能换成铜钱'); } B().saveCareer(); return true; }
     }
     if (o.kind === 'oup') { const L = [...r.oath, ...r.mv].filter(x => x && x.lv < 5); if (!L.length) { toast('没有可以升级的誓约印记'); return false; } const x = L[Math.random() * L.length | 0]; x.lv++; B().recompute(); toast(`${DATA.oaths[x.id].name} 升到 Lv${x.lv}`); return true; }
     if (o.kind === 'oath') { const O = DATA.oaths[o.id]; if (O.mv && rep?.stepChoice) { r.mv[0] = { kind: 'oath', id: o.id, lv: 1, mv: true }; B().recompute(); return true; } const has = [...r.oath, ...r.mv, ...r.bag].find(x => x && x.kind === 'oath' && x.id === o.id);
       if (has) { if (has.lv >= 5) { r.coins += 20; toast(`${O.name} 已满级，换成 20 铜钱`); return true; } has.lv++; B().recompute(); toast(`${O.name} 升到 Lv${has.lv}`); return true; }
       const A = O.mv ? r.mv : r.oath, j = A.indexOf(null); if (j >= 0) { A[j] = { kind: 'oath', id: o.id, lv: 1, mv: !!O.mv }; B().recompute(); return true; } }
+    if (o.kind === 'manual') { const free = r.bag.indexOf(null); if (free < 0) { toast('物品栏满了，先腾出一格'); return false; } r.bag[free] = { kind: 'manual', id: o.id }; B().saveCareer(); return true; }
     if (o.kind === 'use') { const c = USE(o.id), h = B().hero(); B().healHero(h.maxHp * c.heal); toast(`吃掉${c.name}，回复生命`); return true; }
     if (o.kind === 'book') { const j = r.slots.findIndex((s, k) => !s && k < r.open); if (j >= 0) { r.slots[j] = { id: o.id, lv: 1, xp: o.xp || 0 }; toast(`${SK[o.id].name} 自动装上第 ${j + 1} 格` + (r.tipP ? '' : ' · 按 P 调整顺序')); r.tipP = 1; return true; } }   // 技能栏有空位就直接装上
     if (o.kind === 'item' && [...r.gear, ...r.bag].some(x => x && x.kind === 'item' && x.id === o.id)) { toast('已拥有这件宝物'); return false; }
@@ -64,7 +67,7 @@
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
     r.slots.forEach((s, i) => { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
       if (i >= r.open) { d.dataset.t = 'L'; d.dataset.i = i; d.className = 'slot lock' + (i === r.open ? ' buy' : ''); if (sel && sel.t === 'L' && sel.i === i) d.classList.add('sel'); d.onclick = () => { sel = { t: 'L', i }; loadout(box); }; }
-      else if (s) { d.className = 'slot has full tr t' + SK[s.id].tier; d.appendChild(UI.skIcon(s.id)); d.insertAdjacentHTML('beforeend', lvTag(s)); }
+      else if (s) { d.className = 'slot has full tr t' + SK[s.id].tier; d.appendChild(UI.careerIcon(s)); d.insertAdjacentHTML('beforeend', lvTag(s)); }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
@@ -74,7 +77,7 @@
     const oc = (arr, t, cls, empty) => arr.forEach((o, i) => { const d = document.createElement('div'); d.className = cls + (o ? ' has full' : ''); if (t === 'o') { d.title = i === 0 ? '主修：100%' : '辅修：50%'; if (i === 0) { d.style.outline = '2px solid #ffd36a'; d.style.outlineOffset = '-2px'; d.style.borderColor = '#ffd36a'; d.style.boxShadow = 'inset 0 0 0 1px #ffd36a'; } } if (o) { d.appendChild(iconEl(thing(o))); d.insertAdjacentHTML('beforeend', `<b class="lvb">${o.lv}</b>`); } else d.innerHTML = empty; if (sel && sel.t === t && sel.i === i) d.classList.add('sel'); d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); om.appendChild(d); });
     oc(r.oath, 'o', 'oath', ''); oc(r.mv, 'm', 'mv', '<span>身法</span>');
     const cell = (grid, arr, t) => arr.forEach((o, i) => { const d = document.createElement('div'); const th = thing(o);
-      if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); if (o.kind === 'book') { d.appendChild(UI.skIcon(o.id)); d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else { d.appendChild(iconEl(th));  if (o.up && Date.now() - o.up < 4000) d.classList.add('put'); } if (o.fresh && inFight()) d.insertAdjacentHTML('beforeend', '<em class="nw">新</em>'); }
+      if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); if (o.kind === 'book') { d.appendChild(UI.careerIcon(o)); d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else { d.appendChild(iconEl(th));  if (o.up && Date.now() - o.up < 4000) d.classList.add('put'); } if (o.fresh && inFight()) d.insertAdjacentHTML('beforeend', '<em class="nw">新</em>'); }
       if (sel && sel.t === t && sel.i === i) d.classList.add('sel');
       d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); grid.appendChild(d); });
     const lockCells = (grid, n, tip) => { for (let k = 0; k < n; k++) { const d = document.createElement('div'); d.className = 'lk'; d.dataset.tip = tip; grid.appendChild(d); } };
@@ -89,8 +92,8 @@
   }
   const inFight = () => { const G = B().g && B().g(); return !!(G && !G.fe && !G.over); };
   const ARR0 = (r, q) => q.t === 's' ? r.slots : q.t === 'g' ? r.gear : q.t === 'o' ? r.oath : q.t === 'm' ? r.mv : r.bag;
-  function curOf(q) { const r = R(); if (!q) return null; if (q.t === 's') { const s = r.slots[q.i]; return s && { kind: 'book', id: s.id, lv: s.lv, xp: s.xp || 0, slot: true }; } return ARR0(r, q)[q.i]; }
-  function lvTag(s) { const k = B().skillInfo(s); return `<b class="lvb">${k.L}</b><s class="pb${k.next ? '' : ' max'}" style="--p:${k.next ? Math.min(100, k.xp / k.next * 100) : 100}%"></s>`; }
+  function curOf(q) { const r = R(); if (!q) return null; if (q.t === 's') { const s = r.slots[q.i]; return s && { ...s, kind: 'book', slot: true }; } return ARR0(r, q)[q.i]; }
+  function lvTag(s) { if (s.job) return `<b class="lvb">${s.job.final ? '最终' : s.job.progress + '/' + JOBS.PROGRESS_MAX}</b><s class="pb${s.job.progress >= JOBS.PROGRESS_MAX ? ' max' : ''}" style="--p:${s.job.final ? 100 : s.job.progress / JOBS.PROGRESS_MAX * 100}%"></s>`; const k = B().skillInfo(s); return `<b class="lvb">${k.L}</b><s class="pb${k.next ? '' : ' max'}" style="--p:${k.next ? Math.min(100, k.xp / k.next * 100) : 100}%"></s>`; }
   function popAt(el, fill, box, hover) {
     document.querySelectorAll('.loinfo.pop').forEach(e => e.remove());
     const info = document.createElement('div'); info.className = 'loinfo pop' + (hover ? ' hov' : ''); document.body.appendChild(info); fill(info);
@@ -104,17 +107,18 @@
     const watch = () => { if (!info.isConnected) return; if (!box.isConnected || !box.offsetParent) { info.remove(); sel = null; return; } requestAnimationFrame(watch); }; requestAnimationFrame(watch);
   }
   function fillInfo(info, box, withBtn, q) {
-    const r = R(), cur = curOf(q || sel); if (!cur) return; const t = thing(cur); if (cur.kind === 'book') { const w = document.createElement('span'); w.className = 'ic'; w.appendChild(UI.skIcon(cur.id)); info.appendChild(w); } else info.appendChild(iconEl(t));
+    const r = R(), cur = curOf(q || sel); if (!cur) return; const t = thing(cur); if (cur.kind === 'book') { const w = document.createElement('span'); w.className = 'ic'; w.appendChild(UI.careerIcon(cur)); info.appendChild(w); } else info.appendChild(iconEl(t));
     let txt = `<b class="${t.tier ? 'tn' + t.tier : ''}">${t.name}</b> <small>${t.sub}</small><br>${t.desc}`;
-    if (cur.kind === 'book') { const S = SK[cur.id], k = B().skillInfo(cur); const AN = { str: '力量', agi: '敏捷', int: '智力' }[S.type], av = (B().hero().A || {})[S.type] || 0;
+    if (cur.kind === 'book' && !cur.job) { const S = SK[cur.id], k = B().skillInfo(cur); const AN = { str: '力量', agi: '敏捷', int: '智力' }[S.type], av = (B().hero().A || {})[S.type] || 0;
       txt += `<span class="kst"><span>伤害 <b>${Math.round(k.dmg)}</b></span><span>${S.dt === 'magic' ? '魔法' : '物理'}</span><span>前摇 ${k.wu.toFixed(2)}s</span><span>后摇 ${k.rc.toFixed(2)}s</span>${S.hold ? `<span>持续 ${S.hold}s</span>` : ''}</span>`
         + (AN ? `<span class="katt a-${S.type}">受<b>${AN}</b>加成 · 每点 +6%（现在 +${av * 6}%）</span>` : '') + `<small>熟练 Lv${k.L}${k.next ? `（${k.xp}/${k.next}）` : '（已练满）'}</small>` + ['l3', 'l5', 'l7'].filter(x => S[x]).map(x => `<small class="${k.L >= +x.slice(1) ? 'on' : 'off'}">Lv${x.slice(1)}：${S[x]}</small>`).join(''); }
     const p = document.createElement('p'); p.innerHTML = txt; info.appendChild(p);
     if (!withBtn) return; const cs = sel;
     const btns = document.createElement('div'); btns.className = 'lob'; info.appendChild(btns);
     const btn = (label, fn, gold) => { const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.textContent = label; b.onclick = e => { e.stopPropagation(); info.remove(); fn(); }; btns.appendChild(b); };
+    careerActions(cur, cs, btn, box);
     const F = inFight(); if (F) btns.insertAdjacentHTML('beforeend', '<small class="dim">战斗中：卸下要等站末（丢弃随时可以）</small>');
-    if (cs.t === 's') { if (!F && r.slots.filter(Boolean).length > 1) btn('卸下', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = { kind: 'book', id: cur.id, lv: cur.lv, xp: cur.xp }; r.slots[cs.i] = null; sel = null; loadout(box); }); }
+    if (cs.t === 's') { if (!F && r.slots.filter(Boolean).length > 1) btn('卸下', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = { ...cur, kind: 'book' }; delete r.bag[j].slot; r.slots[cs.i] = null; sel = null; loadout(box); }); }
     else {
       if (cur.kind === 'book') btn('装上', () => { const j = r.slots.slice(0, r.open).indexOf(null); if (j < 0) return toast('技能格满了：拖到一个技能格上替换'); pick({ t: 's', i: j }, box); }, true);
       const A = cs.t === 'g' ? r.gear : r.bag;
@@ -124,6 +128,21 @@
       if (cs.t === 'b' || (cs.t === 'g' && !F)) { const b = document.createElement('button'); b.className = 'btn mini'; b.textContent = '丢弃'; let arm = 0;   /* 11/25 局内不能卖，只能丢；带回去才能卖给大法师 */
         b.onclick = e => { e.stopPropagation(); if (!arm) { arm = 1; b.textContent = '再点一次：永久丢弃'; b.classList.add('gold'); setTimeout(() => { if (b.isConnected) { arm = 0; b.textContent = '丢弃'; b.classList.remove('gold'); } }, 3000); return; } info.remove(); A[cs.i] = null; sel = null; B().recompute(); toast(`丢弃了 ${t.name}`); loadout(box); }; btns.appendChild(b); }
     }
+  }
+  function chooseCareer(title, choices, apply) {
+    document.getElementById('careerPicker')?.remove(); const overlay = document.createElement('div'); overlay.id = 'careerPicker'; overlay.style.cssText = 'position:fixed;inset:0;z-index:150;background:#000b;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box';
+    const panel = document.createElement('div'); panel.className = 'panel box'; panel.style.cssText = 'max-width:540px;width:100%;max-height:85vh;overflow:auto;box-sizing:border-box'; const head = document.createElement('h3'); head.textContent = title; panel.appendChild(head);
+    for (const item of choices) { const b = document.createElement('button'); b.className = 'btn gold'; b.style.cssText = 'display:block;width:100%;min-height:44px;margin:8px 0;white-space:normal'; b.textContent = item.label; b.onclick = () => { if (apply(item) !== false) overlay.remove(); }; panel.appendChild(b); }
+    const cancel = document.createElement('button'); cancel.className = 'btn'; cancel.style.minHeight = '44px'; cancel.textContent = '取消'; cancel.onclick = () => overlay.remove(); panel.appendChild(cancel); overlay.appendChild(panel); document.body.appendChild(overlay);
+  }
+  function careerActions(cur, cs, btn, box) {
+    const r = R(), raw = ARR0(r, cs)[cs.i];
+    if (cur.kind === 'manual') { btn('使用', () => { const choices = JOBS.books(r).flatMap(b => JOBS.leaves(b).filter(s => JOBS.level(s) < 7).map(s => ({ label: `${SK[s.id].name} · Lv${JOBS.level(s)}${b.job ? '（' + JOBS.name(b) + '内）' : ''}`, skill: s }))); if (!choices.length) return toast('没有未满级的技能'); chooseCareer(JOBS.manuals[cur.id].name + '：选择技能', choices, x => { if (ARR0(r, cs)[cs.i] !== raw || !JOBS.applyManual(cur.id, x.skill)) return false; ARR0(r, cs)[cs.i] = null; B().careerChanged(); sel = null; loadout(box); return true; }); }, true); return; }
+    if (cur.kind !== 'book') return;
+    if (raw.job) {
+      btn('调换招式顺序', () => chooseCareer('选择要前移的招式', raw.job.children.map((s,i) => ({ label: `${i+1}. ${SK[s.id].name}${i ? ' ↑' : '（移到末尾）'}`, i })), x => { const j = x.i ? x.i-1 : raw.job.children.length-1; JOBS.swap(raw,x.i,j); B().careerChanged(); sel=null; loadout(box); return true; }));
+      if (!raw.job.final && raw.job.progress >= JOBS.PROGRESS_MAX && !r.finalCareer) { const peers = JOBS.books(r).filter(b => b !== raw && b.job && !b.job.final && b.job.progress >= JOBS.PROGRESS_MAX); if (peers.length) btn('最终转职', () => chooseCareer('合成最终职业书', peers.map(b => ({ label: JOBS.finals[JOBS.key([raw.job.families[0],b.job.families[0]])][0] + '（与' + JOBS.name(b) + '合成）', book:b })), x => { if (!JOBS.merge(r,raw,x.book,true)) return false; B().careerChanged(); sel=null; loadout(box); return true; }),true); }
+    } else if (JOBS.level(raw) >= 7) { const peers = JOBS.books(r).filter(b => JOBS.canPair(r,raw,b)); if (peers.length) btn('转职', () => chooseCareer((r.careerCount ? '第二职业书' : '一转') + '：选择同系技能', peers.map(b => ({ label: `${SK[raw.id].name} + ${SK[b.id].name} → ${JOBS.careers[JOBS.family(SK[raw.id])][0]}`, book:b })), x => { if (!JOBS.merge(r,raw,x.book)) return false; B().careerChanged(); sel=null; loadout(box); return true; }),true); }
   }
   // ---------- 属性页：升级攒的属性点手动加；这次结算 / 暂停里加的点，离开前都能退 ----------
   function commit() { const r = R(); for (const k in r.tmp) r.alloc[k] = (r.alloc[k] || 0) + r.tmp[k]; r.tmp = {}; }
@@ -183,7 +202,7 @@
     const ARR = q => ARR0(r, q), get = q => ARR(q)[q.i], put = (q, v) => { ARR(q)[q.i] = v; };
     let a = get(sel), b = get(p);
     const toSlot = (o, q) => q.t !== 's' || !o || o.kind === 'book' || o.lv;   // 技能格只能放技能
-    const asSlot = o => o && o.kind === 'book' ? { id: o.id, lv: 1, xp: o.xp || 0 } : o, asBag = o => o && !o.kind ? { kind: 'book', id: o.id, lv: 1, xp: o.xp || 0 } : o;   // 熟练度跟着书走
+    const asSlot = o => o && o.kind === 'book' ? { ...o } : o, asBag = o => o && !o.kind ? { ...o, kind: 'book' } : o;   // 熟练度跟着书走
     if ((a && p.t === 's' && !toSlot(a, p)) || (b && sel.t === 's' && !toSlot(b, sel))) { toast('技能格只能放技能书'); sel = p.t !== 's' && b ? p : null; return loadout(box); }
     const fit = (o, q) => !o || q.t === 'b' || q.t === 's' || (q.t === 'g' ? o.kind === 'item' : q.t === 'o' ? o.kind === 'oath' && !o.mv : q.t === 'm' ? o.kind === 'oath' && !!o.mv : true);
     const MSG = { g: '宝物格只能放宝物', o: '这里只能放誓约印记', m: '身法格只能放身法印记' };
@@ -197,12 +216,12 @@
       if (!ok) { toast('战斗中只能调顺序、填空格、用新拿到的替换；其他打完这一站再整理'); sel = null; return loadout(box); }
     }
     // 同一招合并 = 升级
-    if (a && b && a.id === b.id && (a.kind === 'book' || !a.kind) && (b.kind === 'book' || !b.kind)) { b.lv += a.lv; put(sel, null); toast(`${SK[b.id].name} 升到 Lv${b.lv}`); }
+    if (a && b && !a.job && !b.job && a.id === b.id && (a.kind === 'book' || !a.kind) && (b.kind === 'book' || !b.kind)) { b.xp = Math.min(DATA.prof[6], Math.max(b.xp || 0, DATA.prof[Math.min(6, JOBS.level(b))])); put(sel, null); toast(`${SK[b.id].name} 熟练度提升`); }
     else {
       put(p, p.t === 's' ? asSlot(a) : asBag(a)); put(sel, sel.t === 's' ? asSlot(b) : asBag(b));
       if (!r.slots.some(Boolean)) { put(sel, sel.t === 's' ? asSlot(a) : asBag(a)); put(p, p.t === 's' ? asSlot(b) : asBag(b)); toast('至少留一招'); }
     }
-    if (r.si >= r.open) r.si = 0; sel = null; B().recompute(); loadout(box);
+    if (r.si >= r.open) r.si = 0; sel = null; B().careerChanged(); loadout(box);
   }
 
   // ---------- 波间结算页 ----------
@@ -251,7 +270,7 @@
       r.shop.forEach((o, i) => { const d = o.kind === 'cry' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic" style="font-size:34px">💎</span><b>水晶 ×${o.n}</b><small>局外货币，带回宫殿用</small><p>死了也不会丢</p>`; return e; })() : o.kind === 'slot' ? (() => { const e = document.createElement('div'); e.className = 'card'; e.innerHTML = `<span class="ic">${UI.piH('slotplus')}</span><b>开第 ${r.open + 1} 格</b><small>技能栏多开一格</small><p>有铜钱随时能买</p>`; return e; })() : card(thing(o), o), price = Math.round(o.price * pm);
         if (o.sold) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已买</p>'); }
         else if (o.kind === 'slot' && o.n !== r.open + 1) { d.classList.add('sold'); d.insertAdjacentHTML('beforeend', '<p class="dim">已开</p>'); }
-        else btnTo(d, rep.field ? `<span class="pc"></span>${UI.pxNum(price, '#3a2410', 0)}` : `买 ${UI.piH('coin', 1)}${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'cry') { B().addCrystal(o.n); toast(`水晶 +${o.n}`); } else if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; r.coins -= price; o.sold = true; render(); }, true);
+        else btnTo(d, rep.field ? `<span class="pc"></span>${UI.pxNum(price, '#3a2410', 0)}` : `买 ${UI.piH('coin', 1)}${price}`, () => { if (r.coins < price) return toast('铜钱不够'); if (o.kind === 'cry') { B().addCrystal(o.n); toast(`水晶 +${o.n}`); } else if (o.kind === 'slot') { r.open = Math.min(DATA.slotsMax, r.open + 1); toast('技能格 +1'); } else if (!learn(o)) return; if (o.kind === 'manual' && o.id === 'training') r.trainingBoughtSt = `${r.chapter || 1}:${rep.st}`; r.coins -= price; o.sold = true; B().saveCareer(); render(); }, true);
         g.appendChild(d); });
       // 刷新：4 + 2 ×（站 − 1）+ 3 × 已刷次数，每次结算最多刷 4 次
       const [c0, c1, c2] = DATA.price.refresh, cost = (fx.freeRoll && !r.rr) ? 0 : Math.round((c0 + c1 * (rep.st - 1) + c2 * r.rr) * (1 + (fx.reroll || 0))), left = DATA.price.refreshMax + MLm('reroll') - r.rr;
@@ -273,7 +292,7 @@
   function rollShop() {
     // 货架：3 件宝物 + 2 本书（新书 22，已有的升 Lv2 34，再往上 52）。开技能格改成在「技能」页点锁
     const r = R(), P = DATA.price, items = shuffle(DATA.itemPool(r)).slice(0, 3 + MLm('shelf')).map(i => ({ kind: 'item', id: i.id, price: i.price || 25 }));
-    const lvOf = id => { const h = r.slots.find(s => s && s.id === id) || r.bag.find(b => b && b.kind === 'book' && b.id === id); return h ? h.lv : 0; };
+    const lvOf = id => { const h = JOBS.skills(r).find(s => s.id === id); return h ? JOBS.level(h) : 0; };
     const own = new Set(Object.keys(SK).filter(id => lvOf(id) || loot.some(o => o.kind === 'book' && o.id === id))), pool = DATA.bookPool(own, rep.st), books = [];   // 已经有的书不再出；按品阶抽，价格 22 / 34 / 52
     while (books.length < 1 && pool.length) { const id = pool[Math.random() * pool.length | 0]; if (!books.some(b => b.id === id)) books.push({ kind: 'book', id, lv: 1, xp: 0, price: DATA.tierPrice[SK[id].tier] }); if (pool.every(i => books.some(b => b.id === i))) break; }
     const ok0 = DATA.oathPool(r.weapon); if (rep.rift) { const pk0 = () => ({ kind: 'oath', id: ok0[Math.random() * ok0.length | 0], price: 46 }), costI = shuffle(DATA.itemPool(r).filter(i => i.cost)).slice(0, 1).map(i => ({ kind: 'item', id: i.id, price: Math.round((i.price || 40) * 1.3) }));
@@ -281,6 +300,7 @@
     const L = items.concat(books), ok = DATA.oathPool(r.weapon), pk = () => ({ kind: 'oath', id: ok[Math.random() * ok.length | 0], price: 38 });
     if (rep.disc) { L.splice(0, 2, pk(), pk()); } else if (Math.random() < .3) L.splice(2, 1, pk());
     { let ml = 0; try { ml = JSON.parse(localStorage.getItem('xsyz-meta') || '{}').ex || 0; } catch (e) {} L.push({ kind: 'cry', id: 'cry', n: 4 + 2 * ml, price: 30 }); }   // 11/24 商人：铜钱换水晶（大臣「兑换」每级 +2）
+    if (r.trainingBoughtSt !== `${r.chapter || 1}:${rep.st}`) L.push({ kind: 'manual', id: 'training', price: JOBS.manuals.training.price }); if (rep.st > 8 && Math.random() < .25) L.push({ kind: 'manual', id: 'master', price: JOBS.manuals.master.price });
     return L;
   }
   $('cGo').onclick = () => {
