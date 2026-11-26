@@ -148,7 +148,7 @@
     if(!JOBS?.books||!B()?.run?.()){document.getElementById('careerEntry')?.remove();return;}
     const choices=careerChoices();if(!choices.length){document.getElementById('careerEntry')?.remove();return;}
     const btn=document.getElementById('careerEntry')||document.createElement('button');btn.id='careerEntry';btn.className='btn gold career-entry';btn.textContent=choices[0].kind==='final'?'最终转职':'转职';
-    btn.onclick=()=>chooseCareer(btn.textContent,careerChoices(),item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged(); careerAnimation(merged);return true;});
+    btn.onclick=()=>chooseCareer(btn.textContent,careerChoices(),item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged(); careerAnimation(merged); sel=null; setTimeout(()=>{ if ($('pause').classList.contains('on')) pauseRender(); careerButton(); },0); return true;});
     if(btn.parentNode!==$('pHome').parentNode)$('pHome').parentNode.insertBefore(btn,$('pRe').nextSibling);
   }
   const careerColor=book=>book?.job?.final?'#ffd36a':({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e',tome:'#ffe6a2',scythe:'#bb8bdf'})[book?.job?.families?.[0]]||'#fff';
