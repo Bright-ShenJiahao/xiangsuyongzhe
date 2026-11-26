@@ -119,6 +119,7 @@ JOBS.combat = A => {
   const displacement = c => !!(c.S.displacement || c.S.moveSkill || ['spear','drill','leap','charge','returnSpear','thunderDive'].includes(c.sk.id));
   function begin(book, sk, index, release, a) {
     const c = { book, sk, S: DATA.skills[sk.id], index, release, a, family: book.job?.origins[index], start: { x: H().x, y: H().y } };
+    c.color=book.job?.final?'#ffd36a':({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e'}[c.family]||null);
     if (c.S.w === 'staff') { const e = element(sk.id); if (e !== 'arcane') G().lastElement = e; }
     if (c.family === 'staff' && element(sk.id) === 'arcane') { c.arcaneElement = ['fire','ice','lightning'][(R().elementCycle || 0) % 3]; R().elementCycle = (R().elementCycle || 0) + 1; }
     c.arrowElement = c.S.w === 'bow' ? H().jobArrowElement : null;

@@ -818,6 +818,37 @@ body.fpx .pnName h5 { font-size: 48px !important; } body.fpx .pnSec h4, body.fpx
 .arow { grid-template-columns: 6.5em 1fr 2.4em !important; }
 /* 11/22 暂停页固定大小：切换「技能 / 属性」不再变宽变高 */
 @media (orientation: landscape) { #pause .cbox { width: min(1000px, 96vw) !important; height: min(640px, 94vh) !important; max-height: none !important; } #pause .cbody { flex: 1 1 auto !important; overflow-y: auto; } }
+@media (orientation: landscape) and (min-width: 761px) { #pause .cbox { width: min(1500px, 80vw) !important; height: min(900px, 94vh) !important; max-height: none !important; transform:none; } #pause .cbody { min-height: 0; flex: 1 1 auto !important; overflow: auto; } }
+@media (orientation: portrait), (max-width: 760px) { #careerEntry { display: block; width: min(240px, 70vw); margin: 8px auto; } }
+.career-entry { display:block; position:relative; z-index:3; min-width:190px; margin:8px auto; animation: careerPulse 1.3s ease-in-out infinite alternate; }
+@keyframes careerPulse { to { filter:brightness(1.35); box-shadow:0 0 18px #ffd86a, inset 0 -4px #8a5418, inset 0 4px #f0c060, 0 0 0 3px #fff0a8, 0 0 0 6px #1a0e08; } }
+.careerIcon { position:relative; display:block; width:100%; height:100%; min-width:0; min-height:0; filter:drop-shadow(0 0 3px #c9d6e8); }
+.careerBadge { position:absolute; inset:2px 3px 5px; display:flex; align-items:center; justify-content:center; gap:0; clip-path:polygon(8% 0,92% 0,100% 10%,94% 67%,50% 100%,6% 67%,0 10%); background:linear-gradient(135deg,#f6f8fa,#778696 42%,#e7eef7); padding:3px; }
+.careerBadge img { max-width:49%; max-height:80%; object-fit:contain; image-rendering:pixelated; }
+.careerIcon.final .careerBadge { background:linear-gradient(135deg,#fff0a0,#bc7e23 48%,#ffdc65); }
+.careerProgress { position:absolute; bottom:1px; left:12%; width:76%; height:2px; background:linear-gradient(90deg,#71e2ff var(--p),#263039 var(--p)); box-shadow:0 0 4px #71e2ff; }
+.sb .careerProgress { display:none; }
+.careerSlot .careerIcon { position:absolute;inset:8% 10% 8%;width:80%;height:84%; }
+.careerSlot .careerBadge { bottom:8px; }
+.careerSlot .careerBadge { inset:0 3px 5px; }
+.careerSlot .careerProgress { bottom:5%;height:3px; }
+#pause .careerSlot em.bk,#pause .careerSlot .lvb { display:none!important; }
+.sb .careerIcon { width:100%;height:100%;min-width:0;min-height:0; }
+.careerBadge img { max-width:100%; }
+#careerReveal { position:fixed; inset:0; z-index:250; display:grid; place-items:center; background:#0008; pointer-events:none; animation:revealFade 2.2s ease both; }
+.career-reveal-box { position:relative; width:min(420px,86vw); height:min(460px,78vh); overflow:hidden; border:2px solid var(--career-color); background:radial-gradient(ellipse at 50% 72%,color-mix(in srgb,var(--career-color) 18%,#171629),#10101beF 68%); box-shadow:0 0 24px color-mix(in srgb,var(--career-color) 55%,transparent),inset 0 0 22px #000; animation:revealPop 2.2s ease both; }
+.career-rune { position:absolute; width:210px; height:210px; left:50%; top:54%; transform:translate(-50%,-50%); border:2px solid var(--career-color); border-radius:50%; opacity:.15; animation:runeLight 2s ease forwards, runeSpin 12s linear infinite; box-shadow:0 0 18px var(--career-color),inset 0 0 16px var(--career-color); }
+.career-rune::before,.career-rune::after { content:""; position:absolute; inset:12px; border:1px dashed var(--career-color); border-radius:50%; background:repeating-conic-gradient(from 0deg,transparent 0 12deg,color-mix(in srgb,var(--career-color) 75%,transparent) 12.4deg 13deg,transparent 13.5deg 30deg); mask:radial-gradient(circle,transparent 57%,#000 59% 61%,transparent 63%); }
+.career-rune::after { inset:38px; border:1px solid var(--career-color); transform:rotate(45deg); clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); border-radius:0; }
+.career-pillar { position:absolute; left:42%; top:27%; width:16%; height:48%; opacity:0; background:linear-gradient(90deg,transparent,#fff8 35%,var(--career-color) 50%,#fff8 65%,transparent); filter:blur(8px); animation:pillarUp 1.4s ease-out .25s forwards; }
+.career-hero { position:absolute; left:50%; top:55%; width:72px;height:88px; transform:translate(-50%,-50%); display:grid;place-items:center;animation:heroHop 1.2s ease-in-out .2s both; filter:drop-shadow(0 0 9px var(--career-color)); }
+.career-hero>span { display:grid;place-items:center;width:60px;height:82px; }
+.careerSoldier { width:auto;height:78px;image-rendering:pixelated;filter:drop-shadow(0 0 7px var(--career-color)); }
+.career-hero .careerIcon { width:58px!important;height:60px!important; }
+.career-hero i { position:absolute; bottom:0; width:34px;height:8px;border-radius:50%;background:var(--career-color);box-shadow:0 0 18px 8px var(--career-color);animation:weaponFlash .35s ease 1.3s both; }
+.career-banner { position:absolute; left:8%;right:8%;bottom:10%;padding:10px;text-align:center;color:var(--career-color);background:#111b;border:1px solid var(--career-color);opacity:0;animation:bannerIn .45s ease 1.45s forwards; }
+.career-banner strong,.career-banner small { display:block; }.career-banner strong { font-size:24px; }.career-banner small { letter-spacing:.18em;opacity:.85; }
+@keyframes runeLight { to {opacity:.88} } @keyframes runeSpin { to { rotate:360deg } } @keyframes pillarUp { 15% {opacity:.9;transform:scaleY(.2);transform-origin:bottom} 55% {opacity:.85;transform:scaleY(1);transform-origin:bottom} to {opacity:0;transform:scaleY(.2);transform-origin:bottom} } @keyframes heroHop { 0%,100% {translate:0 0} 40% {translate:0 -72px} 65% {translate:0 -56px} } @keyframes weaponFlash { to {opacity:0;scale:2.4} } @keyframes bannerIn { to {opacity:1;translate:0 -8px} } @keyframes revealPop { 0% {scale:.72;opacity:0} 12%,84% {scale:1;opacity:1} to {scale:.94;opacity:0} } @keyframes revealFade { 0%,90% {opacity:0} 12%,80% {opacity:1} to {opacity:0} }
 /* 11/22 按钮文字居中：letter-spacing 会在最后一个字后面多留一格，用 text-indent 抵消；上下用 flex 居中 */
 .btn { display: inline-flex !important; align-items: center; justify-content: center; text-indent: .1em; line-height: 1 !important; }
 .pnFoot .btn { height: 46px; padding-top: 0 !important; padding-bottom: 0 !important; }

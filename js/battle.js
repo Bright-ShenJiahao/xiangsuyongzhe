@@ -32,6 +32,7 @@
   const X = x => rd((x - cam.x) * s), Y = y => rd((y - cam.y) * s);
 
   // ---------- 开局 ----------
+  function careerColorSync(){const books=RUN?.slots?.filter(b=>b?.job)||[];hero.jobColor=books.some(b=>b.job.final)?'#ffd36a':books.length?({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e'}[books[0].job.families[0]]):null;}
   function start(o) { if (cv) cv.classList.remove('dead'); if (G) { G.deadR = null; G.dust = 0; }
     opt = o; MAP = DATA.maps.find(m => m.id === (o.map || 'field')); SPR.setGrade(MAP.grade); MAPW = MAP.w || 1672; MAPH = MAP.h || 941; fit();
     MIMG = new Image(); MIMG.crossOrigin = 'anonymous'; MIMG.src = MAP.img;
@@ -48,7 +49,7 @@
       bag: Array(DATA.bagSize).fill(null), gear: Array(DATA.gearSize).fill(null), oath: Array(DATA.oathSize).fill(null), mv: [{ kind: 'oath', id: 'traveler', lv: 1, mv: true }], eq: { main: { t: 1, aff: [] } }, gbag: [], stones: { 1: 0, 2: 0, 3: 0 }, coins: 0, si: 0, xiu: 0, dmgAll: {}, dmgW: {}, xopt: null, xrr: 0, shop: null, rr: 0, bought: {} };
     RUN.slots[0] = { id: (b.book1 && DATA.skills[b.book1]) ? b.book1 : (b.skill && DATA.skills[b.skill] && DATA.skills[b.skill].w === b.weapon) ? b.skill : (DATA.weapons[b.weapon]?.start || b.weapon), lv: 1, xp: 0 };   // 11/24 公主出发准备：第 1 格可放书库的书
     if (b.book2 && DATA.skills[b.book2] && ML('slot2') && b.book2 !== RUN.slots[0].id) RUN.slots[1] = { id: b.book2, lv: 1, xp: 0 };   /* 解锁了第 2 格就多带一本 */ if (b.item) RUN.gear[0] = { kind: 'item', id: b.item };
-    RUN.heat = HEATLS(); if (!ML('oath')) RUN.heat = {}; RUN.hpCut = .1 * (RUN.heat.life || 0);   /* 誓约石热度（要先解锁） */
+    RUN.heat = HEATLS(); if (!ML('oath')) RUN.heat = {}; RUN.hpCut = .1 * (RUN.heat.life || 0);careerColorSync();   /* 誓约石热度（要先解锁） */
     if (ML('step') && !o.resume) setTimeout(() => { if (!G || G.over) return; const L = shuffle(DATA.oathPool(RUN.weapon).filter(k => DATA.oaths[k].mv)).slice(0, 3); G.paused = true; CAMP.open({ title: '选择身法（3选1）', st: G.st, tab: 'shi', loot: L.map(id => ({ kind: 'oath', id })), pickOne: true, stepChoice: true, after: () => { G.paused = false; } }); }, 0);   /* 11/25 局外「身法」：开局随机带 1 个身法 */
     recompute(); RUN.coins = DATA.econ.startCoin + (hero.fx.coin || 0) + 20 * ML('coin') + (+localStorage.getItem('xsyz-bonusCoin') || 0); localStorage.removeItem('xsyz-bonusCoin');   /* 11/25 彩蛋铜钱：下一局开局带上，一次性 */ RUN.lives = 2 + ML('life'); RUN.livesUsed = 0;
     jobTraces.length = 0; foes = []; shots = []; fx = []; parts = []; nums = []; tele = []; burns = []; pend = []; warns.length = 0;
@@ -58,7 +59,7 @@
       boom: (x, y, r) => fx.push({ k: 'boom', x, y, t: 0, T: .45, r }), slash: z => { for (let i = 0; i < 5; i++) parts.push({ x: z.x, y: z.y - 14 * K, vx: R(-60, 60) * K, vy: R(-60, 0) * K, t: 0, T: .3, col: '#fff', g: 0 }); } });
     ESK.reset();
     if (o.resume) { const S = o.resume; Object.assign(RUN, JSON.parse(JSON.stringify(S.RUN))); Object.assign(G, S.G); JOBS.normalize(RUN); if (!RUN.mv?.[0] || DATA.oaths[RUN.mv[0].id]?.retired) RUN.mv = [{ kind: 'oath', id: 'traveler', lv: 1, mv: true }]; RUN.lives = Math.max(RUN.lives || 2, 2 + ML('life')); recompute(); hero.hp = Math.max(1, Math.round(hero.maxHp * Math.min(1, o.cont ? Math.max(S.hp || 1, .6) + .2 * ML('rev') : (S.hp || 1)))); }   // 续关：至少 60% 血，复活强化再 +20%
-    JOBS.normalize(RUN); nextWave(); if (!o.resume || o.drop) { G.drop = { t: 0 }; SFX.play('fall'); } if (!o.resume && ML('shield')) hero.mShield = Math.round(hero.maxHp * .08 * ML('shield'));   /* 11/25 开局护盾 */   // 11/24 新开一局：勇者从森林上空掉下来
+    JOBS.normalize(RUN);careerColorSync(); nextWave(); if (!o.resume || o.drop) { G.drop = { t: 0 }; SFX.play('fall'); } if (!o.resume && ML('shield')) hero.mShield = Math.round(hero.maxHp * .08 * ML('shield'));   /* 11/25 开局护盾 */   // 11/24 新开一局：勇者从森林上空掉下来
   }
   // 11/23 存档：每站开打时自动存（勇者状态 + 本局全部构筑）；通关或败北时删掉
   const SAVE = 'pxyz.save1';
@@ -80,6 +81,7 @@
     for (const a of m.aff || []) { const A = DATA.affixes[a[0]]; if (A) o.a[A[2]] = (o.a[A[2]] || 0) + A[1][a[1] - 1] / 100; }
     for (const [k, it] of Object.entries(RUN.eq)) { if (k === 'main' || !it || (k === 'off' && RUN.weapon !== 'sword')) continue; const D = DATA.gear[it.id], st = D && D.st[(it.t || 1) - 1]; if (!st) continue; for (const [key, v] of Object.entries(st)) { if (key === 'dmgP') o.dmgP += v; else if (key === 'dmgM') o.dmgM += v; else g[key] = (g[key] || 0) + v; } }
     return o; }
+  function careerColorSync(){const books=RUN.slots.filter(b=>b?.job);hero.jobColor=books.some(b=>b.job.final)?'#ffd36a':books.length?({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e'}[books[0].job.families[0]]):null;}
   function recompute() {
     const items = RUN.gear.filter(x => x && x.kind === 'item').map(x => ({ id: x.id, lv: x.lv || 1 }));   // 11/23 只有左边宝物格里的宝物生效
     const gx = gearFx(); hero.gx = gx; const c = DATA.calc({ weapon: RUN.weapon, attrs: RUN.attrs, train: trainAll(), items, habit: RUN.habit, gfx: gx.g }), m = hero.m;
@@ -359,7 +361,7 @@
       if (seq.index === 0) { if (hero.instant) { c.dur *= 1 - Math.min(.5, hero.instant); hero.instant = 0; } seq.bonus = { mul: c.mul, cr: c.cr, ar: c.ar }; } else Object.assign(c, seq.bonus); }
     c.t += dt;
     if (c.ph === 'wu') { c.a = aimNow(c.a); if (!hero.moving) faceTo(c.a); if (c.t < c.dur) return; faceTo(c.a);
-      const L = profL(c.sk), a0 = hero.m.area; hero.m.area = Math.min(1.25, hero.m.area * (1 + ((hero.fx || {})['sarea_' + DATA.SYSK[c.S.sys]] || 0))) * (1 + (c.ar || 0)) * (1 + JC.range(c.career)); if (c.S.dt === 'magic' && hero.lensReady) { hero.m.area *= 1.15; hero.lensReady = false; } hero.castCrit = c.cr || 0; const r = SK.cast({ S: c.S, sk: c.sk, L, d: skillDmg(c.S, c.sk), bonus: c.S.dmg ? skillDmg(c.S, c.sk) / c.S.dmg - 1 : 0, a: c.a, sid: c.sk.id, career: c.career }); hero.m.area = a0;
+      const L = profL(c.sk), a0 = hero.m.area; c.career.color=hero.jobColor; hero.m.area = Math.min(1.25, hero.m.area * (1 + ((hero.fx || {})['sarea_' + DATA.SYSK[c.S.sys]] || 0))) * (1 + (c.ar || 0)) * (1 + JC.range(c.career)); if (c.S.dt === 'magic' && hero.lensReady) { hero.m.area *= 1.15; hero.lensReady = false; } hero.castCrit = c.cr || 0; const r = SK.cast({ S: c.S, sk: c.sk, L, d: skillDmg(c.S, c.sk), bonus: c.S.dmg ? skillDmg(c.S, c.sk) / c.S.dmg - 1 : 0, a: c.a, sid: c.sk.id, career: c.career }); hero.m.area = a0;
       if (!r) { hero.cs = null; return; }   // 场上没敌人了：不放，等下一个敌人
       c.released = true; c.career.a = c.a;
       { const w = c.S.w; SFX.play(w === 'gun' ? 'arrow' : w === 'bow' ? 'arrow' : w === 'staff' ? 'magic' : 'swing'); if (w === 'sword' || w === 'spear') { G.kx = Math.cos(c.a) * 3; G.ky = Math.sin(c.a) * 2; } }   // 11/24 出招声 + 镜头后坐
@@ -1077,7 +1079,7 @@
           if (Math.random() < .6) parts.push({ x: hero.x + R(-12, 12) * K, y: hero.y - R(0, 40) * K, vx: 0, vy: -20 * K, t: 0, T: .5, col: '#6a4aa8', g: 0 }); continue; }   // 暗影步：黑影
         if (hero.rShield) { const r = 22 * u, a0 = G.t * 2; ctx.fillStyle = 'rgba(159,220,255,.8)'; for (let a = 0; a < PI * 2; a += .12) ctx.fillRect(X(hero.x) + Math.cos(a + a0) * r, Y(hero.y) - 14 * u + Math.sin(a + a0) * r * .9, u * ((a * 10 | 0) % 3 ? 1 : 2), u); }   // 二段滚护盾
         const bob = G.drop && G.drop.t < DROP_T ? -(1 - Math.pow(G.drop.t / DROP_T, 2)) * (Y(hero.y) + 70 * u) : 0, lunge = st === 'strike' ? hero.f * (lg || 0) * u : st === 'hurt' ? -hero.f * 2 * u : 0;
-        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { white: hero.dead && (G.deadR || 0) < .14 ? 1 : 0, w: hero.cs ? hero.cs.S.w : (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword', c: RUN.hero });
+        SPR.drawHero(ctx, n, i, X(hero.x) + lunge, Y(hero.y) + bob, hero.f < 0, u, { white: hero.dead && (G.deadR || 0) < .14 ? 1 : 0, w: hero.cs ? hero.cs.S.w : (RUN.slots[0] && DATA.skills[RUN.slots[0].id] && DATA.skills[RUN.slots[0].id].w) || HWPN[RUN.weapon] || 'sword', c: RUN.hero, careerColor:hero.jobColor });
       } else {
         if (o.z.hideT > 0) continue;
         const z = o.z, B = z.T.boss || z.T.ai === 'boss', [n0, st] = foeFrame(z), n = z.noShield && SPR.frame(z.type, 'n_' + n0) ? 'n_' + n0 : n0;
@@ -1110,7 +1112,7 @@
       ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = `bold ${Math.round(8 * u)}px Pix, monospace`;
       ctx.fillStyle = '#0a2a2a'; ctx.fillText('LEVEL UP!', x + u, y + u); ctx.fillStyle = Math.floor(t * 8) % 2 ? '#ffffff' : '#7ff0e0'; ctx.fillText('LEVEL UP!', x, y); ctx.restore(); }
     for (const o of fx) {
-      const p = o.t / o.T;
+      const p = o.t / o.T,career=o.cast?.career;if(o.sid&&career?.color&&!o.extra){o.col=career.color;ctx.save();ctx.shadowColor=career.color;ctx.shadowBlur=8*u;}
       if (o.k === 'slash') {   // 像素刀光：三层，从起手往前扫开（half 半角、rev 反手、gold 金色、wood 枪杆）
         const hf = o.half || 1.35, C3 = o.gold ? ['#ffffff', '#ffe27a', '#e8a020'] : o.wood ? ['#f0e0c0', '#c8a070', '#8a5a2a'] : ['#ffffff', '#fff2b0', '#f0c04c'];
         for (let k = 0; k < 3; k++) { const r = (o.r - k * 4) * u; for (let a = -hf; a <= hf; a += .04) { const t = (o.rev ? hf - a : a + hf) / (2 * hf); if (t > p * 1.6) continue; if (p > .6 && (Math.floor(a * 40) % 2)) continue; const aa = o.a + a; ctx.fillStyle = C3[k]; const q = k === 0 ? 2 * u : u; ctx.fillRect(X(o.x) + rd(Math.cos(aa) * r), Y(o.y) + rd(Math.sin(aa) * r / YS), q, q); } }
@@ -1122,12 +1124,13 @@
       else if (o.k === 'boom') { const r = o.r * u * (.5 + p * .7); for (let a = 0; a < PI * 2; a += .06) { if (Math.floor(a * 10 + o.t * 30) % 3 === 0) continue; ctx.fillStyle = o.col === 'dark' ? (p < .4 ? '#e0c0ff' : p < .7 ? '#9a50e0' : '#40104a') : p < .4 ? '#fff2a0' : p < .7 ? '#ff9a30' : '#a03a18'; ctx.fillRect(X(o.x) + rd(Math.cos(a) * r), Y(o.y) + rd(Math.sin(a) * r / YS), 2 * u, 2 * u); } if (p < .3) { ctx.fillStyle = 'rgba(255,230,140,.35)'; ctx.beginPath(); ctx.ellipse(X(o.x), Y(o.y), r * .8, r * .8 / YS, 0, 0, 7); ctx.fill(); } }
     }
     for (const o of fx) {
-      const p = o.t / o.T;
+      const p = o.t / o.T,career=o.cast?.career;if(o.sid&&career?.color&&!o.extra){o.col=career.color;ctx.save();ctx.shadowColor=career.color;ctx.shadowBlur=8*u;}
       if (o.k === 'line') { const L = o.L * u * Math.min(1, p * 3), ca = Math.cos(o.a), sa = Math.sin(o.a) / YS, w = o.w * u * .5 * (1 - p); for (let d = 0; d < L; d += u) { ctx.fillStyle = p < .4 ? '#ffffff' : o.col; ctx.fillRect(X(o.x) + rd(ca * d - sa * w * .3), Y(o.y) + rd(sa * d + ca * w * .3), 2 * u, Math.max(u, rd(w))); } }
       else if (o.k === 'bolt') { ctx.strokeStyle = p < .5 ? '#ffffff' : o.col; ctx.lineWidth = Math.max(1, (2 - p * 1.5) * u); ctx.beginPath(); o.pts.forEach((q, i) => { const jx = i && i < o.pts.length - 1 ? R(-3, 3) * u : 0; i ? ctx.lineTo(X(q.x) + jx, Y(q.y)) : ctx.moveTo(X(q.x), Y(q.y)); }); ctx.stroke(); }
       else if (o.k === 'pillar') { const w = o.r * u * (1 - p * .5), h = 160 * u; ctx.fillStyle = `rgba(255,245,200,${.5 * (1 - p)})`; ctx.fillRect(X(o.x) - w, Y(o.y) - h, w * 2, h); ctx.fillStyle = `rgba(255,255,255,${.7 * (1 - p)})`; ctx.fillRect(X(o.x) - w * .4, Y(o.y) - h, w * .8, h); }
       else if (o.k === 'orb') { ctx.fillStyle = o.col; ctx.globalAlpha = 1 - p; ctx.beginPath(); ctx.arc(X(o.x), Y(o.y), o.r * u, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
-      else if (o.k === 'icicle') { const y = Y(o.y) - rd((1 - Math.min(1, p * 2)) * 40 * u); for (let j = 0; j < 6; j++) { ctx.fillStyle = j < 2 ? '#ffffff' : '#8ad8ff'; ctx.fillRect(X(o.x), y - j * u, u, u); } }
+      else if (o.k === 'icicle') { const y = Y(o.y) - rd((1 - Math.min(1, p * 2)) * 40 * u); for (let j = 0; j < 6; j++) { ctx.fillStyle = j < 2 ? '#ffffff' : (o.col||'#8ad8ff'); ctx.fillRect(X(o.x), y - j * u, u, u); } }
+      if(o.sid&&career?.color&&!o.extra)ctx.restore();
     }
     for (const q of parts) { ctx.fillStyle = q.col; const z = (q.sz || 1) * u; ctx.fillRect(X(q.x), Y(q.y), z, z); }
     const nk = Math.max(1, rd(u * .9));
@@ -1308,7 +1311,7 @@
   };
   window.BATTLE = { sim: SIM, healHero: n => healHero(n),
     init, start, frame, fit, roll, saveRun,
-    careerChanged() { hero.cs = null; hero.sequence = null; SK.chEnd(); recompute(); saveRun(); },
+    careerChanged() { hero.cs = null; hero.sequence = null; SK.chEnd(); careerColorSync(); recompute(); saveRun(); },
     saveCareer() { saveRun(); },
     exportChapter() { saveRun(); try { localStorage.setItem('pxyz.chapterBuild', JSON.stringify({ RUN, hp: hero.hp / hero.maxHp, chapter: (RUN.chapter || 1) + 1 })); } catch (e) {} },
     continueChapter() { const data = JSON.parse(localStorage.getItem('pxyz.chapterBuild') || 'null'); if (!data) return false; start({ weapon: data.RUN.weapon, map: 'field', resume: { RUN: { ...data.RUN, chapter: data.chapter }, G: { st: 1, wi: -1, kills: 0, t: 0, xp: 0, lv: 1 }, hp: data.hp } }); return true; },

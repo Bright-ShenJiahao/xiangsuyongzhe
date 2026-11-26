@@ -107,11 +107,12 @@
     const f = frame(set, name, i); if (!f) return;
     const S = sheet(set, o.v), k = u * (o.k || 1) * (SETS[set].sk || 1), dw = Math.round(f.w * k), dh = Math.round(f.h * k);
     const dx = Math.round(X - (flip ? f.w - f.ax : f.ax) * k), dy = Math.round(Y - f.ay * k), sx = flip ? S.W - f.x - f.w : f.x;
+    if(o.careerColor){ctx.save();ctx.shadowColor=o.careerColor;ctx.shadowBlur=7*u;}
     if (o.alpha != null) ctx.globalAlpha = o.alpha;
     const hd = SETS[set].hd && !ctx.imageSmoothingEnabled; if (hd) { ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; }
     ctx.drawImage(flip ? S.fl : S.at, sx, f.y, f.w, f.h, dx, dy, dw, dh);
     if (o.white) { ctx.globalAlpha = (o.alpha == null ? 1 : o.alpha) * o.white; ctx.drawImage(flip ? S.wfl : S.wat, sx, f.y, f.w, f.h, dx, dy, dw, dh); }
-    ctx.globalAlpha = 1; if (hd) ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = 1; if (hd) ctx.imageSmoothingEnabled = false;if(o.careerColor)ctx.restore();
   }
   // 单独切一帧出来（武器选择页的小人、头像）
   function crop(set, name, i) { const f = frame(set, name, i), S = SETS[set]; if (!f) return null; const k = S.sk || 1, w = Math.max(1, Math.round(f.w * k)), h = Math.max(1, Math.round(f.h * k)), c = mkc(w, h), g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(S.base, f.x, f.y, f.w, f.h, 0, 0, w, h); return { c, f: k === 1 ? f : { ...f, w, h, ax: f.ax * k, ay: f.ay * k } }; }

@@ -67,7 +67,7 @@
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
     r.slots.forEach((s, i) => { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
       if (i >= r.open) { d.dataset.t = 'L'; d.dataset.i = i; d.className = 'slot lock' + (i === r.open ? ' buy' : ''); if (sel && sel.t === 'L' && sel.i === i) d.classList.add('sel'); d.onclick = () => { sel = { t: 'L', i }; loadout(box); }; }
-      else if (s) { d.className = 'slot has full tr t' + SK[s.id].tier; d.appendChild(UI.careerIcon(s)); d.insertAdjacentHTML('beforeend', lvTag(s)); }
+      else if (s) { d.className = 'slot has full tr t' + SK[s.id].tier+(s.job?' careerSlot':''); d.appendChild(UI.careerIcon(s)); if(!s.job)d.insertAdjacentHTML('beforeend', lvTag(s)); }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
@@ -77,7 +77,7 @@
     const oc = (arr, t, cls, empty) => arr.forEach((o, i) => { const d = document.createElement('div'); d.className = cls + (o ? ' has full' : ''); if (t === 'o') { d.title = i === 0 ? '主修：100%' : '辅修：50%'; if (i === 0) { d.style.outline = '2px solid #ffd36a'; d.style.outlineOffset = '-2px'; d.style.borderColor = '#ffd36a'; d.style.boxShadow = 'inset 0 0 0 1px #ffd36a'; } } if (o) { d.appendChild(iconEl(thing(o))); d.insertAdjacentHTML('beforeend', `<b class="lvb">${o.lv}</b>`); } else d.innerHTML = empty; if (sel && sel.t === t && sel.i === i) d.classList.add('sel'); d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); om.appendChild(d); });
     oc(r.oath, 'o', 'oath', ''); oc(r.mv, 'm', 'mv', '<span>身法</span>');
     const cell = (grid, arr, t) => arr.forEach((o, i) => { const d = document.createElement('div'); const th = thing(o);
-      if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : ''); if (o.kind === 'book') { d.appendChild(UI.careerIcon(o)); d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else { d.appendChild(iconEl(th));  if (o.up && Date.now() - o.up < 4000) d.classList.add('put'); } if (o.fresh && inFight()) d.insertAdjacentHTML('beforeend', '<em class="nw">新</em>'); }
+      if (th) { d.className = 'has full ' + o.kind + (th.tier ? ' tr t' + th.tier : '')+(o.job?' careerSlot':''); if (o.kind === 'book') { d.appendChild(UI.careerIcon(o)); if(!o.job)d.insertAdjacentHTML('beforeend', lvTag(o) + '<em class="bk">书</em>'); } else { d.appendChild(iconEl(th));  if (o.up && Date.now() - o.up < 4000) d.classList.add('put'); } if (o.fresh && inFight()) d.insertAdjacentHTML('beforeend', '<em class="nw">新</em>'); }
       if (sel && sel.t === t && sel.i === i) d.classList.add('sel');
       d.onclick = () => dragged || pick({ t, i }, box); drag(d, { t, i }, !!o, box); grid.appendChild(d); });
     const lockCells = (grid, n, tip) => { for (let k = 0; k < n; k++) { const d = document.createElement('div'); d.className = 'lk'; d.dataset.tip = tip; grid.appendChild(d); } };
@@ -116,7 +116,7 @@
     if (!withBtn) return; const cs = sel;
     const btns = document.createElement('div'); btns.className = 'lob'; info.appendChild(btns);
     const btn = (label, fn, gold) => { const b = document.createElement('button'); b.className = 'btn mini' + (gold ? ' gold' : ''); b.textContent = label; b.onclick = e => { e.stopPropagation(); info.remove(); fn(); }; btns.appendChild(b); };
-    careerActions(cur, cs, btn, box);
+    if(!cur.job) careerActions(cur, cs, btn, box);
     const F = inFight(); if (F) btns.insertAdjacentHTML('beforeend', '<small class="dim">战斗中：卸下要等站末（丢弃随时可以）</small>');
     if (cs.t === 's') { if (!F && r.slots.filter(Boolean).length > 1) btn('卸下', () => { const j = r.bag.indexOf(null); if (j < 0) return toast('物品栏满了'); r.bag[j] = { ...cur, kind: 'book' }; delete r.bag[j].slot; r.slots[cs.i] = null; sel = null; loadout(box); }); }
     else {
@@ -134,6 +134,25 @@
     const panel = document.createElement('div'); panel.className = 'panel box'; panel.style.cssText = 'max-width:540px;width:100%;max-height:85vh;overflow:auto;box-sizing:border-box'; const head = document.createElement('h3'); head.textContent = title; panel.appendChild(head);
     for (const item of choices) { const b = document.createElement('button'); b.className = 'btn gold'; b.style.cssText = 'display:block;width:100%;min-height:44px;margin:8px 0;white-space:normal'; b.textContent = item.label; b.onclick = () => { if (apply(item) !== false) overlay.remove(); }; panel.appendChild(b); }
     const cancel = document.createElement('button'); cancel.className = 'btn'; cancel.style.minHeight = '44px'; cancel.textContent = '取消'; cancel.onclick = () => overlay.remove(); panel.appendChild(cancel); overlay.appendChild(panel); document.body.appendChild(overlay);
+  }
+  function careerChoices() {
+    const r=R(), books=JOBS.books(r), finals=[];
+    if(!r.finalCareer) for(const a of books.filter(b=>b.job&&!b.job.final&&b.job.progress>=JOBS.PROGRESS_MAX)) for(const b of books.filter(q=>q!==a&&q.job&&!q.job.final&&q.job.progress>=JOBS.PROGRESS_MAX)) { const key=JOBS.key([a.job.families[0],b.job.families[0]]), name=JOBS.finals[key]?.[0]; if(name&&!finals.some(x=>x.a===b&&x.b===a)) finals.push({kind:'final',a,b,label:`${JOBS.name(a)} + ${JOBS.name(b)} → ${name}`}); }
+    if(finals.length) return finals;
+    const pairs=[];for(const a of books.filter(b=>!b.job&&JOBS.level(b)>=7))for(const b of books)if(JOBS.canPair(r,a,b))pairs.push({kind:'pair',a,b,label:`${SK[a.id].name} + ${SK[b.id].name} → ${JOBS.careers[JOBS.family(SK[a.id])][0]}`});
+    return pairs;
+  }
+  function careerButton() {
+    if(!JOBS?.books||!B()?.run?.()){document.getElementById('careerEntry')?.remove();return;}
+    const choices=careerChoices();if(!choices.length){document.getElementById('careerEntry')?.remove();return;}
+    const btn=document.getElementById('careerEntry')||document.createElement('button');btn.id='careerEntry';btn.className='btn gold career-entry';btn.textContent=choices[0].kind==='final'?'最终转职':'转职';btn.style.cssText='position:fixed;z-index:110;left:50%;bottom:82px;transform:translateX(-50%);min-width:190px;animation:careerPulse 1.3s ease-in-out infinite alternate';
+    btn.onclick=()=>chooseCareer(btn.textContent,careerChoices(),item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged(); careerAnimation(merged);return true;});
+    if(!btn.isConnected)document.body.appendChild(btn);
+  }
+  const careerColor=book=>book?.job?.final?'#ffd36a':({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e'})[book?.job?.families?.[0]]||'#fff';
+  function careerAnimation(book){
+    document.getElementById('careerReveal')?.remove();const color=careerColor(book),english=({sword:'WIND SWORDSMAN',spear:'SPEAR MASTER',bow:'MOONSTALKER',staff:'ELEMENTAL MAGE',gun:'ARCADE ACE',common:'GRAND ADVENTURER'})[book.job.families[0]],frame=document.createElement('div');
+    const families=book.job.families,eng=book.job.final?families.map(f=>({sword:'WIND',spear:'SPEAR',bow:'MOON',staff:'ELEMENT',gun:'ARCADE',common:'ADVENTURE'})[f]).join(' × '):english;frame.id='careerReveal';frame.style.setProperty('--career-color',color);frame.innerHTML=`<div class="career-reveal-box"><div class="career-rune"></div><div class="career-pillar"></div><div class="career-hero"><span></span><i></i></div><div class="career-banner"><strong>${JOBS.name(book)}</strong><small>${eng}</small></div></div>`;const soldier=document.createElement('canvas'),raw=SPR.crop(SPR.heroSet(R().hero,'sword'),'idle',0);if(raw){soldier.width=raw.c.width*2;soldier.height=raw.c.height*2;soldier.getContext('2d').drawImage(raw.c,0,0,soldier.width,soldier.height);soldier.className='careerSoldier';frame.querySelector('.career-hero span').appendChild(soldier);}document.body.appendChild(frame);setTimeout(()=>frame.remove(),2200);
   }
   function careerActions(cur, cs, btn, box) {
     const r = R(), raw = ARR0(r, cs)[cs.i];
@@ -403,9 +422,9 @@
     const tb = $('pTabs'); tb.innerHTML = '';
     for (const [k, n] of [['ji', '技能'], ['shu', '属性'], ['zhuang', '装备']]) { const b = document.createElement('button'); b.className = k === ptab ? 'on' : ''; const dn = k === 'shu' ? R().pts : 0; b.innerHTML = n + (dn ? `<em>${dn}</em>` : '');
       b.onclick = () => { if (k === ptab) return; const d = ['ji', 'shu', 'zhuang'].indexOf(k) > ['ji', 'shu', 'zhuang'].indexOf(ptab) ? 'slideR' : 'slideL'; if (ptab === 'shu' && k !== 'shu') commit(); ptab = k; sel = null; pauseRender(); const pb = $('pBody'); pb.classList.remove('slideL', 'slideR'); void pb.offsetWidth; pb.classList.add(d); }; tb.appendChild(b); }
-    refreshCoin(); if (ptab === 'ji') loadout($('pBody')); else if (ptab === 'zhuang') equipPanel($('pBody')); else attrPanel($('pBody'));
+    refreshCoin(); if (ptab === 'ji') loadout($('pBody')); else if (ptab === 'zhuang') equipPanel($('pBody')); else attrPanel($('pBody')); careerButton();
   }
-  function pauseOpen() { prevFill = null; UI.newDot(false); sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); }
+  function pauseOpen() { prevFill = null; UI.newDot(false); sel = null; ptab = R().pts ? 'shu' : 'ji'; pauseRender(); careerButton(); }
 
   window.CAMP = { giveGear, learn, rollXiu, open, pauseOpen, commit, isOpen: () => $('camp').classList.contains('on'), close: () => $('camp').classList.remove('on') };
 })();

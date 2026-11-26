@@ -280,14 +280,14 @@ window.SKILLS = (A) => {
       ctx.fillStyle = 'rgba(255,216,106,.18)'; ctx.beginPath(); ctx.arc(x, y, 10 * u, 0, 7); ctx.fill();
       for (let j = -9; j <= 9; j++) { const px = x + Math.round(ca * j * u), py = y + Math.round(sa * j * u); if (j > 5) pix(px, py, j === 6 ? '#ffcf3a' : '#8a5a2a', 2 * u); else { pix(px - Math.round(sa * u), py + Math.round(ca * u), '#e8a020', 2 * u); pix(px, py, j < -7 ? '#ffffff' : '#e8ecf4', 2 * u); } } }
     for (const o of orbs) { const x = X(o.x), y = Y(o.y); ctx.fillStyle = 'rgba(120,60,200,.35)'; ctx.beginPath(); ctx.arc(x, y, 6 * u, 0, 7); ctx.fill(); pix(x - 2 * u, y - 2 * u, '#2a0a40', 4); pix(x - u, y - u, '#c8a0ff', 2); }
-    for (const p of projs) { const x = X(p.x), y = Y(p.y), ca = Math.cos(p.a), sa = Math.sin(p.a) / YS, b = p.big || 1;
+    for (const p of projs) { const x = X(p.x), y = Y(p.y), ca = Math.cos(p.a), sa = Math.sin(p.a) / YS, b = p.big || 1, career=p.cast?.career;if(p.sid&&career?.color&&!p.o?.extra){ctx.save();ctx.shadowColor=career.color;ctx.shadowBlur=7*u;}
       if (p.look === 'crescent') { for (let j = -6 * b; j <= 6 * b; j++) { const off = (1 - (j / (6 * b)) ** 2) * 4 * b; pix(x + Math.round((-sa * j + ca * off) * u), y + Math.round((ca * j + sa * off) * u), Math.abs(j) < 2 * b ? '#ffffff' : '#bfe8ff'); } }
       else if (p.look === 'arrow' || p.look === 'bigarrow' || p.look === 'feather' || p.look === 'spear' || p.look === 'sword') { const n = p.look === 'bigarrow' ? 22 : p.look === 'spear' ? 16 : 9, q = p.look === 'bigarrow' ? 2 * b : 1, c1 = p.look === 'feather' ? '#9ff0c8' : p.look === 'bigarrow' ? '#fff6c0' : '#e8ecf4';
         for (let j = 0; j < n; j++) pix(x - Math.round(ca * j * 1.5 * u), y - Math.round(sa * j * 1.5 * u), j < 2 ? c1 : j > n - 3 ? '#e8e0c8' : p.look === 'bigarrow' ? '#ffe9a0' : '#8a5a2a', q); }
       else if (p.look === 'beam') { for (let j = 0; j < 14 * b; j++) pix(x - Math.round(ca * j * 1.5 * u), y - Math.round(sa * j * 1.5 * u), j < 3 ? '#ffffff' : '#fff2b0', 2 * b); }
       else if (p.look === 'drill' || p.look === 'tornado') { const r = p.r * u, rot = p.t * 18; ctx.fillStyle = p.look === 'drill' ? 'rgba(255,240,180,.18)' : 'rgba(220,240,255,.18)'; ctx.beginPath(); ctx.ellipse(x, y, r, r / YS, 0, 0, 7); ctx.fill();
         for (let k = 0; k < 24; k++) { const aa = rot + k * .52, rr = r * (k % 3 + 1) / 3; pix(x + Math.round(Math.cos(aa) * rr), y + Math.round(Math.sin(aa) * rr / YS) - (p.look === 'tornado' ? k * u : 0), p.look === 'drill' ? (k % 2 ? '#fff2b0' : '#e8b84a') : (k % 2 ? '#ffffff' : '#a8d8f0'), 2); } }
-      else if (p.look === 'shadow' || p.look === 'ice') { const c = p.look === 'ice' ? ['#ffffff', '#8ad8ff'] : ['#e0c0ff', '#6a2aa0']; pix(x - u * b, y - u * b, c[1], 3 * b); pix(x, y, c[0], b); } }
+      else if (p.look === 'shadow' || p.look === 'ice') { const c = p.look === 'ice' ? ['#ffffff', '#8ad8ff'] : ['#e0c0ff', '#6a2aa0']; pix(x - u * b, y - u * b, c[1], 3 * b); pix(x, y, c[0], b); } if(p.sid&&career?.color&&!p.o?.extra)ctx.restore(); }
   }
   return {
     // 出手：返回 null = 没敌人；返回 channel 对象 = 占时型
