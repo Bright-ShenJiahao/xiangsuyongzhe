@@ -1,30 +1,46 @@
 // 开发者面板：网址带 ?debug 才出现。首领出场、无敌、清场、升级、直接胜利、回血、跳过开场。
 (() => {
   if (!/[?&]debug/.test(location.search)) return;
+  // 11/27 调试面板重排：左上角小按钮，点开是分组面板（手机/PC 都在屏幕内，可滚动）
   const box = document.createElement('div');
-  box.style.cssText = 'position:fixed;left:6px;top:42%;z-index:99;display:flex;flex-direction:column;gap:4px;align-items:flex-start;font:12px Pix,monospace';
-  const B = (t, fn) => { const b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:inherit;padding:4px 6px;background:#1c2a1c;color:#8ef07a;border:1px solid #4a8a3a;cursor:pointer'; b.onclick = e => { e.stopPropagation(); fn(b); }; box.appendChild(b); return b; };
-  const hide = B('调试 ▾', b => { const on = box.dataset.c !== '1'; box.dataset.c = on ? '1' : '0'; [...box.children].forEach(c => c !== b && (c.style.display = on ? 'none' : '')); b.textContent = on ? '调试 ▸' : '调试 ▾'; });
+  box.style.cssText = 'position:fixed;left:6px;top:6px;z-index:9999;font:12px Pix,monospace;max-width:calc(100vw - 12px)';
+  const panel = document.createElement('div');
+  panel.style.cssText = 'display:none;margin-top:4px;padding:8px;background:rgba(10,20,10,.92);border:1px solid #4a8a3a;max-height:calc(100vh - 60px);overflow:auto;width:min(420px,calc(100vw - 12px));box-sizing:border-box';
+  const groups = {};
+  const G0 = name => { if (groups[name]) return groups[name]; const h = document.createElement('div'); h.textContent = name; h.style.cssText = 'color:#ffd860;margin:6px 0 3px'; const g = document.createElement('div'); g.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px'; panel.append(h, g); return groups[name] = g; };
+  let cur = '战斗';
+  const B = (t, fn) => { const b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:inherit;padding:5px 7px;background:#1c2a1c;color:#8ef07a;border:1px solid #4a8a3a;cursor:pointer'; b.onclick = e => { e.stopPropagation(); fn(b); }; G0(cur).appendChild(b); return b; };
+  const sec = n => { cur = n; };
+  const tog = document.createElement('button'); tog.textContent = '调试 ▸'; tog.style.cssText = 'font:inherit;padding:4px 8px;background:#1c2a1c;color:#8ef07a;border:1px solid #4a8a3a;cursor:pointer;opacity:.8';
+  tog.onclick = e => { e.stopPropagation(); const on = panel.style.display === 'none'; panel.style.display = on ? 'block' : 'none'; tog.textContent = on ? '调试 ▾' : '调试 ▸'; };
+  box.append(tog, panel);
+  const hide = { click() {} };
+  sec('战斗');
   B('首领出场', () => UI.mod().debug.boss());
   B('无敌', b => { UI.mod().debug.god(); b.style.color = b.style.color === 'rgb(255, 216, 96)' ? '#8ef07a' : '#ffd860'; });
   B('清场', () => UI.mod().debug.clear());
   B('时间到', () => UI.mod().debug.skip());
   B('升级', () => UI.mod().debug.lvl());
   B('回血', () => UI.mod().debug.heal());
+  sec('流程');
   B('本段胜利', () => UI.mod().debug.wave());
   B('本站胜利', () => UI.mod().debug.station());
+  sec('转职');
   B('转职演练', () => { if (!BATTLE.active()) UI.startBattle(); const r = BATTLE.run(); r.slots[0] = { id: 'sword', lv: 7, xp: DATA.prof[6] }; r.slots[1] = { id: 'whirl', lv: 7, xp: DATA.prof[6] }; BATTLE.careerChanged(); UI.togglePause(true); });
+  sec('物品 / 开局');
   B('给印记', () => UI.mod().debug.oath());
   B('直接胜利', () => UI.mod().debug.win());
   B('发装备', () => { CAMP.giveGear(); });
   B('选人页', () => { try { BATTLE.stop(); } catch (e) {} for (const id of ['levelup', 'pause', 'result', 'camp']) { const e = document.getElementById(id); if (e) e.classList.remove('on'); } UI.openPrep(true); });
   B('直接开打', () => { if (window.UI) UI.startBattle(); });
   const poolSel = document.createElement('select'); poolSel.id = 'poolSkillDebug'; poolSel.style.cssText = 'font:inherit;background:#1c2a1c;color:#8fe8ff;max-width:190px;padding:4px';
-  for (const sys of ['光枪','通用']) { const group=document.createElement('optgroup');group.label=sys;for(const id of DATA.newPoolIds.filter(id=>DATA.skills[id].sys===sys)){const o=document.createElement('option');o.value=id;o.textContent=DATA.skills[id].name;group.appendChild(o);}poolSel.appendChild(group); } box.appendChild(poolSel);
-  const preparePool = id => { UI.startBattle({weapon:DATA.skills[id].w==='gun'?'gun':'sword',book1:id,hero:'m'}); BATTLE.debug.god(); BATTLE.debug.skill(id); for(let i=0;i<4;i++)BATTLE.debug.spawn('goblin'); };
+  sec('技能');
+  for (const sys of [...new Set(Object.values(DATA.skills).map(k=>k.sys))]) { const group=document.createElement('optgroup');group.label=sys;for(const id of Object.keys(DATA.skills).filter(id=>DATA.skills[id].sys===sys)){const o=document.createElement('option');o.value=id;o.textContent=DATA.skills[id].name;group.appendChild(o);}poolSel.appendChild(group); } G0('技能').appendChild(poolSel);
+  const preparePool = id => { UI.startBattle({weapon:(DATA.weapons[DATA.skills[id].w]?DATA.skills[id].w:'sword'),book1:id,hero:'m'}); BATTLE.debug.god(); BATTLE.debug.skill(id); for(let i=0;i<4;i++)BATTLE.debug.spawn('goblin'); };
   poolSel.onchange=()=>preparePool(poolSel.value);
   B('演练所选技能',()=>preparePool(poolSel.value));
   B('释放所选技能一次',()=>{if(!BATTLE.active())preparePool(poolSel.value);BATTLE.debug.cast(poolSel.value);});
+  sec('转职');
   for (const [label,ids] of [['光枪转职演练',['g_fast','g_spread']],['通用转职演练',['u_palm','u_sweep']]]) B(label,()=>{UI.startBattle({weapon:label.startsWith('光枪')?'gun':'sword',book1:ids[0],hero:'m'});const r=BATTLE.run();r.slots[0]={id:ids[0],lv:7,xp:DATA.prof[6]};r.slots[1]={id:ids[1],lv:7,xp:DATA.prof[6]};BATTLE.careerChanged();UI.togglePause(true);});
   // 11/23 演练场：一键进入要看的场景（自动开一局、无敌、给钱给书）
   const sel = document.createElement('select'); sel.style.cssText = 'font:inherit;background:#1c2a1c;color:#ffd860;border:1px solid #4a8a3a;padding:3px';
@@ -43,7 +59,7 @@
     if (v === 'fe') return; if (v === 'shop') { const h = BATTLE.hero(); h.x = f.mer.x + 4; h.y = f.mer.y; return; }
     if (v.startsWith('ev:')) return d.ev(v.slice(3));
     f.doors = []; d.rest(v === 'shop2' ? 'shop' : v); };
-  box.appendChild(sel);
+  G0('流程').appendChild(sel);
   hide.click();   // 默认收起，点「调试」展开（手机上不挡按钮）
   box.addEventListener('pointerdown', e => e.stopPropagation());
   addEventListener('DOMContentLoaded', () => document.body.appendChild(box)); if (document.body) document.body.appendChild(box);

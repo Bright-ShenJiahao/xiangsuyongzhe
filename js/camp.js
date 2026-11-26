@@ -65,9 +65,10 @@
     let cyc = 0; r.slots.slice(0, r.open).forEach(s => { if (s) cyc += B().skillInfo(s).cd; });
     L.insertAdjacentHTML('beforeend', `<h4>技能栏 <small>按 1→2→3 顺序轮流自动出手 · 一轮约 ${cyc.toFixed(1)} 秒</small></h4>`);
     const sl = document.createElement('div'); sl.className = 'slots'; L.appendChild(sl);
+    let ready = new Set(); try { ready = new Set(careerChoices().flatMap(c => [c.a, c.b])); } catch (e) {}   // 11/27 可转职的书发金光
     r.slots.forEach((s, i) => { const d = document.createElement('div'); d.innerHTML = `<u>${i + 1}</u>`;
       if (i >= r.open) { d.dataset.t = 'L'; d.dataset.i = i; d.className = 'slot lock' + (i === r.open ? ' buy' : ''); if (sel && sel.t === 'L' && sel.i === i) d.classList.add('sel'); d.onclick = () => { sel = { t: 'L', i }; loadout(box); }; }
-      else if (s) { d.className = 'slot has full tr t' + SK[s.id].tier+(s.job?' careerSlot':''); d.appendChild(UI.careerIcon(s)); if(!s.job)d.insertAdjacentHTML('beforeend', lvTag(s)); }
+      else if (s) { d.className = 'slot has full tr t' + SK[s.id].tier+(s.job?' careerSlot':''); d.appendChild(UI.careerIcon(s)); if(!s.job)d.insertAdjacentHTML('beforeend', lvTag(s)); if (ready.has(s)) { d.classList.add('cglow'); d.title = '可以转职了！点下方「转职」'; } }
       else { d.className = 'slot'; d.insertAdjacentHTML('beforeend', '空'); }
       if (sel && sel.t === 's' && sel.i === i) d.classList.add('sel');
       if (i < r.open) { d.onclick = () => dragged || pick({ t: 's', i }, box); drag(d, { t: 's', i }, !!s, box); } sl.appendChild(d); });
@@ -177,7 +178,7 @@
     for (const a of DATA.attrs) {
       const tr = r.train[a.id] || 0, al = (r.alloc[a.id] || 0) + (r.tmp[a.id] || 0), base = c.A[a.id] - tr - al, row = document.createElement('div'); row.className = 'arow'; row.title = a.desc;
       const src = [`基础 ${base}`, tr && `修炼 +${tr}`, al && `加点 +${al}`].filter(Boolean).join(' · ');
-      const per = a.desc.replace(/\s*\/\s*点/g, '').split(/[、,，]/).map(t => t.trim()).filter(Boolean).reduce((L, t) => { if (L.length && !/[+＋\-]\d/.test(L[L.length - 1])) L[L.length - 1] += '、' + t; else L.push(t); return L; }, []); row.innerHTML = `<div class="an">${UI.piH(a.id, 1)}<b>${a.name}</b><em>${c.A[a.id]}</em><small>${src}</small></div><div class="ad"><span class="per">每点</span>${per.map(t => `<i>${t}</i>`).join('')}</div>`;   // 11/27 属性页大字：效果拆成标签
+      row.title = src + '\n' + a.desc; const per = a.desc.replace(/\s*\/\s*点/g, '').split(/[、,，]/).map(t => t.trim()).filter(Boolean).reduce((L, t) => { if (L.length && !/[+＋\-]\d/.test(L[L.length - 1])) L[L.length - 1] += '、' + t; else L.push(t); return L; }, []); row.innerHTML = `<div class="an">${UI.piH(a.id, 1)}<b>${a.name}</b><em>${c.A[a.id]}</em><small>${src}</small></div><div class="ad"><span class="per">每点</span>${per.map(t => `<i>${t}</i>`).join('')}</div>`;   // 11/27 属性页大字：效果拆成标签
       L.appendChild(row);
     }
     const hp = DATA.heroes.find(x => x.id === r.hero) || {};
