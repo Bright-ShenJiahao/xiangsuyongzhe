@@ -144,6 +144,7 @@ function prep() { const L = $('pl'); $('pt').textContent = `出发准备　（�
   tb('', '不佩戴'); for (const t of DATA.titles) tb(t.id, t.name, !ownT.includes(t.id));
   const TT = DATA.titles.find(t => t.id === T); if (TT) { const d = document.createElement('p'); d.className = 'note'; d.innerHTML = TT.d.replace(/<br>/g, '　'); L.appendChild(d); }
   { const b = document.createElement('button'); b.className = 'more'; b.textContent = '公主的祝福（强化）▶'; b.onclick = () => panel(NPC[0]); L.appendChild(b); }
+  if (GAME) { const g = document.createElement('button'); g.className = 'more'; g.style.cssText = 'margin-top:10px;width:100%;background:#d8a640;color:#2a1604;font-weight:bold;font-size:16px'; g.textContent = '走进时空门 · 出发 ▶'; g.onclick = () => { $('panel').style.display = 'none'; parent.postMessage('introDone', '*'); }; L.appendChild(g); }   // 11/27 出发准备里直接出发
   $('panel').style.display = 'flex'; }
 function updAct() { $('act').style.display = 'none'; return; const a = $('act'); a.innerHTML = ''; if (!near) { a.style.display = 'none'; return; } a.style.display = 'flex';
   const mk = (t, k) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => act(near, k); a.appendChild(b); };
