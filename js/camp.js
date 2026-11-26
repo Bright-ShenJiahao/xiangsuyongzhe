@@ -12,7 +12,7 @@
   function thing(o) {   // 返回 { icon(dom), name, desc, sell }
     if (!o) return null;
     // 出售：书半价（22 / 34 / 52 → 11 / 17 / 26），宝物拿基价的 35%
-    if (o.job) return { tier: o.job.final ? 4 : 3, icon: UI.careerIcon(o), name: JOBS.name(o), sub: o.job.final ? '最终职业书' : '职业书', desc: JOBS.desc(o) + '<br>' + JOBS.leaves(o).map(s => SK[s.id].name + ' Lv' + JOBS.level(s)).join(' → '), sell: null };
+    if (o.job) return { tier: o.job.final ? 4 : 3, icon: UI.careerIcon(o), name: JOBS.name(o), sub: o.job.final ? '最终职业书' : '职业书', desc: `<b>职业效果：</b>${JOBS.desc(o)}<br>` + JOBS.leaves(o).map(s => `· <b>${SK[s.id].name}</b> Lv${JOBS.level(s)}：${SK[s.id].brief || ''}`).join('<br>') + (o.job.final ? '<br><small>最终职业书，已是最高形态</small>' : `<br><small>职业进度 ${Math.min(o.job.progress || 0, JOBS.PROGRESS_MAX)}/${JOBS.PROGRESS_MAX}（这本书完整放一次 +1；练满后可和另一本练满的职业书最终转职）</small>`), sell: null };   // 11/27 原技能简介 + 职业效果 + 进度
     if (o.kind === 'manual') return { icon: UI.pi(o.id === 'master' ? 'bk_staff' : 'bk_sword'), name: JOBS.manuals[o.id].name, sub: '手册 · 使用时选择技能', desc: JOBS.manuals[o.id].desc, sell: 0 };
     if (o.kind === 'book') { const S = SK[o.id], st = DATA.setOf(R().slots), n = st.n[S.sys] || 0, L = DATA.sets[S.sys], nx = L && L.find(t => t[0] > n); return { tier: S.tier, icon: UI.bookOf(o.id), name: S.name, sub: `${S.sys} · ${DATA.tierName[S.tier]}`, desc: S.desc + (L ? `<br><small class="${st.on[S.sys] ? 'on' : 'off'}">${S.sys}系羁绊 ${n}/${nx ? nx[0] : 4}${nx ? '：' + nx[2] : '（已满）'}</small>` : ''), brief: S.brief, sell: null }; }   /* 11/25 技能书不能在营地卖：带回宫殿，死了还有命就能带回去，让大法师换水晶 */
     if (o.kind === 'oup') return { icon: UI.pi('reroll'), name: '印记升级 +1', sub: '裂缝里的符文', desc: '随机让一个已装备、未满级的誓约印记升 1 级', sell: 0 };
@@ -147,8 +147,8 @@
   function careerButton() {
     if(!JOBS?.books||!B()?.run?.()){document.getElementById('careerEntry')?.remove();return;}
     const choices=careerChoices();if(!choices.length){document.getElementById('careerEntry')?.remove();return;}
-    const btn=document.getElementById('careerEntry')||document.createElement('button');btn.id='careerEntry';btn.className='btn gold career-entry';btn.textContent=choices[0].kind==='final'?'最终转职':'转职';
-    btn.onclick=()=>chooseCareer(btn.textContent,careerChoices(),item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged(); careerAnimation(merged); sel=null; setTimeout(()=>{ if ($('pause').classList.contains('on')) pauseRender(); careerButton(); },0); return true;});
+    const btn=document.getElementById('careerEntry')||document.createElement('button');btn.id='careerEntry';btn.className='btn gold career-entry';{ const c0=choices[0], fam=c0.kind==='final'?JOBS.key([c0.a.job.families[0],c0.b.job.families[0]]).replace('|','-'):JOBS.family(SK[c0.a.id]); btn.innerHTML=`<img src="art/jobs/${fam}.png" alt=""><span>${c0.kind==='final'?'最终转职':'转职'}</span><img src="art/jobs/${fam}.png" alt="">`; btn.dataset.kind=c0.kind; }
+    btn.onclick=()=>chooseCareer(btn.dataset.kind==='final'?'最终转职':'转职',careerChoices(),item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged(); careerAnimation(merged); sel=null; setTimeout(()=>{ if ($('pause').classList.contains('on')) pauseRender(); careerButton(); },0); return true;});
     if(btn.parentNode!==$('pHome').parentNode)$('pHome').parentNode.insertBefore(btn,$('pRe').nextSibling);
   }
   const careerColor=book=>book?.job?.final?'#ffd36a':({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e',tome:'#ffe6a2',scythe:'#bb8bdf'})[book?.job?.families?.[0]]||'#fff';
