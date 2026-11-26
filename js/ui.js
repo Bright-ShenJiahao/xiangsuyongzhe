@@ -30,7 +30,7 @@
   // 11/22 技能书：同一系共用一本（剑 / 枪 / 弓 / 法杖）；技能图标：每个技能单独一张 art/ui2/sk/<id>.png
   const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_wand', nova: 'bk_wand', wand: 'bk_wand', staff: 'bk_wand', axe: 'bk_axe' };
   const SYSBK = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '光枪': 'bk_bow', '通用': 'bk_sword', '圣典':'bk_wand', '镰刀':'bk_sword' };
-  const bookOf = id => pi(SYSBK[(DATA.skills[id] || {}).sys] || 'bk_sword'), skIcon = id => { const im = pi('sk/' + (DATA.skills[id]?.reuseIcon || id)); im.classList.add('skic'); return im; };
+  const bookOf = id => pi(SYSBK[(DATA.skills[id] || {}).sys] || 'bk_sword'), skIcon = id => { const im = pi('sk/' + id), ru = DATA.skills[id]?.reuseIcon; if (ru) im.onerror = () => { im.onerror = null; im.src = 'art/ui2/sk/' + ru + '.png'; };   /* 11/27 优先用自己的正式图标，缺图才借用 */ im.classList.add('skic'); return im; };
   function pi(name, k = 2) { const item=DATA.startItems.find(i=>i.id===name);if(item?.reuseIcon)name=item.reuseIcon;
     if(name.startsWith('oath/')&&!['traveler','xianfeng','sanji','jingshou','fanji','tulong','jifeng','lianzhan','pozhu','youlong','canying','qingyu','zhendi','anying'].includes(name.slice(5)))name='oath/qingyu';
     if (name === 'oath/traveler') name = 'oath/qingyu'; if (name === 'end') name = 'amulet';   // 11/23 耐力用护身符图标，和物防的盾分开
