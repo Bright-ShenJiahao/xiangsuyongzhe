@@ -29,12 +29,14 @@
   // 像素图标（art/ui，尺寸见 js/uiart.js）：k = 放大倍数
   // 11/22 技能书：同一系共用一本（剑 / 枪 / 弓 / 法杖）；技能图标：每个技能单独一张 art/ui2/sk/<id>.png
   const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_wand', nova: 'bk_wand', wand: 'bk_wand', staff: 'bk_wand', axe: 'bk_axe' };
-  const SYSBK = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '光枪': 'bk_bow', '通用': 'bk_sword' };
+  const SYSBK = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '光枪': 'bk_bow', '通用': 'bk_sword', '圣典':'bk_wand', '镰刀':'bk_sword' };
   const bookOf = id => pi(SYSBK[(DATA.skills[id] || {}).sys] || 'bk_sword'), skIcon = id => { const im = pi('sk/' + (DATA.skills[id]?.reuseIcon || id)); im.classList.add('skic'); return im; };
-  function pi(name, k = 2) { if (name === 'oath/traveler') name = 'oath/qingyu'; if (name === 'end') name = 'amulet';   // 11/23 耐力用护身符图标，和物防的盾分开
+  function pi(name, k = 2) { const item=DATA.startItems.find(i=>i.id===name);if(item?.reuseIcon)name=item.reuseIcon;
+    if(name.startsWith('oath/')&&!['traveler','xianfeng','sanji','jingshou','fanji','tulong','jifeng','lianzhan','pozhu','youlong','canying','qingyu','zhendi','anying'].includes(name.slice(5)))name='oath/qingyu';
+    if (name === 'oath/traveler') name = 'oath/qingyu'; if (name === 'end') name = 'amulet';   // 11/23 耐力用护身符图标，和物防的盾分开
     const im = new Image(); im.className = 'pi'; im.alt = ''; im.draggable = false; im.src = 'art/ui2/' + name + '.png'; const s = (window.UIART || {})[name]; if (s) { im.width = s[0] * k; im.height = s[1] * k; } return im; }
   const piH = (name, k) => pi(name, k).outerHTML;
-  function careerIcon(book) { if (!book?.job) return skIcon(book.id); const w = document.createElement('span'); w.className = `careerIcon ${book.job.final?'final':''}`; w.title = JOBS.name(book); const badge=document.createElement('span');badge.className='careerBadge';const fam=book.job.families;for(const f of fam){const id={sword:'sword',spear:'spear',bow:'bow',staff:'fire',gun:'g_fast',common:'sword'}[f];badge.appendChild(bookOf(id));}w.appendChild(badge);if(!book.job.final){const bar=document.createElement('i');bar.className='careerProgress';bar.style.setProperty('--p',`${Math.max(0,Math.min(100,100*(book.job.progress||0)/JOBS.PROGRESS_MAX))}%`);w.appendChild(bar);}return w; }
+  function careerIcon(book) { if (!book?.job) return skIcon(book.id); const w = document.createElement('span'); w.className = `careerIcon ${book.job.final?'final':''}`; w.title = JOBS.name(book); const badge=document.createElement('span');badge.className='careerBadge';const fam=book.job.families;for(const f of fam){const id={sword:'sword',spear:'spear',bow:'bow',staff:'fire',gun:'g_fast',common:'sword',tome:'h_pages',scythe:'d_reap'}[f];badge.appendChild(bookOf(id));}w.appendChild(badge);if(!book.job.final){const bar=document.createElement('i');bar.className='careerProgress';bar.style.setProperty('--p',`${Math.max(0,Math.min(100,100*(book.job.progress||0)/JOBS.PROGRESS_MAX))}%`);w.appendChild(bar);}return w; }
 
   function iconCanvas(name) { return pi(BOOK[name] || name); }
   function iconCanvasOld(name) { const c = document.createElement('canvas'); c.width = c.height = 16; const g = c.getContext('2d'); (ICON[name] || ICON.sword).forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); } })); return c; }

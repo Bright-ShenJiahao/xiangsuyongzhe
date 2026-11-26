@@ -2,7 +2,7 @@
 // battle.js 负责轮流、前摇 / 后摇、熟练度；这里只管「出手那一刻做什么」、持续类（占时型 channel）、飞行物、地面区域、召唤物和它们的画法。
 // 距离单位：像素格（和 battle.js 一样，1 格 = K 地图像素）；角度用 ang()（已把竖向压扁算进去）。
 window.SKILLS = (A) => {
-  const raw = A; let active = null; A = Object.assign({}, raw, { hurt: (z, d, from, kb, sid, o = {}) => raw.hurt(z, d, from, kb, sid, Object.assign({ cast: active }, o)), fireball: (x, y, t, r, cb) => { const token = active; return raw.fireball(x, y, t, r, cb && (() => withCast(token, cb))); } });
+  const raw = Object.assign({}, A, {shake:()=>{}}); let active = null; A = Object.assign({}, raw, { hurt: (z, d, from, kb, sid, o = {}) => raw.hurt(z, d, from, kb, sid, Object.assign({ cast: active }, o)), fireball: (x, y, t, r, cb) => { const token = active; return raw.fireball(x, y, t, r, cb && (() => withCast(token, cb))); } });
   const withCast = (token, fn) => { const prev = active; active = token; try { return fn(); } finally { active = prev; } };
   const { K, YS, PI } = A, R = (a, b) => a + Math.random() * (b - a);
   let projs = [], zones = [], swords = [], orbs = [], ghosts = [], later = [], marks = [], followers = [], actors = [], ch = null;
@@ -105,12 +105,12 @@ window.SKILLS = (A) => {
       hitAll(z => inCircle(z, h, r), c.d, { sid: c.sid, kb: 14, slow: c.L >= 5 ? 2 : 1 });
       if (c.L >= 7) for (let i = 0; i < 8; i++) shoot({ x: h.x, y: h.y - 8 * K, a: i / 8 * PI * 2, v: 200, life: .5, r: 7, pierce: 1, d: c.d * .4, sid: c.sid, look: 'ice', o: { slow: 1 } }); },
     chain(c) { const one = (start) => { if (!start) return; const hit = new Set([start]), pts = [{ x: H().x, y: H().y - 20 * K }]; let z = start, d = c.d; const n = (c.L >= 3 ? 5 : 3) + 1;
-        for (let i = 0; i < n && z; i++) { pts.push({ x: z.x, y: z.y - 14 * K }); A.hurt(z, d * (z.slowL > 0 ? 2 : 1), H(), 4, c.sid, { dt: 'magic' }); if (c.L < 5) d *= .85; const nx = nearOf(z, 60, hit); if (nx) hit.add(nx); z = nx; }
+        for (let i = 0; i < n && z; i++) { pts.push({ x: z.x, y: z.y - 14 * K }); A.hurt(z, d * (1+.15*(z.slowL||0)), H(), 4, c.sid, { dt: 'magic' }); if (c.L < 5) d *= .85; const nx = nearOf(z, 60, hit); if (nx) hit.add(nx); z = nx; }
         bolt(pts); };
       const t1 = near(); one(t1); if (c.L >= 7) one(near(1e9, new Set([t1]))); },
     pillar(c) { const n = c.L >= 3 ? 2 : 1, used = new Set(); for (let i = 0; i < n; i++) { const t = near(1e9, used) || near(); if (!t) return; used.add(t); const p = { x: t.x, y: t.y }; A.tele({ k: 'circle', x: p.x, y: p.y, r: 26, t: 0, T: .5, gold: true });
       wait(.5, () => { A.fx({ k: 'pillar', x: p.x, y: p.y, t: 0, T: c.L >= 5 ? 1.5 : .4, r: 14, col: '#fff2b0' }); let healed = 0;
-        hitAll(z => inCircle(z, p, 26), c.d, { sid: c.sid, kb: 8, on: () => { if (c.L >= 7 && healed < 5) { healed++; A.heal(1); } } });
+        hitAll(z => inCircle(z, p, 26), c.d, { sid: c.sid, kb: 8, on: () => { if (false && c.L >= 7 && healed < 5) { healed++; A.heal(1); } } });
         if (c.L >= 5) zone({ x: p.x, y: p.y, r: 26, T: 1.5, every: .3, d: c.d * .3, sid: c.sid, look: 'holy' }); }); } },
     // 11/22 暗影黑雾（原暗影宝珠，id 不变）：在怪最密处放一团黑雾 5 秒，每 0.5 秒魔法伤害 + 减速；最多 2 团，再放就换掉剩得最少的那团
     orbs(c) { const p = dense(40, 220) || near(); if (!p) return; const fogs = zones.filter(z => z.look === 'fog'); if (fogs.length >= 2) { const old = fogs.sort((a, b) => (b.t / b.T) - (a.t / a.T))[0]; zones.splice(zones.indexOf(old), 1); }
@@ -188,6 +188,130 @@ window.SKILLS = (A) => {
     u_wall(c) { actor({kind:'shield',sid:c.sid,x:H().x,y:H().y,a:c.a,T:1.5,update:o=>{const p=P(H().x,H().y,o.a,36);o.x=p.x;o.y=p.y;for(const z of F())if(!z.tier&&!z.T.boss&&inCircle(z,o,24))A.push(z,A.ang(o,z),5);}}); },
     u_bulwark(c) { const hit=[],h={x:H().x,y:H().y};puff(h,100,'#b0d8f0');hitAll(z=>inCircle(z,h,100),c.d,{sid:c.sid,kb:30,on:z=>{hit.push({z,x:z.x,y:z.y});A.push(z,A.ang(h,z),18);}});wait(.12,()=>{for(const {z,x,y} of hit)if(!z.dead&&(F().some(q=>q!==z&&D2(q,z)<23)||Math.hypot(z.x-x,(z.y-y)*YS)<2*K))A.hurt(z,c.d*6/25,h,0,c.sid,{finisher:true});}); },
   });
+  // 圣典与镰刀复用已有光柱、连线、刃弧及敌方骷髅帧。
+  const skillScale = c => c.S.dmg ? c.d / c.S.dmg : 1;
+  function cappedHeal(c, ratio) {
+    const used = active?.healed || 0;
+    const cap = c.S.healCap || ratio;
+    const request = Math.min(ratio, Math.max(0, cap - used));
+    if (active) active.healed = used + request;
+    if (request > 0) A.heal(H().maxHp * request);
+  }
+  function holyPillar(c, p, delay, damage, opts = {}) {
+    A.tele({ k:'circle', x:p.x, y:p.y, r:26, t:0, T:delay });
+    wait(delay, () => {
+      A.fx({ k:'pillar', x:p.x, y:p.y, t:0, T:.35, r:16, col:'#fff0b0' });
+      hitAll(z => inCircle(z,p,26*area()), damage, { sid:c.sid, kb:5, ...opts });
+    });
+  }
+  Object.assign(C, {
+    h_pages(c) {
+      const targets=F();
+      for(let i=0;i<6;i++)wait(i*.1,()=>{
+        const z=targets[i%targets.length]; if(!z||z.dead)return;
+        packet(c,A.ang(H(),z),c.d,{home:z,look:'beam',life:1.2});
+      });
+    },
+    h_sword(c) { const p=eliteTarget(); if(p)holyPillar(c,{x:p.x,y:p.y},1,c.d); },
+    h_smite(c) {
+      const p=eliteTarget(); if(!p)return;
+      holyPillar(c,{x:p.x,y:p.y},.15,c.d,{on:()=>{if(c.L>=7)cappedHeal(c,.005);}});
+    },
+    h_shield(c) { A.shield(H().maxHp*.06,2);puff(H(),28,'#fff0b0'); },
+    h_water(c) {
+      const p=dense(35,200)||H();
+      actor({kind:'holy',sid:c.sid,x:p.x,y:p.y,r:50*area(),T:3,every:.5,maxTicks:6,
+        update:o=>{if(inCircle(H(),o,o.r))A.cleanse();},
+        tick:o=>{puff(o,o.r,'rgba(255,225,140,.35)');hitAll(z=>inCircle(z,o,o.r),c.d,{sid:c.sid,kb:0});}});
+    },
+    h_beam(c) {
+      const origin={x:H().x,y:H().y};
+      actor({kind:'holy',sid:c.sid,x:origin.x,y:origin.y,T:1.5,every:.25,maxTicks:6,
+        tick:o=>{const a=c.a-.5+o.ticks/6;A.fx({k:'line',x:o.x,y:o.y,a,L:240,w:24,t:0,T:.18,col:'#fff0b0'});hitAll(z=>inLine(z,o,a,240,35),c.d,{sid:c.sid,kb:0});}});
+    },
+    h_verdict(c) {
+      const targets=F().filter(z=>z.judgmentT>0&&D2(z,H())<=260).slice(0,6);
+      for(const z of targets){A.detonate('judgment',z,c);holyPillar(c,{x:z.x,y:z.y},.1,c.d,{detonate:true,on:()=>cappedHeal(c,.0025)});}
+      return true;
+    },
+    h_seraph(c) {
+      const h={x:H().x,y:H().y},a=c.a;
+      A.fx({k:'slash',x:h.x,y:h.y-12*K,a,t:0,T:.55,r:220,half:PI/2,gold:true});
+      hitAll(z=>inFan(z,h,a,260,PI/2),c.d,{sid:c.sid,kb:10});
+      wait(.4,()=>{puff(h,180,'rgba(255,225,140,.35)');hitAll(z=>inFan(z,h,a,260,PI/2),12*skillScale(c),{sid:c.sid,finisher:true,kb:0});});
+    },
+    d_reap(c) {
+      const h=H(); A.fx({k:'slash',x:h.x,y:h.y-12*K,a:c.a,t:0,T:.3,r:110*area(),half:PI/2});
+      hitAll(z=>inFan(z,h,c.a,110*area(),PI/2),c.d,{sid:c.sid,kb:8,on:()=>cappedHeal(c,.01)});
+    },
+    d_return(c) {
+      const h={x:H().x,y:H().y};
+      A.fx({k:'line',x:h.x,y:h.y,a:c.a,L:200,w:25,t:0,T:.4,col:'#bd86da'});
+      hitAll(z=>inLine(z,h,c.a,200,30),c.d,{sid:c.sid,kb:4});
+      wait(.4,()=>{A.fx({k:'line',x:h.x,y:h.y,a:c.a,L:200,w:25,t:0,T:.3,col:'#bd86da'});hitAll(z=>inLine(z,h,c.a,200,30),c.d,{sid:c.sid,kb:4});});
+    },
+    d_curse(c) {
+      for(const z of F().filter(z=>D2(z,H())<200).slice(0,c.L>=3?5:3)){A.mark('curse',z,c);if(c.L>=7)z.curseSummon=true;puff(z,16,'#bd86da');}
+    },
+    d_hook(c) {
+      const z=eliteTarget();if(!z)return;
+      bolt([{x:H().x,y:H().y-12*K},{x:z.x,y:z.y-12*K}],'#bd86da');
+      if(!z.T.boss){const p=P(H().x,H().y,c.a,90);const steps=Math.ceil(D2(z,p)/6);for(let i=0;i<steps;i++){const old={x:z.x,y:z.y};A.pull(z,p,360,.016);if(D2(old,z)<.1)break;}}
+      A.hurt(z,c.d,H(),4,c.sid,{});
+    },
+    d_siphon(c) {
+      const targets=F().filter(z=>D2(z,H())<150).slice(0,5);
+      actor({kind:'siphon',sid:c.sid,x:H().x,y:H().y,T:1.5,every:.25,maxTicks:6,
+        tick:()=>{for(const z of targets)if(!z.dead&&D2(z,H())<180){bolt([{x:H().x,y:H().y-15*K},{x:z.x,y:z.y-12*K}],'#bd86da',.12);if(A.hurt(z,c.d,H(),0,c.sid,{})!==false&&!active.callbacks?.has(z)){active.callbacks ||= new Set();active.callbacks.add(z);cappedHeal(c,.0025);}}}});
+    },
+    d_burst(c) {
+      for(const z of F().filter(z=>z.curseT>0&&D2(z,H())<200)){A.detonate('curse',z,c);puff(z,28,'#bd86da');A.hurt(z,c.d,H(),0,c.sid,{detonate:true});}
+    },
+    d_blood(c) {
+      if(H().hp<H().maxHp*.3)return false;
+      A.drain(H().hp*.03);
+      A.fx({k:'slash',x:H().x,y:H().y-12*K,a:c.a,t:0,T:.35,r:180,half:PI/2,gold:false});
+      hitAll(z=>inFan(z,H(),c.a,220,PI/2),c.d,{sid:c.sid,kb:8,on:()=>cappedHeal(c,.01)});
+    },
+    d_death(c) {
+      const z=eliteTarget();if(!z)return;
+      z.deathMarkT=3;z.vulnT=3;z.vulnN=Math.max(z.vulnN||0,4);puff(z,20,'#bd86da');
+      if(z.T.boss)A.hurt(z,30*skillScale(c),H(),0,c.sid,{detonate:true});
+      else if(z.tier&&z.hp<z.maxHp*.1)A.hurt(z,z.hp,H(),0,c.sid,{execute:true});
+    },
+    d_feast(c) {
+      for(const z of F().filter(z=>z.curseT>0&&D2(z,H())<220)){
+        bolt([{x:z.x,y:z.y-12*K},{x:H().x,y:H().y-15*K}],'#bd86da');
+        if(A.hurt(z,c.d,H(),0,c.sid,{})!==false){cappedHeal(c,.003);if(c.L>=7)A.summon(z);}
+      }
+    },
+    d_harvest(c) {
+      const h=H();A.fx({k:'slash',x:h.x,y:h.y-12*K,a:c.a,t:0,T:.5,r:200,half:PI});
+      for(const z of F().filter(z=>D2(z,h)<200)){
+        const execute=!z.tier&&!z.T.boss&&z.hp<z.maxHp*.25;
+        if(A.hurt(z,execute?z.hp:c.d,h,8,c.sid,{execute})!==false){cappedHeal(c,.003);if(z.dead)A.summon(z);}
+      }
+    },
+    d_grave(c) {
+      const p=dense(50,220)||H();
+      for(let i=0;i<3;i++){const q=P(p.x,p.y,i*2*PI/3,36);actor({kind:'grave',sid:c.sid,x:q.x,y:q.y,T:3,every:.5,maxTicks:6,
+        tick:o=>{puff(o,38,'rgba(170,110,215,.35)');for(const z of F())if(inCircle(z,o,38)&&!active.graveTargets?.has(z)){active.graveTargets ||= new Set();active.graveTargets.add(z);A.mark('curse',z,c);}}});}
+    },
+  });
+  function summonSkeleton(p, opts={}) {
+    const minions=actors.filter(o=>o.kind==='skeleton'&&!o.dead);
+    if(minions.length>=(opts.limit||4))return false;
+    actor({kind:'skeleton',sid:'_skeleton',x:p.x,y:p.y,T:2,every:.5,maxTicks:4,opts,
+      update:(o,dt)=>{const z=nearOf(o,240);if(!z)return;const a=A.ang(o,z),distance=D2(o,z);if(distance>18){o.x+=Math.cos(a)*80*K*dt;o.y+=Math.sin(a)*80*K*dt/YS;A.clamp(o);}},
+      tick:o=>{const z=nearOf(o,opts.ranged?220:28);if(!z)return;
+        if(opts.ranged)shoot({x:o.x,y:o.y-12*K,a:A.ang(o,z),v:220,life:1,r:6,pierce:0,d:3,sid:'_skeleton',look:'shadow',o:{extra:true,dt:'magic'}});
+        else A.hurt(z,3,o,0,'_skeleton',{extra:true,dt:'magic'});
+        // 永夜巫妖是追加攻击不挂效果规则的唯一明确职业例外。
+        if(opts.curse&&!o.cursed?.has(z)){o.cursed ||= new Set();o.cursed.add(z);A.mark('curse',z);}
+      }});
+    return true;
+  }
+
   function poolTick(dt) {
     for(let i=actors.length-1;i>=0;i--){const o=actors[i];if(!o)continue;withCast(o.cast,()=>{o.t+=dt;o.ti-=dt;if(!o.dead&&o.update)o.update(o,dt);if(o.tick&&!o.dead)while(o.ti<=1e-7&&(!o.maxTicks||o.ticks<o.maxTicks)){o.ti+=o.every;o.ticks++;o.tick(o);}});if(o.dead||o.t>=o.T){actors.splice(i,1);if(o.end)withCast(o.cast,()=>o.end(o));}}
   }
@@ -201,7 +325,10 @@ window.SKILLS = (A) => {
   function drawPool(ctx,X,Y,u) {
     const rect=(x,y,w,h,col)=>{ctx.fillStyle=col;ctx.fillRect(Math.round(x),Math.round(y),Math.max(1,w*u),Math.max(1,h*u));};
     const tokenBoxes=new Set();for(const o of actors){if(o.dead)continue;const x=X(o.x),y=Y(o.y)-8*u;
-      if(o.kind==='burger'){const b=o.eaten===5?1.5:1;ctx.save();ctx.translate(x,y);ctx.scale(b,b);rect(-13*u,-13*u,26,7,'#bc7b38');rect(-15*u,-6*u,30,4,'#65a84c');rect(-14*u,-2*u,28,5,'#793e2e');rect(-13*u,3*u,26,5,'#d39754');for(let i=0;i<4;i++)rect((-9+i*6)*u,-12*u,2,1,'#fff0b0');ctx.restore();}
+      if(o.kind==='skeleton'){SPR.draw(ctx,'skeleton','walk'+(Math.floor(o.t*8)%4),0,x,Y(o.y),false,u,{});}
+      else if(o.kind==='grave'){rect(x-7*u,y-13*u,14,18,'rgba(150,120,175,.35)');rect(x-5*u,y-15*u,10,3,'#b794cd');}
+      else if(o.kind==='holy'){ctx.strokeStyle='rgba(255,225,140,.35)';ctx.lineWidth=u;ctx.beginPath();ctx.ellipse(x,Y(o.y),(o.r||25)*u,(o.r||25)*u/YS,0,0,2*PI);ctx.stroke();}
+      else if(o.kind==='burger'){const b=o.eaten===5?1.5:1;ctx.save();ctx.translate(x,y);ctx.scale(b,b);rect(-13*u,-13*u,26,7,'#bc7b38');rect(-15*u,-6*u,30,4,'#65a84c');rect(-14*u,-2*u,28,5,'#793e2e');rect(-13*u,3*u,26,5,'#d39754');for(let i=0;i<4;i++)rect((-9+i*6)*u,-12*u,2,1,'#fff0b0');ctx.restore();}
       else if(o.kind==='tank'){rect(x-16*u,y-12*u,7,27,'#303c38');rect(x+9*u,y-12*u,7,27,'#303c38');rect(x-10*u,y-10*u,20,24,'#4e8460');rect(x-6*u,y-5*u,12,12,'#8cac80');rect(x-2*u,y-21*u,4,19,'#c0c8a8');}
       else if(o.kind==='brick'){for(let i=0;i<3;i++)for(let j=0;j<2;j++)rect(x+(i*10-15)*u,y+(j*6-6)*u,9,5,j?'#86512f':'#be8151');}
       else if(o.kind==='shield'){ctx.save();ctx.translate(x,y);ctx.rotate(o.a+PI/2);rect(-25*u,-3*u,50,7,'rgba(160,210,240,.35)');rect(-24*u,-3*u,48,1,'#c8e8f8');ctx.restore();}
@@ -291,10 +418,10 @@ window.SKILLS = (A) => {
   }
   return {
     // 出手：返回 null = 没敌人；返回 channel 对象 = 占时型
-    cast(c) { if (!F().length) return null; if (c.S.poolV2) clearPoolSkill(c.sid); active = { hits: new Map(), effects: new Set(), thunderBonus: false, bonus: c.bonus || 0, career: c.career, sid: c.sid }; const token = active; const r = C[c.S.kind || c.sk.id](c); if (r && r.hold) { const channel = Object.assign({ ti: r.every, cast: token, scale: area(), elapsed: 0 }, r); if (['storm', 'dragon', 'blizzard', 'starfall', 'abyss'].includes(c.sk.id)) { if (r.snow || r.spin || c.sk.id === 'dragon') followers = followers.filter(f => !f.follow); channel.follow = !!(r.snow || r.spin || c.sk.id === 'dragon'); followers.push(channel); active = null; return true; } ch = channel; active = null; return ch; } if (c.S.sys === '剑' && c.sk.id !== 'phantom') for (const g of ghosts) if (g.mimic && g.spun && g.t < g.T) withCast(g.cast, () => ghostSpin(g)); active = null; return true; },
+    cast(c) { if (!F().length) return null; if(c.sid==='h_sword'&&later.some(o=>o.cast?.sid===c.sid))return null; if (c.S.poolV2) clearPoolSkill(c.sid); active = { hits: new Map(), effects: new Set(), thunderBonus: null, bonus: c.bonus || 0, career: c.career, sid: c.sid }; const token = active; const r = C[c.S.kind || c.sk.id](c); if(r===false){active=null;return false;} if (r && r.hold) { const channel = Object.assign({ ti: r.every, cast: token, scale: area(), elapsed: 0 }, r); if (['storm', 'dragon', 'blizzard', 'starfall', 'abyss'].includes(c.sk.id)) { if (r.snow || r.spin || c.sk.id === 'dragon') followers = followers.filter(f => !f.follow); channel.follow = !!(r.snow || r.spin || c.sk.id === 'dragon'); followers.push(channel); active = null; return true; } ch = channel; active = null; return ch; } if (c.S.sys === '剑' && c.sk.id !== 'phantom') for (const g of ghosts) if (g.mimic && g.spun && g.t < g.T) withCast(g.cast, () => ghostSpin(g)); active = null; return true; },
     chEnd() { if (ch && ch.end) withCast(ch.cast, ch.end); ch = null; }, ch: () => ch,
     extraShot(p) { const prev = active; active = null; try { return shoot({ ...p, o: { ...p.o, extra: true, jobExtra: true } }); } finally { active = prev; } },
-    interceptShot, has: id => !!C[id], tick, drawUnder, drawOver,
+    summon:summonSkeleton, interceptShot, has: id => !!C[id], tick, drawUnder, drawOver,
     reset() { projs = []; zones = []; swords = []; orbs = []; ghosts = []; later = []; marks = []; followers = []; actors = []; active = null; ch = null; },
   };
 };

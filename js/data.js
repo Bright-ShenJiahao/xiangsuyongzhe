@@ -468,3 +468,116 @@ DATA.commonMasters = slots => slots.filter(Boolean).flatMap(JOBS.leaves).filter(
 DATA.newPoolIds = ["g_fast", "g_spread", "g_bomb", "g_head", "g_clear", "g_chomp", "g_missile", "g_claw", "g_tank", "g_ko", "g_marble", "u_palm", "u_fist", "u_titan", "u_sweep", "u_rift", "u_stomp", "u_knives", "u_ring", "u_daggers", "u_poison", "u_venom", "u_plague", "u_bash", "u_wall", "u_bulwark"];
 
 DATA.canEquipCommon = (slots, book, index) => DATA.commonMasters(slots.map((s,i) => i === index ? null : s).concat(book ? [book] : [])) <= 1;
+// 定稿系统数据。第二章技能只供 debug 演练，正常书池始终排除。
+(() => {
+  Object.assign(DATA.weapons, {
+    tome: { name: '圣典', start: 'h_pages', skill: '圣页飞舞', icon: 'fire', type: 'int', dmg: 2, cd: .7, range: 220, hidden: true, debugOnly: true },
+    scythe: { name: '大镰刀', start: 'd_reap', skill: '收割', icon: 'sword', type: 'int', dmg: 6, cd: .7, range: 200, hidden: true, debugOnly: true },
+  });
+  Object.assign(DATA.weaponNames, { tome: ['祷文书','圣典','天启之书'], scythe: ['收割镰','骸骨镰','冥王之镰'] });
+  Object.assign(DATA.SYSK, { '圣典': 'tome', '镰刀': 'scythe' });
+  const rows = [
+    ['h_pages','圣页飞舞','tome',1,2,.3,.4,200,6,.1,.5,'homing','六张追踪书页，命中挂审判。'],
+    ['h_sword','审判之剑','tome',1,9,.3,.4,220,1,0,1,'pillar','光剑预警1秒后落下，命中挂审判。'],
+    ['h_smite','圣光惩戒','tome',2,12,.4,.4,216,1,0,0,'pillar','目标脚下落光柱，Lv7每次释放回血不超过0.5%。'],
+    ['h_shield','信仰之盾','tome',2,0,.4,.5,999,0,0,2,'guard','获得最大生命6%的护盾，持续2秒，不叠加。'],
+    ['h_water','圣水洗礼','tome',2,2,.4,.5,200,6,.5,3,'staff','圣焰区域持续3秒，站入区域净化负面。'],
+    ['h_beam','天罚之光','tome',3,4,.6,.6,240,6,.25,1.5,'thunder','光束扫射1.5秒，每目标最多6跳，挂审判。'],
+    ['h_verdict','神之裁决','tome',3,18,.6,.6,260,1,0,0,'holysword','引爆最多6名审判目标，每名18伤；整次回复上限1.5%。'],
+    ['h_seraph','炽天使之剑','tome',4,32,.8,.8,300,1,0,0,'holysword','巨型光剑横扫32伤，圣焰另结算12；两端判定一致。'],
+    ['d_reap','收割','scythe',1,6,.3,.4,140,1,0,0,'whirl','前方大弧收割，整次吸血上限1%。'],
+    ['d_return','回旋飞镰','scythe',1,5,.3,.4,200,2,.4,.4,'wave','飞镰去回各伤一次，挂诅咒。'],
+    ['d_curse','枯萎诅咒','scythe',1,0,.3,.4,200,0,0,3,'orbs','最多3名敌人获得诅咒；Lv7诅咒死亡有机会召唤骷髅。'],
+    ['d_hook','灵魂钩索','scythe',2,18,.4,.5,240,1,0,0,'javelin','拉目标到前方90格并重斩；首领不位移。'],
+    ['d_siphon','灵魂虹吸','scythe',2,1.5,.4,.5,150,6,.25,1.5,'orbs','连接最多5名敌人，6跳吸血；整次回复上限1.5%。'],
+    ['d_burst','诅咒爆裂','scythe',2,10,.4,.5,200,1,0,0,'abyss','引爆附近诅咒，每名10伤，无视体质减伤。'],
+    ['d_blood','血月斩','scythe',2,20,.4,.5,220,1,0,0,'wave','消耗当前生命3%，低于30%不放；命中吸回，计入回复上限。'],
+    ['d_death','死亡印记','scythe',3,0,.6,.6,240,0,0,3,'orbs','易伤20%；精英低于10%斩杀，首领追加30。'],
+    ['d_feast','灵魂吞噬','scythe',3,16,.6,.6,220,1,0,0,'abyss','抽取诅咒目标灵魂，每名回血0.3%、整次最多2%；Lv7召骷髅。'],
+    ['d_harvest','死神收割','scythe',4,30,.8,.8,200,1,0,0,'flash','全周收割；低于25%普通怪斩杀并变骷髅；整次吸血上限2%。'],
+    ['d_grave','永夜墓园','scythe',4,0,.8,.8,220,0,.5,3,'abyss','怪群中心三座墓碑，持续3秒自动施加诅咒。'],
+  ];
+  for (const [id,name,w,tier,dmg,wu,rc,rg,hitCap,tick,duration,reuseIcon,desc] of rows) DATA.skills[id] = {
+    name,w,sys:w==='tome'?'圣典':'镰刀',pose:w==='tome'?'staff':'sword',type:'int',dt:'magic',tier,dmg,wu,rc,rg,
+    hitCap:hitCap||undefined,tick,duration,reuseIcon,icon:w==='tome'?'fire':'sword',tags:[w==='tome'?'圣光':'黑暗'],poolV2:true,debugOnly:true,
+    desc,brief:desc,l3:'强化范围或覆盖，保留共享命中上限',l5:'强化状态表现，保留共享命中上限',l7:'最终形态，可参与转职',
+  };
+  const activeItems = new Set(['purse','bento','clover','cloak','blade_oil','mana_lens','curse_crown','berserk','glass_sword','heavy_armor','greed_bag','guild','piggy']);
+  DATA.retiredItems = Object.fromEntries(DATA.startItems.filter(i=>!activeItems.has(i.id)).map(i=>[i.id,i.price]));
+  DATA.startItems = DATA.startItems.filter(i=>activeItems.has(i.id));
+  const changed = {
+    bento: ['每站开始回复6%生命',{waveHeal:.06}],
+    clover: ['宝箱、商店、奇遇选择增加一个',{options:1}],
+    cloak: ['闪避后1.5秒移速+20%',{dodgeMove:1}],
+    blade_oil: ['物理暴击后2秒出手速度+8%',{critSpeed:1}],
+  };
+  for(const i of DATA.startItems) if(changed[i.id]) { i.desc=changed[i.id][0];i.d=()=>i.desc;i.fx=changed[i.id][1]; }
+  const items = [
+    ['miser','守财奴戒指',40,'每10铜钱伤害+1%，最多6%',{miser:1},'piggy'],
+    ['thorn','荆棘护符',36,'实际受伤反击50格内敌人，攻击力150%，冷却3秒',{thorn:1},'amulet'],
+    ['doll','替身木偶',44,'免死两次，恢复至10生命并无敌0.5秒，随后破碎',{doll:1},'cloak'],
+    ['rift_eye','裂隙之眼',44,'目标有三种状态时额外15伤，不清状态，同目标3秒一次',{riftEye:1},'mana_lens'],
+    ['wind_stone','风纹石',34,'每次释放首次命中15%挂1层破绽',{mark_break:1},'sheath'],
+    ['balance_seal','太极令',34,'每次释放首次命中15%挂1层失衡',{mark_imbalance:1},'spear_tassel'],
+    ['hunter_badge','猎人徽章',34,'每次释放首次命中15%挂1层猎物',{mark_prey:1},'quiver'],
+    ['frost_pendant','寒玉坠',34,'每次释放首次命中15%挂1层寒滞',{mark_frost:1},'prism'],
+    ['perfect','完美主义徽章',38,'满血时技能伤害+12%',{perfect:.12},'clover'],
+    ['snake_bell','蛇铃',36,'中毒目标死亡向两名敌人传毒，不连锁',{snake:1},'mana_vial'],
+    ['ember','火种',36,'点燃目标死亡向两名敌人传火，不连锁',{ember:1},'blade_oil'],
+  ];
+  for(const [id,name,price,desc,fx,reuseIcon] of items) DATA.startItems.push({id,name,price,desc,fx,reuseIcon,d:()=>desc});
+  DATA.normalizeItems = r => {
+    const seen=new Set(); for(const a of [r.gear,r.bag]) for(let i=0;i<a.length;i++) {const o=a[i];if(o?.kind!=='item')continue;
+      if(DATA.retiredItems[o.id]) {r.coins=(r.coins||0)+DATA.retiredItems[o.id];a[i]=null;continue;}
+      if(seen.has(o.id)||(o.id==='doll'&&(r.dollUsed||0)>=2)){a[i]=null;continue;} seen.add(o.id);delete o.lv;
+    }
+  };
+  const pool=DATA.itemPool;
+  DATA.itemPool = r => pool(r).filter(i=>i.id!=='doll'||(r.dollUsed||0)<2);
+  const bookPool=DATA.bookPool;
+  DATA.bookPool = (...args) => bookPool(...args).filter(id=>!DATA.skills[id].debugOnly);
+  const oath = (name,ch,d,w) => ({name,ch,d,w});
+  Object.assign(DATA.oaths, {
+    ballistics: oath('弹道之誓','弹',m=>`主修每次释放多一发35%弱弹；辅修伤害+${Math.round(10*m)}%`),
+    calamity: oath('灾厄之誓','厄',m=>`目标每种持续伤害对其+${Math.round(4*m)}%，最多两种`),
+    backstab: oath('背袭之誓','背',m=>`背后命中伤害+${Math.round(20*m)}%`),
+    scavenge: oath('搜刮之誓','财',m=>`击杀${Math.round(5*m)}%额外掉铜钱`),
+    stone: oath('石肤之誓','石',m=>`受到伤害-${Math.round(8*m)}%`),
+    momentum: oath('蓄势之誓','势',m=>`同系连续第二/三/四次释放伤害+${Math.round(10*m)}/${Math.round(20*m)}/${Math.round(30*m)}%`),
+    mark_sword: oath('破绽之誓','破',m=>`破绽引爆伤害+${Math.round(20*m)}%`,'sword'),
+    mark_spear: oath('失衡之誓','衡',m=>`失衡延长${(1.5*m).toFixed(1)}秒，最多4.5秒；位移挂失衡`,'spear'),
+    mark_bow: oath('猎物之誓','猎',m=>`猎物增伤额外+${Math.round(15*m)}%；死亡转移`,'bow'),
+    mark_staff: oath('寒霜之誓','霜',m=>`${Math.round(20*m)}%多一层寒滞，融化伤害+${Math.round(50*m)}%`,'staff'),
+    mark_gun: oath('连击之誓','连',()=> '连击上限15，受伤只扣3层','gun'),
+    mark_tome: oath('审判之誓','审',m=>`审判惩击回复提高${Math.round(50*m)}%`,'tome'),
+    mark_scythe: oath('诅咒之誓','咒',()=> '诅咒死亡传染两名敌人','scythe'),
+    mist: {...oath('迷雾步','雾',()=> '翻滚后0.5秒普通怪丢失目标'),mv:1},
+    frosttrail: {...oath('霜痕步','痕',()=> '翻滚路径减速15%，持续1秒'),mv:1},
+    sigil: {...oath('符印步','印',()=> '穿过带标记敌人使标记延长0.8秒；光枪翻滚后下次受伤保留连击'),mv:1},
+  });
+  DATA.oaths.youlong.d=()=> '移速+5%、翻滚距离+15%；满格穿敌后终点风浪推开小怪';
+  DATA.oaths.canying.d=()=> '闪避+5%、移速+3%；满格翻滚在起点留假身1.5秒';
+  DATA.oaths.qingyu.d=()=> '回格时间-8%、移速+4%；翻滚后2秒移速+15%';
+  DATA.oaths.anying.d=()=> '闪避+8%；精准翻滚触发短暂无敌、穿怪和0.3秒慢动作';
+  DATA.heldWeapons = r => new Set([r.weapon,...JOBS.skills(r).map(s=>DATA.skills[s.id]?.w)]);
+  DATA.oathPool = r => {const held=typeof r==='string'?new Set([r]):DATA.heldWeapons(r);return Object.keys(DATA.oaths).filter(id=>id!=='traveler'&&!DATA.oaths[id].retired&&(!DATA.oaths[id].w||held.has(DATA.oaths[id].w)));};
+  DATA.affixes.push(
+    ['标签增伤',[4,8,12],'tag'],['标记目标伤害',[3,6,10],'marked'],['闪避',[1,2,4],'eva'],
+    ['移速',[2,4,6],'move'],['翻滚回格',[3,6,10],'roll'],['铜钱获得',[3,6,10],'coin']);
+  DATA.weaponTags = w => [...new Set(Object.values(DATA.skills).filter(s=>s.w===w).flatMap(s=>s.tags||[]))];
+  DATA.rollAffix = (r,used=new Set(),grade) => {
+    const choices=DATA.affixes.map((a,i)=>i).filter(i=>!used.has(i)&&(DATA.affixes[i][2]!=='tag'||DATA.weaponTags(r.weapon).length));
+    const weighted=choices.flatMap(i=>Array(DATA.affixes[i][2]==='coin'?1:2).fill(i)); if(!weighted.length)return null;
+    const i=weighted[Math.random()*weighted.length|0],tags=DATA.weaponTags(r.weapon);
+    return [i,grade||((v)=>v<.5?1:v<.85?2:3)(Math.random()),DATA.affixes[i][2]==='tag'?tags[Math.random()*tags.length|0]:undefined].filter(x=>x!==undefined);
+  };
+  DATA.affixCount = t => t===1?(Math.random()<.5?1:0):t===2?1:2;
+  DATA.makeWeapon = (r,t) => {const aff=[];for(let i=0,n=DATA.affixCount(t);i<n;i++){const a=DATA.rollAffix(r,new Set(aff.map(x=>x[0])));if(a)aff.push(a);}return {k:'w',t,aff};};
+})();
+// 旧技能补齐标签，与词条和跨系判断使用同一份数据。
+for (const [id,s] of Object.entries(DATA.skills)) if(!s.tags) {
+  const fire=['staff','meteor','pyroblast','flame'],ice=['nova','blizzard','icewall','winter'],lightning=['chain','thunder','balllightning','stormeye'];
+  s.tags=[s.w==='sword'?'斩':s.w==='spear'?'刺':s.w==='bow'?'射':s.w==='gun'?'数码':fire.includes(id)?'火':ice.includes(id)?'冰':lightning.includes(id)?'雷':id==='pillar'?'圣光':s.w==='staff'?'奥术':'斩'];
+}
+
+Object.assign(DATA.skills.h_smite,{healCap:.005});Object.assign(DATA.skills.h_verdict,{healCap:.015});Object.assign(DATA.skills.d_reap,{healCap:.01});Object.assign(DATA.skills.d_siphon,{healCap:.015});Object.assign(DATA.skills.d_feast,{healCap:.02});Object.assign(DATA.skills.d_harvest,{healCap:.02});

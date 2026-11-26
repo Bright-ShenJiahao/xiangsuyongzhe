@@ -36,6 +36,7 @@
     if (o.kind === 'manual') { const free = r.bag.indexOf(null); if (free < 0) { toast('物品栏满了，先腾出一格'); return false; } r.bag[free] = { kind: 'manual', id: o.id }; B().saveCareer(); return true; }
     if (o.kind === 'use') { const c = USE(o.id), h = B().hero(); B().healHero(h.maxHp * c.heal); toast(`吃掉${c.name}，回复生命`); return true; }
     if (o.kind === 'book') { const j = r.slots.findIndex((s, k) => !s && k < r.open); if (j >= 0 && DATA.canEquipCommon(r.slots,o,j)) { r.slots[j] = { id: o.id, lv: 1, xp: o.xp || 0 }; toast(`${SK[o.id].name} 自动装上第 ${j + 1} 格` + (r.tipP ? '' : ' · 按 P 调整顺序')); r.tipP = 1; return true; } }   // 技能栏有空位就直接装上
+    if(o.kind==='item'&&o.id==='doll'&&(r.dollUsed||0)>=2)return false;
     if (o.kind === 'item' && [...r.gear, ...r.bag].some(x => x && x.kind === 'item' && x.id === o.id)) { toast('已拥有这件宝物'); return false; }
     if (o.kind === 'item') { const g = r.gear.indexOf(null); if (g >= 0) { r.gear[g] = { kind: 'item', id: o.id }; B().recompute(); return true; } }   // 11/23 宝物格有空就直接生效
     const i = r.bag.indexOf(null); if (i < 0) { toast('物品栏满了，先腾出点位置'); return false; }
@@ -150,10 +151,10 @@
     btn.onclick=()=>chooseCareer(btn.textContent,careerChoices(),item=>{const r=R(),merged=JOBS.merge(r,item.a,item.b,item.kind==='final');if(!merged)return false;B().careerChanged(); careerAnimation(merged);return true;});
     if(btn.parentNode!==$('pHome').parentNode)$('pHome').parentNode.insertBefore(btn,$('pRe').nextSibling);
   }
-  const careerColor=book=>book?.job?.final?'#ffd36a':({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e'})[book?.job?.families?.[0]]||'#fff';
+  const careerColor=book=>book?.job?.final?'#ffd36a':({sword:'#83ed8a',spear:'#72d9ff',bow:'#e5edff',staff:'#ff8af2',gun:'#70f2ff',common:'#ffd46e',tome:'#ffe6a2',scythe:'#bb8bdf'})[book?.job?.families?.[0]]||'#fff';
   function careerAnimation(book){
-    document.getElementById('careerReveal')?.remove();const color=careerColor(book),english=({sword:'WIND SWORDSMAN',spear:'SPEAR MASTER',bow:'MOONSTALKER',staff:'ELEMENTAL MAGE',gun:'ARCADE ACE',common:'GRAND ADVENTURER'})[book.job.families[0]],frame=document.createElement('div');
-    const families=book.job.families,eng=book.job.final?families.map(f=>({sword:'WIND',spear:'SPEAR',bow:'MOON',staff:'ELEMENT',gun:'ARCADE',common:'ADVENTURE'})[f]).join(' × '):english;frame.id='careerReveal';frame.style.setProperty('--career-color',color);frame.innerHTML=`<div class="career-reveal-box"><div class="career-rune"></div><div class="career-pillar"></div><div class="career-hero"><span></span><i></i></div><div class="career-banner"><strong>${JOBS.name(book)}</strong><small>${eng}</small></div></div>`;const soldier=document.createElement('canvas'),raw=SPR.crop(SPR.heroSet(R().hero,'sword'),'idle',0);if(raw){soldier.width=raw.c.width*2;soldier.height=raw.c.height*2;soldier.getContext('2d').drawImage(raw.c,0,0,soldier.width,soldier.height);soldier.className='careerSoldier';frame.querySelector('.career-hero span').appendChild(soldier);}document.body.appendChild(frame);setTimeout(()=>frame.remove(),2200);
+    document.getElementById('careerReveal')?.remove();const color=careerColor(book),english=({sword:'WIND SWORDSMAN',spear:'SPEAR MASTER',bow:'MOONSTALKER',staff:'ELEMENTAL MAGE',gun:'ARCADE ACE',common:'GRAND ADVENTURER',tome:'APOSTLE OF LIGHT',scythe:'NECROMANCER'})[book.job.families[0]],frame=document.createElement('div');
+    const families=book.job.families,eng=book.job.final?families.map(f=>({sword:'WIND',spear:'SPEAR',bow:'MOON',staff:'ELEMENT',gun:'ARCADE',common:'ADVENTURE',tome:'LIGHT',scythe:'DEATH'})[f]).join(' × '):english;frame.id='careerReveal';frame.style.setProperty('--career-color',color);frame.innerHTML=`<div class="career-reveal-box"><div class="career-rune"></div><div class="career-pillar"></div><div class="career-hero"><span></span><i></i></div><div class="career-banner"><strong>${JOBS.name(book)}</strong><small>${eng}</small></div></div>`;const soldier=document.createElement('canvas'),raw=SPR.crop(SPR.heroSet(R().hero,'sword'),'idle',0);if(raw){soldier.width=raw.c.width*2;soldier.height=raw.c.height*2;soldier.getContext('2d').drawImage(raw.c,0,0,soldier.width,soldier.height);soldier.className='careerSoldier';frame.querySelector('.career-hero span').appendChild(soldier);}document.body.appendChild(frame);setTimeout(()=>frame.remove(),2200);
   }
   function careerActions(cur, cs, btn, box) {
     const r = R(), raw = ARR0(r, cs)[cs.i];
@@ -316,9 +317,9 @@
     const lvOf = id => { const h = JOBS.skills(r).find(s => s.id === id); return h ? JOBS.level(h) : 0; };
     const own = new Set(Object.keys(SK).filter(id => lvOf(id) || loot.some(o => o.kind === 'book' && o.id === id))), pool = DATA.bookPool(own, rep.st).filter(id => SK[id].w !== 'gun' || JOBS.skills(r).some(s => SK[s.id].w === 'gun')), books = [];   // 已经有的书不再出；按品阶抽，价格 22 / 34 / 52
     while (books.length < 1 && pool.length) { const id = pool[Math.random() * pool.length | 0]; if (!books.some(b => b.id === id)) books.push({ kind: 'book', id, lv: 1, xp: 0, price: DATA.tierPrice[SK[id].tier] }); if (pool.every(i => books.some(b => b.id === i))) break; }
-    const ok0 = DATA.oathPool(r.weapon); if (rep.rift) { const pk0 = () => ({ kind: 'oath', id: ok0[Math.random() * ok0.length | 0], price: 46 }), costI = shuffle(DATA.itemPool(r).filter(i => i.cost)).slice(0, 1).map(i => ({ kind: 'item', id: i.id, price: Math.round((i.price || 40) * 1.3) }));
+    const ok0 = DATA.oathPool(r); if (rep.rift) { const pk0 = () => ({ kind: 'oath', id: ok0[Math.random() * ok0.length | 0], price: 46 }), costI = shuffle(DATA.itemPool(r).filter(i => i.cost)).slice(0, 1).map(i => ({ kind: 'item', id: i.id, price: Math.round((i.price || 40) * 1.3) }));
       return [pk0(), pk0(), { kind: 'oup', id: 'oup', price: 52 }, ...costI]; }
-    const L = items.concat(books), ok = DATA.oathPool(r.weapon), pk = () => ({ kind: 'oath', id: ok[Math.random() * ok.length | 0], price: 38 });
+    const L = items.concat(books), ok = DATA.oathPool(r), pk = () => ({ kind: 'oath', id: ok[Math.random() * ok.length | 0], price: 38 });
     if (rep.disc) { L.splice(0, 2, pk(), pk()); } else if (Math.random() < .3) L.splice(2, 1, pk());
     { let ml = 0; try { ml = JSON.parse(localStorage.getItem('xsyz-meta') || '{}').ex || 0; } catch (e) {} L.push({ kind: 'cry', id: 'cry', n: 4 + 2 * ml, price: 30 }); }   // 11/24 商人：铜钱换水晶（大臣「兑换」每级 +2）
     if (r.trainingBoughtSt !== `${r.chapter || 1}:${rep.st}`) L.push({ kind: 'manual', id: 'training', price: JOBS.manuals.training.price }); if (rep.st > 8 && Math.random() < .25) L.push({ kind: 'manual', id: 'master', price: JOBS.manuals.master.price });
@@ -351,10 +352,10 @@
   function GS() { const r = R(); if (!r.eq) r.eq = {}; if (!r.eq.main) r.eq.main = { t: 1, aff: [] }; if (!r.gbag) r.gbag = []; if (!r.stones) r.stones = { 1: 0, 2: 0, 3: 0 }; return r; }
   const wIcon = (wp, t, cls) => `<img class="wimg${cls ? ' ' + cls : ''}" src="art/ui2/w_${wp}${t}.png?v=2" alt="">`;
   const WN = (wp, t) => DATA.weaponNames[wp][t - 1], gname = it => (it.k === 'w' || !it.id) ? WN(R().weapon || 'sword', it.t) : DATA.gear[it.id].names[it.t - 1];
-  const affTxt = a => a.map(x => `${DATA.affixes[x[0]][0]} +${DATA.affixes[x[0]][1][x[1] - 1]}%（${DATA.stoneNames[x[1]]}）`);
+  const affTxt = a => a.map(x => `${(x[2]?x[2]+'伤害':DATA.affixes[x[0]][0])} +${DATA.affixes[x[0]][1][x[1] - 1]}%（${DATA.stoneNames[x[1]]}）`);
   const statTxt = (D, t) => Object.entries(D.st[t - 1]).map(([k, v]) => `${DATA.statLabel[k]} +${k.startsWith('dmg') ? Math.round(v * 100) + '%' : v}`);
   function equipPanel(box) {
-    const r = GS(), wp = r.weapon || 'sword', W = DATA.weapons[wp], two = wp !== 'sword', E = r.eq, mt = E.main.t || 1;
+    const r = GS(), wp = r.weapon || 'sword', W = DATA.weapons[wp], two = wp !== 'sword', E = r.eq, mt = E.main.t || 1, affMax = mt === 3 ? 2 : 1;
     if (two) E.off = null;
     const HINT = { main: '本局拿的兵器，局内换不了系，只能升阶。', off: '盾牌；只有拿剑才能装。', helm: '头部防具。', armor: '身体防具。', belt: '腰带。', boots: '鞋子。', acc: '戒指、护符等配饰。' };
     const SN = { main: '主手', off: '副手', helm: '头盔', armor: '铠甲', belt: '腰带', boots: '鞋子', acc: '配饰' };
@@ -379,8 +380,8 @@
     let tt = document.getElementById('eqTT'); if (!tt) { tt = document.createElement('div'); tt.id = 'eqTT'; tt.className = 'eqTT'; document.body.appendChild(tt); } tt.style.display = 'none';
     const det = $('eqDet'), hideT = () => { tt.style.display = 'none'; det.innerHTML = eqMsg; };
     const showT = (e, html, d) => { tt.innerHTML = html; tt.style.display = 'block'; const w = tt.offsetWidth, h = tt.offsetHeight; let x = e.clientX + 16, y = e.clientY + 16; if (x + w > innerWidth - 6) x = e.clientX - w - 12; if (y + h > innerHeight - 6) y = innerHeight - h - 6; tt.style.left = Math.max(6, x) + 'px'; tt.style.top = y + 'px'; det.innerHTML = d; };
-    const wTip = (it, tag) => `<h5 class="tr${it.t}">${gname(it)}<span>${tag || W.name + ' · ' + it.t + ' 阶'}</span></h5><div class="g">${W.name}系招式伤害 +${Math.round(DATA.weaponDmg[it.t - 1] * 100)}%${it.t === 1 ? '；该系熟练度 +10%' : it.t === 2 ? '；该系标记持续 +0.5秒' : ''}</div>` + (it.aff && it.aff.length ? affTxt(it.aff).map(t => `<div class="g">✦ ${t}</div>`).join('') : '') + `<div class="d">附魔 ${(it.aff || []).length}/${it.t}</div>`;
-    const wDet = it => `<b class="tr${it.t}">${gname(it)}</b> <i>· ${it.t} 阶 · ${W.name}系招式伤害 +${Math.round(DATA.weaponDmg[it.t - 1] * 100)}%${it.t === 1 ? '；该系熟练度 +10%' : it.t === 2 ? '；该系标记持续 +0.5秒' : ''}　附魔 ${(it.aff || []).length}/${it.t}</i><br>` + ((it.aff || []).map(a => `<span class="aff">✦ ${affTxt([a])[0]}</span>`).join('') || '<i>还没有词条</i>');
+    const wTip = (it, tag) => `<h5 class="tr${it.t}">${gname(it)}<span>${tag || W.name + ' · ' + it.t + ' 阶'}</span></h5><div class="g">${W.name}系招式伤害 +${Math.round(DATA.weaponDmg[it.t - 1] * 100)}%${it.t === 1 ? '；该系熟练度 +10%' : it.t === 2 ? '；该系标记持续 +0.5秒' : ''}</div>` + (it.aff && it.aff.length ? affTxt(it.aff).map(t => `<div class="g">✦ ${t}</div>`).join('') : '') + `<div class="d">附魔 ${(it.aff || []).length}/${it.t === 3 ? 2 : 1}</div>`;
+    const wDet = it => `<b class="tr${it.t}">${gname(it)}</b> <i>· ${it.t} 阶 · ${W.name}系招式伤害 +${Math.round(DATA.weaponDmg[it.t - 1] * 100)}%${it.t === 1 ? '；该系熟练度 +10%' : it.t === 2 ? '；该系标记持续 +0.5秒' : ''}　附魔 ${(it.aff || []).length}/${it.t === 3 ? 2 : 1}</i><br>` + ((it.aff || []).map(a => `<span class="aff">✦ ${affTxt([a])[0]}</span>`).join('') || '<i>还没有词条</i>');
     const gTip = (it, tag, extra) => { const D = DATA.gear[it.id]; return `<h5 class="tr${it.t}">${gname(it)}<span>${tag}</span></h5>${statTxt(D, it.t).map(t => `<div class="g">${t}</div>`).join('')}${extra || ''}`; };
     for (const e of box.querySelectorAll('.eqD .slot')) { const k = e.dataset.s, it = k === 'main' ? E.main : E[k];
       e.onmousemove = ev => { if (k === 'main') showT(ev, wTip(E.main, '主手'), wDet(E.main));
@@ -395,13 +396,19 @@
     for (const e of box.querySelectorAll('.eqS')) { const t = +e.dataset.st; e.onmousemove = ev => showT(ev, `<h5>附魔石<span>${DATA.stoneNames[t]}</span></h5><div class="g">给武器随机添加 1 个词条</div><div class="d">词条强度：${DATA.stoneNames[t]}　·　拖到主手武器上（点选后再点武器也行）</div>`, `<b>附魔石</b> <i>· ${DATA.stoneNames[t]}　×${r.stones[t]}　拖到主手武器上</i>`); e.onmouseleave = hideT; }
     for (const e of box.querySelectorAll('.lk')) { e.onmousemove = ev => showT(ev, `<h5>未解锁的格子<span>物品栏</span></h5><div class="d">以后开放。</div>`, '<b>未解锁</b> <i>· 以后开放</i>'); e.onmouseleave = hideT; }
     const redo = m => { eqMsg = m; hideT(); equipPanel(box); B().recompute(); };
-    // 附魔：满了弹确认，随机覆盖一条
-    const doEnc = t => { if (!(r.stones[t] > 0)) return; const w = E.main, P = a => a[Math.random() * a.length | 0], used = new Set(w.aff.map(a => a[0])), pool = DATA.affixes.map((_, i) => i).filter(i => !used.has(i)), n = [P(pool.length ? pool : DATA.affixes.map((_, i) => i)), t]; let old = null;
-      if (w.aff.length < mt) w.aff.push(n); else { const i = Math.random() * w.aff.length | 0; old = affTxt([w.aff[i]])[0]; w.aff[i] = n; }
-      r.stones[t]--; if (!r.stones[t] && eqSel === t) eqSel = 0; redo(`新增：${affTxt([n])[0]}${old ? '（覆盖了：' + old + '）' : ''}`); };
-    const enc = t => { t = t || eqSel; if (!t || !(r.stones[t] > 0)) return; if (E.main.aff.length < mt) return doEnc(t);
-      const m = document.createElement('div'); m.className = 'eqMdl'; m.innerHTML = `<div><p>${WN(wp, mt)} 的附魔已满（${E.main.aff.length}/${mt}）。<br>用${DATA.stoneNames[t]}石会<b>随机覆盖一条词条</b>，确定吗？</p><div class="eqBtns"><button class="btn mini" data-n>取消</button><button class="btn mini gold" data-y>确定覆盖</button></div></div>`; document.body.appendChild(m);
-      m.querySelector('[data-n]').onclick = () => m.remove(); m.querySelector('[data-y]').onclick = () => { m.remove(); doEnc(t); }; };
+    // 有空位添加词条；满格后随机提升一条，满档不消耗。
+    const doEnc = t => {
+      if (!(r.stones[t] > 0)) return;
+      const w=E.main; w.aff ||= [];
+      if(w.aff.length < affMax) {
+        const n=DATA.rollAffix(r,new Set(w.aff.map(a=>a[0])),t);if(!n)return;w.aff.push(n);eqMsg=`新增：${affTxt([n])[0]}`;
+      } else {
+        const choices=w.aff.filter(a=>a[1]<3);if(!choices.length)return redo('词条已经满档，未消耗附魔石');
+        const a=choices[Math.random()*choices.length|0];a[1]=Math.min(3,Math.max(a[1]+1,t));eqMsg=`提升：${affTxt([a])[0]}`;
+      }
+      r.stones[t]--;if(!r.stones[t]&&eqSel===t)eqSel=0;redo(eqMsg);
+    };
+    const enc = t => {t=t||eqSel;if(t)doEnc(t);};
     for (const e of box.querySelectorAll('.eqD .slot')) e.onclick = () => { const k = e.dataset.s; if (k === 'main') { if (eqSel) return enc(); return redo('主手是本局的兵器，只能升阶（背包里有更高阶的就点它换上）。'); } if (k === 'off' && two) return redo('双格武器占着副手，只有拿剑才能放盾。'); if (!E[k]) return; if (r.gbag.length >= 16) return redo('物品栏满了，先把东西腾出来。'); r.gbag.push(E[k]); E[k] = null; redo('已卸下，回到物品栏。'); };
     for (const e of box.querySelectorAll('.eqI')) e.onclick = () => { const i = +e.dataset.i, it = r.gbag[i];
       if (it.k === 'w') { const old = E.main; E.main = it; r.gbag.splice(i, 1); r.gbag.push(old.k ? old : Object.assign({ k: 'w' }, old)); return redo(`换上了 ${WN(wp, it.t)}。`); }
@@ -415,7 +422,7 @@
         addEventListener('pointermove', mv); addEventListener('pointerup', up); }; e.ondragstart = ev => ev.preventDefault(); }
   }
   let eqSel = 0;
-  function giveGear() { const r = GS(); r.stones = { 1: 5, 2: 3, 3: 1 }; r.gbag = [{ k: 'w', t: 2, aff: [] }, { k: 'w', t: 3, aff: [] }, ...Object.keys(DATA.gear).filter(k => !(DATA.gear[k].sword && r.weapon !== 'sword')).map(id => ({ k: 'g', id, t: 1 + Math.floor(Math.random() * 3) }))].slice(0, 16); B().recompute(); if ($('pause').classList.contains('on') && ptab === 'zhuang') pauseRender(); }
+  function giveGear() { const r = GS(); r.stones = { 1: 5, 2: 3, 3: 1 }; r.gbag = [DATA.makeWeapon(r,2), DATA.makeWeapon(r,3), ...Object.keys(DATA.gear).filter(k => !(DATA.gear[k].sword && r.weapon !== 'sword')).map(id => ({ k: 'g', id, t: 1 + Math.floor(Math.random() * 3) }))].slice(0, 16); B().recompute(); if ($('pause').classList.contains('on') && ptab === 'zhuang') pauseRender(); }
   // ---------- 暂停页 = 备战 ----------
   let ptab = 'ji';
   function pauseRender() {
