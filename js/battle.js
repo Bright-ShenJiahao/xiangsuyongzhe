@@ -1264,7 +1264,7 @@
   function propHit(x, y, r) {
     if (!G || !G.props) return;
     for (const p of G.props) { if (p.brk || p.hp > 50 || p.hitT > 0 || Math.hypot(p.x - x, (p.y - y) * YS) > r) continue; p.hitT = .25; if (--p.hp > 0) { G.shake = Math.max(G.shake, .08); continue; }
-      p.brk = 1; G.shake = Math.max(G.shake, .12); SFX.play('pon');
+      p.brk = 1; p.bt = G.t; G.shake = Math.max(G.shake, .12); SFX.play('pon');
       for (let i = 0; i < 12; i++) parts.push({ x: p.x, y: p.y, vx: R(-70, 70) * K, vy: R(-90, -20) * K, t: 0, T: R(.4, .8), col: i % 3 ? '#8a6038' : '#c8a070', g: 220 * K });
       const n = Math.round((p.k === 'barrel' ? 2 + G.st : p.k === 'crate' ? 3 + G.st : 4 + G.st) * (1 + (hero.fx.propCoin || 0))); if (hero.fx.firstBreak && !G.purseBreak) { G.purseBreak = true; G.gi.push({ kind: 'use', id: 'meat', x: p.x, y: p.y, t: 0 }); }
       if (Math.random() < (p.k === 'barrel' ? .7 : .85)) for (let i = 0, m = 1 + (Math.random() < .5); i < m; i++) G.gc.push({ x: p.x, y: p.y, v: n, t: 0, h: 0, vh: 90, vx: R(-20, 20) * K });
@@ -1306,9 +1306,10 @@
   }
   function propsEntries() {
     const L = [], im = (n, x, y, sc = 1, a = 1) => { const I = pim(n); if (!okI(I)) return; ctx.save(); ctx.imageSmoothingEnabled = false; ctx.globalAlpha = a; const w = I.naturalWidth * u * sc, h = I.naturalHeight * u * sc; ctx.drawImage(I, rd(X(x) - w / 2), rd(Y(y) - h), w, h); ctx.restore(); };
-    for (const p of G.props || []) L.push({ y: p.y, d: () => { shadow(p.x, p.y, p.k === 'banner' || p.k === 'rack' ? 22 : 13);
+    for (const p of G.props || []) { const fa = p.brk ? Math.max(0, Math.min(1, 3 - (G.t - (p.bt || 0)))) : 1; if (!fa) continue;   /* 11/27 残骸 2 秒后 1 秒淡出消失 */
+      L.push({ y: p.y, d: () => { if (!p.brk) shadow(p.x, p.y, p.k === 'banner' || p.k === 'rack' ? 22 : 13);
       if (p.k === 'brazier') { im('brazier_b', p.x, p.y); const [sx, sy] = [X(p.x), Y(p.y) - 26 * u], r = (30 + 4 * Math.sin(G.t * 9 + p.x)) * u; ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r); g.addColorStop(0, 'rgba(255,170,70,.35)'); g.addColorStop(1, 'rgba(255,90,20,0)'); ctx.fillStyle = g; ctx.fillRect(sx - r, sy - r, 2 * r, 2 * r); ctx.restore(); }
-      else im(p.brk ? p.k + '_b' : p.k, p.x, p.y, 1, 1); } });
+      else im(p.brk ? p.k + '_b' : p.k, p.x, p.y, 1, fa); } }); }
     for (const c of G.cl || []) L.push({ y: c.y, d: () => {
       if (c.k === 'catapult') { const f = c.st === 'wind' ? (c.t < .9 ? 1 : 1) : c.st === 'rec' ? (c.t < .18 ? 2 : 3) : 0; im('catapult' + f, c.x, c.y, 1); }
       else { const ty = c.k === 'archer' ? 'gob_archer' : 'gob_mage', n = c.st === 'wind' ? (c.k === 'archer' ? 'draw' : 'windup') : 'idle' + (Math.floor(G.t * 2) % 2); SPR.draw(ctx, ty, n, 0, X(c.x), Y(c.y), !!c.f, u, {}); } } });
