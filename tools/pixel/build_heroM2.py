@@ -1,0 +1,51 @@
+# 11/27 阿远新版精灵：每把武器一张 33 帧 AI 图 → 按轮廓切帧、按像素块缩到 42px 高 → art/heroM2/atlas.png/json
+# 用法：python3 build_heroM2.py sword=图.png staff=图.png ...
+import sys, json, numpy as np
+from PIL import Image
+from scipy import ndimage
+COMMON=[('idle',2),('run',4),('roll',3),('back',1),('hurt',1),('dead',1),('charge',2),('dash',1),('stop',1),('jump',1),('slam',1)]
+TAIL=[('up',1),('finish',1),('atk',2),('big',1)]
+ATK={'sword':[('slash',3),('chop',2),('upper',2),('spin',2),('thrust',1)],
+ 'spear':[('thrust',2),('sweep',3),('lift',2),('twirl',2),('throw',1)],
+ 'bow':[('shoot',3),('sky',2),('side',1),('kneel',2),('rapid',1),('lower',1)],
+ 'staff':[('point',2),('raise',2),('stomp',2),('twirl',2),('palm',2)],
+ 'tome':[('cast',3),('raise',2),('push',2),('guard',2),('orbit',1)],
+ 'scythe':[('reap',3),('toss',2),('hook',2),('chop',2),('spin',1)],
+ 'gun':[('press',3),('rapid',2),('aim',2),('toss',2),('sky',1)]}
+def frames(path):
+    a=np.array(Image.open(path).convert('RGB')).astype(int)
+    bg=np.median(np.concatenate([a[0],a[-1],a[:,0],a[:,-1]]),axis=0); fg=np.abs(a-bg).max(-1)>30
+    L,n=ndimage.label(ndimage.binary_dilation(fg,iterations=6))
+    ob=[(s,i+1) for i,s in enumerate(ndimage.find_objects(L)) if (s[0].stop-s[0].start)*(s[1].stop-s[1].start)>2500]
+    ob.sort(key=lambda o:(o[0][0].start+o[0][0].stop)/2); rows=[]
+    for o in ob:
+        cy=(o[0][0].start+o[0][0].stop)/2
+        if rows and abs(cy-rows[-1][0])<90: rows[-1][1].append(o)
+        else: rows.append([cy,[o]])
+    order=[o for _,r in rows for o in sorted(r,key=lambda o:o[0][1].start)]
+    out=[]
+    for s,lid in order:
+        m=((L==lid)&fg)[s]; im=Image.fromarray(np.dstack([a[s],np.where(m,255,0)]).astype(np.uint8),'RGBA'); out.append(im.crop(im.getbbox()))
+    return out
+SC=42/125   # 所有武器同一比例（AI 图里阿远约 125px 高），人物大小一致
+def main(args):
+    small={}; 
+    for arg in args:
+        w,p=arg.split('=',1); fr=frames(p); names=COMMON+ATK[w]+TAIL; need=sum(c for _,c in names)
+        assert len(fr)==need,(w,len(fr),need)
+        sc=SC; L=[]
+        for f in fr:
+            g=f.resize((max(1,round(f.width*sc)),max(1,round(f.height*sc))),Image.NEAREST); A=np.array(g); A[...,3]=np.where(A[...,3]>127,255,0); L.append(Image.fromarray(A))
+        small[w]=(names,L)
+    W=sum(s.width+2 for _,L in small.values() for s in L); H=max(s.height for _,L in small.values() for s in L)
+    atlas=Image.new('RGBA',(W,H),(0,0,0,0)); x=0; out={}
+    for w,(names,L) in small.items():
+        i=0
+        for nm,c in names:
+            arr=[]
+            for _ in range(c):
+                s=L[i]; i+=1; atlas.paste(s,(x,0)); A=np.array(s)[...,3]; ys,xs=np.where(A>0); bot=xs[ys>=ys.max()-3]
+                arr.append([x,0,s.width,s.height,float((bot.min()+bot.max())/2),s.height]); x+=s.width+2
+            out[f'hero:{w}.{nm}']=arr
+    atlas.save('art/heroM2/atlas.png'); json.dump({'f':out},open('art/heroM2/atlas.json','w')); print('ok',list(small),atlas.size)
+main(sys.argv[1:])
