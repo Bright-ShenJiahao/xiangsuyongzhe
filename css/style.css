@@ -1476,19 +1476,19 @@ html body .oathrow .oic { border-radius: 50%; }
 .stnI { width: 78%; image-rendering: pixelated; pointer-events: none; }
 
 /* 11/27 属性页大字布局 */
-.attr2 { grid-template-columns: 52% 1fr !important; }
+.attr2 { grid-template-columns: 60% 1fr !important; }
 .attr2 .lol { display: flex; flex-direction: column; }
 .attr2 .lol h4, .attr2 .lor h4 { font-size: 19px; margin-bottom: 4px; }
-.attr2 .arow { display: block !important; flex: 1 1 auto; padding: 6px 4px !important; border-bottom: 1px dashed rgba(200,160,90,.35); }
+.attr2 .arow { display: block !important; flex: 1 1 auto; padding: 4px 4px !important; border-bottom: 1px dashed rgba(200,160,90,.35); }
 .attr2 .arow .an { display: flex; align-items: center; gap: 8px; }
 .attr2 .arow .an b { font-size: 19px; }
 .attr2 .arow .an em { font-size: 24px; font-style: normal; color: #ffe8a8; margin-left: 2px; }
 .attr2 .arow .an small { margin-left: auto; font-size: 13px; opacity: .7; }
-.attr2 .arow .ad { display: flex; flex-wrap: wrap; gap: 4px 5px; margin-top: 4px; padding-left: 28px; }
+.attr2 .arow .ad { display: flex; flex-wrap: wrap; gap: 3px 5px; margin-top: 3px; padding-left: 28px; }
 .attr2 .arow .ad i { font-style: normal; font-size: 14px; padding: 0 7px; border-radius: 4px; background: rgba(255,220,150,.08); border: 1px solid rgba(255,220,150,.22); }
 .attr2 .arow .ad .per { font-size: 12px; opacity: .6; align-self: center; }
 .attr2 .lol .dim { font-size: 13px; margin: 2px 4px; }
-.attr2 .rcols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+.attr2 .rcols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
 .attr2 .lor h5 { font-size: 15px; margin: 4px 0 2px; }
 .attr2 .lor .stats { grid-template-columns: 1fr auto; }
 .attr2 .lor .stats span, .attr2 .lor .stats b { font-size: 15px; line-height: 1.5; }
