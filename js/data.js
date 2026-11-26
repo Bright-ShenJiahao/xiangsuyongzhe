@@ -170,10 +170,10 @@ window.DATA = {
     hundred: { name: '扇影连刺', brief: '扇形六道枪影', rg: 130, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .2, rc: .4, dmg: 3, desc: '原地朝前方快刺 6 下（占 1 秒，能慢慢走）。', l3: '刺 9 下', l5: '每下都穿透', l7: '最后一刺放出粗枪芒' },
     rising: { name: '龙牙上挑', brief: '上挑浮空一排', rg: 116, sys: '枪', w: 'spear', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .3, rc: .45, dmg: 6, frame: 'big', desc: '向前上挑，前方一条宽直线的怪全部浮空 0.6 秒，落地再伤。', l3: '直线变长变宽 +25%', l5: '浮空的怪受伤 +30%', l7: '落地砸出冲击' },
     drill: { name: '螺旋贯穿', brief: '慢速钻头穿透', rg: 200, sys: '枪', w: 'spear', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .6, rc: .5, dmg: 3, desc: '刺出一道旋转枪芒缓慢向前，持续搅伤路上的怪。', l3: '枪芒变粗 +30%', l5: '两边的怪被吸向中线', l7: '走到尽头爆炸' },
-    leap: { name: '雷龙坠击', brief: '沿移动方向跃击并召雷', rg: 87, sys: '枪', w: 'spear', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .7, rc: .5, dmg: 16, frame: 'big', desc: '跃起砸地：一圈冲击 + 四道地裂。', l3: '地裂 6 道', l5: '中心冲击把怪击飞', l7: '0.5 秒后再震一次' },
+    leap: { name: '雷龙坠击', brief: '沿移动方向跳160格，落地22伤并降下8道4伤雷。', rg: 220, sys: '枪', w: 'spear', pose: 'sword', tier: 4, icon: 'spear', type: 'str', dt: 'phys', wu: .8, rc: .8, dmg: 22, frame: 'big', desc: '沿移动方向跳160格，落地22伤并降下8道4伤雷。', l3: '范围扩大25%', l5: '强化落地无敌', l7: '额外落下4道雷', hitCap: 9, poolV2: true },
     dragon: { name: '龙魂之枪', brief: '苍龙盘旋撞怪', rg: 220, sys: '枪', w: 'spear', tier: 4, icon: 'spear', type: 'str', dt: 'phys', wu: 1, rc: .8, hold: 4, dmg: 5, frame: 'big', desc: '枪化苍龙在场上盘旋 4 秒撞击怪。', l3: '龙更大', l5: '每秒喷龙息', l7: '结束时俯冲重击' },
 
-    meteorjavelins: { name: '流星枪雨', brief: '远处落下一排5支投枪，每支4伤，同目标最多2支。', rg: 220, sys: '枪', w: 'spear', pose: 'sword', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .4, rc: .5, dmg: 4, desc: '远处落下5支投枪，每支4伤，同目标最多3支。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hitCap: 3 },
+    meteorjavelins: { name: '流星枪雨', brief: '远处落下一排5支投枪，每支4伤，同目标最多2支。', rg: 220, sys: '枪', w: 'spear', pose: 'sword', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .4, rc: .5, dmg: 4, desc: '远处落下5支投枪，每支4伤，同目标最多2支。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hitCap: 2 },
     returningthrust: { name: '回马枪', brief: '沿移动方向冲刺100格，回身枪芒造成12伤。', rg: 220, sys: '枪', w: 'spear', pose: 'sword', tier: 2, icon: 'spear', type: 'str', dt: 'phys', wu: .4, rc: .5, dmg: 12, desc: '沿移动方向冲刺100格，回身枪芒造成12伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果' },
     knightcharge: { name: '骑士冲锋', brief: '沿移动方向冲锋140格，撞击5伤并以18伤重刺；挂失衡。', rg: 220, sys: '枪', w: 'spear', pose: 'sword', tier: 3, icon: 'spear', type: 'str', dt: 'phys', wu: .6, rc: .6, dmg: 5, desc: '沿移动方向冲锋140格，撞击5伤并以18伤重刺；挂失衡。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hitCap: 1 },
 
@@ -201,12 +201,12 @@ window.DATA = {
 
     magicmissiles: { name: '魔法飞弹', brief: '连续发射4枚2伤魔弹，同目标最多4次。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 1, icon: 'fire', type: 'int', dt: 'magic', wu: .3, rc: .4, dmg: 2, desc: '连续发射4枚2伤魔弹，同目标最多4次。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hitCap: 4 },
     fireburst: { name: '炎爆术', brief: '凝聚0.6秒后对目标造成18点火焰伤害。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 2, icon: 'fire', type: 'int', dt: 'magic', wu: .6, rc: .3, dmg: 18, desc: '凝聚0.6秒后对目标造成18点火焰伤害。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果' },
-    icewall: { name: '冰川之墙', brief: '横墙持续2秒并叠寒滞，碎裂造成8伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 2, icon: 'nova', type: 'int', dt: 'magic', wu: .4, rc: .5, dmg: 8, desc: '横墙持续2秒并叠寒滞，碎裂造成8伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 2 },
+    icewall: { name: '冰川之墙', brief: '横墙持续2秒并叠寒滞，碎裂造成8伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 2, icon: 'nova', type: 'int', dt: 'magic', wu: .4, rc: .5, dmg: 0, desc: '横墙持续2秒并叠寒滞，碎裂造成8伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 2, hitCap: 1 },
     balllightning: { name: '球状闪电', brief: '电网持续2秒，每0.25秒造成2伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 2, icon: 'fire', type: 'int', dt: 'magic', wu: .4, rc: .5, dmg: 2, desc: '电网持续2秒，每0.25秒造成2伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 2, hitCap: 8 },
     arcaneorb: { name: '奥术光球', brief: '奥术球持续1.8秒，每0.3秒造成3伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 2, icon: 'nova', type: 'int', dt: 'magic', wu: .4, rc: .5, dmg: 3, desc: '奥术球持续1.8秒，每0.3秒造成3伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 1.8, hitCap: 6 },
     firestorm: { name: '烈焰风暴', brief: '向敌群吹出4段火浪，每段6伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 3, icon: 'fire', type: 'int', dt: 'magic', wu: .6, rc: .6, dmg: 6, desc: '向敌群吹出4段火浪，每段6伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hitCap: 4 },
     gravitywell: { name: '重力漩涡', brief: '漩涡持续2秒，每0.25秒3伤，结束额外12伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 3, icon: 'nova', type: 'int', dt: 'magic', wu: .6, rc: .6, dmg: 3, desc: '漩涡持续2秒，每0.25秒3伤，结束额外12伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 2, hitCap: 8 },
-    mirrorbarrage: { name: '镜影弹幕', brief: '三分身持续3秒发射弹幕，弹幕36伤、收尾18伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 4, icon: 'nova', type: 'int', dt: 'magic', wu: .8, rc: .8, dmg: 2, desc: '三分身持续3秒发射弹幕，弹幕36伤、收尾18伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 3, hitCap: 36, finisherCap: 3, poolV2: true },
+    mirrorbarrage: { name: '镜影弹幕', brief: '三分身持续3秒发射弹幕，弹幕约36发×2伤、收尾18伤。', rg: 220, sys: '法杖', w: 'staff', pose: 'staff', tier: 4, icon: 'nova', type: 'int', dt: 'magic', wu: .8, rc: .8, dmg: 2, desc: '三分身持续3秒发射弹幕，弹幕约36发×2伤、收尾18伤。', l3: '范围提升25%', l5: '效果强化', l7: '强化追加效果', hold: 3, hitCap: 36, finisherCap: 3, poolV2: true },
   },
   prof: [8, 20, 36, 56, 80, 110, 150],   // 熟练度：每格要的累计出手次数（7 格）
   tierName: ['', '初阶', '中阶', '高阶', '宗师'], tierPrice: [0, 22, 34, 52, 80],
@@ -601,3 +601,4 @@ for (const [id,s] of Object.entries(DATA.skills)) if(!s.tags) {
 }
 
 Object.assign(DATA.skills.h_smite,{healCap:.005});Object.assign(DATA.skills.h_verdict,{healCap:.015});Object.assign(DATA.skills.d_reap,{healCap:.01});Object.assign(DATA.skills.d_siphon,{healCap:.015});Object.assign(DATA.skills.d_feast,{healCap:.02});Object.assign(DATA.skills.d_harvest,{healCap:.02});
+
