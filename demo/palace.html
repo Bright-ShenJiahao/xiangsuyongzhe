@@ -234,8 +234,8 @@ function ringAt(x, y, rx, ry, p) { g.save(); g.lineWidth = 5; g.strokeStyle = 'r
 
 /* 11/25 摆放调试页（palace.html?edit）：拖人物 / 传送阵 / 誓约石 / 时空门 / 勇者出生点；松手自动存到本机，正常进宫殿会用这个布局。空白处拖动 = 平移画面 */
 const EDIT = QS.has('edit');
-const DRAG = () => [...NPC.map(n => ({ k: n.id, o: n, l: n.name })), ...SPOT.map(o => ({ k: o.id, o, l: o.id === 'tp' ? '传送阵' : '誓约石' })), { k: 'portal', o: PORTAL, l: '时空门' }, { k: 'hero', o: hero, l: '勇者出生点' }];
-const LAY0 = { p: [423, 318], m: [912, 710], c: [210, 710], s: [380, 890], s6: [742, 890], s3: [380, 995], s4: [742, 995], s5: [380, 1100], s2: [742, 1100], tp: [210, 257], oath: [912, 493], portal: [878, 300], hero: [561, 1100] };   /* 11/25 用户摆的位置，左右上下对齐后的默认布局 */
+const DRAG = () => [...NPC.map(n => ({ k: n.id, o: n, l: n.name })), ...SPOT.map(o => ({ k: o.id, o, l: o.id === 'tp' ? '传送阵' : o.id === 'mirror' ? '勇者之镜' : '誓约石' })), { k: 'portal', o: PORTAL, l: '时空门' }, { k: 'hero', o: hero, l: '勇者出生点' }];
+const LAY0 = { mirror: [268, 425], p: [423, 318], m: [912, 710], c: [210, 710], s: [380, 890], s6: [742, 890], s3: [380, 995], s4: [742, 995], s5: [380, 1100], s2: [742, 1100], tp: [210, 257], oath: [912, 493], portal: [878, 300], hero: [561, 1100] };   /* 11/25 用户摆的位置，左右上下对齐后的默认布局 */
 try { const Ly = Object.assign({}, LAY0, JSON.parse(LS.get('layout2') || '{}')); for (const it of DRAG()) if (Ly[it.k]) { it.o.x = Ly[it.k][0]; it.o.y = Ly[it.k][1]; } if (Ly.hero) { cam.x = hero.x; cam.y = hero.y; } } catch (e) {}
 const layoutNow = () => { const r = {}; for (const it of DRAG()) r[it.k] = [Math.round(it.o.x), Math.round(it.o.y)]; return r; };
 let EP = null, EBOX = null;
