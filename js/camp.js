@@ -171,13 +171,13 @@
     const items = r.gear.filter(x => x && x.kind === 'item').map(x => ({ id: x.id, lv: x.lv || 1 })), c = DATA.calc({ weapon: r.weapon, attrs: r.attrs, train: B().trainAll(), items, habit: r.habit });
     const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
     { const T = DATA.titles.find(t => t.id === r.title), d = document.createElement('div'); d.className = 'ttlbar'; d.innerHTML = T ? `<b>称号：${T.name}</b>　${T.d.replace(/<br>/g, '　')}` : '<b>称号：未佩戴</b>　<small>（宫殿里找公主「出发准备」更换）</small>'; if (r.newT && r.newT.length) d.innerHTML += `<br><span class="new">这局新获得：${r.newT.join('、')}（下一局起可佩戴）</span>`; box.appendChild(d); }   // 11/24 称号
-    const wrap = document.createElement('div'); wrap.className = 'lo attrlo'; box.appendChild(wrap);
+    const wrap = document.createElement('div'); wrap.className = 'lo attrlo attr2'; box.appendChild(wrap);
     const L = document.createElement('div'), Rt = document.createElement('div'); L.className = 'lol'; Rt.className = 'lor'; wrap.append(L, Rt);
     L.innerHTML = `<h4>属性 <small>Lv${B().lv()} · 修炼来自公主的光球</small></h4>`;
     for (const a of DATA.attrs) {
       const tr = r.train[a.id] || 0, al = (r.alloc[a.id] || 0) + (r.tmp[a.id] || 0), base = c.A[a.id] - tr - al, row = document.createElement('div'); row.className = 'arow'; row.title = a.desc;
       const src = [`基础 ${base}`, tr && `修炼 +${tr}`, al && `加点 +${al}`].filter(Boolean).join(' · ');
-      row.innerHTML = `<b>${UI.piH(a.id, 1)}${a.name}</b><small>${src}<br><span class="src">${a.desc}</span></small><em>${c.A[a.id]}</em>`;
+      const per = a.desc.replace(/\s*\/\s*点/g, '').split(/[、,，]/).map(t => t.trim()).filter(Boolean); row.innerHTML = `<div class="an">${UI.piH(a.id, 1)}<b>${a.name}</b><em>${c.A[a.id]}</em><small>${src}</small></div><div class="ad"><span class="per">每点</span>${per.map(t => `<i>${t}</i>`).join('')}</div>`;   // 11/27 属性页大字：效果拆成标签
       L.appendChild(row);
     }
     const hp = DATA.heroes.find(x => x.id === r.hero) || {};
