@@ -31,13 +31,18 @@ def frames(path):
             m=np.isin(L[y0:y1,x0:x1],[g[1] for g in grp])&fg[y0:y1,x0:x1]
             im=Image.fromarray(np.dstack([a[y0:y1,x0:x1],np.where(m,255,0)]).astype(np.uint8),'RGBA'); out.append(im.crop(im.getbbox()))
     return out
+def body_h(im):
+    A=np.array(im).astype(int); r,g,b,al=A[...,0],A[...,1],A[...,2],A[...,3]
+    hair=(al>0)&(r>150)&(g>70)&(g<150)&(b<90)&(r-b>90)
+    ys=np.where(hair.sum(1)>=3)[0]; return im.height-ys.min() if len(ys) else im.height
 SC=42/125   # 所有武器同一比例（AI 图里阿远约 125px 高），人物大小一致
 def main(args):
     small={}; 
     for arg in args:
         w,p=arg.split('=',1); fr=frames(p); names=COMMON+ATK[w]+TAIL; need=sum(c for _,c in names)
         assert len(fr)==need,(w,len(fr),need)
-        sc=SC; L=[]
+        hh=body_h(fr[0]); ref=ref if 'ref' in dir() and ref else hh   # 待机帧：从头发顶到脚底的高度（不算举过头的武器）
+        sc=SC*ref/hh; print(w,'scale',round(sc,3)); L=[]
         for f in fr:
             g=f.resize((max(1,round(f.width*sc)),max(1,round(f.height*sc))),Image.NEAREST); A=np.array(g); A[...,3]=np.where(A[...,3]>127,255,0); L.append(Image.fromarray(A))
         small[w]=(names,L)
