@@ -24,6 +24,7 @@
   B('回血', () => UI.mod().debug.heal());
   sec('流程');
   B('本段胜利', () => UI.mod().debug.wave());
+  B('进宫殿', () => UI.enterHub());
   B('本站胜利', () => UI.mod().debug.station());
   sec('转职');
   B('转职演练', () => { if (!BATTLE.active()) UI.startBattle(); const r = BATTLE.run(); r.slots[0] = { id: 'sword', lv: 7, xp: DATA.prof[6] }; r.slots[1] = { id: 'whirl', lv: 7, xp: DATA.prof[6] }; BATTLE.careerChanged(); UI.togglePause(true); });

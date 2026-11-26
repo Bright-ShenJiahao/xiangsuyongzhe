@@ -491,6 +491,8 @@
       if (typeof e.data === 'string' && e.data.startsWith('panel:')) { const b = document.querySelector(`[data-panel="${e.data.slice(6)}"]`); if (b) b.click(); return; }   // 11/27 宫殿菜单：设置/帮助/图鉴
       if (e.data === 'toTitle') { removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); show('title'); return; }
       if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
+  // 11/27 调试：带着当前存档进宫殿（和「继续游戏」同一流程）
+  function enterHub() { try { BATTLE.saveNow(); BATTLE.stop(); } catch (e) {} for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); const s = BATTLE.loadSave(); openHub('', () => { if (s) { lastBuild = s.opt.build || lastBuild; mapFall(() => { HC = {}; BATTLE.start(Object.assign({}, s.opt, { resume: s, drop: 1 })); show('battle'); for (const id of ['levelup', 'pause', 'result', 'camp']) overlay(id, false); }); } else { openPrep(true); startBattle(build()); } }); }
   function openHub(qs, go) { const f = $('introF'); try { BGM.play('k1'); } catch (e) {} f.src = 'demo/palace.html?game&h=' + (store.get('hero') === 'f' ? 'f' : 'm') + qs + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     f.dataset.pal = f.src.replace(/&v=\d+$/, ''); hubMsgs(f, go); }
   function playTower(r, go) { let seen; try { seen = new Set(JSON.parse(store.get('linesSeen') || '[]')); } catch (e) { seen = new Set(); }
@@ -552,7 +554,7 @@
       if ((e.key === 'Enter' || e.key === ' ') && a && L.contains(a) && !a.matches('button, input')) { e.preventDefault(); e.stopImmediatePropagation(); a.click(); }
     }, true); }
   try { document.querySelector('#hud .hp').appendChild($('coins')); } catch (e) {}   /* 11/25 铜钱挪到血条下面、等级右边，和等级同一种框 */
-  window.UI = { openPrep, slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, careerIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
+  window.UI = { enterHub, openPrep, slot, FX, victory, nextChapter, pxNum, pTip, pKey, newDot, feed, softPause, bookOf, skIcon, careerIcon, mod: () => BATTLE, hud, levelUp, result, waveEnd, route, event, toast, icon: iconCanvas, pi, piH, togglePause, show, startBattle: b => startBattle(b, true), openPrep, get screen() { return screen; } };
   BATTLE.init(cv);
   /* 11/25 加载完：只剩发光的 logo，玩家点一下（浏览器规定点过才能放 BGM）→ 「进入游戏」冒出来 */
   function titleGate() { const t = $('title'); if (t.dataset.gated) return; t.dataset.gated = 1; t.classList.add('gate');
