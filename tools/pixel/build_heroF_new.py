@@ -19,7 +19,7 @@ SOURCES = {
     "bow": SRC_DIR / "media_1795798116744_e4bde02a.webp",
     "staff": SRC_DIR / "media_1795798116744_3119fc45.webp",
     "tome": SRC_DIR / "media_1795798116743_cb4eefc9.webp",
-    "gun": SRC_DIR / "media_1795798116743_2da66deb.webp",
+    "gun": SRC_DIR / "media_1795802244111_0a06ca86.webp",
     "scythe": SRC_DIR / "media_1795798116743_09432bf7.webp",
 }
 
@@ -138,12 +138,12 @@ ACTION_MAPS = {
     },
     "gun": {
         "idle": [0, 1],
-        "run": [2, 3, 4, 3],
-        "roll": [14, 10, 11],
-        "back": [5],
-        "hurt": [6],
-        "dead": [7],
-        "charge": [8, 9],
+        "run": [2, 3, 4, 5],
+        "roll": [7, 8, 14],
+        "back": [10],
+        "hurt": [10],
+        "dead": [9],
+        "charge": [12, 15],
         "dash": [11],
         "stop": [12],
         "jump": [13],
@@ -151,12 +151,12 @@ ACTION_MAPS = {
         "press": [15, 16, 20],
         "rapid": [16, 20],
         "aim": [17, 20],
-        "toss": [8, 21],
+        "toss": [16, 20],
         "sky": [17],
-        "up": [22],
-        "finish": [23],
-        "atk": [9, 20],
-        "big": [22],
+        "up": [21],
+        "finish": [22],
+        "atk": [15, 20],
+        "big": [21],
     },
     "scythe": {
         "idle": [0, 1],
@@ -374,7 +374,7 @@ def compute_anchor(im, act, idx, weapon):
     r, g, b = a[:, :, 0], a[:, :, 1], a[:, :, 2]
 
     # Special poses
-    if act == "roll" and idx == 1 and weapon in ("sword", "spear", "tome", "scythe"):
+    if act == "roll" and idx == 1 and weapon in ("sword", "spear", "tome", "gun", "scythe"):
         # Ball roll: center of the dark/yellow/blue ball
         yy, xx = np.where(al)
         # Exclude long protruding spear/scythe shaft by looking at dense core
@@ -416,7 +416,7 @@ def compute_anchor(im, act, idx, weapon):
     # Airborne offsets matching old heroF (jump floats ~4px, back floats ~3px)
     if act == "jump":
         ay = round(boot_bot + 5.0, 1)
-    elif act == "back" or (act == "roll" and idx == 1 and weapon in ("bow", "staff", "gun")):
+    elif act == "back" or (act == "roll" and idx == 1 and weapon in ("bow", "staff")):
         ay = round(boot_bot + 3.0, 1)
 
     return ax, ay
