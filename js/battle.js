@@ -212,6 +212,7 @@
     }
     if (!o.extra && G.props && G.props.length) propHit(z.x, z.y, 34 * K);
     if (z.thiefP) return thiefHit();
+    if (z.propRef) { propHit(z.propRef.x, z.propRef.y, 12 * K); return; }
     if (!o.execute && z.eShield > 0 && d > 0) { const a = Math.min(z.eShield, d); z.eShield -= a; d -= a; if (!d) { nums.push({ x: z.x, y: z.y - 40 * K, txt: '盾', t: 0, col: '#ffe08a' }); return; } }   // 11/24 圣骑士护盾
     if (z.dead || z.flee) return;
     const career = token?.career; if (!o.extra && career) d *= JC.factor(career, z);
@@ -351,7 +352,12 @@
   }
 
   // ---------- 勇者的武器 ----------
-  function nearest(maxD = 1e9) { let b = null, bd = maxD; for (const z of foes) if (!z.dead && !z.flee) { const d = dist(z, hero); if (d < bd) { bd = d; b = z; } } return b; }
+  const liveProps = () => (G && G.props || []).filter(p => !p.brk && p.hp < 50);
+  const propTargets = () => liveProps().map(p => ({ propRef: p, x: p.x, y: p.y, dead: false, hp: p.hp, maxHp: PROP_HP[p.k] || 1, kbx: 0, kby: 0, flash: 0, T: { name: '物件', r: 14, pdef: 0, mdef: 0, ghost: true, hp: p.hp, spd: 0 } }));
+  function nearestProp(maxD = 1e9) { let b = null, bd = maxD; for (const p of liveProps()) { const d = dist(p, hero); if (d < bd) { bd = d; b = p; } } return b; }
+  function maxReach() { let r = 0; for (let i = 0; i < RUN.open; i++) { const sk = RUN.slots[i]; if (sk && DATA.canEquipCommon(RUN.slots, sk, i)) r = Math.max(r, reach(DATA.skills[JOBS.leaves(sk)[0].id])); } return r; }
+  // 优先攻击射程内的可破坏物件（木箱/木桶/战旗/骷髅架），再索敌怪物
+  function nearest(maxD = 1e9) { const pr = nearestProp(Math.min(maxD, maxReach())); if (pr) return pr; let b = null, bd = maxD; for (const z of foes) if (!z.dead && !z.flee) { const d = dist(z, hero); if (d < bd) { bd = d; b = z; } } return b; }
   // 熟练度：每本书出手一次 +1，7 格（DATA.prof）；第 2/4/6 格伤害 +10%，第 7 格前摇后摇各快 0.05 秒
   const profL = sk => { if (sk?.job) return 7; let L = 0; for (const n of DATA.prof) if ((sk.xp || 0) >= n) L++; return L; };
   function skillDmg(S, sk) { const L = profL(sk), w = DATA.SYSK[S.sys], f = hero.fx || {}; const bonus = (hero.cs ? hero.cs.mul - 1 : 0) + (f.dmg || 0) + (f.miser?Math.min(.06,Math.floor(RUN.coins/10)*.01):0) + (f.perfect&&hero.hp>=hero.maxHp?f.perfect:0) + (OB('ballistics')&&RUN.oath[0]?.id!=='ballistics'?.2*OB('ballistics'):0) + (f['sdmg_' + w] || 0) + (f.low && hero.hp < hero.maxHp * .3 ? f.low : 0) + (RUN.hero === 'p' && S.sys === '法杖' ? .1 : 0) + .06 * (hero.A[S.type] || 0) + .03 * (G.lv - 1) + (TT().dmg || 0) + .03 * ML('pow') + ((hero.setF || {}).dmg || 0) + (w === RUN.weapon && hero.gx ? hero.gx.wd : 0) + .1 * Math.floor(L / 2) + (G.wi === 0 ? f.firstWave || 0 : 0); return S.dmg * (1 + bonus); }
@@ -410,7 +416,7 @@
   // 11/24 技能也能打到小咕噜：给技能看的敌人列表里多一个替身，打中就掉钱逃跑（不会死）
   const TP = { thiefP: 1, dead: false, hp: 1e9, maxHp: 1e9, kbx: 0, kby: 0, flash: 0, T: { name: '小咕噜', r: 10, pdef: 0, mdef: 0, ghost: true, hp: 1, spd: 0 } };
   function thiefHit() { const T = G && G.thief; if (!T || T.hurt > 0) return; T.hurt = .4; if (T.bag) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`打中小咕噜！${T.bag} 铜钱掉了出来`); RUN.thief = (RUN.thief || 0) + 1; T.bag = 0; } T.st = 'run'; T.n = 9; }
-  const API = { K, YS, PI, now: () => G.t, clamp: o => clampG(o), hero: () => hero, foes: () => G && G.thief && G.thief.hurt <= 0 ? (TP.x = G.thief.x, TP.y = G.thief.y, foes.concat([TP])) : foes, ang, aimNow, face: faceTo, moveDir: () => moveDir(), spinFace: () => { hero.f = Math.floor(G.t * 12) % 2 ? 1 : -1; },
+  const API = { K, YS, PI, now: () => G.t, clamp: o => clampG(o), hero: () => hero, foes: () => { const pt = propTargets(), th = G && G.thief && G.thief.hurt <= 0 ? (TP.x = G.thief.x, TP.y = G.thief.y, [TP]) : []; return pt.length || th.length ? foes.concat(pt, th) : foes; }, ang, aimNow, face: faceTo, moveDir: () => moveDir(), spinFace: () => { hero.f = Math.floor(G.t * 12) % 2 ? 1 : -1; },
     hurt: (z, d, from, kb, sid, o) => hurt(z, d, from, kb, sid, o), fx: o => fx.push(o), tele: o => tele.push(Object.assign({ mine: true }, o)), shake: v => { G.shake = Math.max(G.shake, v); },
     mark: (kind,z,c) => {const result=JC.mark(kind,z,c?.career);if(c?.career)JC.hit(c.career,z,{});return result;}, detonate: (kind,z,c) => JC.detonate(kind,z,c?.career),
     summon: z=>JC.summon(z), drain: n=>{hero.hp=Math.max(1,hero.hp-n);},
@@ -566,7 +572,7 @@
     // 掉书只从还没拿到的书里抽（11/21 定）；全拿到了就换成铜钱
     const own = ownBooks(), ids = DATA.bookPool(own, G.st, G.drops.some(d => d.kind === 'book')), pick = a => a[Math.random() * a.length | 0], loot = [];
     const book = false;   // v2：技能书来自固定中场精英，不再按波次保底
-    const pickNew = () => { const f = ids.filter(i => !loot.some(o => o.id === i)); return pick(f.length ? f : ids); };   // 同一次结算不掉两本一样的
+    const pickNew = () => { for (let i = 0; i < 6; i++) { const b = randBook(1); if (b && !loot.some(o => o.id === b)) return b; } const f = ids.filter(i => !loot.some(o => o.id === i)); return pick(f.length ? f : ids); };   // 同一次结算不掉两本一样的，同系仅略微加权
     if (book) loot.push(ids.length ? { kind: 'book', id: pickNew() } : { kind: 'use', id: 'meat' });
     for (const d of G.drops) { if (d.kind === 'manual') { loot.push({ kind: 'manual', id: d.id }); continue; } if (d.kind === 'use') { loot.push({ kind: 'use', id: d.id || 'meat' }); continue; } const pool = ITEMS(); if (d.kind !== 'book' && !pool.length) { RUN.coins += 20; continue; } loot.push(d.kind === 'book' && ids.length ? { kind: 'book', id: pickNew() } : { kind: 'item', id: pick(pool)?.id }); }
     if (!loot.length && Math.random() < .3) loot.push({ kind: 'use', id: 'meat' });
@@ -841,7 +847,23 @@
     UI.route({ st: n, cards }, pick);
   }
   function ownBooks() { return new Set(JOBS.skills(RUN).map(x => x.id)); }
-  function randBook(minTier, poolKind) { const own = ownBooks(), all = DATA.bookPool(own, Math.max(G.st, minTier >= 3 ? 4 : 1), minTier >= 3); const available = [...new Set(all)].filter(id => DATA.skills[id].tier >= (minTier || 1)); if (!available.length) return null; const held = new Set(JOBS.skills(RUN).map(x => DATA.skills[x.id].w)); const mode = poolKind ?? Math.floor(Math.random() * 3), w = mode === 0 ? [...held][Math.random() * held.size | 0] : mode === 1 ? (Math.random() < .7 ? RUN.weapon : 'common') : Object.keys(DATA.weapons).filter(w => w !== RUN.weapon && w !== 'common')[Math.random() * Math.max(1, Object.keys(DATA.weapons).filter(w => w !== RUN.weapon && w !== 'common').length) | 0]; const pool = available.filter(id => DATA.skills[id].w === w), ids = pool.length ? pool : available; const tiers = [...new Set(ids.map(id => DATA.skills[id].tier))], weights = tiers.map(t => [0,3,2,1,1][t]), sum = weights.reduce((a,b) => a+b,0); let roll = Math.random() * sum, tier = tiers[0]; for (let i=0; i<tiers.length; i++) { roll -= weights[i]; if (roll < 0) { tier=tiers[i]; break; } } const picked = ids.filter(id => DATA.skills[id].tier === tier); return picked[Math.random() * picked.length | 0]; }
+  function randBook(minTier) {
+    const own = ownBooks(), all = DATA.bookPool(own, Math.max(G.st, minTier >= 3 ? 4 : 1), minTier >= 3);
+    const available = [...new Set(all)].filter(id => DATA.skills[id].tier >= (minTier || 1));
+    if (!available.length) return null;
+    // 先按可用系别柔和加权抽系：主武器同系权重 2.0，其余已持有系 1.25，其他系 1.0（略微倾向同系，但不硬锁）
+    const held = new Set(JOBS.skills(RUN).map(x => DATA.skills[x.id].w));
+    const fams = [...new Set(available.map(id => DATA.skills[id].w))];
+    const fWeights = fams.map(w => w === RUN.weapon ? 2.0 : held.has(w) ? 1.25 : 1.0);
+    let fRoll = Math.random() * fWeights.reduce((a, b) => a + b, 0), w = fams[0];
+    for (let i = 0; i < fams.length; i++) { fRoll -= fWeights[i]; if (fRoll < 0) { w = fams[i]; break; } }
+    const pool = available.filter(id => DATA.skills[id].w === w), ids = pool.length ? pool : available;
+    const tiers = [...new Set(ids.map(id => DATA.skills[id].tier))], weights = tiers.map(t => [0, 3, 2, 1, 1][t]), sum = weights.reduce((a, b) => a + b, 0);
+    let roll = Math.random() * sum, tier = tiers[0];
+    for (let i = 0; i < tiers.length; i++) { roll -= weights[i]; if (roll < 0) { tier = tiers[i]; break; } }
+    const picked = ids.filter(id => DATA.skills[id].tier === tier);
+    return picked[Math.random() * picked.length | 0];
+  }
   function doRest(k) {
     const back = () => { G.paused = false; showRoute(true); }, base = { st: G.st, wi: 0, kills: 0, coins: 0, xp: 0, lv: G.lv, dmg: {}, loot: [], after: back, goText: '回到路线 ▶' };
     if (k === 'chest') { const L = []; for (let i = 0; i < 3 + ML('chest'); i++) { const id = randBook(); if (id && !L.some(o => o.id === id)) L.push({ kind: 'book', id }); } return CAMP.open(Object.assign(base, { title: '宝箱 · 三本书选一本', tab: 'shi', loot: L, pickOne: true })); }
@@ -1269,6 +1291,7 @@
     const q = MAPW / 1672, deep = !!MAP.zone;
     const own = !!MAP.props;   // 11/26 新地图自带摆设 / 鸟 / 图腾坐标（地图像素 1672×941）；没写的走旧的按站号规则
     G.props = (own ? MAP.props : (PDEF[G.st] || []).filter(d => deep ? G.st >= 4 : G.st <= 3)).map(([k, x, y]) => ({ k, x: x * q, y: y * q, hp: PROP_HP[k], brk: 0, hitT: 0 }));
+    G.propRespawn = { done: false, at: R(18, 36) };   // 每站战斗时间内随机再刷新一次箱子/物件
     G.cl = own ? (MAP.cliff || []).map(([k, x, y], i) => ({ k, x: x * q, y: y * q, cd: 3 + i * 1.7, st: 'idle', t: 0 })) : deep ? (CDEF[G.st] || []).map(([k, x, y], i) => ({ k, x: x * q, y: y * q, cd: 3 + i * 1.7, st: 'idle', t: 0 })) : [];
     G.birds = (MAP.birds || (G.st<=6 ? [[310,75],[600,95],[980,65],[1450,145]] : [])).map(([x,y],i)=>({x:x*q,y:y*q,t:1,fly:false,dir:i%2?1:-1,wait:i*2}));
     try { SEEN.add('place:' + G.st); } catch(e) {}
@@ -1292,10 +1315,37 @@
         else { hero.rune = { k: r.k, t: 10 }; recompute(); }
         nums.push({ x: hero.x, y: hero.y - 70 * K, txt: RUNE_N[r.k], t: 0, col: RUNE_C[r.k] }); } }
     G.runes = G.runes.filter(r => !r.got && r.t < 8); }
+  function randPropPos() {
+    const g = MAP.ground, pad = 28 * K;
+    for (let i = 0; i < 30; i++) {
+      const y = R(g.y0 + 18 * K, g.y1 - 14 * K);
+      const [l, r] = ground(y);
+      if (r - l < pad * 2.5) continue;
+      const x = R(l + pad, r - pad);
+      if (MECH && MECH.on() && !MECH.walk(x, y, false)) continue;
+      if (hero && Math.hypot(x - hero.x, (y - hero.y) * YS) < 60 * K) continue;
+      if ((G.props || []).some(p => !p.brk && Math.hypot(x - p.x, (y - p.y) * YS) < 32 * K)) continue;
+      return { x, y };
+    }
+    return null;
+  }
+  function respawnProps() {
+    if (!G || !G.props) return;
+    const baseKinds = [...new Set(G.props.map(p => p.k).filter(k => (PROP_HP[k] || 99) < 50))];
+    const kinds = baseKinds.length ? baseKinds : (G.st <= 3 ? ['barrel', 'crate'] : ['banner', 'rack']);
+    const n = 2 + (Math.random() * 3 | 0);
+    for (let i = 0; i < n; i++) {
+      const pos = randPropPos(); if (!pos) continue;
+      const k = kinds[Math.random() * kinds.length | 0];
+      G.props.push({ k, x: pos.x, y: pos.y, hp: PROP_HP[k], brk: 0, hitT: 0 });
+      for (let j = 0; j < 8; j++) parts.push({ x: pos.x, y: pos.y, vx: R(-40, 40) * K, vy: R(-60, -15) * K, t: 0, T: R(.35, .65), col: j % 2 ? '#e8d8a8' : '#b89058', g: 140 * K });
+    }
+  }
   function propsTick(dt) { runeTick(dt);
     if (!G.props) return;
     for (const p of G.props) { if (p.hitT > 0) p.hitT -= dt; if (!p.brk && p.hp < 50 && hero.roll > 0 && Math.hypot(p.x - hero.x, (p.y - hero.y) * YS) < 26 * K) propHit(p.x, p.y, 9999); }
     const live = G.waveOn && !G.fe && !G.over && !(G.ready > 0) && !hero.dead && !G.winT;
+    if (live && G.propRespawn && !G.propRespawn.done && (G.stT || 0) >= G.propRespawn.at) { G.propRespawn.done = true; respawnProps(); }
     for (const c of G.cl || []) {
       c.t += dt; c.f = hero.x < c.x;
       if (c.st === 'idle') { if (live && (c.cd -= dt) <= 0) { c.st = 'wind'; c.t = 0; c.tx = hero.x; c.ty = hero.y; } }
