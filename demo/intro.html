@@ -103,7 +103,7 @@ async function play() { const id = ++RUN; $('play').style.display = 'none'; rese
   for (const [pg, a, b, lines] of P) { if (id !== RUN) return; const el = $(pg), vd = el.querySelector('video'); el.classList.add('on'); if (GAME) { try { parent.BGM.play(pg === 'gv1' ? 't1' : pg === 'gv3' ? 'h1' : 'u1'); } catch (e) {} }  /* 剧情配乐：第1段轻快，第2段不安，第3段圣歌 */
     vd.currentTime = 0; vd.play().catch(() => {}); const t0 = performance.now(); await wait(900);
     for (let li = 0; li < lines.length; li++) { if (id !== RUN) return; await type($('cap'), lines[li], id); await wait(1100); }
-    const left = 9700 - (performance.now() - t0); if (left > 0) await wait(left);   // 视频 10 秒，等它放完（字幕早播完的话停一会）
+    const left = ({ gv1: 6200, gv2: 8800, gv3: 7000 })[pg] - (performance.now() - t0); if (left > 0) await wait(left);   // 字幕播完再留一小会就切，不等视频放满 10 秒（第 1 段 6.2s / 第 2 段 8.8s / 第 3 段 7s）
     $('cap').textContent = ''; if (pg !== 'gv3') { el.classList.remove('on'); vd.pause(); await wait(700); } }
   if (id !== RUN) return; if (QS.has('hub')) { const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); return done(); } tower(id); }   // 11/24 不是第一次：剧情播完白光 → 宫殿
 // 塔顶：白光淡入 → 对话 → 开门 → 走进门（11/24 长按跳过：故事书跳到这里；这里再长按 = 跳过对话直接开门）
