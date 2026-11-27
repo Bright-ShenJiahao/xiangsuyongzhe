@@ -7,6 +7,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 #st { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
 .pg { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s; overflow: hidden; }
 .pg.on { opacity: 1; }
+.pg video.ill { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.7vh); transform: translate(-50%, -50%); background: #000; }
 .pg img.ill { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.7vh); transform: translate(-50%, -50%) scale(1.04); filter: sepia(.15); }
 .frame { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.7vh); aspect-ratio: 16/9; transform: translate(-50%, -50%); background: url(../art/intro/frame.webp) center / 100% 100%; pointer-events: none; mix-blend-mode: multiply; opacity: .95; }
 .vig { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(30, 16, 6, .75) 100%); pointer-events: none; }
@@ -24,6 +25,9 @@ html.gm #play, html.gm #first { display: none !important; }
 #bub::after { content: ''; position: absolute; left: 50%; top: 100%; width: 10px; height: 8px; margin-left: -5px; background: #3a2814; }
 </style></head><body>
 <div id="st">
+  <div class="pg" id="gv1"><video class="ill" src="../art/intro/v1.mp4" muted playsinline preload="auto"></video><div class="vig"></div><div class="frame"></div></div>
+  <div class="pg" id="gv2"><video class="ill" src="../art/intro/v2.mp4" muted playsinline preload="auto"></video><div class="vig"></div><div class="frame"></div></div>
+  <div class="pg" id="gv3"><video class="ill" src="../art/intro/v3.mp4" muted playsinline preload="auto"></video><div class="vig"></div><div class="frame"></div></div>
   <div class="pg" id="g1"><img class="ill" src="../art/intro/p1.webp"><div class="vig"></div><div class="frame"></div></div>
   <div class="pg" id="g2"><img class="ill" src="../art/intro/p2.webp"><canvas class="crack" id="ck"></canvas><div class="vig"></div><div class="frame"></div></div>
   <div class="pg" id="g2b"><img class="ill" src="../art/ui2/map.webp" style="filter:sepia(.75) brightness(.9) contrast(1.05)"><canvas class="crack" id="mk" style="mix-blend-mode:normal"></canvas><div class="vig"></div><div class="frame"></div></div>
@@ -91,19 +95,22 @@ function pxDraw(n) { HD = null; const g = $('pc').getContext('2d'); g.imageSmoot
   if (pxState === 'on') requestAnimationFrame(pxDraw); }
 async function say(id, who, av, s) { const b = $('bub'), c = $('pc').getBoundingClientRect(), S0 = CW / 1672, POS = { '大法师': [1270 * S0, 425 * S0 - 70 * Z], '士兵甲': [505 * S0, 418 * S0 - 70 * Z], '士兵乙': [1165 * S0, 418 * S0 - 70 * Z] }, ps = POS[who], hx = ps ? ps[0] : CW / 2, hy = ps ? ps[1] : who === '勇者' ? 66 * Z + 14 : 120 * Z + 10; b.style.left = c.left + hx / CW * c.width + 'px'; b.style.top = c.top + hy / CH * c.height + 'px'; b.style.display = 'block'; await type(b, s, id, 60, who === '露米娜' ? 'blipP' : who === '勇者' ? 'blipH' : 'blipN'); await wait(1400); b.style.display = 'none'; }
 async function play() { const id = ++RUN; $('play').style.display = 'none'; reset(); setSkip(true);
-  const P = [['g1', 'scale(1.04)', 'scale(1.14) translate(-2%, 1%)', ['卡带世界里，有一块和平的大陆。', '每到祭典，城里的街道总是热闹非凡。']],
-             ['g2', 'scale(1.16) translate(2%, 2%)', 'scale(1.05)', ['直到有一天，这盘卡带被拿去违规烧录——', '别的游戏里的怪物，被硬塞了进来。']],
-             ['g2b', 'scale(1.0)', 'scale(1.1) translate(-1%, 0)', ['数据裂开的地方，哥布林占了森林，', '吸血鬼占了古城，', '兽人霸占了草原……']],
-             ['g3', 'scale(1.06) translate(0, 3%)', 'scale(1.14) translate(0, -3%)', ['公主露米娜在最后的神殿里发出呼唤——', '呼唤顺着卡带，传到了屏幕的另一边。']]];
-  for (const [pg, a, b, lines] of P) { if (id !== RUN) return; const el = $(pg); el.classList.add('on'); if (GAME) { try { parent.BGM.play(pg === 'g1' ? 't1' : pg === 'g3' ? 'h1' : 'u1'); } catch (e) {} }  /* 剧情配乐：第1张轻快，2~4张不安（第4张的圣歌到货后换） */ kb(el.querySelector('.ill'), a, b, lines.length * 3200 + 1500); await wait(900);
-    for (let li = 0; li < lines.length; li++) { const l = lines[li]; if (id !== RUN) return; if (pg === 'g2b') MK.go(li); await type($('cap'), l, id); await wait(1500); } if (pg === 'g2b') { MK.go(3); await wait(900); } $('cap').textContent = ''; if (pg !== 'g3') { el.classList.remove('on'); await wait(700); } }
+  // 11/27 开场改用三段视频（Gemini 做的，已去掉原声，没有语音）：和平的城 → 怪物入侵 → 公主召唤。旧的静态图页（g1/g2/g2b/g3）留在页面里不再用
+  const P = [['gv1', null, null, ['卡带世界里，有一块和平的大陆。', '每到祭典，城里的街道总是热闹非凡。']],
+             ['gv2', null, null, ['直到有一天，这盘卡带被拿去违规烧录——', '别的游戏里的怪物，被硬塞了进来。', '哥布林占了森林，吸血鬼占了古城，兽人霸占了草原……']],
+             ['gv3', null, null, ['公主露米娜在最后的神殿里发出呼唤——', '呼唤顺着卡带，传到了屏幕的另一边。']]];
+  for (const [pg, a, b, lines] of P) { if (id !== RUN) return; const el = $(pg), vd = el.querySelector('video'); el.classList.add('on'); if (GAME) { try { parent.BGM.play(pg === 'gv1' ? 't1' : pg === 'gv3' ? 'h1' : 'u1'); } catch (e) {} }  /* 剧情配乐：第1段轻快，第2段不安，第3段圣歌 */
+    vd.currentTime = 0; vd.play().catch(() => {}); const t0 = performance.now(); await wait(900);
+    for (let li = 0; li < lines.length; li++) { if (id !== RUN) return; await type($('cap'), lines[li], id); await wait(1100); }
+    const left = 9700 - (performance.now() - t0); if (left > 0) await wait(left);   // 视频 10 秒，等它放完（字幕早播完的话停一会）
+    $('cap').textContent = ''; if (pg !== 'gv3') { el.classList.remove('on'); vd.pause(); await wait(700); } }
   if (id !== RUN) return; if (QS.has('hub')) { const w = $('white'); w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); return done(); } tower(id); }   // 11/24 不是第一次：剧情播完白光 → 宫殿
 // 塔顶：白光淡入 → 对话 → 开门 → 走进门（11/24 长按跳过：故事书跳到这里；这里再长按 = 跳过对话直接开门）
 /* 11/25 新流程：故事书 → 选人 → 塔顶召唤。?tw = 从选人页过来：塔顶的图已经在了，等宿主说 summon（选人页像素化消散完）再召唤勇者 */
 let summonGo = null; addEventListener('message', e => { if (e.data === 'summon' && summonGo) { const f = summonGo; summonGo = null; f(); } });
 async function tower(id, fromSkip) { setSkip(true, 'tower'); const w = $('white');
-  if (QS.has('tw')) { $('g3').classList.remove('on'); $('px').style.opacity = 1; pxT0 = performance.now() + 1e7; if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); } await new Promise(r => { summonGo = r; setTimeout(r, 6000); }); if (id !== RUN) return; pxT0 = performance.now(); await wait(3600); }
-  else { w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); if (id !== RUN) return; $('g3').classList.remove('on');
+  if (QS.has('tw')) { $('g3').classList.remove('on'); $('gv3').classList.remove('on'); $('px').style.opacity = 1; pxT0 = performance.now() + 1e7; if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); } await new Promise(r => { summonGo = r; setTimeout(r, 6000); }); if (id !== RUN) return; pxT0 = performance.now(); await wait(3600); }
+  else { w.style.transition = 'opacity .8s'; w.style.opacity = 1; await wait(900); if (id !== RUN) return; $('g3').classList.remove('on'); $('gv3').classList.remove('on');
   $('px').style.opacity = 1; pxT0 = performance.now(); if (pxState !== 'on') { pxState = 'on'; requestAnimationFrame(pxDraw); } w.style.transition = 'opacity 1.4s'; w.style.opacity = 0; await wait(3600); } if (id !== RUN) return;
   if (id !== RUN) return; await say(id, '勇者', '../art/portrait/m.webp', '这是……我刚买的游戏里？');
   if (id !== RUN) return; await say(id, '露米娜', '../art/portrait/p.webp', '您就是回应召唤的勇者吧！');
