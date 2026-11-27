@@ -394,6 +394,19 @@ def compute_anchor(im, act, idx, weapon):
             return round(float((xx.min() + xx.max()) / 2.0) + 4.0, 1), round(float(yy.max()) + 1.0, 1)
         return round(w / 2.0, 1), round(float(h - 1), 1)
 
+    # Manual anchor override for Rin scythe frame 14 (slam0 / chop1):
+    # Exclude the low-hanging scythe handle/blade to the right so boots sit dead-on the ground line.
+    if weapon == "scythe" and ((act == "slam" and idx == 0) or (act == "chop" and idx == 1)):
+        skin = al & (r > 175) & (g > 130) & (b > 90) & (r - b > 20)
+        sy, sx = np.where(skin)
+        fcx = float(np.median(sx)) if len(sx) else w * 0.4
+        boots = al & (r > 55) & (r < 165) & (g < 72) & (b < 80) & (r > g * 1.35)
+        xs_all = np.arange(w)[None, :]
+        ys_all = np.arange(h)[:, None]
+        by, bx = np.where(boots & (xs_all <= fcx + 4) & (ys_all > float(np.median(sy)) if len(sy) else h * 0.4))
+        if len(by) >= 3:
+            return round(float(np.median(bx)), 1), round(float(by.max()) + 1.0, 1)
+
     # Normal grounded / airborne poses
     restrict = weapon in ("scythe", "bow", "spear")
     _, boot_bot, body_cx = person_head_and_boots(im, restrict_boot_x=restrict)
