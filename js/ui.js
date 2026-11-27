@@ -270,7 +270,7 @@
     if (c.width !== W || c.height !== H) { c.width = W; c.height = H; } const g = c.getContext('2d'); g.clearRect(0, 0, W, H); g.imageSmoothingEnabled = false;
     const u = Math.max(1, Math.floor(Math.min(H * .8 / 45, W * .8 / 50))); heroSwing -= dt;
     g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(W / 2, H * .9, 14 * u, 3.5 * u, 0, 0, 7); g.fill();
-    const hs = SPR.heroSet(P.hero, P.weapon), swing = heroSwing > 0, n = swing ? 'atk' : 'idle', i = swing ? Math.floor((.6 - heroSwing) / .6 * SPR.count(hs, 'atk')) : Math.floor(t * 3) % Math.max(1, SPR.count(hs, 'idle'));
+    const hs = SPR.heroSet(P.hero, P.weapon), swing = heroSwing > 0, n = swing ? 'atk' : 'idle', i = swing ? Math.floor((.6 - heroSwing) / .6 * (SPR.count(hs, P.weapon+'.atk') || SPR.count(hs, 'atk'))) : Math.floor(t * 3) % Math.max(1, (SPR.count(hs, P.weapon+'.idle') || SPR.count(hs, 'idle')));
     SPR.drawHero(g, n, i, W / 2, H * .9, false, u, { w: P.weapon, c: P.hero });   // 备战页预览：拿选中的起手兵器
   }
   // ---------- 选人界面·战斗演示：小人每隔一会儿放一次当前选的起手技能（画法照 js/skills.js） ----------
@@ -317,7 +317,7 @@
     if (T < .25) { const q = SKF.pick(F, 'wu', T); if (q) { n = q[0]; i = q[1]; } }
     else if (T < .25 + F.hitT) { if (!DM.casted) { DM.casted = 1; demoCast(id, c, u, hx, hy); } const q = SKF.pick(F, 'hit', T - .25); if (q) { n = q[0]; i = q[1]; } }
     else { const q = SKF.pick(F, 'rc', T - .25 - F.hitT); if (q) { n = q[0]; i = q[1]; } }
-    const hs = SPR.heroSet(P.hero, P.weapon); if (!n) { n = 'idle'; i = Math.floor(DM.clock * 3) % Math.max(1, SPR.count(hs, P.weapon + '.idle') || SPR.count(hs, 'idle')); }
+    const hs = SPR.heroSet(P.hero, P.weapon); if (!n) { n = 'idle'; i = Math.floor(DM.clock * 3) % Math.max(1, SPR.count(hs, P.weapon + '.idle') || (SPR.count(hs, P.weapon+'.idle') || SPR.count(hs, 'idle'))); }
     g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(hx, hy, u * 9, u * 3, 0, 0, 7); g.fill();
     const cmp = P.weapon !== 'gun' && P.hero === 'm' && SPR.sets.heroM2 && SPR.sets.heroM2.f[P.weapon + '.idle'];   // 11/27 阿远新旧版对比（左旧右新），定稿后删掉
     if (cmp) { g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(hx - 55 * u, hy, u * 9, u * 3, 0, 0, 7); g.fill(); g.font = `${6 * u}px sans-serif`; g.textAlign = 'center'; g.fillStyle = '#6a4a2a'; g.fillText('旧版', hx - 55 * u, hy + 10 * u); g.fillText('新版', hx, hy + 10 * u); try { SPR.drawHero(g, n, i, hx - 55 * u, hy, false, u, { w: P.weapon, c: 'mo' }); } catch (e) {} }
