@@ -319,3 +319,4 @@
 - 接入剑、枪、弓、法杖、圣典、掌机、镰刀全 7 套 33 帧图集至 `art/heroENew/atlas.{png,json}`（保留旧 `art/heroE/` 用于对比），生成脚本 `tools/pixel/build_heroE_new.py` 及 3x 新旧对比图 `art/heroENew/compare.png`。
 - 校准基准：每套单一固定等比缩放（`0.5036`～`0.5141`），`idle0` 身高与旧版一致（40–41px），清理洋红残边与杂点，按支撑脚/重心定锚点。
 - 已接入 `js/sprites.js`（`SETS.heroENew`，`drawHero` 支持精灵王子原生使用 `gun`/`tome`/`scythe`）、`demo/intro.html`（`h=e`）、`demo/palace.html`、`js/ui.js` 及 `tools/frames.html`。
+- 三角色对标校准与实测（2026-11-28）：以阿远（`Gemini2Cal`，`idle0` 身高 39–40px、亮部约 200、描边约 29）为基准，微调精灵王子高光（×0.94 对齐约 200）与暗棕描边（×0.85），生成三角色 3x 同落脚线对比图 `art/compare_3heroes.png`（`tools/pixel/build_compare_3heroes.py`）。浏览器基础实测通过（0 控制台报错）：选人页小凛与精灵王子切剑/掌机正常显示且仅展示当前人物（修复精灵王子选掌机头像空白），精灵王子持剑进第 1 站实测走停、翻滚、挥剑与打箱子均无大小跳变/漂移/裁断/空白帧。

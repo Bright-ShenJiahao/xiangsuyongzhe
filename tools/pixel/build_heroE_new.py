@@ -94,13 +94,20 @@ def cut_sheet(path):
             sizes[0] = 0
             m = (sizes >= 4)[clab]
 
-        # Gentle magenta despill on dark outline pixels only (keep purple scythe intact!)
+        # Gentle magenta despill + match Ayuan's warm dark-brown outline & highlight ceiling (~200)
         edge2 = m & ~ndimage.binary_erosion(m, structure=np.ones((3, 3)), border_value=0)
         sr, sg, sb = sub.astype(int).transpose(2, 0, 1)
         dark_mag = edge2 & (sr < 105) & (sg < 65) & (sb < 105) & (sb > sg + 18) & (sr > sg + 18)
-        sub[dark_mag, 0] = 58
-        sub[dark_mag, 1] = 34
-        sub[dark_mag, 2] = 24
+        sub[dark_mag, 0] = 52
+        sub[dark_mag, 1] = 30
+        sub[dark_mag, 2] = 22
+        # Soften overly bright non-metal character highlights (~215 -> ~200) to match Ayuan's luminance
+        lum = 0.299 * sr + 0.587 * sg + 0.114 * sb
+        warm_bright = m & (lum > 185) & ((sr - sb) > 18)  # blonde hair / warm tunic, excluding cool silver/emerald
+        sub[warm_bright] = np.clip(np.rint(sub[warm_bright].astype(float) * 0.94), 0, 255).astype(np.uint8)
+        # Deepen dark brown outlines slightly to match Ayuan's crisp outline contrast
+        dark_out = m & (sr < 88) & (sg < 62) & (sb < 62) & (sr > sg)
+        sub[dark_out] = np.clip(np.rint(sub[dark_out].astype(float) * 0.85), 0, 255).astype(np.uint8)
 
         rgba = np.dstack([sub, (m.astype(np.uint8) * 255)])
         fr = Image.fromarray(rgba)
