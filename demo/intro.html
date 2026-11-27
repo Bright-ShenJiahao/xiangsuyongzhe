@@ -7,6 +7,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 #st { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
 .pg { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s; overflow: hidden; }
 .pg.on { opacity: 1; }
+.pg video ~ .frame { mix-blend-mode: normal; }   /* 11/27 视频页的边框不用「正片叠底」：视频每帧都要重新混合，实测慢速机上 26 帧→55 帧 */
 .pg video.ill { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.7vh); transform: translate(-50%, -50%); background: #000; }
 .pg img.ill { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.7vh); transform: translate(-50%, -50%) scale(1.04); filter: sepia(.15); }
 .frame { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.7vh); aspect-ratio: 16/9; transform: translate(-50%, -50%); background: url(../art/intro/frame.webp) center / 100% 100%; pointer-events: none; mix-blend-mode: multiply; opacity: .95; }
