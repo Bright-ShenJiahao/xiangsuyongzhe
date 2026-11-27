@@ -354,7 +354,7 @@ window.SKILLS = (A) => {
       else if(o.kind==='brick'){gunImage(ctx,'brick'+(o.hp<2?1:0),x,y,u);}
       else if(o.kind==='shield'){ctx.save();ctx.translate(x,y);ctx.rotate(o.a+PI/2);rect(-25*u,-3*u,50,7,'rgba(160,210,240,.35)');rect(-24*u,-3*u,48,1,'#c8e8f8');ctx.restore();}
       else if(o.kind==='bomb'){gunImage(ctx,'bomb'+(Math.floor(o.t*8)%2),x,y,u);}
-      else if(o.kind==='marble'){if(!tokenBoxes.has(o.cast)){tokenBoxes.add(o.cast);ctx.strokeStyle='rgba(180,205,230,.3)';ctx.lineWidth=u;ctx.strokeRect(X(H().x-90*K),Y(H().y-90*K/YS),180*u,180*u/YS);}gunImage(ctx,'marble',x,y,u,Math.atan2(o.vy,o.vx));}
+      else if(o.kind==='marble'){gunImage(ctx,'marble',x,y,u,Math.atan2(o.vy,o.vx));}
       else if(o.kind==='ko'){for(const [i,n] of ['ko_k','ko_dot','ko_o','ko_dot'].entries())gunImage(ctx,n,x+(i-1.5)*18*u,y-20*u*(1-Math.min(1,o.t/.3)),u);}
       else if(o.kind==='claw'){gunImage(ctx,'claw'+Math.min(2,Math.floor(o.t*5)),x,y-12*u,u);}
       else if(o.kind==='poison'||o.kind==='plague'){ctx.strokeStyle='rgba(130,210,80,.35)';ctx.lineWidth=u;ctx.beginPath();ctx.ellipse(x,Y(o.y),(o.r||28)*u,(o.r||28)*u/YS,0,0,2*PI);ctx.stroke();for(let j=0;j<5;j++)rect(x+Math.cos(j*1.4+o.t)*20*u,Y(o.y)+Math.sin(j*1.4+o.t)*10*u,1,2,'rgba(130,210,80,.35)');}
