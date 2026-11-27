@@ -3,7 +3,7 @@
 window.DATA = {
   // 起手兵器（备战页四选一，不锁定：之后技能书什么系都会出）。type：吃哪项属性的加成
   weapons: {
-    gun: { name: '掌机', skill: '连发弹', start: 'g_fast', icon: 'bow', type: 'agi', hidden: true, desc: '隐藏数码武器；通过掉落或debug取得。', dmg: 1, cd: .7, range: 240 },
+    gun: { name: '掌机', skill: '连发弹', start: 'g_fast', icon: 'bow', type: 'agi', hidden: false, desc: '操作掌机发射像素弹，连击召出复古游戏物件。', dmg: 1, cd: .7, range: 240 },
     common: { name: '通用', skill: '震荡掌', start: 'u_palm', icon: 'sword', type: 'str', hidden: true, desc: '通用技能池，不作为正常起手兵器。', dmg: 6, cd: .9, range: 180 },
     sword: { name: '剑', skill: '新月斩', icon: 'sword', type: 'str', desc: '身前大扇面横扫，近身最稳。', cd: .8, dmg: 6, range: 52, arc: 1.35, sys: '剑' },
     spear: { name: '枪', skill: '疾风突刺', icon: 'spear', type: 'str', desc: '朝前方长直线突刺，穿透一整排。', cd: .9, dmg: 7, range: 82, width: 14, sys: '枪' },

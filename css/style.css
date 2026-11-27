@@ -1536,3 +1536,7 @@ html body .oathrow .oic { border-radius: 50%; }
  #pause .chead h2, #camp .chead h2, #tpanel #tpTitle, #route #rtTitle, #levelup #luTitle {padding:16px 32px 9px;min-height:50px;font-size:17px!important;}
  .ctabs button,.ptabs button{padding:12px 19px 8px;min-width:0;}
 }
+
+/* 掌机成为第五个起手武器，窄屏允许换行。 */
+#wSel{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;}
+@media(max-width:600px){#wSel>button{flex:0 1 28%;min-width:64px;}}

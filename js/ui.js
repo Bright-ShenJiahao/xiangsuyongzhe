@@ -182,10 +182,10 @@
   $('tpX').onclick = () => $('tpClose').click(); $('tpClose').onclick = () => { overlay('tpanel', false); document.querySelectorAll('.cxtabs, .cxpop, .cxtop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } };
 
   // ================= 备战页 =================
-  const SK2 = { sword: 'whirl', spear: 'sweep', bow: 'fan', staff: 'nova' }, P = { hero: 'm', weapon: 'sword', sk: 0, free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
+  const SK2 = { gun: 'g_spread', sword: 'whirl', spear: 'sweep', bow: 'fan', staff: 'nova' }, P = { hero: 'm', weapon: 'sword', sk: 0, free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
   const attrsOf = () => { const o = {}; for (const a of DATA.attrs) o[a.id] = DATA.attrBase + (P.free[a.id] || 0); return o; };
   const used = () => Object.values(P.free).reduce((s, v) => s + v, 0);
-  const build = () => ({ book1: store.get('book1') || null, book2: store.get('book2') || null, title: store.get('title') || null, hero: P.hero, weapon: P.weapon, skill: P.sk ? SK2[P.weapon] : P.weapon, attrs: attrsOf(), item: store.get('item') || P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
+  const build = () => ({ book1: store.get('book1') || null, book2: store.get('book2') || null, title: store.get('title') || null, hero: P.hero, weapon: P.weapon, skill: P.sk ? SK2[P.weapon] : (DATA.weapons[P.weapon].start || P.weapon), attrs: attrsOf(), item: store.get('item') || P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
   function openPrep(fresh) {
     if (fresh || !P.itemOpts.length) {   // 新的一局：重新抽习惯和开局宝物，属性点清零（兵器记住上次选的）
       const w = store.get('weapon'); P.weapon = DATA.weapons[w] && !DATA.weapons[w].hidden ? w : 'sword'; P.sk = store.get('wsk') === '1' ? 1 : 0; P.hero = ['f', 'e'].includes(store.get('hero')) ? store.get('hero') : 'm';
@@ -210,10 +210,10 @@
         <div class="pills">${PL('hp', '生命', c0.hp)}${PL(dmgA, W0.name + '伤害', pct(c0.dmg - 1))}${PL('guard', '物防 / 魔防', c0.pdef + ' / ' + c0.mdef)}${PL('move', '移速', pct(c0.move - 1))}${PL('crit', '暴击率', Math.round(c0.critP * 100) + '% / ' + Math.round(c0.critM * 100) + '%')}${PL('move', '闪避', Math.round(c0.eva * 100) + '%')}${PL('xp', '经验', pct(c0.xp - 1))}</div>`; }
     // 起手兵器
     const ws = $('wSel'); ws.innerHTML = '';
-    for (const [id, w] of Object.entries(DATA.weapons).filter(([,w]) => !w.hidden)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; P.sk = 0; store.set('weapon', id); store.set('wsk', '0'); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
+    for (const [id, w] of Object.entries(DATA.weapons).filter(([,w]) => !w.hidden)) { const b = document.createElement('button'); b.className = id === P.weapon ? 'on' : ''; b.appendChild(iconCanvas(id)); /* 11/22 法杖用法杖书 */ b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`); b.onclick = () => { P.weapon = id; P.sk = 0; store.set('weapon', id); store.set('book1', w.start || id); store.set('book2', ''); store.set('wsk', '0'); heroSwing = .6; renderPrep(); }; ws.appendChild(b); }
     const W = DATA.weapons[P.weapon], AT = DATA.attrs.find(a => a.id === W.type);   // 11/25 起手技能：每种兵器 2 个初级技能二选一
-    $('wDesc').innerHTML = [P.weapon, SK2[P.weapon]].map((id, k) => { const S = DATA.skills[id] || {}; return `<div class="skI${P.sk === k ? ' on' : ''}" data-k="${k}" title="${['l3', 'l5', 'l7'].filter(q => S[q]).map(q => 'Lv' + q.slice(1) + '：' + S[q]).join('\n')}"><div class="skIc">${skIcon(id).outerHTML}</div><div class="skIb"><div class="skIt"><b>${S.name || id}</b><em>${S.dt === 'magic' ? '魔法' : '物理'}</em></div><p>${S.brief || S.desc || ''}</p></div></div>`; }).join('');
-    for (const e of $('wDesc').children) e.onclick = () => { P.sk = +e.dataset.k; store.set('wsk', String(P.sk)); renderPrep(); };
+    $('wDesc').innerHTML = [W.start || P.weapon, SK2[P.weapon]].map((id, k) => { const S = DATA.skills[id] || {}; return `<div class="skI${P.sk === k ? ' on' : ''}" data-k="${k}" title="${['l3', 'l5', 'l7'].filter(q => S[q]).map(q => 'Lv' + q.slice(1) + '：' + S[q]).join('\n')}"><div class="skIc">${skIcon(id).outerHTML}</div><div class="skIb"><div class="skIt"><b>${S.name || id}</b><em>${S.dt === 'magic' ? '魔法' : '物理'}</em></div><p>${S.brief || S.desc || ''}</p></div></div>`; }).join('');
+    for (const e of $('wDesc').children) e.onclick = () => { P.sk = +e.dataset.k; store.set('wsk', String(P.sk)); store.set('book1', P.sk ? SK2[P.weapon] : (W.start || P.weapon)); renderPrep(); };
     // 属性
     const c = DATA.calc(build()), left = DATA.attrFree - used(); $("aLeft").textContent = left ? `剩余 ${left} 点（可带进游戏）` : "剩余 0 点";
     const ar = $('aRows'); ar.innerHTML = '';
@@ -251,7 +251,7 @@
   const introSeen = () => store.get('introSeen') === '1';
   function playIntro(go, hub) { const f = $('introF'), first = !introSeen(); f.src = 'demo/intro.html?game' + (hub ? '&hub' : '') + '&h=' + (store.get('hero') || 'm') + '&w=' + (store.get('weapon') || 'sword') + (first ? '&first' : '') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); store.set('introSeen', '1'); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
-  function playStory(go) { const f = $('introF'); f.src = 'demo/intro.html?game&hub&first&h=' + (store.get('hero') || 'm') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
+  function playStory(go) { const f = $('introF'); f.src = 'demo/intro.html?game&hub&first&h=' + (store.get('hero') || 'm') + '&w=' + (store.get('weapon') || 'sword') + '&v=' + Date.now(); f.style.display = 'block'; f.onload = () => { try { f.contentWindow.focus(); } catch (e) {} };
     const on = e => { if (e.data !== 'introDone') return; removeEventListener('message', on); f.style.display = 'none'; f.src = 'about:blank'; refocus(); go(); }; addEventListener('message', on); }
   /* 选人页点出发：整个界面（真的 DOM）被 SVG 滤镜越变越大的像素吃掉，塔顶已经在底下，然后勇者由像素聚拢召唤出来 */
   function pixelOut(done) { const pr = $('prep'); let svg = document.getElementById('pixF'); if (!svg) { document.body.insertAdjacentHTML('beforeend', '<svg id="pixF" width="0" height="0" style="position:absolute"><filter id="pixelate" filterUnits="userSpaceOnUse" x="0" y="0" width="4000" height="4000" color-interpolation-filters="sRGB"><feFlood id="pfF" x="0" y="0" width="1" height="1"/><feComposite id="pfC" width="1" height="1"/><feTile result="a"/><feComposite in="SourceGraphic" in2="a" operator="in"/><feMorphology id="pfM" operator="dilate" radius="0"/></filter></svg>'); svg = document.getElementById('pixF'); }
@@ -278,7 +278,8 @@
   const DPI = Math.PI, DYS = 1.35;
   function demoCast(id, c, u, hx, hy) {
     const y = hy - 14 * u;
-    if (id === 'sword') DM.fx.push({ k: 'slash', x: hx, y, a: 0, t: 0, T: .2, r: 52, half: 1.18 });
+    if(id==='g_fast'||id==='g_spread'){for(let j=0;j<(id==='g_fast'?6:8);j++)DM.shots.push({k:'arrow',x:hx,y,vx:320*u,vy:id==='g_spread'?(j-3.5)*25*u:0,t:-j*.04,T:.6});}
+    else if (id === 'sword') DM.fx.push({ k: 'slash', x: hx, y, a: 0, t: 0, T: .2, r: 52, half: 1.18 });
     else if (id === 'whirl') DM.fx.push({ k: 'ring', x: hx, y, t: 0, T: .3, r: 40, col: '#e8ecf4' });
     else if (id === 'spear') DM.fx.push({ k: 'thrust', x: hx, y, a: 0, L: 82, w: 14, t: 0, T: .2 });
     else if (id === 'sweep') DM.fx.push({ k: 'slash', x: hx, y, a: 0, t: 0, T: .22, r: 48, half: 1.4, wood: true });
@@ -308,7 +309,7 @@
     const c = $('demoCv'), r = c.getBoundingClientRect(); if (!r.width || !r.height) return;
     const W = rd(r.width), H = rd(r.height); if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
     const g = c.getContext('2d'); g.clearRect(0, 0, W, H); g.imageSmoothingEnabled = false;
-    const id = P.sk ? SK2[P.weapon] : P.weapon, key = P.hero + P.weapon + P.sk; if (DM.key !== key) { DM.key = key; DM.clock = 0; DM.casted = 0; DM.fx = []; DM.shots = []; }
+    const id = P.sk ? SK2[P.weapon] : (DATA.weapons[P.weapon].start || P.weapon), key = P.hero + P.weapon + P.sk; if (DM.key !== key) { DM.key = key; DM.clock = 0; DM.casted = 0; DM.fx = []; DM.shots = []; }
     DM.clock += dt;
     const u = Math.min(Math.max(2, Math.min(3, Math.floor(H / 70))), P.hero==='m'&&P.weapon==='sword'?W/185:3), hx = W / 2, hy = H / 2 + 20 * u, F = SKF.get(id), CAST = 2.6, T = DM.clock % CAST;
     let n, i;
@@ -318,7 +319,7 @@
     else { const q = SKF.pick(F, 'rc', T - .25 - F.hitT); if (q) { n = q[0]; i = q[1]; } }
     const hs = SPR.heroSet(P.hero, P.weapon); if (!n) { n = 'idle'; i = Math.floor(DM.clock * 3) % Math.max(1, SPR.count(hs, P.weapon + '.idle') || SPR.count(hs, 'idle')); }
     g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(hx, hy, u * 9, u * 3, 0, 0, 7); g.fill();
-    const cmp = P.hero === 'm' && SPR.sets.heroM2 && SPR.sets.heroM2.f[P.weapon + '.idle'];   // 11/27 阿远新旧版对比（左旧右新），定稿后删掉
+    const cmp = P.weapon !== 'gun' && P.hero === 'm' && SPR.sets.heroM2 && SPR.sets.heroM2.f[P.weapon + '.idle'];   // 11/27 阿远新旧版对比（左旧右新），定稿后删掉
     if (cmp) { g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(hx - 55 * u, hy, u * 9, u * 3, 0, 0, 7); g.fill(); g.font = `${6 * u}px sans-serif`; g.textAlign = 'center'; g.fillStyle = '#6a4a2a'; g.fillText('旧版', hx - 55 * u, hy + 10 * u); g.fillText('新版', hx, hy + 10 * u); try { SPR.drawHero(g, n, i, hx - 55 * u, hy, false, u, { w: P.weapon, c: 'mo' }); } catch (e) {} }
     try { SPR.drawHero(g, n, i, cmp&&P.weapon==='sword'?hx:hx, hy, false, u, { w: P.weapon, c: P.hero }); } catch (e) {}
     if(cmp && P.weapon==='sword' && SPR.sets.heroHandheldPreview){
