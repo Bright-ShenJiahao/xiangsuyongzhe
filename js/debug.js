@@ -32,6 +32,9 @@
   B('给印记', () => UI.mod().debug.oath());
   B('直接胜利', () => UI.mod().debug.win());
   B('发装备', () => { CAMP.giveGear(); });
+  sec('镰刀人物试用');
+  for(const [label,key] of [['原版','heroM2'],['新版3','heroScythePreview3'],['GEMINI','heroScytheGemini']]) B('试用镰刀'+label,()=>{window.AYUAN_SCYTHE_SET=key;UI.startBattle({weapon:'scythe',book1:'d_reap',hero:'m'});panel.style.display='none';tog.textContent='调试 ▸';});
+  sec('物品 / 开局');
   B('七武器动作对比', () => window.open('demo/hero-compare.html','_blank'));
   B('选人页', () => { try { BATTLE.stop(); } catch (e) {} for (const id of ['levelup', 'pause', 'result', 'camp']) { const e = document.getElementById(id); if (e) e.classList.remove('on'); } UI.openPrep(true); });
   B('直接开打', () => { if (window.UI) UI.startBattle(); });
