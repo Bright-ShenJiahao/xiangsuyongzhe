@@ -323,7 +323,7 @@
     // 货架：3 件宝物 + 2 本书（新书 22，已有的升 Lv2 34，再往上 52）。开技能格改成在「技能」页点锁
     const r = R(), P = DATA.price, items = shuffle(DATA.itemPool(r)).slice(0, 3 + MLm('shelf')).map(i => ({ kind: 'item', id: i.id, price: i.price || 25 }));
     const lvOf = id => { const h = JOBS.skills(r).find(s => s.id === id); return h ? JOBS.level(h) : 0; };
-    const own = new Set(Object.keys(SK).filter(id => lvOf(id) || loot.some(o => o.kind === 'book' && o.id === id))), pool = DATA.bookPool(own, rep.st).filter(id => SK[id].w !== 'gun' || JOBS.skills(r).some(s => SK[s.id].w === 'gun')), books = [];   // 已经有的书不再出；按品阶抽，价格 22 / 34 / 52
+    const own = new Set(Object.keys(SK).filter(id => lvOf(id) || loot.some(o => o.kind === 'book' && o.id === id))), pool = DATA.bookPool(own, rep.st), books = [];   // 已经有的书不再出；按品阶抽，价格 22 / 34 / 52
     while (books.length < 1 && pool.length) { const id = pool[Math.random() * pool.length | 0]; if (!books.some(b => b.id === id)) books.push({ kind: 'book', id, lv: 1, xp: 0, price: DATA.tierPrice[SK[id].tier] }); if (pool.every(i => books.some(b => b.id === i))) break; }
     const ok0 = DATA.oathPool(r); if (rep.rift) { const pk0 = () => ({ kind: 'oath', id: ok0[Math.random() * ok0.length | 0], price: 46 }), costI = shuffle(DATA.itemPool(r).filter(i => i.cost)).slice(0, 1).map(i => ({ kind: 'item', id: i.id, price: Math.round((i.price || 40) * 1.3) }));
       return [pk0(), pk0(), { kind: 'oup', id: 'oup', price: 52 }, ...costI]; }

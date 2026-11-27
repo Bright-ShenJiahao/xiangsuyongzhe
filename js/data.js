@@ -488,11 +488,11 @@ DATA.commonMasters = slots => slots.filter(Boolean).flatMap(JOBS.leaves).filter(
 DATA.newPoolIds = ["g_fast", "g_spread", "g_bomb", "g_head", "g_clear", "g_chomp", "g_missile", "g_claw", "g_tank", "g_ko", "g_marble", "u_palm", "u_fist", "u_titan", "u_sweep", "u_rift", "u_stomp", "u_knives", "u_ring", "u_daggers", "u_poison", "u_venom", "u_plague", "u_bash", "u_wall", "u_bulwark"];
 
 DATA.canEquipCommon = (slots, book, index) => DATA.commonMasters(slots.map((s,i) => i === index ? null : s).concat(book ? [book] : [])) <= 1;
-// 定稿系统数据。第二章技能只供 debug 演练，正常书池始终排除。
+// 定稿系统数据。圣典、镰刀开放选用与正常书池，沿用站点品阶限制。
 (() => {
   Object.assign(DATA.weapons, {
-    tome: { name: '圣典', start: 'h_pages', skill: '圣页飞舞', icon: 'fire', type: 'int', dmg: 2, cd: .7, range: 220, hidden: true, debugOnly: true },
-    scythe: { name: '大镰刀', start: 'd_reap', skill: '收割', icon: 'sword', type: 'int', dmg: 6, cd: .7, range: 200, hidden: true, debugOnly: true },
+    tome: { name: '圣典', start: 'h_pages', skill: '圣页飞舞', icon: 'fire', type: 'int', dmg: 2, cd: .7, range: 220 },
+    scythe: { name: '大镰刀', start: 'd_reap', skill: '收割', icon: 'sword', type: 'int', dmg: 6, cd: .7, range: 200 },
   });
   Object.assign(DATA.weaponNames, { tome: ['祷文书','圣典','天启之书'], scythe: ['收割镰','骸骨镰','冥王之镰'] });
   Object.assign(DATA.SYSK, { '圣典': 'tome', '镰刀': 'scythe' });
@@ -519,7 +519,7 @@ DATA.canEquipCommon = (slots, book, index) => DATA.commonMasters(slots.map((s,i)
   ];
   for (const [id,name,w,tier,dmg,wu,rc,rg,hitCap,tick,duration,reuseIcon,desc] of rows) DATA.skills[id] = {
     name,w,sys:w==='tome'?'圣典':'镰刀',pose:w==='tome'?'staff':'sword',type:'int',dt:'magic',tier,dmg,wu,rc,rg,
-    hitCap:hitCap||undefined,tick,duration,reuseIcon,icon:w==='tome'?'fire':'sword',tags:[w==='tome'?'圣光':'黑暗'],poolV2:true,debugOnly:true,
+    hitCap:hitCap||undefined,tick,duration,reuseIcon,icon:w==='tome'?'fire':'sword',tags:[w==='tome'?'圣光':'黑暗'],poolV2:true,
     desc,brief:desc,l3:'强化范围或覆盖，保留共享命中上限',l5:'强化状态表现，保留共享命中上限',l7:'最终形态，可参与转职',
   };
   const activeItems = new Set(['purse','bento','clover','cloak','blade_oil','mana_lens','curse_crown','berserk','glass_sword','heavy_armor','greed_bag','guild','piggy']);

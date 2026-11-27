@@ -28,8 +28,8 @@
   ICON.axe = ICON.axe.map(r => r.replace(/c/g, 'd'));
   // 像素图标（art/ui，尺寸见 js/uiart.js）：k = 放大倍数
   // 11/22 技能书：同一系共用一本（剑 / 枪 / 弓 / 法杖）；技能图标：每个技能单独一张 art/ui2/sk/<id>.png
-  const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_wand', nova: 'bk_wand', wand: 'bk_wand', staff: 'bk_wand', axe: 'bk_axe' };
-  const SYSBK = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '掌机': 'bk_bow', '通用': 'bk_sword', '圣典':'bk_wand', '镰刀':'bk_sword' };
+  const BOOK = { sword: 'bk_sword', spear: 'bk_spear', bow: 'bk_bow', fire: 'bk_wand', nova: 'bk_wand', wand: 'bk_wand', staff: 'bk_wand', axe: 'bk_axe', gun: 'sk/g_fast', tome: 'sk/h_pages', scythe: 'sk/d_reap' };
+  const SYSBK = { '剑': 'bk_sword', '枪': 'bk_spear', '弓': 'bk_bow', '法杖': 'bk_wand', '掌机': 'sk/g_fast', '通用': 'bk_sword', '圣典':'sk/h_pages', '镰刀':'sk/d_reap' };
   const bookOf = id => pi(SYSBK[(DATA.skills[id] || {}).sys] || 'bk_sword'), skIcon = id => { const im = pi('sk/' + id), ru = DATA.skills[id]?.reuseIcon; if (ru) im.onerror = () => { im.onerror = null; im.src = 'art/ui2/sk/' + ru + '.png'; };   /* 11/27 优先用自己的正式图标，缺图才借用 */ im.classList.add('skic'); return im; };
   function pi(name, k = 2) { const item=DATA.startItems.find(i=>i.id===name), fb=item?.reuseIcon;   /* 11/27 先用自己的正式图标，缺图才借用 */
     const fbo = name.startsWith('oath/') ? 'oath/qingyu' : fb;
@@ -182,7 +182,7 @@
   $('tpX').onclick = () => $('tpClose').click(); $('tpClose').onclick = () => { overlay('tpanel', false); document.querySelectorAll('.cxtabs, .cxpop, .cxtop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } };
 
   // ================= 备战页 =================
-  const SK2 = { gun: 'g_spread', sword: 'whirl', spear: 'sweep', bow: 'fan', staff: 'nova' }, P = { hero: 'm', weapon: 'sword', sk: 0, free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
+  const SK2 = { tome: 'h_sword', scythe: 'd_return', gun: 'g_spread', sword: 'whirl', spear: 'sweep', bow: 'fan', staff: 'nova' }, P = { hero: 'm', weapon: 'sword', sk: 0, free: {}, habit: null, item: null, habitOpts: [], itemOpts: [], tab: 'w' };
   const attrsOf = () => { const o = {}; for (const a of DATA.attrs) o[a.id] = DATA.attrBase + (P.free[a.id] || 0); return o; };
   const used = () => Object.values(P.free).reduce((s, v) => s + v, 0);
   const build = () => ({ book1: store.get('book1') || null, book2: store.get('book2') || null, title: store.get('title') || null, hero: P.hero, weapon: P.weapon, skill: P.sk ? SK2[P.weapon] : (DATA.weapons[P.weapon].start || P.weapon), attrs: attrsOf(), item: store.get('item') || P.item, habit: P.habit, pts: Math.max(0, DATA.attrFree - used()) });   // 没加完的点带进游戏，营地里再加
