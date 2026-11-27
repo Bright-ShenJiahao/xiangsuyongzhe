@@ -33,7 +33,11 @@ def lab_rgb(lab):
 
 ATK = {'sword':[('slash',3),('chop',2),('upper',2),('spin',2),('thrust',1)],
        'spear':[('thrust',2),('sweep',3),('lift',2),('twirl',2),('throw',1)],
-       'bow':[('shoot',3),('sky',2),('side',1),('kneel',2),('rapid',1),('lower',1)]}
+       'bow':[('shoot',3),('sky',2),('side',1),('kneel',2),('rapid',1),('lower',1)],
+       'staff':[('point',2),('raise',2),('stomp',2),('twirl',2),('palm',2)],
+       'tome':[('cast',3),('raise',2),('push',2),('guard',2),('orbit',1)],
+       'gun':[('press',3),('rapid',2),('aim',2),('toss',2),('sky',1)],
+       'scythe':[('reap',3),('toss',2),('hook',2),('chop',2),('spin',1)]}
 
 def old_palette(weapon):
     atlas=Image.open(ROOT/'art/hero/atlas.png').convert('RGBA')
@@ -74,7 +78,7 @@ def recolor(frames, old_rgb):
 def build(weapon, path):
     fr=frames(path)
     assert len(fr)==33, f'{weapon}: expected 33 frames, got {len(fr)}'
-    old_rgb,_=old_palette(weapon)
+    old_rgb,_=old_palette(weapon if weapon in ['sword','spear','bow','staff'] else 'sword')
     source_height=body_h(fr[0])
     fr=recolor(fr,old_rgb)
     names=COMMON+ATK[weapon]+TAIL

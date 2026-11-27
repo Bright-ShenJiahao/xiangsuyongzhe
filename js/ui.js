@@ -311,7 +311,7 @@
     const g = c.getContext('2d'); g.clearRect(0, 0, W, H); g.imageSmoothingEnabled = false;
     const id = P.sk ? SK2[P.weapon] : (DATA.weapons[P.weapon].start || P.weapon), key = P.hero + P.weapon + P.sk; if (DM.key !== key) { DM.key = key; DM.clock = 0; DM.casted = 0; DM.fx = []; DM.shots = []; }
     DM.clock += dt;
-    const previewSet = {sword:'heroSwordPreview',spear:'heroSpearPreview',bow:'heroBowPreview'}[P.weapon];
+    const previewSet = {sword:'heroSwordPreview',spear:'heroSpearPreview',bow:'heroBowPreview',staff:'heroStaffPreview',gun:'heroGunPreview'}[P.weapon];
     const weaponCompare = P.hero==='m' && previewSet && SPR.sets[previewSet];
     const u = Math.min(Math.max(2, Math.min(3, Math.floor(H / 70))), weaponCompare?W/130:3), hx = W / 2, hy = H / 2 + 20 * u, F = SKF.get(id), CAST = 2.6, T = DM.clock % CAST;
     let n, i;
@@ -326,11 +326,11 @@
     const cmp = !weaponCompare && P.weapon !== 'gun' && P.hero === 'm' && SPR.sets.heroM2 && SPR.sets.heroM2.f[P.weapon + '.idle'];   // 11/27 阿远新旧版对比（左旧右新），定稿后删掉
     if (cmp) { g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(hx - 55 * u, hy, u * 9, u * 3, 0, 0, 7); g.fill(); g.font = `${6 * u}px sans-serif`; g.textAlign = 'center'; g.fillStyle = '#6a4a2a'; g.fillText('旧版', hx - 55 * u, hy + 10 * u); g.fillText('新版', hx, hy + 10 * u); try { SPR.drawHero(g, n, i, hx - 55 * u, hy, false, u, { w: P.weapon, c: 'mo' }); } catch (e) {} }
     if(weaponCompare){
-      const cn={sword:'剑',spear:'枪',bow:'弓'}[P.weapon], offset=45;
+      const cn={sword:'剑',spear:'枪',bow:'弓',staff:'法杖',gun:'掌机'}[P.weapon], offset=45;
       g.fillStyle='#6a4a2a';g.font=`${6*u}px sans-serif`;g.textAlign='center';
       g.fillText('旧'+cn,hx-offset*u,hy+10*u);g.fillText('新'+cn,hx+offset*u,hy+10*u);
-      SPR.draw(g,'hero',P.weapon+'.'+n,i,hx-offset*u,hy,false,u,{});
-      SPR.drawHero(g,n,i,hx+offset*u,hy,false,u,{w:P.weapon,c:P.weapon+'Preview'});
+      SPR.draw(g,P.weapon==='gun'?'heroHandheldPreview':'hero',P.weapon+'.'+n,i,hx-offset*u,hy,false,u,{});
+      SPR.draw(g,previewSet,P.weapon+'.'+n,i,hx+offset*u,hy,false,u,{});
     }else{try { SPR.drawHero(g,n,i,hx,hy,false,u,{w:P.weapon,c:P.hero}); } catch(e) {}}
 
     if(cmp && P.weapon==='sword' && SPR.sets.heroHandheldPreview){

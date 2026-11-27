@@ -32,6 +32,7 @@
   B('给印记', () => UI.mod().debug.oath());
   B('直接胜利', () => UI.mod().debug.win());
   B('发装备', () => { CAMP.giveGear(); });
+  B('七武器动作对比', () => window.open('demo/hero-compare.html','_blank'));
   B('选人页', () => { try { BATTLE.stop(); } catch (e) {} for (const id of ['levelup', 'pause', 'result', 'camp']) { const e = document.getElementById(id); if (e) e.classList.remove('on'); } UI.openPrep(true); });
   B('直接开打', () => { if (window.UI) UI.startBattle(); });
   const poolSel = document.createElement('select'); poolSel.id = 'poolSkillDebug'; poolSel.style.cssText = 'font:inherit;background:#1c2a1c;color:#8fe8ff;max-width:190px;padding:4px';

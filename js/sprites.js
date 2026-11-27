@@ -64,6 +64,13 @@
       const ef = {}; for (const k in ej.f) if (k.startsWith('hero:')) ef[k.slice(5)] = ej.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay })); SETS.heroE = { base: ec, f: ef }; } catch (e) { console.warn('heroE', e); }
     try { const [fi, fj] = await Promise.all([loadImg('art/heroF/atlas.png'), loadJSON('art/heroF/atlas.json')]); const fc = mkc(fi.width, fi.height); fc.getContext('2d').drawImage(fi, 0, 0); brownEdge(fc);
       const ff = {}; for (const k in fj.f) if (k.startsWith('hero:')) ff[k.slice(5)] = fj.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay })); SETS.heroF = { base: fc, f: ff }; } catch (e) { console.warn('heroF', e); }
+    for (const weapon of ['Staff','Gun','Tome','Scythe']) {
+      const key='hero'+weapon+'Preview';
+      try { const [im,j]=await Promise.all([loadImg('art/'+key+'/atlas.png'),loadJSON('art/'+key+'/atlas.json')]);
+        const base=mkc(im.width,im.height);base.getContext('2d').drawImage(im,0,0);const f={};
+        for(const k in j.f)f[k.slice(5)]=j.f[k].map(([x,y,w,h,ax,ay])=>({x,y,w,h,ax,ay}));SETS[key]={base,f};
+      } catch(e){console.warn(key,e);}
+    }
     // 高清勇者（11/22，tools/pixel/build_hd.py：原图清晰度，sk = 1/r 换算回像素格）。画质选「像素」时不载入
     if (HD) try { const [i2, j2] = await Promise.all([loadImg('art/herohd/atlas.webp'), loadJSON('art/herohd/atlas.json')]); const c2 = mkc(i2.width, i2.height); c2.getContext('2d').drawImage(i2, 0, 0); brown(c2);
       const f2 = {}; for (const k in j2.f) if (k.startsWith('hero:')) f2[k.slice(5)] = j2.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay })); SETS.herohd = { base: c2, f: f2, sk: 1 / j2.r, hd: true }; } catch (e) { console.warn('herohd', e); }
