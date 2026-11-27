@@ -71,7 +71,7 @@
         for(const k in j.f)f[k.slice(5)]=j.f[k].map(([x,y,w,h,ax,ay])=>({x,y,w,h,ax,ay}));SETS[key]={base,f};
       } catch(e){console.warn(key,e);}
     }
-    for (const key of ['heroScythePreview3',...['Sword','Spear','Bow','Staff','Gun','Tome','Scythe'].map(w=>'hero'+w+'Gemini')]) {
+    for (const key of ['heroScythePreview3',...['Sword','Spear','Bow','Staff','Gun','Tome','Scythe'].flatMap(w=>['hero'+w+'Gemini','hero'+w+'Gemini2Raw','hero'+w+'Gemini2Cal'])]) {
       try {const [im,j]=await Promise.all([loadImg('art/'+key+'/atlas.png'),loadJSON('art/'+key+'/atlas.json')]);const base=mkc(im.width,im.height);base.getContext('2d').drawImage(im,0,0);const f={};for(const k in j.f)f[k.slice(5)]=j.f[k].map(([x,y,w,h,ax,ay])=>({x,y,w,h,ax,ay}));SETS[key]={base,f};}catch(e){console.warn(key,e)}
     }
     // 高清勇者（11/22，tools/pixel/build_hd.py：原图清晰度，sk = 1/r 换算回像素格）。画质选「像素」时不载入

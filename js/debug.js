@@ -34,8 +34,8 @@
   B('发装备', () => { CAMP.giveGear(); });
   sec('阿远人物实战对比');
   for(const [w,name,id] of [['sword','剑','sword'],['spear','枪','spear'],['bow','弓','bow'],['staff','法杖','staff'],['gun','掌机','g_fast'],['tome','圣典','t_page'],['scythe','镰刀','d_reap']]) {
-    for(const variant of ['原版',w==='scythe'?'新版3':'新版','GEMINI']) B(name+'·'+variant,()=>{
-      const title=w[0].toUpperCase()+w.slice(1),set=variant==='原版'?(['tome','scythe'].includes(w)?'heroM2':w==='gun'?'heroHandheldPreview':'hero'):variant==='GEMINI'?'hero'+title+'Gemini':'hero'+title+'Preview'+(w==='scythe'?'3':'');
+    for(const variant of ['原版','GEMINI原色','旧版校色']) B(name+'·'+variant,()=>{
+      const title=w[0].toUpperCase()+w.slice(1),set=variant==='原版'?(['tome','scythe'].includes(w)?'heroM2':w==='gun'?'heroHandheldPreview':'hero'):variant==='GEMINI原色'?'hero'+title+'Gemini2Raw':'hero'+title+'Gemini2Cal';
       window.AYUAN_SCYTHE_SET=null;window.AYUAN_TRY={weapon:w,set};const skill=DATA.weapons[w].start||id;UI.startBattle({weapon:w,book1:skill,hero:'m'});panel.style.display='none';tog.textContent='调试 ▸';
     });
   }
