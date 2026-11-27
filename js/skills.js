@@ -1,4 +1,4 @@
-const GUNOBJ=Object.fromEntries('tank0 tank1 tankfire0 tankfire1 shell brick0 brick1 claw0 claw1 claw2 missile0 missile1 bomb0 bomb1 cross0 cross1 ko_k ko_o ko_dot marble blk0 blk1 blk2 blk3 popgun0 popgun1 popgun2'.split(' ').map(n=>[n,Object.assign(new Image(),{src:'art/obj/gun/'+n+'.png'})]));
+const GUNOBJ=Object.fromEntries('tank0 tank1 tankfire0 tankfire1 shell brick0 brick1 claw0 claw1 claw2 missile0 missile1 bomb0 bomb1 cross0 cross1 ko_k ko_o ko_dot marble blk0 blk1 blk2 blk3'.split(' ').map(n=>[n,Object.assign(new Image(),{src:'art/obj/gun/'+n+'.png'})]));
 const gunImage=(ctx,n,x,y,u,a=0)=>{const im=GUNOBJ[n];if(!im?.naturalWidth)return;ctx.save();ctx.imageSmoothingEnabled=false;ctx.translate(Math.round(x),Math.round(y));ctx.rotate(a);ctx.drawImage(im,-im.naturalWidth*u/2,-im.naturalHeight*u/2,im.naturalWidth*u,im.naturalHeight*u);ctx.restore();};
 const BURGER=[0,1,2,3,4,5].map(i=>Object.assign(new Image(),{src:'art/obj/burger'+i+'.png'}));   // 11/27
 // 像素勇者 · 技能书的出手效果（11/21 第二批）。规则和数值见 js/data.js 的 DATA.skills 与设计文档。
@@ -170,14 +170,14 @@ window.SKILLS = (A) => {
       tick:o=>{if(z.dead){o.dead=true;return;}const moving=D2(z,o.last)>.5;A.hurt(z,c.d*2/3+(moving?c.d/3:0),z,0,c.sid,{dot:true,poisonTag:1,extra:secondary,hitGroup:'poison',maxHits:6});o.last={x:z.x,y:z.y};}});
   }
   Object.assign(C, {
-    g_fast(c) { actor({kind:'popgun',x:H().x,y:H().y,a:c.a,T:.25}); for(let i=0;i<9;i++)wait(i*.05,()=>{const z=near();packet(c,z?A.ang(H(),z):c.a,c.d);}); },
-    g_spread(c) { actor({kind:'popgun',x:H().x,y:H().y,a:c.a,T:.25}); for(let i=0;i<8;i++)packet(c,c.a+(i-3.5)*.15,c.d,{life:.5}); },
+    g_fast(c) { for(let i=0;i<9;i++)wait(i*.05,()=>{const z=near();packet(c,z?A.ang(H(),z):c.a,c.d);}); },
+    g_spread(c) { for(let i=0;i<8;i++)packet(c,c.a+(i-3.5)*.15,c.d,{life:.5}); },
     g_bomb(c) { for(let i=0;i<3;i++)wait(i*.3,()=>actor({kind:'bomb',sid:c.sid,x:H().x,y:H().y,T:1.5,d:c.d,end:o=>explodeBomb(o)})); },
-    g_head(c) { actor({kind:'popgun',x:H().x,y:H().y,a:c.a,T:.25}); const z=eliteTarget(),a=z?A.ang(H(),z):c.a,h=H(); A.fx({k:'line',x:h.x,y:h.y-12*K,a,L:1200,w:12,t:0,T:.2,col:'#fff6a0'});hitAll(q=>inLine(q,h,a,1200,18),c.d,{sid:c.sid,forceCrit:true,kb:8}); },
+    g_head(c) { const z=eliteTarget(),a=z?A.ang(H(),z):c.a,h=H(); A.fx({k:'line',x:h.x,y:h.y-12*K,a,L:1200,w:12,t:0,T:.2,col:'#fff6a0'});hitAll(q=>inLine(q,h,a,1200,18),c.d,{sid:c.sid,forceCrit:true,kb:8}); },
     g_clear(c) { for(let i=0;i<4;i++)actor({kind:'block',x:H().x+Math.cos(c.a)*i*20*K,y:H().y+Math.sin(c.a)*i*20*K/YS,T:.8,frame:i});const h={x:H().x,y:H().y},p=dense(40,220)||h;for(let i=0;i<4;i++)wait(i*.1,()=>{const q=P(h.x,h.y,c.a+PI/2,(i-1.5)*8);A.fx({k:'line',x:q.x,y:q.y,a:c.a,L:220,w:32,t:0,T:.16,col:'#80d8f0'});hitAll(z=>inLine(z,q,c.a,220,44),c.d,{sid:c.sid,kb:2});});wait(.4,()=>{puff(p,60,'#ffe08a');hitAll(z=>inCircle(z,p,60),c.d*1.5,{sid:c.sid,finisher:true,kb:8});}); },
     g_chomp(c) { const h={x:H().x,y:H().y};actor({kind:'burger',sid:c.sid,x:h.x,y:h.y,T:3,eaten:0,r:18,
       update:(o,dt)=>{if(o.gulp>0)o.gulp-=dt;o.fl=Math.cos(c.a)*Math.cos(o.t*PI/1.5)<0;const d=Math.sin(o.t*PI/1.5)*95;o.x=h.x+Math.cos(c.a)*d*K;o.y=h.y+Math.sin(c.a)*d*K/YS;A.clamp(o);for(const z of F())if(o.eaten<5&&!z.tier&&!z.T.boss&&inCircle(z,o,o.r)){A.hurt(z,z.hp,o,0,c.sid,{execute:true,maxHits:5,hitGroup:'swallow'});o.eaten++;o.gulp=.25;if(o.eaten===5)o.r=28;}},}); },
-    g_missile(c) { actor({kind:'popgun',x:H().x,y:H().y,a:c.a,T:.25}); const z=eliteTarget();packet(c,z?A.ang(H(),z):c.a,c.d,{home:z,v:170,r:10,life:2,look:'gunmissile',onHit:(p,target)=>{const q={x:target.x,y:target.y};puff(q,42,'#ffb060');hitAll(t=>t!==target&&inCircle(t,q,42),c.d,{sid:c.sid,extra:true,kb:0});}}); },
+    g_missile(c) { const z=eliteTarget();packet(c,z?A.ang(H(),z):c.a,c.d,{home:z,v:170,r:10,life:2,look:'gunmissile',onHit:(p,target)=>{const q={x:target.x,y:target.y};puff(q,42,'#ffb060');hitAll(t=>t!==target&&inCircle(t,q,42),c.d,{sid:c.sid,extra:true,kb:0});}}); },
     g_claw(c) { const p=dense(80,240)||H(),hit=[];actor({kind:'claw',sid:c.sid,x:p.x,y:p.y,T:.6,r:80});hitAll(z=>inCircle(z,p,80),c.d,{sid:c.sid,cc:['air',.4],kb:0,on:z=>hit.push(z)});wait(.4,()=>{puff(p,80,'#e8c8a0');for(const z of hit)if(!z.dead)A.hurt(z,c.d*8/15,p,8,c.sid,{finisher:true});}); },
     g_tank(c) { const p={x:H().x,y:H().y};actor({kind:'tank',a:c.a,sid:c.sid,x:p.x,y:p.y,origin:p,T:3,every:.5,maxTicks:6,
       update:o=>{const d=40*Math.sin(o.t*PI/1.5);o.x=p.x+Math.cos(c.a)*d*K;o.y=p.y+Math.sin(c.a)*d*K/YS;A.clamp(o);for(const z of F())if(inCircle(z,o,20))A.hurt(z,c.d,o,4,c.sid,{hitGroup:'body',maxHits:1});},
@@ -346,7 +346,6 @@ window.SKILLS = (A) => {
       if(o.kind==='skeleton'){SPR.draw(ctx,'skeleton','walk'+(Math.floor(o.t*8)%4),0,x,Y(o.y),false,u,{});}
       else if(o.kind==='cross'){gunImage(ctx,'cross'+(Math.floor(o.t*10)%2),x,y,u);}
       else if(o.kind==='block'){gunImage(ctx,'blk'+o.frame,x,y,u);}
-      else if(o.kind==='popgun'){gunImage(ctx,'popgun'+Math.min(2,Math.floor(o.t*12)),X(H().x)+Math.cos(o.a)*20*u,Y(H().y)-12*u+Math.sin(o.a)*20*u/YS,u,o.a);}
       else if(o.kind==='grave'){rect(x-7*u,y-13*u,14,18,'rgba(150,120,175,.35)');rect(x-5*u,y-15*u,10,3,'#b794cd');}
       else if(o.kind==='holy'){ctx.strokeStyle='rgba(255,225,140,.35)';ctx.lineWidth=u;ctx.beginPath();ctx.ellipse(x,Y(o.y),(o.r||25)*u,(o.r||25)*u/YS,0,0,2*PI);ctx.stroke();}
       else if(o.kind==='burger'){const b=o.eaten===5?1.5:1,fi=o.gulp>0?(o.gulp>.12?4:5):Math.floor(o.t*10)%4,I=BURGER[fi];ctx.save();ctx.translate(x,y);ctx.scale(b*(o.fl?-1:1),b);ctx.imageSmoothingEnabled=false;if(I.complete&&I.naturalWidth){const w=I.naturalWidth*u,hh=I.naturalHeight*u;ctx.drawImage(I,-w/2,6*u-hh,w,hh);}else{rect(-13*u,-13*u,26,7,'#bc7b38');rect(-14*u,-2*u,28,5,'#793e2e');}ctx.restore();}   /* 11/27 汉堡吞吞怪像素帧：4 帧咀嚼 + 2 帧吞下 */
