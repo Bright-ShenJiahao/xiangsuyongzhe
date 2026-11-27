@@ -31,21 +31,28 @@ def head_measure(im):
  labels,n=ndimage.label(ndimage.binary_closing(mask,iterations=1))
  sizes=np.bincount(labels.ravel());sizes[0]=0;component=labels==int(sizes.argmax())
  yy,xx=np.where(component)
- return float(mask[component].sum()),float(np.median(xx)),float(yy.min())
+ return float(xx.max()-xx.min()+1),float((xx.max()+xx.min())/2),float(yy.min())
 
 def build(w,path):
  fr=cut(path)
  reference=cut(Path.home()/'Downloads'/(SOURCES['sword']+'.webp'))
- ref_area,_,_=head_measure(reference[0]);reference_scale=38/helper['body_h'](reference[0])
- target_area=ref_area*reference_scale**2
- scales=[]
- for im in fr:
-  area,_,_=head_measure(im);scales.append(float(np.sqrt(target_area/max(1,area))))
- # Limit occlusion-induced corrections while preserving true per-frame scale differences.
- median=float(np.median(scales));scales=np.clip(scales,median*.88,median*1.12)
- if w=='scythe': scales[:6]=float(np.median(scales[:6]))
+ reference_scale=38/helper['body_h'](reference[0])
+ target_width=head_measure(reference[0])[0]*reference_scale
+ # Hair width is less sensitive to hands/arrow occlusion than colored area.
+ scales=[target_width/head_measure(im)[0] for im in fr]
+ # Avoid within-cycle zoom; use one scale for idle/run, measured from idle heads.
+ scales[:6]=[float(np.median(scales[:2]))]*6
+ if w=='bow': scales=[v*1.12 for v in scales] # bow/arrow occludes hair; visual body correction
  scale=float(np.median(scales));names=helper['COMMON']+helper['ATK'][w]+helper['TAIL']
- refs=helper['old_palette'](w if w in ['sword','spear','bow','staff'] else 'sword')[0]
+ refs=helper['old_palette']('sword')[0]
+ # Pose-relative ground anchors from the actual old sword, excluding every weapon.
+ old_image=Image.open(ROOT/'art/hero/atlas.png').convert('RGBA')
+ old_json=json.loads((ROOT/'art/hero/atlas.json').read_text())['f']
+ old_frames=[r for key,arr in old_json.items() if key.startswith('hero:sword.') for r in arr]
+ anchors=[]
+ for r in old_frames:
+  ox,oy,ow,oh,oax,oay=r;oi=old_image.crop((ox,oy,ox+ow,oy+oh));_,hx,hy=head_measure(oi)
+  anchors.append((oax-hx,oay-hy))
  corrected=helper['recolor'](fr,refs)
  for tag,frames in [('Gemini2Raw',fr),('Gemini2Cal',corrected)]:
   small=[im.resize((max(1,round(im.width*scale)),max(1,round(im.height*scale))),Image.Resampling.NEAREST) for im,scale in zip(frames,scales)]
@@ -55,12 +62,9 @@ def build(w,path):
   for name,count in names:
    arr=[]
    for k in range(count):
-    im=small[idx];yy,xx=np.where(np.array(im)[:,:,3]>0);bot=xx[yy>=yy.max()-3];ax=float((bot.min()+bot.max())/2)
-    ay=im.height
-    if w=='scythe' and idx<6:
-     # Source-space pelvis/ground reference excludes blade and trailing handle.
-     sx,sy=[(40,108),(45,100),(53,95),(52,101),(54,95),(52,93)][idx]
-     ax=round(sx*float(scales[idx]));ay=round(sy*float(scales[idx]))
+    im=small[idx]
+    _,hx,hy=head_measure(fr[idx]);dx,dy=anchors[idx]
+    ax=round(hx*float(scales[idx])+dx);ay=round(hy*float(scales[idx])+dy)
     atlas.alpha_composite(im,(x,0));arr.append([x,0,im.width,im.height,ax,ay]);x+=im.width+2
     px=(idx%5)*220+5;py=(idx//5)*180;d.text((px,py),name+str(k),fill='white');big=im.resize((im.width*3,im.height*3),Image.Resampling.NEAREST);sheet.paste(big,(px,py+20),big);idx+=1
    mapping['hero:'+w+'.'+name]=arr
@@ -71,3 +75,4 @@ def build(w,path):
  print(w,'33 complete silhouettes, identical alpha, scale',round(scale,3))
 if __name__=='__main__':
  for w,f in SOURCES.items():build(w,Path.home()/'Downloads'/(f+'.webp'))
+
