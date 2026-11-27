@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>小凛（凛）新旧动作对比</title>
+<style>
+  body { margin: 0; background: #e9dfc1; color: #38281d; font: 15px system-ui, sans-serif; text-align: center; padding-bottom: 24px; }
+  .bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 8px; }
+  button, select { font: inherit; padding: 6px 10px; }
+  canvas { display: block; margin: 8px auto; max-width: 100%; image-rendering: pixelated; }
+  #frames { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; padding: 8px; max-width: 1120px; margin: auto; }
+  .card { background: rgba(0,0,0,.06); border-radius: 6px; padding: 4px; }
+</style>
+</head>
+<body>
+<h2>小凛（凛）七武器新旧动作对比</h2>
+<div class="bar">
+  <select id="weapon"></select>
+  <select id="action"></select>
+  <button id="pause">暂停</button>
+  <button id="bg">切换深/浅底</button>
+</div>
+<p id="status">载入中…</p>
+<canvas id="cv" width="520" height="240"></canvas>
+<p>下方逐帧查看（同倍率、同一条红线落脚线，左旧图 heroF / 右新图 heroFNew）</p>
+<div id="frames"></div>
+<script>
+const statusEl = document.getElementById('status');
+const weapon = document.getElementById('weapon'), action = document.getElementById('action');
+const pauseBtn = document.getElementById('pause'), bgBtn = document.getElementById('bg');
+const cv = document.getElementById('cv'), framesEl = document.getElementById('frames');
+const NAMES = { sword: '剑', spear: '枪', bow: '弓', staff: '法杖', tome: '圣典', gun: '掌机', scythe: '镰刀' };
+const cache = {};
+let oldSet, newSet, paused = false, dark = false, t = 0;
+
+function brownEdge(c) {
+  const x = c.getContext('2d', { willReadFrequently: true });
+  let d; try { d = x.getImageData(0, 0, c.width, c.height); } catch (e) { return; }
+  const p = d.data, W = c.width, H = c.height, A = i => (i < 0 || i >= W * H) ? 0 : p[i * 4 + 3];
+  const out = [];
+  for (let y = 0; y < H; y++) for (let X = 0; X < W; X++) {
+    const i = y * W + X, k = i * 4;
+    if (!p[k + 3] || !(p[k] < 56 && p[k + 1] < 50 && p[k + 2] < 50)) continue;
+    if ((X > 0 && !A(i - 1)) || (X < W - 1 && !A(i + 1)) || !A(i - W) || !A(i + W) ||
+        (X > 1 && !A(i - 2)) || (X < W - 2 && !A(i + 2)) || !A(i - 2 * W) || !A(i + 2 * W)) out.push(k);
+  }
+  for (const k of out) { p[k] = 58; p[k + 1] = 34; p[k + 2] = 24; }
+  x.putImageData(d, 0, 0);
+}
+
+async function load(dir) {
+  if (cache[dir]) return cache[dir];
+  const [j, im] = await Promise.all([
+    fetch('../art/' + dir + '/atlas.json').then(r => r.json()),
+    new Promise((ok, no) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = no; i.src = '../art/' + dir + '/atlas.png'; })
+  ]);
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+  c.getContext('2d').drawImage(im, 0, 0); brownEdge(c);
+  return cache[dir] = { j: j.f, im: c };
+}
+
+function drawFrame(g, set, key, i, x, y, u) {
+  const arr = set && set.j['hero:' + key]; if (!arr) return false;
+  const [sx, sy, w, h, ax, ay] = arr[i % arr.length];
+  g.imageSmoothingEnabled = false;
+  g.drawImage(set.im, sx, sy, w, h, Math.round(x - ax * u), Math.round(y - ay * u), w * u, h * u);
+  return true;
+}
+
+function refreshActions() {
+  const w = weapon.value;
+  action.innerHTML = '';
+  const keys = Object.keys(newSet.j).filter(k => k.startsWith('hero:' + w + '.')).map(k => k.split('.')[1]);
+  for (const k of keys) action.add(new Option(k, k));
+  action.value = keys.includes('idle') ? 'idle' : keys[0];
+  renderGrid();
+}
+
+function renderGrid() {
+  const w = weapon.value;
+  const keys = Object.keys(newSet.j).filter(k => k.startsWith('hero:' + w + '.')).map(k => k.split('.')[1]);
+  const hasOld = !!oldSet.j['hero:' + w + '.idle'];
+  statusEl.textContent = NAMES[w] + (hasOld ? '：左侧旧版 heroF / 右侧新版 heroFNew（同倍率同落脚线）' : '：新版专属武器图集（旧版无此武器）');
+  framesEl.innerHTML = '';
+  const bgCol = dark ? '#1d2230' : '#f2ead4', fgCol = dark ? '#eee' : '#38281d';
+  for (const act of keys) {
+    const arr = newSet.j['hero:' + w + '.' + act];
+    arr.forEach((_, idx) => {
+      const card = document.createElement('div'); card.className = 'card';
+      const c = document.createElement('canvas'); c.width = hasOld ? 220 : 140; c.height = 148;
+      const g = c.getContext('2d'); g.fillStyle = bgCol; g.fillRect(0, 0, c.width, c.height);
+      const yBase = 130;
+      g.strokeStyle = 'rgba(220,60,60,.75)'; g.beginPath(); g.moveTo(0, yBase); g.lineTo(c.width, yBase); g.stroke();
+      g.fillStyle = fgCol; g.font = '12px sans-serif';
+      g.fillText(act + idx, 6, 14);
+      if (hasOld) {
+        g.fillText('旧', 52, 14); g.fillText('新', 156, 14);
+        drawFrame(g, oldSet, w + '.' + act, idx, 58, yBase, 2);
+        drawFrame(g, newSet, w + '.' + act, idx, 162, yBase, 2);
+      } else {
+        drawFrame(g, newSet, w + '.' + act, idx, 70, yBase, 2);
+      }
+      card.appendChild(c); framesEl.appendChild(card);
+    });
+  }
+}
+
+for (const [w, n] of Object.entries(NAMES)) weapon.add(new Option(n, w));
+weapon.onchange = refreshActions;
+pauseBtn.onclick = () => { paused = !paused; pauseBtn.textContent = paused ? '播放' : '暂停'; };
+bgBtn.onclick = () => { dark = !dark; renderGrid(); };
+
+function tick() {
+  requestAnimationFrame(tick);
+  if (!newSet) return;
+  if (!paused) t += 1 / 60;
+  const w = weapon.value, act = action.value, hasOld = !!oldSet.j['hero:' + w + '.idle'];
+  const g = cv.getContext('2d');
+  g.fillStyle = dark ? '#1d2230' : '#f2ead4'; g.fillRect(0, 0, cv.width, cv.height);
+  const yBase = 192;
+  g.strokeStyle = 'rgba(220,60,60,.8)'; g.beginPath(); g.moveTo(0, yBase); g.lineTo(cv.width, yBase); g.stroke();
+  const idx = Math.floor(t * 6);
+  g.fillStyle = dark ? '#eee' : '#38281d'; g.font = '15px sans-serif';
+  if (hasOld) {
+    drawFrame(g, oldSet, w + '.' + act, idx, 150, yBase, 3);
+    drawFrame(g, newSet, w + '.' + act, idx, 370, yBase, 3);
+    g.fillText('旧版 heroF', 112, 224); g.fillText('新版 heroFNew', 322, 224);
+  } else {
+    drawFrame(g, newSet, w + '.' + act, idx, 260, yBase, 3);
+    g.fillText('新版 heroFNew（' + NAMES[w] + '）', 180, 224);
+  }
+}
+
+Promise.all([load('heroF'), load('heroFNew')]).then(([o, n]) => {
+  oldSet = o; newSet = n;
+  const qw = new URLSearchParams(location.search).get('w');
+  if (qw && NAMES[qw]) weapon.value = qw;
+  refreshActions();
+  tick();
+}).catch(e => { statusEl.textContent = '载入失败：' + e; });
+</script>
+</body>
+</html>
