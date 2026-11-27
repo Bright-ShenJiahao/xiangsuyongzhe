@@ -319,8 +319,11 @@
     else if (T < .25 + F.hitT) { if (!DM.casted) { DM.casted = 1; demoCast(id, c, u, hx, hy); } const q = SKF.pick(F, 'hit', T - .25); if (q) { n = q[0]; i = q[1]; } }
     else { const q = SKF.pick(F, 'rc', T - .25 - F.hitT); if (q) { n = q[0]; i = q[1]; } }
     const hs = SPR.heroSet(P.hero, P.weapon); if (!n) { n = 'idle'; i = Math.floor(DM.clock * 3) % Math.max(1, SPR.count(hs, P.weapon + '.idle') || (SPR.count(hs, P.weapon+'.idle') || SPR.count(hs, 'idle'))); }
-    g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(hx, hy, u * 9, u * 3, 0, 0, 7); g.fill();
-    const bowCompare = P.hero==='m' && P.weapon==='bow' && SPR.sets.heroBowPreview && SPR.sets.heroHandheldPreview;
+    const bowCompareReady = P.hero==='m' && P.weapon==='bow' && SPR.sets.heroBowPreview && SPR.sets.heroHandheldPreview;
+    g.fillStyle = 'rgba(0,0,0,.12)';
+    if (swordCompareReady || bowCompareReady) { for (const dx of swordCompareReady ? [-45,45] : [-55,0,55]) { g.beginPath(); g.ellipse(hx+dx*u, hy, u*9, u*3, 0, 0, 7); g.fill(); } }
+    else { g.beginPath(); g.ellipse(hx, hy, u * 9, u * 3, 0, 0, 7); g.fill(); }
+    const bowCompare = bowCompareReady;
     const swordCompare = swordCompareReady;
     const cmp = !bowCompare && !swordCompare && P.weapon !== 'gun' && P.hero === 'm' && SPR.sets.heroM2 && SPR.sets.heroM2.f[P.weapon + '.idle'];   // 11/27 阿远新旧版对比（左旧右新），定稿后删掉
     if (cmp) { g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(hx - 55 * u, hy, u * 9, u * 3, 0, 0, 7); g.fill(); g.font = `${6 * u}px sans-serif`; g.textAlign = 'center'; g.fillStyle = '#6a4a2a'; g.fillText('旧版', hx - 55 * u, hy + 10 * u); g.fillText('新版', hx, hy + 10 * u); try { SPR.drawHero(g, n, i, hx - 55 * u, hy, false, u, { w: P.weapon, c: 'mo' }); } catch (e) {} }
