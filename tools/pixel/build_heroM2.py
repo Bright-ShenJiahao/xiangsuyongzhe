@@ -29,6 +29,9 @@ def frames(path):
         for k in sorted(cells):
             grp=cells[k]; y0=min(g[0][0].start for g in grp); y1=max(g[0][0].stop for g in grp); x0=min(g[0][1].start for g in grp); x1=max(g[0][1].stop for g in grp)
             m=np.isin(L[y0:y1,x0:x1],[g[1] for g in grp])&fg[y0:y1,x0:x1]
+            h=ndimage.binary_fill_holes(m)&~m; hl,hn=ndimage.label(h)   # 11/27 身体里被抠空的小缝（披风和手臂之间等）补回来，不透出背景
+            for j in range(1,hn+1):
+                if (hl==j).sum()<700: m|=hl==j
             im=Image.fromarray(np.dstack([a[y0:y1,x0:x1],np.where(m,255,0)]).astype(np.uint8),'RGBA'); out.append(im.crop(im.getbbox()))
     return out
 def body_h(im):
