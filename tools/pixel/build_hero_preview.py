@@ -55,9 +55,17 @@ def old_palette(weapon):
 def recolor(frames, old_rgb):
     old_lab=rgb_lab(old_rgb)
     pts=[]
+    source_hair=[]
     for im in frames:
-        a=np.asarray(im); pts.append(rgb_lab(a[a[...,3]>127,:3]))
+        a=np.asarray(im); visible=a[a[...,3]>127,:3]; pts.append(rgb_lab(visible))
+        c=visible.astype(np.float32); hm=(c[:,0]>c[:,1]*1.35)&(c[:,0]>c[:,2]*1.9)&(c[:,1]>40)&(c[:,1]<190)
+        source_hair.append(rgb_lab(visible[hm]))
     new_lab=np.concatenate(pts)
+    old_color=old_rgb.astype(np.float32)
+    old_hm=(old_color[:,0]>old_color[:,1]*1.35)&(old_color[:,0]>old_color[:,2]*1.9)&(old_color[:,1]>40)&(old_color[:,1]<190)
+    old_hair=rgb_lab(old_rgb[old_hm]); source_hair=np.concatenate(source_hair)
+    hair_src_mu=source_hair.mean(0); hair_dst_mu=old_hair.mean(0)
+    hair_ratio=np.minimum(1.5,np.maximum(old_hair.std(0),1.)/np.maximum(source_hair.std(0),1.))
     km_old=KMeans(n_clusters=8,random_state=21,n_init=5).fit(old_lab)
     km_new=KMeans(n_clusters=8,random_state=21,n_init=5).fit(new_lab)
     oc,nc=km_old.cluster_centers_,km_new.cluster_centers_
@@ -87,6 +95,8 @@ def recolor(frames, old_rgb):
         a=np.array(im.convert('RGBA')); mask=a[...,3]>127
         lab=rgb_lab(a[mask,:3]); mapped=transfer(lab,km_new.predict(lab))
         mapped[:,0]=(mapped[:,0]-mapped_l_mean)*global_l_scale+old_l_mean
+        c=a[mask,:3].astype(np.float32); hair=(c[:,0]>c[:,1]*1.35)&(c[:,0]>c[:,2]*1.9)&(c[:,1]>40)&(c[:,1]<190)
+        mapped[hair]=(lab[hair]-hair_src_mu)*hair_ratio+hair_dst_mu
         target=lab_rgb(mapped); d=((rgb_lab(target)[:,None,:]-plab[None,:,:])**2).sum(2)
         a[mask,:3]=palette[d.argmin(1)]; a[~mask,:3]=0; a[...,3]=np.where(mask,255,0)
         out.append(Image.fromarray(a))
