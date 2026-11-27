@@ -32,8 +32,13 @@
   B('给印记', () => UI.mod().debug.oath());
   B('直接胜利', () => UI.mod().debug.win());
   B('发装备', () => { CAMP.giveGear(); });
-  sec('镰刀人物试用');
-  for(const [label,key] of [['原版','heroM2'],['新版3','heroScythePreview3'],['GEMINI','heroScytheGemini']]) B('试用镰刀'+label,()=>{window.AYUAN_SCYTHE_SET=key;UI.startBattle({weapon:'scythe',book1:'d_reap',hero:'m'});panel.style.display='none';tog.textContent='调试 ▸';});
+  sec('阿远人物实战对比');
+  for(const [w,name,id] of [['sword','剑','sword'],['spear','枪','spear'],['bow','弓','bow'],['staff','法杖','staff'],['gun','掌机','g_fast'],['tome','圣典','t_page'],['scythe','镰刀','d_reap']]) {
+    for(const variant of ['原版',w==='scythe'?'新版3':'新版','GEMINI']) B(name+'·'+variant,()=>{
+      const title=w[0].toUpperCase()+w.slice(1),set=variant==='原版'?(['tome','scythe'].includes(w)?'heroM2':w==='gun'?'heroHandheldPreview':'hero'):variant==='GEMINI'?'hero'+title+'Gemini':'hero'+title+'Preview'+(w==='scythe'?'3':'');
+      window.AYUAN_SCYTHE_SET=null;window.AYUAN_TRY={weapon:w,set};const skill=DATA.weapons[w].start||id;UI.startBattle({weapon:w,book1:skill,hero:'m'});panel.style.display='none';tog.textContent='调试 ▸';
+    });
+  }
   sec('物品 / 开局');
   B('七武器动作对比', () => window.open('demo/hero-compare.html','_blank'));
   B('选人页', () => { try { BATTLE.stop(); } catch (e) {} for (const id of ['levelup', 'pause', 'result', 'camp']) { const e = document.getElementById(id); if (e) e.classList.remove('on'); } UI.openPrep(true); });
