@@ -26,7 +26,14 @@ def cut(path):
  return result
 
 def build(w,path):
- fr=cut(path);scale=38/helper['body_h'](fr[0]);names=helper['COMMON']+helper['ATK'][w]+helper['TAIL']
+ fr=cut(path);body_height=helper['body_h'](fr[0])
+ if w=='scythe':
+  a=np.array(fr[0]);r,g,b=a[:,:,:3].astype(int).transpose(2,0,1)
+  hair=(a[:,:,3]>0)&(r>100)&(r>g*1.3)&(g>40)&(b<g*.9)
+  yy,xx=np.where(hair & (np.indices(hair.shape)[0]<a.shape[0]*.55));cx=float(np.median(xx))
+  ys,xs=np.where((a[:,:,3]>0)&(np.abs(np.indices(hair.shape)[1]-cx)<18))
+  body_height=int(ys.max()-yy.min()+1)
+ scale=38/body_height;names=helper['COMMON']+helper['ATK'][w]+helper['TAIL']
  refs=helper['old_palette'](w if w in ['sword','spear','bow','staff'] else 'sword')[0]
  corrected=helper['recolor'](fr,refs)
  for tag,frames in [('Gemini2Raw',fr),('Gemini2Cal',corrected)]:
