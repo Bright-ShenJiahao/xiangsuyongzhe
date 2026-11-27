@@ -318,6 +318,8 @@
     else { const q = SKF.pick(F, 'rc', T - .25 - F.hitT); if (q) { n = q[0]; i = q[1]; } }
     const hs = SPR.heroSet(P.hero, P.weapon); if (!n) { n = 'idle'; i = Math.floor(DM.clock * 3) % Math.max(1, SPR.count(hs, P.weapon + '.idle') || SPR.count(hs, 'idle')); }
     g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(hx, hy, u * 9, u * 3, 0, 0, 7); g.fill();
+    const cmp = P.hero === 'm' && SPR.sets.heroM2 && SPR.sets.heroM2.f[P.weapon + '.idle'];   // 11/27 阿远新旧版对比（左旧右新），定稿后删掉
+    if (cmp) { g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(hx - 30 * u, hy, u * 9, u * 3, 0, 0, 7); g.fill(); g.font = `${6 * u}px sans-serif`; g.textAlign = 'center'; g.fillStyle = '#6a4a2a'; g.fillText('旧版', hx - 30 * u, hy + 10 * u); g.fillText('新版', hx, hy + 10 * u); try { SPR.drawHero(g, n, i, hx - 30 * u, hy, false, u, { w: P.weapon, c: 'mo' }); } catch (e) {} }
     try { SPR.drawHero(g, n, i, hx, hy, false, u, { w: P.weapon, c: P.hero }); } catch (e) {}
     demoFx(g, u, dt);
   }
