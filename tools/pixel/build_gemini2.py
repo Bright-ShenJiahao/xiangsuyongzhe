@@ -112,4 +112,7 @@ def build(w,path):
  raw=np.array(Image.open(ROOT/('art/hero'+w.title()+'Gemini2Raw/atlas.png')));cal=np.array(Image.open(ROOT/('art/hero'+w.title()+'Gemini2Cal/atlas.png')));assert np.array_equal(raw[:,:,3],cal[:,:,3])
  print(w,'33 complete silhouettes, identical alpha, scale',round(scale,3))
 if __name__=='__main__':
- for w,f in SOURCES.items():build(w,Path.home()/'Downloads'/(f+'.webp'))
+ for w,f in SOURCES.items():
+  if w=='scythe' and (ROOT/'art/src/ayuan_scythe_latest.webp').exists():
+   runpy.run_path(str(ROOT/'tools/pixel/build_ayuan_scythe.py'),run_name='__main__')
+  else:build(w,Path.home()/'Downloads'/(f+'.webp'))
