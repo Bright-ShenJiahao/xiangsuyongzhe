@@ -77,6 +77,10 @@ def build(w,path):
     scales[i]=float(candidate)
     break
   else: raise ValueError((w,i,'height outside tolerance'))
+ if w=='gun':
+  # The hands and console obscure the hair in some casting poses.
+  # Keep all 33 poses at the calibrated first idle frame's scale.
+  scales=[scales[0]]*len(fr)
  scale=float(np.median(scales));names=helper['COMMON']+helper['ATK'][w]+helper['TAIL']
  refs=helper['old_palette']('sword')[0]
  # Pose-relative ground anchors from the actual old sword, excluding every weapon.
@@ -109,6 +113,3 @@ def build(w,path):
  print(w,'33 complete silhouettes, identical alpha, scale',round(scale,3))
 if __name__=='__main__':
  for w,f in SOURCES.items():build(w,Path.home()/'Downloads'/(f+'.webp'))
-
-
-
