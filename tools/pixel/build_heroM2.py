@@ -15,6 +15,8 @@ ATK={'sword':[('slash',3),('chop',2),('upper',2),('spin',2),('thrust',1)],
 def frames(path):
     a=np.array(Image.open(path).convert('RGB')).astype(int)
     bg=np.median(np.concatenate([a[0],a[-1],a[:,0],a[:,-1]]),axis=0); fg=np.abs(a-bg).max(-1)>30
+    near=np.abs(a-bg).max(-1)<8; nl,_=ndimage.label(near); out_ids=np.unique(np.concatenate([nl[0],nl[-1],nl[:,0],nl[:,-1]])); out_ids=out_ids[out_ids>0]
+    fg2=~np.isin(nl,out_ids)   # 11/27 只抠掉和外圈连通、几乎等于背景色的像素；身体里的深灰缝一律保留
     L,n=ndimage.label(ndimage.binary_dilation(fg,iterations=6))
     ob=[(s,i+1) for i,s in enumerate(ndimage.find_objects(L)) if (s[0].stop-s[0].start)*(s[1].stop-s[1].start)>2500]
     ob.sort(key=lambda o:(o[0][0].start+o[0][0].stop)/2); rows=[]
@@ -28,7 +30,7 @@ def frames(path):
         for sl,lid in r: cells.setdefault(int(((sl[1].start+sl[1].stop)/2)//cw),[]).append((sl,lid))
         for k in sorted(cells):
             grp=cells[k]; y0=min(g[0][0].start for g in grp); y1=max(g[0][0].stop for g in grp); x0=min(g[0][1].start for g in grp); x1=max(g[0][1].stop for g in grp)
-            m=np.isin(L[y0:y1,x0:x1],[g[1] for g in grp])&fg[y0:y1,x0:x1]
+            m=np.isin(L[y0:y1,x0:x1],[g[1] for g in grp])&fg2[y0:y1,x0:x1]
             h=ndimage.binary_fill_holes(m)&~m; hl,hn=ndimage.label(h)   # 11/27 身体里被抠空的小缝（披风和手臂之间等）补回来，不透出背景
             for j in range(1,hn+1):
                 if (hl==j).sum()<700: m|=hl==j
