@@ -43,6 +43,7 @@ def build(w,path):
   area,_,_=head_measure(im);scales.append(float(np.sqrt(target_area/max(1,area))))
  # Limit occlusion-induced corrections while preserving true per-frame scale differences.
  median=float(np.median(scales));scales=np.clip(scales,median*.88,median*1.12)
+ if w=='scythe': scales[:6]=float(np.median(scales[:6]))
  scale=float(np.median(scales));names=helper['COMMON']+helper['ATK'][w]+helper['TAIL']
  refs=helper['old_palette'](w if w in ['sword','spear','bow','staff'] else 'sword')[0]
  corrected=helper['recolor'](fr,refs)
@@ -55,7 +56,12 @@ def build(w,path):
    arr=[]
    for k in range(count):
     im=small[idx];yy,xx=np.where(np.array(im)[:,:,3]>0);bot=xx[yy>=yy.max()-3];ax=float((bot.min()+bot.max())/2)
-    atlas.alpha_composite(im,(x,0));arr.append([x,0,im.width,im.height,ax,im.height]);x+=im.width+2
+    ay=im.height
+    if w=='scythe' and idx<6:
+     # Source-space pelvis/ground reference excludes blade and trailing handle.
+     sx,sy=[(40,108),(45,100),(53,95),(52,101),(54,95),(52,93)][idx]
+     ax=round(sx*float(scales[idx]));ay=round(sy*float(scales[idx]))
+    atlas.alpha_composite(im,(x,0));arr.append([x,0,im.width,im.height,ax,ay]);x+=im.width+2
     px=(idx%5)*220+5;py=(idx//5)*180;d.text((px,py),name+str(k),fill='white');big=im.resize((im.width*3,im.height*3),Image.Resampling.NEAREST);sheet.paste(big,(px,py+20),big);idx+=1
    mapping['hero:'+w+'.'+name]=arr
   atlas.save(dest/'atlas.png');(dest/'atlas.json').write_text(json.dumps({'f':mapping}),encoding='utf-8')
