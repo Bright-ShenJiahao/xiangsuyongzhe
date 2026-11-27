@@ -546,9 +546,10 @@
   }
   // 出怪前地上先亮一个圈（0.55 秒），离勇者 135–190 格
   const warns = [];
+  const warnDuration = w => (w.tier || DATA.enemies[w.type].boss ? 1.5 : .55);
   function warnSpawn(o) { const p = spawnPos(); warns.push(Object.assign({ x: p.x, y: p.y, t: 0 }, o)); }
   function warnTick(dt) {
-    for (let i = warns.length - 1; i >= 0; i--) { const w = warns[i]; w.t += dt; if (w.t >= (w.tier || DATA.enemies[w.type].boss ? 1.5 : .55)) { warns.splice(i, 1); const z = spawn(w.type, w, w.tier); if (w.routeElite) z.routeElite = true; if (!w.tier && !DATA.enemies[w.type].boss && Math.random() < .15 * HT('mob')) spawn(w.type);   /* 热度：怪物数量 +15%/级 */ } }
+    for (let i = warns.length - 1; i >= 0; i--) { const w = warns[i]; w.t += dt; if (w.t >= warnDuration(w)) { warns.splice(i, 1); const z = spawn(w.type, w, w.tier); if (w.routeElite) z.routeElite = true; if (!w.tier && !DATA.enemies[w.type].boss && Math.random() < .15 * HT('mob')) spawn(w.type);   /* 热度：怪物数量 +15%/级 */ } }
   }
   // 一波结算：铜钱、经验、回血、战利品（固定书、精英 / 小头目掉落）
   function waveEnd() {
@@ -1095,7 +1096,7 @@
       ctx.restore();
     }
     for (const w of warns) {   // 出怪预警：地上一个小圈慢慢合拢
-      const p = w.t / .55, r = (14 + 10 * (1 - p)) * u; ctx.fillStyle = `rgba(30,10,5,${.25 + .25 * p})`; ctx.beginPath(); ctx.ellipse(X(w.x), Y(w.y), r, r / YS, 0, 0, 7); ctx.fill();
+      const p = Math.max(0, Math.min(1, w.t / warnDuration(w))), r = (14 + 10 * (1 - p)) * u; ctx.fillStyle = `rgba(30,10,5,${.25 + .25 * p})`; ctx.beginPath(); ctx.ellipse(X(w.x), Y(w.y), r, r / YS, 0, 0, 7); ctx.fill();
       ctx.fillStyle = w.tier ? '#ffcf3a' : '#d8402a'; for (let a = 0; a < PI * 2; a += .2) ctx.fillRect(X(w.x) + rd(Math.cos(a) * r), Y(w.y) + rd(Math.sin(a) * r / YS), u, u);
     }
     SK.drawUnder(ctx, X, Y, u); ESK && ESK.drawUnder(ctx, X, Y, u, G.t); chargePreview(); coinDraw(); princessDraw(); fieldDraw(); MECH && MECH.drawUnder(ctx, X, Y, s, G.t); propsUnder();   // 11/23 地上的光球、掉落、门画在人物下面
