@@ -20,7 +20,7 @@ SOURCES = {
     "staff": SRC_DIR / "media_1795798116744_3119fc45.webp",
     "tome": SRC_DIR / "media_1795798116743_cb4eefc9.webp",
     "gun": SRC_DIR / "media_1795802244111_0a06ca86.webp",
-    "scythe": SRC_DIR / "media_1795798116743_09432bf7.webp",
+    "scythe": SRC_DIR / "media_1795811919277_072d51e4.webp",
 }
 
 # Exact frame index mapping verified visually on each numbered sheet against heroF + js/skframes.js
