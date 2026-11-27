@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
+from sprite_edges import despill, reduce_complete, outline_complete
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = Path(r"C:\Users\hangs\.gemini\antigravity\brain\efc7e57b-693c-47d1-ba23-a2a1c2b47937\.user_uploaded")
@@ -253,24 +254,11 @@ def cut_sheet(path, expected):
         m = (lab2[y0:y1, x0:x1] == cid) & mask[y0:y1, x0:x1]
         sub = a[y0:y1, x0:x1].copy()
 
-        # Remove 1-pixel magenta fringe along outer boundary without eroding dark outlines
-        sr, sg, sb = sub.astype(int).transpose(2, 0, 1)
-        edge = m & ~ndimage.binary_erosion(m, structure=np.ones((3, 3)), border_value=0)
-        pink_edge = edge & (sr > sg + 30) & (sb > sg + 25) & ((sr + sb) > 220)
-        m = m & ~pink_edge
-
-        # Remove isolated 1-2px detached dust specs inside crop
-        clab, cn = ndimage.label(m)
-        if cn > 1:
-            sizes = np.bincount(clab.ravel())
-            sizes[0] = 0
-            keep = sizes >= 4
-            m = keep[clab]
-
+        # Preserve the complete keyed silhouette, including detached thin weapon tips.
         rgba = np.dstack([sub, (m.astype(np.uint8) * 255)])
         fr = Image.fromarray(rgba)
         bbox = fr.getbbox()
-        frames.append(fr.crop(bbox) if bbox else fr)
+        frames.append(despill(fr.crop(bbox) if bbox else fr, (17, 10, 13)))
     return frames
 
 
@@ -436,6 +424,8 @@ def compute_anchor(im, act, idx, weapon):
 
 
 def main():
+    global INSPECT_DIR
+    INSPECT_DIR = ROOT.parent.parent / "heroFNew-inspection"
     INSPECT_DIR.mkdir(parents=True, exist_ok=True)
     pal, plab = load_heroF_palette()
 
@@ -474,8 +464,8 @@ def main():
         for im in raw_frames:
             nw = max(1, round(im.width * sc))
             nh = max(1, round(im.height * sc))
-            sm = im.resize((nw, nh), Image.Resampling.NEAREST)
-            sm = recolor_frame(sm, pal, plab)
+            sm = reduce_complete(im, (nw, nh))
+            sm = outline_complete(recolor_frame(sm, pal, plab), (17, 10, 13))
             scaled.append(sm)
         processed[w] = scaled
 

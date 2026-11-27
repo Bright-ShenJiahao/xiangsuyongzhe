@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
+from sprite_edges import despill, reduce_complete, outline_complete
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = Path(r"C:\Users\hangs\.gemini\antigravity\brain\efc7e57b-693c-47d1-ba23-a2a1c2b47937\.user_uploaded")
@@ -85,32 +86,11 @@ def cut_sheet(path, weapon):
         m = (lab2[y0:y1, x0:x1] == cid) & mask[y0:y1, x0:x1]
         sub = a[y0:y1, x0:x1].copy()
 
-        # Remove 1-pixel magenta fringe along outer boundary
-        sr, sg, sb = sub.astype(int).transpose(2, 0, 1)
-        edge = m & ~ndimage.binary_erosion(m, structure=np.ones((3, 3)), border_value=0)
-        pink_edge = edge & (sr > sg + 25) & (sb > sg + 20) & ((sr + sb) > 205)
-        m = m & ~pink_edge
-
-        # Clean isolated 1-3px detached dust
-        clab, cn = ndimage.label(m)
-        if cn > 1:
-            sizes = np.bincount(clab.ravel())
-            sizes[0] = 0
-            m = (sizes >= 4)[clab]
-
-        # Clean purplish/magenta background-tainted pixels (antlers, hair tips, cape, bow); keep purple scythe blade
-        sr, sg, sb = sub.astype(int).transpose(2, 0, 1)
-        purp = m & (sr > sg + 14) & (sb > sg + 12) & (sb > 55) & (sr < 185)
-        if weapon != "scythe":
-            sub[purp] = OUTLINE
-        else:
-            edge2 = m & ~ndimage.binary_erosion(m, structure=np.ones((3, 3)), border_value=0)
-            sub[purp & edge2] = OUTLINE
-
+        # Never erase keyed foreground to remove pink spill; recolor it instead.
         rgba = np.dstack([sub, (m.astype(np.uint8) * 255)])
         fr = Image.fromarray(rgba)
         bbox = fr.getbbox()
-        frames.append(fr.crop(bbox) if bbox else fr)
+        frames.append(despill(fr.crop(bbox) if bbox else fr))
     return frames
 
 
@@ -205,16 +185,12 @@ def main():
 
         scaled = []
         for im in raw_frames:
-            sm = im.resize((max(1, round(im.width * sc)), max(1, round(im.height * sc))), Image.Resampling.NEAREST)
+            sm = reduce_complete(im, (max(1, round(im.width * sc)), max(1, round(im.height * sc))))
             arr = np.array(sm).copy()
             m = arr[..., 3] > 127
             sr, sg, sb = arr[..., 0].astype(int), arr[..., 1].astype(int), arr[..., 2].astype(int)
-            if w != "scythe":
-                purp = m & (sr > sg + 12) & (sb > sg + 10) & (sr < 190)
-                arr[purp, :3] = OUTLINE
-            # Restore continuous 1px crisp dark-brown outer outline (Ayuan style)
+            # Retain source steel and skin pixels; an exterior outline is added last.
             edge = m & ~ndimage.binary_erosion(m, structure=CROSS, border_value=0)
-            arr[edge, :3] = OUTLINE
             # Tone & contrast calibration: soften overly bright blonde/cream blocks, deepen mid-shadows
             sr, sg, sb = arr[..., 0].astype(float), arr[..., 1].astype(float), arr[..., 2].astype(float)
             lum = 0.299 * sr + 0.587 * sg + 0.114 * sb
@@ -226,7 +202,7 @@ def main():
             arr[inner_dark, :3] = OUTLINE
             arr[~m, :3] = 0
             arr[..., 3] = np.where(m, 255, 0)
-            scaled.append(Image.fromarray(arr))
+            scaled.append(outline_complete(Image.fromarray(arr)))
         processed[w] = scaled
         st0, sb0, _ = person_metrics(scaled[0])
         print(f"  {w:6s}: 33f | raw=({h0:.0f},{h1:.0f}) | scale={sc:.4f} | scaled_h={sb0 - st0 + 1:.1f}px | idle0={scaled[0].size}")

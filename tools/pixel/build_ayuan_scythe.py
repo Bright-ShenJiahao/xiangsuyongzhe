@@ -2,11 +2,12 @@
 import json
 from pathlib import Path
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 from scipy import ndimage
+from sprite_edges import despill, reduce_complete, outline_complete
 
 ROOT = Path(__file__).resolve().parents[2]
-SRC = Path(r"C:\Users\hangs\.gemini\antigravity\brain\efc7e57b-693c-47d1-ba23-a2a1c2b47937\.user_uploaded\media_1795812722189_6919d37d.webp")
+SRC = ROOT / 'art/src/ayuan_scythe_latest.webp'
 
 COMMON = [
     ("idle", 2), ("run", 4), ("roll", 3), ("back", 1), ("hurt", 1), ("dead", 1),
@@ -67,21 +68,9 @@ def cut_sheet(path):
         y0, y1, x0, x1 = int(yy.min()), int(yy.max()) + 1, int(xx.min()), int(xx.max()) + 1
         m = (lab2[y0:y1, x0:x1] == cid) & mask[y0:y1, x0:x1]
         sub = a[y0:y1, x0:x1].copy()
-        sr, sg, sb = sub.astype(int).transpose(2, 0, 1)
-        edge = m & ~ndimage.binary_erosion(m, structure=np.ones((3, 3)), border_value=0)
-        m = m & ~(edge & (sr > sg + 25) & (sb > sg + 20) & ((sr + sb) > 205))
-        clab, cn = ndimage.label(m)
-        if cn > 1:
-            sizes = np.bincount(clab.ravel())
-            sizes[0] = 0
-            m = (sizes >= 4)[clab]
-        # Clean purple edge specks
-        sr, sg, sb = sub.astype(int).transpose(2, 0, 1)
-        purp = m & (sr > sg + 14) & (sb > sg + 12) & (sr < 185)
-        sub[purp] = OUTLINE
         fr = Image.fromarray(np.dstack([sub, (m.astype(np.uint8) * 255)]))
         bbox = fr.getbbox()
-        frames.append(fr.crop(bbox) if bbox else fr)
+        frames.append(despill(fr.crop(bbox) if bbox else fr))
     return frames
 
 
@@ -143,12 +132,12 @@ def main():
 
     small_raw, small_cal = [], []
     for fr in raw_frames:
-        sm = fr.resize((max(1, round(fr.width * sc)), max(1, round(fr.height * sc))), Image.Resampling.NEAREST)
+        sm = reduce_complete(fr, (max(1, round(fr.width * sc)), max(1, round(fr.height * sc))))
         a = np.array(sm).copy()
         m = a[..., 3] > 127
         a[~m, :3] = 0
         a[..., 3] = np.where(m, 255, 0)
-        small_raw.append(Image.fromarray(a))
+        small_raw.append(outline_complete(Image.fromarray(a)))
 
         # Calibrated to Ayuan sword palette
         rgb = a[m, :3]
@@ -160,8 +149,7 @@ def main():
         ca = a.copy()
         ca[m, :3] = out_rgb
         edge = m & ~ndimage.binary_erosion(m, structure=CROSS, border_value=0)
-        ca[edge, :3] = OUTLINE
-        small_cal.append(Image.fromarray(ca))
+        small_cal.append(outline_complete(Image.fromarray(ca), reference=Image.fromarray(a)))
 
     groups = COMMON + ATK_SCYTHE + TAIL
     for tag, frames in [("Raw", small_raw), ("Cal", small_cal)]:
@@ -184,6 +172,15 @@ def main():
             mapping[f"hero:scythe.{act}"] = arr
         atlas.save(dest / "atlas.png")
         (dest / "atlas.json").write_text(json.dumps({"f": mapping}), encoding="utf-8")
+        if tag == 'Cal':
+            contact = Image.new('RGB', (1100, 1260), '#597c80')
+            draw = ImageDraw.Draw(contact)
+            for i, im in enumerate(frames):
+                px, py = (i % 5) * 220 + 5, (i // 5) * 180
+                draw.text((px, py), str(i + 1), fill='white')
+                big = im.resize((im.width * 3, im.height * 3), Image.Resampling.NEAREST)
+                contact.paste(big, (px, py + 20), big)
+            contact.save(dest / 'frames-check.png')
         print(f"Saved {dest} ({atlas.size}) scale={sc:.4f} idle0={frames[0].size}")
 
 
