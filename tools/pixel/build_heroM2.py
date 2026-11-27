@@ -16,7 +16,9 @@ def frames(path):
     a=np.array(Image.open(path).convert('RGB')).astype(int)
     bg=np.median(np.concatenate([a[0],a[-1],a[:,0],a[:,-1]]),axis=0); fg=np.abs(a-bg).max(-1)>30
     near=np.abs(a-bg).max(-1)<8; nl,_=ndimage.label(near); out_ids=np.unique(np.concatenate([nl[0],nl[-1],nl[:,0],nl[:,-1]])); out_ids=out_ids[out_ids>0]
-    fg2=~np.isin(nl,out_ids)   # 11/27 只抠掉和外圈连通、几乎等于背景色的像素；身体里的深灰缝一律保留
+    if bg[0]>180 and bg[2]>180 and bg[1]<90: near=(np.minimum(a[...,0],a[...,2])-a[...,1]>40); nl,_=ndimage.label(near); out_ids=np.unique(np.concatenate([nl[0],nl[-1],nl[:,0],nl[:,-1]])); out_ids=out_ids[out_ids>0]   # 洋红底：按色相抠，连粉边一起去掉
+    fg2=~np.isin(nl,out_ids)
+    if bg[0]>180 and bg[2]>180 and bg[1]<90: fg2&=~near   # 洋红底：人物身上不会有洋红，被包住的洋红小块也去掉   # 11/27 只抠掉和外圈连通、几乎等于背景色的像素；身体里的深灰缝一律保留
     L,n=ndimage.label(ndimage.binary_dilation(fg,iterations=6))
     ob=[(s,i+1) for i,s in enumerate(ndimage.find_objects(L)) if (s[0].stop-s[0].start)*(s[1].stop-s[1].start)>2500]
     ob.sort(key=lambda o:(o[0][0].start+o[0][0].stop)/2); rows=[]
@@ -47,7 +49,7 @@ def main(args):
         w,p=arg.split('=',1); fr=frames(p); names=COMMON+ATK[w]+TAIL; need=sum(c for _,c in names)
         assert len(fr)==need,(w,len(fr),need)
         hh=body_h(fr[0]); ref=ref if 'ref' in dir() and ref else hh   # 待机帧：从头发顶到脚底的高度（不算举过头的武器）
-        sc=SC*ref/hh; print(w,'scale',round(sc,3)); L=[]
+        sc=38/hh; print(w,'scale',round(sc,3)); L=[]
         for f in fr:
             g=f.resize((max(1,round(f.width*sc)),max(1,round(f.height*sc))),Image.NEAREST); A=np.array(g); A[...,3]=np.where(A[...,3]>127,255,0); L.append(Image.fromarray(A))
         small[w]=(names,L)
