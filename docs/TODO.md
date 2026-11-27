@@ -303,3 +303,8 @@
 - 接入位置：`js/sprites.js`（`SETS.heroFNew`，保留 `SETS.heroF`，修正 `drawHero` 使小凛原生支持 `tome`/`gun`/`scythe`）、`demo/intro.html`（`h=f` 指向 `heroFNew`）、`demo/palace.html`、`js/ui.js`（选人头像/预览/演示仅显示当前人物）、`js/debug.js` 与 `demo/heroF-compare.html`（同倍率同落脚线新旧对比页）及静态对比图 `art/heroFNew/compare.png`。
 - 实测验证：本地启动服务在浏览器实测通过（0 控制台报错）：选人页（小凛5把可选武器 + 阿远/精灵正常）、实战（小凛持剑/枪/弓/法杖及掌机连发弹走停/翻滚/出招/收招，无大小跳变/漂移/武器裁断/空白帧）、塔顶开场（`demo/intro.html?h=f&w=sword`）、宫殿（`demo/palace.html?h=f`）及新旧对比页（`demo/heroF-compare.html` 7把武器逐帧检查）。
 - 未实战单独验证项：圣典（`tome`）与镰刀（`scythe`）为隐藏/debug武器，因调试面板技能演练按钮会切回默认男主 `m`，其逐招动作仅在 `demo/heroF-compare.html` 与静态对比图核对，未在小凛实战局内逐招完整演练；各武器受击/倒地（`hurt`/`dead`）在无敌实测中未触发。
+
+## 技能出招帧全量校准与 frames.html 升级（2026-11-28）
+- 按 11/22 出招帧基准补齐 `js/skframes.js` 缺失的 30 个新技能配置（剑 2、枪 3、弓 2、法杖 8、通用 15），全部 92 个技能均有显式前摇/出手/持续/后摇/前冲配置；同时微调圣典/镰刀宗师大招收招帧（`rc: ['finish0']`）及镰刀近战横扫 `lunge: 2`，保留全部原有 `ED` 调优结果。
+- 升级 `tools/frames.html`：新增角色切换（阿远新版 7 武器 / 小凛新版 7 武器 / 旧男主 / 旧小凛）和全部 8 个技能分页（剑/枪/弓/法杖/掌机/圣典/镰刀/通用），补齐中文动作名。
+- 核对结果：92/92 技能在阿远（`Gemini2Cal`）与小凛（`heroFNew`）七套图集下均 0 缺帧、0 越界、0 语法错误。

@@ -53,6 +53,7 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
 <body>
 <header>
   <b>出招帧调整</b>
+  <label>角色 <select id="heroSel"><option value="m">阿远（新版7武器）</option><option value="f">小凛（新版7武器）</option><option value="m_old">阿远（旧4武器）</option><option value="f_old">小凛（旧4武器）</option></select></label>
   <button class="go" id="save">保存（游戏里立刻生效）</button>
   <button id="copy">复制结果发给 Claude</button>
   <button class="warn" id="resetOne">这招恢复默认</button>
@@ -97,17 +98,44 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
 <script>
 (async () => { try {
   const $ = id => document.getElementById(id);
-  const WN = { sword: '剑', spear: '枪', bow: '弓', staff: '法杖' }, AN = { idle: '站立', run: '跑', atk: '旧出招', big: '旧大招', roll: '翻滚', back: '后跳', hurt: '受伤', dead: '倒地', charge: '蓄力', dash: '前冲', stop: '刹停', jump: '跳起', slam: '落地砸', up: '举天', finish: '收招',
-    slash: '横斩', chop: '下劈', upper: '上撩', spin: '旋转', thrust: '刺', sweep: '横扫', lift: '上挑', twirl: '旋转', throw: '掷', shoot: '射', sky: '朝天射', side: '横拉', kneel: '跪射', rapid: '快射', lower: '收弓', point: '前指', raise: '高举', stomp: '杖击地', palm: '托掌' };
+  const WN = { sword: '剑', spear: '枪', bow: '弓', staff: '法杖', gun: '掌机', tome: '圣典', scythe: '镰刀', common: '通用' };
+  const AN = { idle: '站立', run: '跑', atk: '出招', big: '大招', roll: '翻滚', back: '后跳', hurt: '受伤', dead: '倒地', charge: '蓄力', dash: '前冲', stop: '刹停', jump: '跳起', slam: '落地砸', up: '举天', finish: '收招',
+    slash: '横斩', chop: '下劈', upper: '上撩', spin: '旋转', thrust: '刺', sweep: '横扫', lift: '上挑', twirl: '旋转', throw: '掷', shoot: '射', sky: '朝天射', side: '横拉', kneel: '跪射', rapid: '快射', lower: '收弓', point: '前指', raise: '高举', stomp: '杖击地', palm: '托掌',
+    cast: '施法', push: '推击', guard: '护盾', orbit: '环绕', press: '按键', aim: '瞄准', toss: '投掷', reap: '收割', hook: '钩拉' };
   const PH = [['wu', '前摇', '#7a5a36'], ['hit', '出手', '#c8902a'], ['hold', '持续', '#3a6aa0'], ['rc', '后摇', '#6a3a5a']];
-  const img = new Image(); img.src = '../art/hero/atlas.png'; await img.decode();
-  const J = await (await fetch('../art/hero/atlas.json')).json();
-  // 跟游戏一样把描边的黑压成深棕
-  const at = document.createElement('canvas'); at.width = img.width; at.height = img.height; const ag = at.getContext('2d'); ag.drawImage(img, 0, 0);
-  try { const d = ag.getImageData(0, 0, at.width, at.height), p = d.data; for (let i = 0; i < p.length; i += 4) if (p[i + 3] && p[i] < 56 && p[i + 1] < 50 && p[i + 2] < 50) { p[i] = 58; p[i + 1] = 34; p[i + 2] = 24; } ag.putImageData(d, 0, 0); } catch (e) {}
-  const FR = {}; for (const k in J.f) if (k.startsWith('hero:') && k.includes('.')) { const [w, a] = k.slice(5).split('.'); (FR[w] = FR[w] || {})[a] = J.f[k].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay })); }
-  const frame = (w, tok) => { const m = /^([a-z]+)(\d+)$/.exec(tok || ''); if (!m) return null; const L = FR[w] && FR[w][m[1]]; return L && L[+m[2]] || null; };
-  function drawF(g, f, X, Y, k, flip) { if (!f) return; g.save(); g.imageSmoothingEnabled = false; if (flip) { g.translate(X, 0); g.scale(-1, 1); X = 0; } g.drawImage(at, f.x, f.y, f.w, f.h, Math.round(X - f.ax * k), Math.round(Y - f.ay * k), f.w * k, f.h * k); g.restore(); }
+  const HERO_CACHE = {};
+  function brownEdge(c, allBlack) {
+    const ag = c.getContext('2d', { willReadFrequently: true });
+    try {
+      const d = ag.getImageData(0, 0, c.width, c.height), p = d.data, W0 = c.width, H0 = c.height;
+      const A = i => (i < 0 || i >= W0 * H0) ? 0 : p[i * 4 + 3];
+      if (allBlack) { for (let i = 0; i < p.length; i += 4) if (p[i + 3] && p[i] < 56 && p[i + 1] < 50 && p[i + 2] < 50) { p[i] = 58; p[i + 1] = 34; p[i + 2] = 24; } }
+      else { const out = []; for (let y = 0; y < H0; y++) for (let X = 0; X < W0; X++) { const i = y * W0 + X, k = i * 4; if (!p[k + 3] || !(p[k] < 56 && p[k + 1] < 50 && p[k + 2] < 50)) continue; if ((X > 0 && !A(i - 1)) || (X < W0 - 1 && !A(i + 1)) || !A(i - W0) || !A(i + W0) || (X > 1 && !A(i - 2)) || (X < W0 - 2 && !A(i + 2)) || !A(i - 2 * W0) || !A(i + 2 * W0)) out.push(k); } for (const k of out) { p[k] = 58; p[k + 1] = 34; p[k + 2] = 24; } }
+      ag.putImageData(d, 0, 0);
+    } catch (e) {}
+  }
+  async function loadAtlas(dir, edgeMode) {
+    const k = dir + '|' + edgeMode; if (HERO_CACHE[k]) return HERO_CACHE[k];
+    const [img, J] = await Promise.all([
+      new Promise((ok, no) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = no; i.src = '../art/' + dir + '/atlas.png'; }),
+      fetch('../art/' + dir + '/atlas.json').then(r => r.json())
+    ]);
+    const at = document.createElement('canvas'); at.width = img.width; at.height = img.height; at.getContext('2d').drawImage(img, 0, 0);
+    if (edgeMode === 'all') brownEdge(at, true); else if (edgeMode === 'edge') brownEdge(at, false);
+    const FR = {}; for (const kk in J.f) if (kk.startsWith('hero:') && kk.includes('.')) { const [w, a] = kk.slice(5).split('.'); (FR[w] = FR[w] || {})[a] = J.f[kk].map(([x, y, w, h, ax, ay]) => ({ x, y, w, h, ax, ay })); }
+    return HERO_CACHE[k] = { at, FR, J };
+  }
+  let CUR_HERO = 'm', CUR_SET = null;
+  const artW = w => w === 'common' ? 'sword' : w;
+  async function loadHeroWeapon(hero, w) {
+    const aw = artW(w);
+    if (hero === 'm') return loadAtlas('hero' + aw[0].toUpperCase() + aw.slice(1) + 'Gemini2Cal', 'none');
+    if (hero === 'f') return loadAtlas('heroFNew', 'edge');
+    if (hero === 'f_old') return loadAtlas('heroF', 'edge');
+    return loadAtlas('hero', 'all');
+  }
+  const frame = (w, tok) => { const m = /^([a-z]+)(\d+)$/.exec(tok || ''); if (!m || !CUR_SET) return null; const aw = artW(w), L = (CUR_SET.FR[aw] || CUR_SET.FR.sword || {})[m[1]]; return L && L[+m[2]] || null; };
+  function drawF(g, f, X, Y, k, flip) { if (!f || !CUR_SET) return; g.save(); g.imageSmoothingEnabled = false; if (flip) { g.translate(X, 0); g.scale(-1, 1); X = 0; } g.drawImage(CUR_SET.at, f.x, f.y, f.w, f.h, Math.round(X - f.ax * k), Math.round(Y - f.ay * k), f.w * k, f.h * k); g.restore(); }
   function thumb(w, tok, cw, ch) { const c = document.createElement('canvas'); c.width = cw; c.height = ch; const f = frame(w, tok); if (f) { const k = Math.min((cw - 4) / f.w, (ch - 4) / f.h, 2); drawF(c.getContext('2d'), f, cw / 2 - (f.w / 2 - f.ax) * k, ch - 2 - (f.h - f.ay) * k, k); } return c; }
 
   let edits = {}; try { edits = JSON.parse(localStorage.getItem('xsyz-skf') || '{}') || {}; } catch (e) {}
@@ -119,7 +147,9 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
     const e = {}; for (const kk in c) if (JSON.stringify(c[kk]) !== JSON.stringify(def[kk])) e[kk] = c[kk];
     if (Object.keys(e).length) edits[id] = e; else delete edits[id]; render(); };
 
-  function tabs() { $('wtabs').innerHTML = ''; for (const w in WN) { const b = document.createElement('button'); b.textContent = WN[w]; if (w === W) b.className = 'on'; b.onclick = () => { W = w; id = ids(w)[0]; phSel = 'wu'; tabs(); render(); }; $('wtabs').append(b); } }
+  async function switchSet() { CUR_SET = await loadHeroWeapon(CUR_HERO, W); render(); }
+  function tabs() { $('wtabs').innerHTML = ''; for (const w in WN) { const b = document.createElement('button'); b.textContent = WN[w]; if (w === W) b.className = 'on'; b.onclick = () => { W = w; id = ids(w)[0]; phSel = 'wu'; tabs(); switchSet(); }; $('wtabs').append(b); } }
+  $('heroSel').onchange = e => { CUR_HERO = e.target.value; switchSet(); };
   function list() { $('list').innerHTML = ''; for (const k of ids(W)) { const S = DATA.skills[k], d = document.createElement('div'); d.className = (k === id ? 'sel ' : '') + (edits[k] ? 'mod' : ''); d.innerHTML = `<span>${S.name}</span><i>${DATA.tierName ? DATA.tierName[S.tier] : S.tier}${S.hold ? '·占时' : ''}</i>`; d.onclick = () => { id = k; phSel = 'wu'; tAcc = 0; render(); }; $('list').append(d); } }
   function phases() {
     const c = cur(), S = DATA.skills[id]; $('phases').innerHTML = '';
@@ -137,7 +167,7 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
     }
     $('fps').value = c.fps; $('hitT').value = c.hitT; $('lunge').value = c.lunge;
   }
-  function pal() { $('pal').innerHTML = ''; for (const a of (J.own && J.own[W]) || Object.keys(FR[W])) FR[W][a].forEach((_, i) => { const tok = a + i, d = document.createElement('div'); d.append(thumb(W, tok, 56, 60)); d.append(document.createTextNode(`${AN[a] || a}${FR[W][a].length > 1 ? i + 1 : ''} · ${tok}`)); d.onclick = () => { const c = cur(); setK(phSel, (c[phSel] || []).concat(tok)); }; $('pal').append(d); }); }
+  function pal() { $('pal').innerHTML = ''; if (!CUR_SET) return; const aw = artW(W), map = CUR_SET.FR[aw] || CUR_SET.FR.sword || {}; const keys = (CUR_SET.J.own && CUR_SET.J.own[aw]) || Object.keys(map); for (const a of keys) if (map[a]) map[a].forEach((_, i) => { const tok = a + i, d = document.createElement('div'); d.append(thumb(W, tok, 56, 60)); d.append(document.createTextNode(`${AN[a] || a}${map[a].length > 1 ? i + 1 : ''} · ${tok}`)); d.onclick = () => { const c = cur(); setK(phSel, (c[phSel] || []).concat(tok)); }; $('pal').append(d); }); }
   function out() { $('out').value = Object.keys(edits).length ? 'SKF 出招帧：\n' + JSON.stringify(edits) : '（还没改任何招）'; }
   function render() { list(); phases(); pal(); out(); const S = DATA.skills[id]; $('title').textContent = `${S.name}（${WN[S.w]} · ${DATA.tierName ? DATA.tierName[S.tier] : ''}）`;
     $('info').textContent = `前摇 ${S.wu}s · ${S.hold ? '持续 ' + S.hold + 's · ' : ''}后摇 ${S.rc}s（出手算在后摇里）· ${S.desc}`; }
@@ -172,7 +202,7 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
   $('resetOne').onclick = () => { delete edits[id]; render(); msg('这招已恢复默认（记得点保存）'); };
   $('resetAll').onclick = () => { if (!confirm('清除所有改动？')) return; edits = {}; localStorage.removeItem('xsyz-skf'); render(); msg('已全部清除'); };
   $('toAll').onclick = () => { const c = cur(), me = id; for (const k of ids(W)) if (k !== me) { const S = DATA.skills[k]; edits[k] = { wu: c.wu, hit: c.hit, rc: c.rc, fps: c.fps, hitT: c.hitT, lunge: c.lunge }; if (S.hold) edits[k].hold = c.hold; } render(); msg(`已套用到${WN[W]}的所有招（记得点保存）`); };
-  id = ids(W)[0]; tabs(); render(); requestAnimationFrame(loop);
+  id = ids(W)[0]; tabs(); await switchSet(); requestAnimationFrame(loop);
 } catch (e) { document.getElementById('msg').textContent = '出错了：' + e; } })();
 </script>
 </body>
