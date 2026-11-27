@@ -8,8 +8,6 @@ import json, os, pathlib, sys
 os.environ.setdefault('LOKY_MAX_CPU_COUNT','4')
 import numpy as np
 from PIL import Image
-from scipy.optimize import linear_sum_assignment
-from sklearn.cluster import KMeans
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -52,62 +50,13 @@ def old_palette(weapon):
         samples.append(p[p[...,3]>127,:3])
     return np.concatenate(samples), atlas
 
-def recolor(frames, old_rgb):
-    old_lab=rgb_lab(old_rgb)
-    pts=[]
-    source_hair=[]
-    for im in frames:
-        a=np.asarray(im); visible=a[a[...,3]>127,:3]; pts.append(rgb_lab(visible))
-        c=visible.astype(np.float32); hm=(c[:,0]>c[:,1]*1.35)&(c[:,0]>c[:,2]*1.9)&(c[:,1]>40)&(c[:,1]<190)
-        source_hair.append(rgb_lab(visible[hm]))
-    new_lab=np.concatenate(pts)
-    old_color=old_rgb.astype(np.float32)
-    old_hm=(old_color[:,0]>old_color[:,1]*1.35)&(old_color[:,0]>old_color[:,2]*1.9)&(old_color[:,1]>40)&(old_color[:,1]<190)
-    old_hair=rgb_lab(old_rgb[old_hm]); source_hair=np.concatenate(source_hair)
-    hair_src_mu=source_hair.mean(0); hair_dst_mu=old_hair.mean(0)
-    hair_ratio=np.minimum(1.5,np.maximum(old_hair.std(0),1.)/np.maximum(source_hair.std(0),1.))
-    km_old=KMeans(n_clusters=8,random_state=21,n_init=5).fit(old_lab)
-    km_new=KMeans(n_clusters=8,random_state=21,n_init=5).fit(new_lab)
-    oc,nc=km_old.cluster_centers_,km_new.cluster_centers_
-    cost=np.linalg.norm(oc[:,None,1:]-nc[None,:,1:],axis=2)
-    oi,ni=linear_sum_assignment(cost)
-    old_mu=[]; old_sd=[]; new_mu=[]; new_sd=[]
-    for i in range(8):
-        op=old_lab[km_old.labels_==i]; npix=new_lab[km_new.labels_==i]
-        old_mu.append(op.mean(0)); old_sd.append(np.maximum(op.std(0),1.0))
-        new_mu.append(npix.mean(0)); new_sd.append(np.maximum(npix.std(0),1.0))
-    match={int(j):int(i) for i,j in zip(oi,ni)}
-    def transfer(lab, labels):
-        mapped=np.empty_like(lab)
-        for j in range(8):
-            sel=labels==j
-            if not np.any(sel): continue
-            k=match[j]; ratio=np.minimum(1.5,old_sd[k]/new_sd[j])
-            mapped[sel]=(lab[sel]-new_mu[j])*ratio+old_mu[k]
-        return mapped
-    cluster_mapped=transfer(new_lab,km_new.labels_)
-    old_l_mean,old_l_std=old_lab[:,0].mean(),max(1.,old_lab[:,0].std())
-    mapped_l_mean,mapped_l_std=cluster_mapped[:,0].mean(),max(1.,cluster_mapped[:,0].std())
-    global_l_scale=min(1.5,old_l_std/mapped_l_std)
-    palette=np.unique(np.asarray(old_rgb,dtype=np.uint8),axis=0); plab=rgb_lab(palette)
-    out=[]
-    for im in frames:
-        a=np.array(im.convert('RGBA')); mask=a[...,3]>127
-        lab=rgb_lab(a[mask,:3]); mapped=transfer(lab,km_new.predict(lab))
-        mapped[:,0]=(mapped[:,0]-mapped_l_mean)*global_l_scale+old_l_mean
-        c=a[mask,:3].astype(np.float32); hair=(c[:,0]>c[:,1]*1.35)&(c[:,0]>c[:,2]*1.9)&(c[:,1]>40)&(c[:,1]<190)
-        mapped[hair]=(lab[hair]-hair_src_mu)*hair_ratio+hair_dst_mu
-        target=lab_rgb(mapped); d=((rgb_lab(target)[:,None,:]-plab[None,:,:])**2).sum(2)
-        a[mask,:3]=palette[d.argmin(1)]; a[~mask,:3]=0; a[...,3]=np.where(mask,255,0)
-        out.append(Image.fromarray(a))
-    return out
-
 def frames(path):
     # Use connected silhouette bounds rather than row/cell rectangles.
     clean_src=src[:src.index('def main(args):')]
     start=clean_src.index('            h=ndimage.binary_fill_holes')
     end=clean_src.index('            im=Image.fromarray',start)
     clean_src=clean_src[:start]+clean_src[end:]
+    clean_src=clean_src.replace('(np.minimum(a[...,0],a[...,2])-a[...,1]>40)', '( (a[...,0]>180)&(a[...,2]>150)&(np.minimum(a[...,0],a[...,2])-a[...,1]>80) )')
     namespace={}; exec(clean_src,namespace)
     return namespace['frames'](path)
 
@@ -133,7 +82,17 @@ def build(weapon, path):
     scaled=[]
     for im in fr:
         g=im.resize((max(1,round(im.width*scale)),max(1,round(im.height*scale))),Image.Resampling.NEAREST)
-        a=np.array(g); a[...,3]=np.where(a[...,3]>127,255,0); scaled.append(Image.fromarray(a))
+        a=np.array(g); mask=a[...,3]>127
+        # One inner pixel of continuous dark contour, including weapon and holes.
+        edge=mask & ~ndimage.binary_erosion(mask,structure=np.array([[0,1,0],[1,1,1],[0,1,0]]),border_value=0)
+        a[edge,:3]=[58,34,24]
+        # Despill only edge-adjacent magenta contamination, preserving cape interiors.
+        near=mask & ndimage.binary_dilation(edge)
+        r,gg,b=a[...,:3].astype(np.int16).transpose(2,0,1)
+        spill=near & (r>gg*1.35) & (b>gg*1.35) & (r>90)
+        a[spill,:3]=[58,34,24]
+        a[...,3]=np.where(mask,255,0); a[~mask,:3]=0
+        scaled.append(Image.fromarray(a))
     W=sum(im.width+2 for im in scaled); H=max(im.height for im in scaled)
     atlas=Image.new('RGBA',(W,H),(0,0,0,0)); x=idx=0; mapping={}
     for name,count in names:
