@@ -53,7 +53,7 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
 <body>
 <header>
   <b>出招帧调整</b>
-  <label>角色 <select id="heroSel"><option value="m">阿远（新版7武器）</option><option value="f">小凛（新版7武器）</option><option value="m_old">阿远（旧4武器）</option><option value="f_old">小凛（旧4武器）</option></select></label>
+  <label>角色 <select id="heroSel"><option value="m">阿远（新版7武器）</option><option value="f">小凛（新版7武器）</option><option value="e">精灵王子（新版7武器）</option><option value="m_old">阿远（旧4武器）</option><option value="f_old">小凛（旧4武器）</option><option value="e_old">精灵王子（旧4武器）</option></select></label>
   <button class="go" id="save">保存（游戏里立刻生效）</button>
   <button id="copy">复制结果发给 Claude</button>
   <button class="warn" id="resetOne">这招恢复默认</button>
@@ -131,7 +131,9 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
     const aw = artW(w);
     if (hero === 'm') return loadAtlas('hero' + aw[0].toUpperCase() + aw.slice(1) + 'Gemini2Cal', 'none');
     if (hero === 'f') return loadAtlas('heroFNew', 'edge');
+    if (hero === 'e') return loadAtlas('heroENew', 'none');
     if (hero === 'f_old') return loadAtlas('heroF', 'edge');
+    if (hero === 'e_old') return loadAtlas('heroE', 'none');
     return loadAtlas('hero', 'all');
   }
   const frame = (w, tok) => { const m = /^([a-z]+)(\d+)$/.exec(tok || ''); if (!m || !CUR_SET) return null; const aw = artW(w), L = (CUR_SET.FR[aw] || CUR_SET.FR.sword || {})[m[1]]; return L && L[+m[2]] || null; };
