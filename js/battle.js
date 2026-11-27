@@ -1114,6 +1114,17 @@
     for (const o of list) {
       if (o.d) { o.d(); continue; }
       if (o.h) {
+        // Screenshot-only debug comparison: all three use identical sprite scale.
+        if (new URLSearchParams(location.search).has('debug') && new URLSearchParams(location.search).has('bowcompare') && SPR.sets.heroBowPreview) {
+          const [bn,bi]=heroFrame(), px=X(hero.x), py=Y(hero.y);
+          for(const offset of [-52,0,52])shadow(hero.x+offset*K,hero.y,26);
+          SPR.draw(ctx,'hero','bow.'+bn,bi,px-52*u,py,false,u,{});
+          SPR.drawHero(ctx,bn,bi,px,py,false,u,{w:'bow',c:'bowPreview'});
+          SPR.draw(ctx,'goblin','idle'+(Math.floor(G.t*2)%2),0,px+52*u,py,true,u,{});
+          ctx.save();ctx.textAlign='center';ctx.font=`${7*u}px Pix, sans-serif`;ctx.lineWidth=3*u;ctx.strokeStyle='#26170c';ctx.fillStyle='#fff0c8';
+          for(const [txt,offset] of [['旧弓',-52],['新弓',0],['哥布林',52]]){ctx.strokeText(txt,px+offset*u,py+12*u);ctx.fillText(txt,px+offset*u,py+12*u);}ctx.restore();
+          continue;
+        }
         shadow(hero.x, hero.y, 26);
         if (hero.inv > 0 && hero.roll <= 0 && hero.hurtT <= 0 && !hero.dead && !(hero.shadowT > 0) && Math.floor(G.t * 20) % 2) continue;
         if (G.drop && G.drop.t < DROP_T) { const k = G.drop.t / DROP_T; ctx.fillStyle = `rgba(0,0,0,${.12 + .3 * k})`; ctx.beginPath(); ctx.ellipse(X(hero.x), Y(hero.y), (3 + 11 * k) * u, (1.5 + 4 * k) * u, 0, 0, 7); ctx.fill(); }   /* 影子越来越大 */
