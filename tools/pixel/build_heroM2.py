@@ -38,7 +38,7 @@ def body_h(im):
     A=np.array(im).astype(int); r,g,b,al=A[...,0],A[...,1],A[...,2],A[...,3]
     hair=(al>0)&(r>150)&(g>70)&(g<150)&(b<90)&(r-b>90)
     ys=np.where(hair.sum(1)>=3)[0]; return im.height-ys.min() if len(ys) else im.height
-SC=42/125   # 所有武器同一比例（AI 图里阿远约 125px 高），人物大小一致
+SC=38.9/125   # 11/27 对齐旧版阿远：待机帧头发顶到脚底 38px
 def main(args):
     small={}; 
     for arg in args:
