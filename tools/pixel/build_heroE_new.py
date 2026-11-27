@@ -37,11 +37,15 @@ ATK = {
 TAIL = [("up", 1), ("finish", 1), ("atk", 2), ("big", 1)]
 
 
-def cut_sheet(path):
+OUTLINE = np.array([58, 34, 24], dtype=np.uint8)
+CROSS = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+
+
+def cut_sheet(path, weapon):
     im = Image.open(path).convert("RGB")
     a = np.array(im)
     r, g, b = a.astype(int).transpose(2, 0, 1)
-    bg_mag = (r > 165) & (b > 135) & (np.minimum(r, b) - g > 68)
+    bg_mag = (r > 155) & (b > 125) & (np.minimum(r, b) - g > 55)
     mask = ~bg_mag
 
     lab, _ = ndimage.label(mask)
@@ -84,7 +88,7 @@ def cut_sheet(path):
         # Remove 1-pixel magenta fringe along outer boundary
         sr, sg, sb = sub.astype(int).transpose(2, 0, 1)
         edge = m & ~ndimage.binary_erosion(m, structure=np.ones((3, 3)), border_value=0)
-        pink_edge = edge & (sr > sg + 30) & (sb > sg + 25) & ((sr + sb) > 220)
+        pink_edge = edge & (sr > sg + 25) & (sb > sg + 20) & ((sr + sb) > 205)
         m = m & ~pink_edge
 
         # Clean isolated 1-3px detached dust
@@ -94,20 +98,14 @@ def cut_sheet(path):
             sizes[0] = 0
             m = (sizes >= 4)[clab]
 
-        # Gentle magenta despill + match Ayuan's warm dark-brown outline & highlight ceiling (~200)
-        edge2 = m & ~ndimage.binary_erosion(m, structure=np.ones((3, 3)), border_value=0)
+        # Clean purplish/magenta background-tainted pixels (antlers, hair tips, cape, bow); keep purple scythe blade
         sr, sg, sb = sub.astype(int).transpose(2, 0, 1)
-        dark_mag = edge2 & (sr < 105) & (sg < 65) & (sb < 105) & (sb > sg + 18) & (sr > sg + 18)
-        sub[dark_mag, 0] = 52
-        sub[dark_mag, 1] = 30
-        sub[dark_mag, 2] = 22
-        # Soften overly bright non-metal character highlights (~215 -> ~200) to match Ayuan's luminance
-        lum = 0.299 * sr + 0.587 * sg + 0.114 * sb
-        warm_bright = m & (lum > 185) & ((sr - sb) > 18)  # blonde hair / warm tunic, excluding cool silver/emerald
-        sub[warm_bright] = np.clip(np.rint(sub[warm_bright].astype(float) * 0.94), 0, 255).astype(np.uint8)
-        # Deepen dark brown outlines slightly to match Ayuan's crisp outline contrast
-        dark_out = m & (sr < 88) & (sg < 62) & (sb < 62) & (sr > sg)
-        sub[dark_out] = np.clip(np.rint(sub[dark_out].astype(float) * 0.85), 0, 255).astype(np.uint8)
+        purp = m & (sr > sg + 14) & (sb > sg + 12) & (sb > 55) & (sr < 185)
+        if weapon != "scythe":
+            sub[purp] = OUTLINE
+        else:
+            edge2 = m & ~ndimage.binary_erosion(m, structure=np.ones((3, 3)), border_value=0)
+            sub[purp & edge2] = OUTLINE
 
         rgba = np.dstack([sub, (m.astype(np.uint8) * 255)])
         fr = Image.fromarray(rgba)
@@ -198,17 +196,37 @@ def main():
     processed = {}
     scales = {}
     for w, path in SOURCES.items():
-        raw_frames = cut_sheet(path)
+        raw_frames = cut_sheet(path, w)
         t0, b0, _ = person_metrics(raw_frames[0])
         t1, b1, _ = person_metrics(raw_frames[1])
         h0, h1 = b0 - t0 + 1, b1 - t1 + 1
         sc = float(np.mean([old_h0 / h0, old_h1 / h1]))
         scales[w] = sc
 
-        scaled = [
-            im.resize((max(1, round(im.width * sc)), max(1, round(im.height * sc))), Image.Resampling.NEAREST)
-            for im in raw_frames
-        ]
+        scaled = []
+        for im in raw_frames:
+            sm = im.resize((max(1, round(im.width * sc)), max(1, round(im.height * sc))), Image.Resampling.NEAREST)
+            arr = np.array(sm).copy()
+            m = arr[..., 3] > 127
+            sr, sg, sb = arr[..., 0].astype(int), arr[..., 1].astype(int), arr[..., 2].astype(int)
+            if w != "scythe":
+                purp = m & (sr > sg + 12) & (sb > sg + 10) & (sr < 190)
+                arr[purp, :3] = OUTLINE
+            # Restore continuous 1px crisp dark-brown outer outline (Ayuan style)
+            edge = m & ~ndimage.binary_erosion(m, structure=CROSS, border_value=0)
+            arr[edge, :3] = OUTLINE
+            # Tone & contrast calibration: soften overly bright blonde/cream blocks, deepen mid-shadows
+            sr, sg, sb = arr[..., 0].astype(float), arr[..., 1].astype(float), arr[..., 2].astype(float)
+            lum = 0.299 * sr + 0.587 * sg + 0.114 * sb
+            tunic_hair = m & (~edge) & (lum > 175) & ((sr - sb) > 14)
+            arr[tunic_hair, :3] = np.clip(np.rint(arr[tunic_hair, :3].astype(float) * 0.90), 0, 255).astype(np.uint8)
+            mid_dark = m & (~edge) & (lum >= 55) & (lum <= 135)
+            arr[mid_dark, :3] = np.clip(np.rint(arr[mid_dark, :3].astype(float) * 0.92), 0, 255).astype(np.uint8)
+            inner_dark = m & (~edge) & (sr < 82) & (sg < 58) & (sb < 58)
+            arr[inner_dark, :3] = OUTLINE
+            arr[~m, :3] = 0
+            arr[..., 3] = np.where(m, 255, 0)
+            scaled.append(Image.fromarray(arr))
         processed[w] = scaled
         st0, sb0, _ = person_metrics(scaled[0])
         print(f"  {w:6s}: 33f | raw=({h0:.0f},{h1:.0f}) | scale={sc:.4f} | scaled_h={sb0 - st0 + 1:.1f}px | idle0={scaled[0].size}")
