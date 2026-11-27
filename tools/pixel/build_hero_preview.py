@@ -102,13 +102,34 @@ def recolor(frames, old_rgb):
         out.append(Image.fromarray(a))
     return out
 
+def frames(path):
+    # Use connected silhouette bounds rather than row/cell rectangles.
+    clean_src=src[:src.index('def main(args):')]
+    start=clean_src.index('            h=ndimage.binary_fill_holes')
+    end=clean_src.index('            im=Image.fromarray',start)
+    clean_src=clean_src[:start]+clean_src[end:]
+    namespace={}; exec(clean_src,namespace)
+    return namespace['frames'](path)
+
+def recolor(frames, old_rgb):
+    # Direct nearest legacy palette preserves light metal and dark outlines.
+    palette=np.unique(old_rgb,axis=0); plab=rgb_lab(palette)
+    out=[]
+    for im in frames:
+        a=np.array(im); mask=a[...,3]>127; colors=a[mask,:3]
+        lab=rgb_lab(colors); d=((lab[:,None,:]-plab[None,:,:])**2).sum(2)
+        a[mask,:3]=palette[d.argmin(1)]; a[~mask,:3]=0
+        out.append(Image.fromarray(a))
+    return out
+
 def build(weapon, path):
     fr=frames(path)
     assert len(fr)==33, f'{weapon}: expected 33 frames, got {len(fr)}'
     old_rgb,_=old_palette(weapon)
+    source_height=body_h(fr[0])
     fr=recolor(fr,old_rgb)
     names=COMMON+ATK[weapon]+TAIL
-    hh=body_h(fr[0]); scale=38/max(1,hh)
+    hh=source_height; scale=38/max(1,hh)
     scaled=[]
     for im in fr:
         g=im.resize((max(1,round(im.width*scale)),max(1,round(im.height*scale))),Image.Resampling.NEAREST)
