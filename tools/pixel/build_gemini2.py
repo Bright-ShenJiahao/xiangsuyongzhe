@@ -42,7 +42,20 @@ def build(w,path):
  scales=[target_width/head_measure(im)[0] for im in fr]
  # Avoid within-cycle zoom; use one scale for idle/run, measured from idle heads.
  scales[:6]=[float(np.median(scales[:2]))]*6
- if w=='bow': scales=[v*1.12 for v in scales] # bow/arrow occludes hair; visual body correction
+ # 11/27 身高统一：只看「人」——发顶到靴底（不算武器），待机+跑步共 6 帧取中位数，整套乘一个系数，使人和旧剑一样高。逐帧的相对大小仍按头宽保持稳定。
+ def boot_bottom(im):
+  q=np.array(im).astype(float);r,g,b=q[:,:,0],q[:,:,1],q[:,:,2]
+  m=(q[:,:,3]>0)&(r>90)&(r<200)&(g>40)&(g<110)&(b<70)&(r>g*1.5);yy=np.where(m)[0]
+  return float(yy.max()) if len(yy) else None
+ def person_h(im):
+  f=boot_bottom(im);return None if f is None else f-head_measure(im)[2]+1
+ _oi=Image.open(ROOT/'art/hero/atlas.png').convert('RGBA');_oj=json.loads((ROOT/'art/hero/atlas.json').read_text())['f']
+ _of=[r for key,arr in _oj.items() if key.startswith('hero:sword.') for r in arr]
+ ratios=[]
+ for i in range(6):
+  ox,oy,ow,oh=_of[i][:4];oh_=person_h(_oi.crop((ox,oy,ox+ow,oy+oh)));nh=person_h(fr[i])
+  if oh_ and nh: ratios.append(oh_/(nh*float(scales[i])))
+ k=float(np.median(ratios)) if ratios else 1.0;scales=[v*k for v in scales];print(w,'身高系数',round(k,3),'（1=已一样高）')
  scale=float(np.median(scales));names=helper['COMMON']+helper['ATK'][w]+helper['TAIL']
  refs=helper['old_palette']('sword')[0]
  # Pose-relative ground anchors from the actual old sword, excluding every weapon.
