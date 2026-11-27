@@ -25,19 +25,29 @@ def cut(path):
  selected=np.isin(lab,[x[2] for x in parts]);assert not np.any(mask&~selected)
  return result
 
+def head_measure(im):
+ a=np.array(im);r,g,b=a[:,:,:3].astype(float).transpose(2,0,1)
+ mask=(a[:,:,3]>0)&(r>95)&(r>g*1.3)&(g>35)&(b<g*.95)
+ labels,n=ndimage.label(ndimage.binary_closing(mask,iterations=1))
+ sizes=np.bincount(labels.ravel());sizes[0]=0;component=labels==int(sizes.argmax())
+ yy,xx=np.where(component)
+ return float(mask[component].sum()),float(np.median(xx)),float(yy.min())
+
 def build(w,path):
- fr=cut(path);body_height=helper['body_h'](fr[0])
- if w=='scythe':
-  a=np.array(fr[0]);r,g,b=a[:,:,:3].astype(int).transpose(2,0,1)
-  hair=(a[:,:,3]>0)&(r>100)&(r>g*1.3)&(g>40)&(b<g*.9)
-  yy,xx=np.where(hair & (np.indices(hair.shape)[0]<a.shape[0]*.55));cx=float(np.median(xx))
-  ys,xs=np.where((a[:,:,3]>0)&(np.abs(np.indices(hair.shape)[1]-cx)<18))
-  body_height=int(ys.max()-yy.min()+1)
- scale=38/body_height;names=helper['COMMON']+helper['ATK'][w]+helper['TAIL']
+ fr=cut(path)
+ reference=cut(Path.home()/'Downloads'/(SOURCES['sword']+'.webp'))
+ ref_area,_,_=head_measure(reference[0]);reference_scale=38/helper['body_h'](reference[0])
+ target_area=ref_area*reference_scale**2
+ scales=[]
+ for im in fr:
+  area,_,_=head_measure(im);scales.append(float(np.sqrt(target_area/max(1,area))))
+ # Limit occlusion-induced corrections while preserving true per-frame scale differences.
+ median=float(np.median(scales));scales=np.clip(scales,median*.88,median*1.12)
+ scale=float(np.median(scales));names=helper['COMMON']+helper['ATK'][w]+helper['TAIL']
  refs=helper['old_palette'](w if w in ['sword','spear','bow','staff'] else 'sword')[0]
  corrected=helper['recolor'](fr,refs)
  for tag,frames in [('Gemini2Raw',fr),('Gemini2Cal',corrected)]:
-  small=[im.resize((max(1,round(im.width*scale)),max(1,round(im.height*scale))),Image.Resampling.NEAREST) for im in frames]
+  small=[im.resize((max(1,round(im.width*scale)),max(1,round(im.height*scale))),Image.Resampling.NEAREST) for im,scale in zip(frames,scales)]
   dest=ROOT/('art/hero'+w.title()+tag);dest.mkdir(exist_ok=True)
   atlas=Image.new('RGBA',(sum(im.width+2 for im in small),max(im.height for im in small)));mapping={};idx=x=0
   sheet=Image.new('RGB',(1100,1260),'#597c80');d=ImageDraw.Draw(sheet)
