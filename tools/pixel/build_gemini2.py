@@ -43,19 +43,40 @@ def build(w,path):
  # Avoid within-cycle zoom; use one scale for idle/run, measured from idle heads.
  scales[:6]=[float(np.median(scales[:2]))]*6
  # 11/27 身高统一：只看「人」——发顶到靴底（不算武器），待机+跑步共 6 帧取中位数，整套乘一个系数，使人和旧剑一样高。逐帧的相对大小仍按头宽保持稳定。
- def boot_bottom(im):
+ def boot_bottom(im, limit_handle=False):
   q=np.array(im).astype(float);r,g,b=q[:,:,0],q[:,:,1],q[:,:,2]
-  m=(q[:,:,3]>0)&(r>90)&(r<200)&(g>40)&(g<110)&(b<70)&(r>g*1.5);yy=np.where(m)[0]
+  m=(q[:,:,3]>0)&(r>90)&(r<200)&(g>40)&(g<110)&(b<70)&(r>g*1.5)
+  if limit_handle:
+   _,cx,_=head_measure(im)
+   m &= np.abs(np.arange(im.width)-cx)<im.height*.26
+  yy=np.where(m)[0]
   return float(yy.max()) if len(yy) else None
- def person_h(im):
-  f=boot_bottom(im);return None if f is None else f-head_measure(im)[2]+1
+ def person_h(im, limit_handle=False):
+  f=boot_bottom(im,limit_handle);return None if f is None else f-head_measure(im)[2]+1
  _oi=Image.open(ROOT/'art/hero/atlas.png').convert('RGBA');_oj=json.loads((ROOT/'art/hero/atlas.json').read_text())['f']
  _of=[r for key,arr in _oj.items() if key.startswith('hero:sword.') for r in arr]
  ratios=[]
  for i in range(6):
-  ox,oy,ow,oh=_of[i][:4];oh_=person_h(_oi.crop((ox,oy,ox+ow,oy+oh)));nh=person_h(fr[i])
+  ox,oy,ow,oh=_of[i][:4];oh_=person_h(_oi.crop((ox,oy,ox+ow,oy+oh)));nh=person_h(fr[i],w=="scythe")
   if oh_ and nh: ratios.append(oh_/(nh*float(scales[i])))
  k=float(np.median(ratios)) if ratios else 1.0;scales=[v*k for v in scales];print(w,'身高系数',round(k,3),'（1=已一样高）')
+ # Check the actual resized pixels. A single median cannot align all poses.
+ for i in range(6):
+  ox,oy,ow,oh=_of[i][:4]
+  target=person_h(_oi.crop((ox,oy,ox+ow,oy+oh)))
+  im=fr[i]
+  if w=="scythe":
+   # Foot rows marked on the source frames, excluding the lower blade and handle.
+   sole=[108,100,95,101,95,93][i]
+   scales[i]=target/(sole-head_measure(im)[2])
+   continue
+  for candidate in sorted(scales[i]*np.linspace(.70,1.30,241),key=lambda v:abs(v-scales[i])):
+   resized=im.resize((round(im.width*candidate),round(im.height*candidate)),Image.Resampling.NEAREST)
+   measured=person_h(resized,w=="scythe")
+   if measured is not None and abs(measured-target)<=1:
+    scales[i]=float(candidate)
+    break
+  else: raise ValueError((w,i,'height outside tolerance'))
  scale=float(np.median(scales));names=helper['COMMON']+helper['ATK'][w]+helper['TAIL']
  refs=helper['old_palette']('sword')[0]
  # Pose-relative ground anchors from the actual old sword, excluding every weapon.
@@ -88,4 +109,6 @@ def build(w,path):
  print(w,'33 complete silhouettes, identical alpha, scale',round(scale,3))
 if __name__=='__main__':
  for w,f in SOURCES.items():build(w,Path.home()/'Downloads'/(f+'.webp'))
+
+
 
