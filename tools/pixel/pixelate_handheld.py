@@ -43,6 +43,17 @@ for group in frames.values():
 base = np.array(im)
 screen = mask & (base[:,:,1] > base[:,:,0].astype(int)+12) & (base[:,:,2] > base[:,:,0].astype(int)+12)
 a[screen, :3] = [44, 116, 111]
+# Material-aware warm-tone correction: preserve cloak, clothes and deep shadows.
+c = a[:,:,:3].astype(float)
+r,g,b = c[:,:,0],c[:,:,1],c[:,:,2]
+hair = mask & (r > 110) & (r > g*1.4) & (g > 45) & (g < 145) & (b < g*.85)
+c[hair] *= np.array([.91, .96, .94])
+# Consolidate the large pale face/hand midtone; leave the brightest glints alone.
+skin = mask & (r > 180) & (g > 130) & (b > 65) & (r > g*1.06) & (g > b*1.12)
+highlight = skin & (g >= 210)
+c[skin & ~highlight] -= np.array([9, 10, 9])
+c[highlight] -= np.array([3, 4, 4])
+a[:,:,:3] = np.clip(np.rint(c),0,255).astype(np.uint8)
 # One-pixel torso dip on idle1; keep feet and frame anchors unchanged.
 x,y,w,h,*_ = frames['hero:gun.idle'][1]
 cut = max(1, int(h*.72))
