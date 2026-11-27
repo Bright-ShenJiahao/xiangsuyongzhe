@@ -1523,7 +1523,7 @@ html body .oathrow .oic { border-radius: 50%; }
 .cxph { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; min-width: 40px; min-height: 40px; border: 2px dashed rgba(200,170,110,.5); border-radius: 6px; color: rgba(220,200,150,.6); font-size: 12px; }
 
 /* 11/27 正式标题横幅：标题保留真实文字，图片只作装饰。 */
-#pause .chead h2, #camp .chead h2, #tpanel #tpTitle, #route #rtTitle, #levelup #luTitle {
+#pause .chead h2, #camp .chead h2, #route #rtTitle, #levelup #luTitle {
  background: url('../art/ui2/title_gold.png') center/100% 100% no-repeat;
  color:#fff1ce!important; text-shadow:1px 2px 2px #260d08!important;
  padding:22px 52px 12px; min-height:64px; box-sizing:border-box; text-align:center;
@@ -1531,12 +1531,24 @@ html body .oathrow .oic { border-radius: 50%; }
 }
 .ctabs button, .ptabs button {background-image:url('../art/ui2/title_silver.png');background-size:100% 100%;background-position:center;background-repeat:no-repeat;padding:15px 28px 9px;}
 .ctabs button.on, .ctabs button.active, .ptabs button.on, .ptabs button.active {background-image:url('../art/ui2/title_silver_on.png');}
-#pause .chead h2:hover, #tpanel #tpTitle:hover {background-image:url('../art/ui2/title_gold_on.png');}
+#pause .chead h2:hover {background-image:url('../art/ui2/title_gold_on.png');}
 @media(max-width:600px){
- #pause .chead h2, #camp .chead h2, #tpanel #tpTitle, #route #rtTitle, #levelup #luTitle {padding:16px 32px 9px;min-height:50px;font-size:17px!important;}
+ #pause .chead h2, #camp .chead h2, #route #rtTitle, #levelup #luTitle {padding:16px 32px 9px;min-height:50px;font-size:17px!important;}
  .ctabs button,.ptabs button{padding:12px 19px 8px;min-width:0;}
 }
 
 /* 掌机成为第五个起手武器，窄屏允许换行。 */
 #wSel{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;}
 @media(max-width:600px){#wSel>button{flex:0 1 28%;min-width:64px;}}
+
+/* 图鉴采用纯文字标题。 */
+#tpanel #tpTitle,
+#tpanel #tpTitle:hover {
+  background: none;
+  min-height: 0;
+  padding: 8px 40px;
+  text-align: center;
+  color: #f0d695;
+  text-shadow: 0 1px 1px #20180d;
+}
+
