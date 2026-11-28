@@ -3,8 +3,30 @@
 // 不用 canvas 的 filter（iPhone Safari 不支持），自己按像素算颜色矩阵。
 (() => {
   const mkc = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; };
-  const loadImg = src => new Promise((ok, no) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = () => no(src); i.src = src; });   // 试玩网址（raw.githack）的图片算跨域：要带 crossOrigin，不然改不了颜色
-  const loadJSON = src => fetch(src).then(r => r.json());
+  async function retryAsset(src, read) {
+    let failure;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const url = attempt ? src + (src.includes('?') ? '&' : '?') + 'retry=' + attempt : src;
+      try { return await read(url); }
+      catch (error) {
+        failure = error;
+        if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+      }
+    }
+    throw failure;
+  }
+  const loadImg = src => retryAsset(src, url => new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Image failed: ' + url));
+    image.src = url;
+  }));
+  const loadJSON = src => retryAsset(src, async url => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Atlas failed: ' + url + ' (' + response.status + ')');
+    return response.json();
+  });
 
   // ---------- 颜色矩阵（和 CSS 滤镜同一套公式）----------
   const I3 = () => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];

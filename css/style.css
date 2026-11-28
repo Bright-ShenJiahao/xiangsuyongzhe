@@ -1670,3 +1670,4 @@ html body .oathrow .oic { border-radius: 50%; }
 #title .tload i {
   background: repeating-linear-gradient(90deg, #ffdc75 0 6px, #bd872c 6px 8px);
 }
+#tpanel .fst canvas, #tpanel .cxbig canvas { image-rendering: pixelated; }
