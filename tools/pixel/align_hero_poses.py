@@ -42,7 +42,7 @@ def match(ref, target, base, current):
     score,dx,dy=candidates[0]
     if score<.69 or score-candidates[1][0]<.025:
         return None
-    return round(ax+dx,1),round(ay+dy,1)
+    return round(ax+dx,1),round(ay+dy,1),score
 
 
 def main():
@@ -63,9 +63,25 @@ def main():
                 weapon,action=key.split(':',1)[-1].split('.')
                 if weapon=='sword' or action in ('atk', 'big'):
                     continue
-                for base,box in zip(sword[1]['f'].get('hero:sword.'+action, []),frames):
-                    anchor=match(tile(sword[2],base),tile(atlas,box),base,box)
-                    if anchor and any(abs(a-b)>=1.5 for a,b in zip(anchor,box[4:])):
+                reference = sword[1]['f'].get('hero:sword.'+action)
+                if reference is None:
+                    if action in ('jump','back','roll','dead'):
+                        continue
+                    reference = [f for k, entries in sword[1]['f'].items()
+                                 if k.startswith('hero:sword.')
+                                 and k.split('.')[-1] not in ('jump','back','roll','dead')
+                                 for f in entries]
+                    reference = list({tuple(f):f for f in reference}.values())
+                    reference = reference[18:28]
+                for i,box in enumerate(frames):
+                    choices = reference if 'hero:sword.'+action not in sword[1]['f'] else reference[i:i+1]
+                    matches = [result for base in choices
+                               if (result := match(tile(sword[2],base),tile(atlas,box),base,box))]
+                    if not matches:
+                        continue
+                    result = max(matches, key=lambda result:result[2])
+                    anchor = result[:2]
+                    if result[2] >= .78 and any(abs(a-b)>=1.5 for a,b in zip(anchor,box[4:])):
                         adjustments[tuple(box[:4])]=anchor
             if adjustments:
                 for frames in render.values():
