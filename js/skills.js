@@ -36,7 +36,7 @@ window.SKILLS = (A) => {
   // c = { S, sk, L(熟练度格数), d(本次伤害), a(朝向), sid }；返回 false = 场上没有敌人，不放
   const C = {
     sword(c) { const r = 52 * MR * (c.L >= 3 ? 1.25 : 1) * area(), half = 1.18 * (c.L >= 3 ? 1.2 : 1), h = H();
-      const slash = (rev) => { const a = A.aimNow(c.a); A.fx({ k: 'slash', x: h.x, y: h.y - 12 * K, a, t: 0, T: .2, r, half, rev }); hitAll(z => inFan(z, h, a, r, half), c.d, { sid: c.sid, kb: 12 }); };
+      const slash = (rev) => { const a = A.aimNow(c.a); A.fx({ k: 'pixelSlash', x: h.x, y: h.y - 12 * K, a, t: 0, T: .24, r, half, rev }); hitAll(z => inFan(z, h, a, r, half), c.d, { sid: c.sid, kb: 12 }); };
       slash(); if (c.L >= 5) wait(.15, () => slash(true));
       if (c.L >= 7) shoot({ x: h.x, y: h.y, a: c.a, v: 260, life: .6, r: 12, pierce: 99, d: c.d * .7, sid: c.sid, o: { extra: true }, look: 'crescent' }); },
     whirl(c) { const r = 40 * MR * area(), h = H(), spin = (k) => { A.fx({ k: 'ring', x: h.x, y: h.y, t: 0, T: .3, r, col: '#e8ecf4' }); hitAll(z => inCircle(z, h, r), c.d * k, { sid: c.sid, kb: 12, slowP: c.L >= 3 ? [.3, 1.5] : 0 }); };

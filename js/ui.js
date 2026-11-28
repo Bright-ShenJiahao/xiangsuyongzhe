@@ -280,7 +280,7 @@
   function demoCast(id, c, u, hx, hy) {
     const y = hy - 14 * u;
     if(id==='g_fast'||id==='g_spread'){for(let j=0;j<(id==='g_fast'?6:8);j++)DM.shots.push({k:'arrow',x:hx,y,vx:320*u,vy:id==='g_spread'?(j-3.5)*25*u:0,t:-j*.04,T:.6});}
-    else if (id === 'sword') DM.fx.push({ k: 'slash', x: hx, y, a: 0, t: 0, T: .2, r: 52, half: 1.18 });
+    else if (id === 'sword') DM.fx.push({ k: 'pixelSlash', x: hx, y, a: 0, t: 0, T: .24, r: 52, half: 1.18 });
     else if (id === 'whirl') DM.fx.push({ k: 'ring', x: hx, y, t: 0, T: .3, r: 40, col: '#e8ecf4' });
     else if (id === 'spear') DM.fx.push({ k: 'thrust', x: hx, y, a: 0, L: 82, w: 14, t: 0, T: .2 });
     else if (id === 'sweep') DM.fx.push({ k: 'slash', x: hx, y, a: 0, t: 0, T: .22, r: 48, half: 1.4, wood: true });
@@ -292,7 +292,8 @@
   function demoFx(g, u, dt) {
     for (const o of DM.fx) {
       o.t += dt; const p = o.t / o.T;
-      if (o.k === 'slash') { const C3 = o.wood ? ['#f0e0c0', '#c8a070', '#8a5a2a'] : ['#ffffff', '#fff2b0', '#f0c04c']; for (let k = 0; k < 3; k++) { const r = (o.r - k * 4) * u; for (let a = -o.half; a <= o.half; a += .04) { const t = (a + o.half) / (2 * o.half); if (t > p * 1.6) continue; if (p > .6 && (Math.floor(a * 40) % 2)) continue; g.fillStyle = C3[k]; const q = k === 0 ? 2 * u : u; g.fillRect(o.x + rd(Math.cos(o.a + a) * r), o.y + rd(Math.sin(o.a + a) * r / DYS), q, q); } } }
+      if (o.k === 'pixelSlash' && window.PIXEL_SKILL_FX?.slash(g, o, o.x, o.y, u, DYS)) {}
+      else if (o.k === 'slash' || o.k === 'pixelSlash') { const C3 = o.wood ? ['#f0e0c0', '#c8a070', '#8a5a2a'] : ['#ffffff', '#fff2b0', '#f0c04c']; for (let k = 0; k < 3; k++) { const r = (o.r - k * 4) * u; for (let a = -o.half; a <= o.half; a += .04) { const t = (a + o.half) / (2 * o.half); if (t > p * 1.6) continue; if (p > .6 && (Math.floor(a * 40) % 2)) continue; g.fillStyle = C3[k]; const q = k === 0 ? 2 * u : u; g.fillRect(o.x + rd(Math.cos(o.a + a) * r), o.y + rd(Math.sin(o.a + a) * r / DYS), q, q); } } }
       else if (o.k === 'thrust') { const L = o.L * u * Math.min(1, p * 2.2); for (let d = 0; d < L; d += u) { const k = d / (o.L * u); g.fillStyle = k > .85 ? '#ffffff' : p > .6 ? '#f0c04c' : '#fff2b0'; g.fillRect(o.x + rd(d), o.y, k > .85 ? 2 * u : u, k > .85 ? 2 * u : u); if (d % (3 * u) < u && p < .5) { const w = o.w * u * .5; g.fillStyle = 'rgba(255,240,180,.6)'; g.fillRect(o.x + rd(d), o.y + rd(w), u, u); g.fillRect(o.x + rd(d), o.y - rd(w), u, u); } } }
       else if (o.k === 'frost') { const r = o.r * u * (.3 + p * .8); for (let a = 0; a < DPI * 2; a += .05) { if (p > .6 && Math.floor(a * 20) % 2) continue; g.fillStyle = p < .4 ? '#ffffff' : '#8ad8ff'; g.fillRect(o.x + rd(Math.cos(a) * r), o.y + rd(Math.sin(a) * r / DYS), 2 * u, 2 * u); } if (p < .35) { g.fillStyle = 'rgba(160,220,255,.25)'; g.beginPath(); g.ellipse(o.x, o.y, r, r / DYS, 0, 0, 7); g.fill(); } }
       else if (o.k === 'ring') { const r = o.r * u * (.6 + p * .8); for (let a = 0; a < DPI * 2; a += .05) { g.fillStyle = p < .5 ? '#fff2c0' : (o.col || '#c8a066'); g.fillRect(o.x + rd(Math.cos(a) * r), o.y + rd(Math.sin(a) * r / DYS), 2 * u, 2 * u); } }

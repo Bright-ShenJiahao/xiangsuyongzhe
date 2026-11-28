@@ -1190,7 +1190,8 @@
       ctx.fillStyle = '#0a2a2a'; ctx.fillText('LEVEL UP!', x + u, y + u); ctx.fillStyle = Math.floor(t * 8) % 2 ? '#ffffff' : '#7ff0e0'; ctx.fillText('LEVEL UP!', x, y); ctx.restore(); }
     for (const o of fx) {
       const p = o.t / o.T,career=o.cast?.career;if(o.sid&&career?.color&&!o.extra){o.col=career.color;ctx.save();ctx.shadowColor=career.color;ctx.shadowBlur=8*u;}
-      if (o.k === 'slash') {   // 像素刀光：三层，从起手往前扫开（half 半角、rev 反手、gold 金色、wood 枪杆）
+      if (o.k === 'pixelSlash' && window.PIXEL_SKILL_FX?.slash(ctx, o, X(o.x), Y(o.y), u, YS)) {}
+      else if (o.k === 'slash' || o.k === 'pixelSlash') {   // 像素刀光：三层，从起手往前扫开（half 半角、rev 反手、gold 金色、wood 枪杆）
         const hf = o.half || 1.35, C3 = o.gold ? ['#ffffff', '#ffe27a', '#e8a020'] : o.wood ? ['#f0e0c0', '#c8a070', '#8a5a2a'] : ['#ffffff', '#fff2b0', '#f0c04c'];
         for (let k = 0; k < 3; k++) { const r = (o.r - k * 4) * u; for (let a = -hf; a <= hf; a += .04) { const t = (o.rev ? hf - a : a + hf) / (2 * hf); if (t > p * 1.6) continue; if (p > .6 && (Math.floor(a * 40) % 2)) continue; const aa = o.a + a; ctx.fillStyle = C3[k]; const q = k === 0 ? 2 * u : u; ctx.fillRect(X(o.x) + rd(Math.cos(aa) * r), Y(o.y) + rd(Math.sin(aa) * r / YS), q, q); } }
       } else if (o.k === 'thrust') {   // 像素枪芒：一道往前捅出去的直线，带两条边
