@@ -339,6 +339,11 @@
 ## 小凛镰刀替换（2026-11-28）
 - 用新上传的 24 帧镰刀图集替换 `art/heroFNew` 镰刀动作帧（缩放倍率 `0.4663`，`idle0` 身高 `40.0px`），重新校准色板、身高与锚点并同步更新 `art/heroFNew/compare.png` 与 `art/compare_3heroes.png`。
 - 修正小凛镰刀 `slam0`/`chop1` 锚点（排除低垂镰柄避免悬空）；同步接入阿远新版 33 帧镰刀图集（`art/heroScytheGemini2Cal` / `Raw`，脚本 `tools/pixel/build_ayuan_scythe.py`）并统一按阿远剑色板与身高基准校准，更新 `art/compare_3heroes.png`。
+
+## 吸血鬼公主（id=v）可玩角色接入（2026-11-28）
+- 接入剑、枪、弓、法杖、圣典、掌机、镰刀全 7 套 33 帧图集至 `art/heroV/atlas.{png,json}`（生成脚本 `tools/pixel/build_heroV.py`），同步生成占位立绘 `art/portrait/v.webp` 与四角色同落脚线对比图 `art/compare_4heroes.png`。
+- 校准基准：按阿远身高（`idle0=39px` / `idle1=36px`）定每套单一等比缩放（`0.5116`～`0.5197`），严格洋红抠图保留猩红武器，补齐连续 1px 深棕描边 `(58,34,24)` 并柔化银发过高亮部，按靴底与重心定锚点。
+- 全场景接入：`js/data.js`（`DATA.heroes` 新增 `id: 'v'`）、`js/sprites.js`（`SETS.heroV`）、`js/ui.js`（选人/图鉴/立绘预载）、`demo/intro.html`（`h=v`）、`demo/palace.html`（`h=v`）与 `tools/frames.html`。
 ## 正式书封与阿远新镰刀（2026-11-28）
 - 接入用户提供的掌机、圣典、镰刀三本正式书封，按独立连通轮廓抠图，统一128px画布，替换选人/背包/商店/场内书本与拾取提示中的旧借图；保留单技能图标。美术清单同步更新。
 - 替换阿远镰刀33帧，源图保存于art/src/ayuan_scythe_latest.webp。全套固定倍率0.4935，第一待机人物身高按旧剑38px对齐（排除武器），各动作锚点参考旧剑对应姿态的头部与落脚关系；保留腾空/翻滚姿势差异，清理轮廓内洋红污染，默认使用旧剑色板版本。
