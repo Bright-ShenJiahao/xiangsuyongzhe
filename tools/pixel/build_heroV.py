@@ -135,8 +135,8 @@ def vampire_metrics(im):
         yy, xx = np.where(al)
         fcx, fcy, htop = float(np.median(xx)), float(np.median(yy)) * 0.4, 0.0
 
-    # Boots: dark pixels strictly under head/torso
-    near_boots = dark_body & (ys_all > fcy + im.height * 0.25) & (np.abs(xs_all - fcx) < im.width * 0.26)
+    # Boots: dark pixels strictly under head/torso (exclude bow/weapon extending to the right)
+    near_boots = dark_body & (ys_all > fcy + im.height * 0.25) & (xs_all >= fcx - im.width * 0.24) & (xs_all <= fcx + im.width * 0.14)
     by, bx = np.where(near_boots)
     if len(by) >= 4:
         boot_bot = float(np.percentile(by, 98))
