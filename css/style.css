@@ -1552,3 +1552,13 @@ html body .oathrow .oic { border-radius: 50%; }
   text-shadow: 0 1px 1px #20180d;
 }
 
+
+/* 选人：直接展示武器伤害的属性来源。 */
+#wSel .weaponAttr{font-size:12px;line-height:1.4;color:#715335;white-space:nowrap;}
+#wSel .weaponAttr[data-attr="str"]{color:#8b3d28;}
+#wSel .weaponAttr[data-attr="agi"]{color:#386333;}
+#wSel .weaponAttr[data-attr="int"]{color:#594283;}
+#prep .weaponAttrHint{margin:10px 0 0;padding:7px 10px;border-left:3px solid #bb9145;background:rgba(255,248,220,.65);color:#594023;font-size:14px;line-height:1.5;}
+#wDesc .skIt{flex-wrap:wrap;}
+#wDesc .skIt em{white-space:nowrap;}
+@media(max-width:600px){#wSel .weaponAttr{font-size:11px;}#prep .weaponAttrHint{font-size:13px;}}
