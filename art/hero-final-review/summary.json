@@ -1,0 +1,57 @@
+[
+  {
+    "hero": "Ayuan",
+    "mappedFrames": 231,
+    "uniqueFrames": 231
+  },
+  {
+    "hero": "heroFNew",
+    "mappedFrames": 232,
+    "uniqueFrames": 170
+  },
+  {
+    "hero": "heroENew",
+    "mappedFrames": 231,
+    "uniqueFrames": 231
+  },
+  {
+    "hero": "heroV",
+    "mappedFrames": 231,
+    "uniqueFrames": 231
+  },
+  {
+    "hero": "heroS",
+    "mappedFrames": 231,
+    "uniqueFrames": 231
+  },
+  {
+    "hero": "heroK",
+    "mappedFrames": 231,
+    "uniqueFrames": 231
+  },
+  {
+    "hero": "heroCat",
+    "mappedFrames": 231,
+    "uniqueFrames": 231
+  },
+  {
+    "hero": "heroMech",
+    "mappedFrames": 231,
+    "uniqueFrames": 231
+  },
+  {
+    "hero": "heroWitch",
+    "mappedFrames": 231,
+    "uniqueFrames": 231
+  },
+  {
+    "hero": "heroMoon",
+    "mappedFrames": 231,
+    "uniqueFrames": 231
+  },
+  {
+    "hero": "heroMiko",
+    "mappedFrames": 231,
+    "uniqueFrames": 231
+  }
+]
