@@ -197,7 +197,13 @@
         ['称号', `· 打出某种成绩就会解锁称号，永久保留。<br>· 每个称号都有加有减，比如「伤害 +8%，受到伤害 +5%」，看这局想怎么打来选。<br>· 一次只能佩戴 1 个，在宫殿找公主更换。<br>· 图鉴的「称号」页能看到获得条件。`],
         ['铜钱和奇遇', `· 铜钱是局内货币，掉在地上要走过去捡。放太久会被小咕噜偷走——撞到它能抢回来。<br>· 站与站之间能逛商店：买技能书、宝物、印记，还能换水晶。<br>· 路上会遇到奇遇：坏掉的街机、小咕噜的赌局、精灵、旅商……有赚有赔。`]];
       const bar = document.createElement('div'); bar.className = 'cxtop'; const box = document.createElement('div'); box.className = 'hbox';
-      H.forEach(([t, h], i) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => { bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); box.innerHTML = `<h3>${t}</h3><p>${h}</p>`; }; bar.appendChild(b); if (!i) setTimeout(() => b.click()); });
+      if (window.LUMINA_AI) {
+        const ab = document.createElement('button'); ab.textContent = '✨ 露米娜AI';
+        ab.onclick = () => { bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === ab)); LUMINA_AI.render(box, H); };
+        bar.appendChild(ab);
+      }
+      H.forEach(([t, h], i) => { const b = document.createElement('button'); b.textContent = t; b.onclick = () => { bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); box.innerHTML = `<h3>${t}</h3><p>${h}</p>`; }; bar.appendChild(b); });
+      setTimeout(() => { const first = bar.querySelector('button'); if (first) first.click(); });
       d.appendChild(bar); d.appendChild(box); return d; }],
   };
   for (const b of document.querySelectorAll('[data-panel]')) b.onclick = () => { const [t, fn] = PANELS[b.dataset.panel]; $('tpTitle').textContent = t; const body = $('tpBody'); document.querySelectorAll('.cxtabs, .cxpop, .cxtop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } body.innerHTML = ''; body.appendChild(fn()); overlay('tpanel', true); };
