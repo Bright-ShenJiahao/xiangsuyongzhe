@@ -103,6 +103,7 @@ window.DATA = {
     { id: 'f', name: '小凛', from: '日本', desc: '剑道部的高中生', perk: '翻滚冷却 −20%' },
     { id: 'e', name: '戈拉斯尔', from: '精灵王国', desc: '精灵小王国的王子，战死后被神明留住了魂魄', perk: '闪避 +8%' },   // 11/26 精灵王子（素材 art/heroE；先开放方便试玩，要锁就加 locked: true）
     { id: 'v', name: '吸血鬼公主', from: '吸血鬼城堡', desc: '银发红瞳的暗夜血族公主', perk: '暴击率 +5%' },   // 11/28 吸血鬼公主（素材 art/heroV，全7武器）
+    { id: 's', name: '骷髅法师', from: '黑暗之地', desc: '披着紫金法袍的古老亡灵法师', perk: '范围 +8%' },   // 11/28 骷髅法师（素材 art/heroS，全7武器）
     { id: 'p', name: '公主', desc: '光之王国的公主露米娜', perk: '法杖伤害 +10%', locked: true },   // 11/22 先锁起来（素材都在）
   ],
   habits: [
