@@ -15,16 +15,19 @@ def cut_sheet(path):
     rgb = np.array(Image.open(path).convert("RGB"))
     r, g, b = rgb.astype(int).transpose(2, 0, 1)
     foreground = ~((r > 180) & (b > 155) & (np.minimum(r, b)-g > 90))
-    for erosion in range(4):
+    for erosion in range(8):
         seeds = ndimage.binary_erosion(foreground,iterations=erosion) if erosion else foreground
         labels, _ = ndimage.label(seeds, np.ones((3, 3)))
         big = {}
         for cid, region in enumerate(ndimage.find_objects(labels), 1):
             ys, xs = region
-            if np.count_nonzero(labels[region] == cid) < 600:
+            if np.count_nonzero(labels[region] == cid) < 300:
                 continue
             row = int(np.argmin(np.abs(np.array(CENTERS_Y)-(ys.start+ys.stop)/2)))
             big.setdefault(row, []).append((xs.start, cid))
+        sizes = np.bincount(labels.ravel())
+        big = {row: sorted(parts, key=lambda part: -sizes[part[1]])[:8 if row<4 else 1]
+               for row,parts in big.items()}
         if [len(big.get(row,[])) for row in range(5)] == [8,8,8,8,1]:
             break
     assert [len(big.get(row,[])) for row in range(5)] == [8,8,8,8,1], (path,big)
@@ -33,7 +36,7 @@ def cut_sheet(path):
     dist, nearest = ndimage.distance_transform_edt(~major, return_indices=True)
     owner = labels[tuple(nearest)]
     for cid in order:
-        mask = (owner == cid) & foreground & (dist <= 8)
+        mask = (owner == cid) & foreground & (dist <= max(8, erosion + 5))
         ys,xs = np.where(mask)
         bounds = (slice(ys.min(),ys.max()+1),slice(xs.min(),xs.max()+1))
         sub = rgb[bounds].copy()
@@ -47,8 +50,8 @@ def cut_sheet(path):
         yield Image.fromarray(np.dstack((sub,m.astype(np.uint8)*255))), (int(xs.min()),int(ys.min()))
 
 
-def main():
-    sources = {w:list(cut_sheet(ART/'src/heroCat'/f'{w}.webp')) for w in ATK}
+def main(directory="heroCat", hero_id="c"):
+    sources = {w:list(cut_sheet(ART/'src'/directory/f'{w}.webp')) for w in ATK}
     sword = sources['sword']
     # All sheets share the same body poses. Measure anchors on the short sword
     # sheet so long weapons and tail tips cannot move the other weapon sets.
@@ -62,7 +65,7 @@ def main():
         boots = (xx+x>=cx-32)&(xx+x<=cx+23)
         ay = int(yy[boots].max()+1+y) if boots.any() else y+im.height
         anchors.append((ax,ay))
-    scale = 38/(anchors[0][1]-sword[0][1][1])
+    scale = (42 if directory == "heroWitch" else 38)/(anchors[0][1]-sword[0][1][1])
     atlas = Image.new('RGBA',(1024,900))
     sheet = Image.new('RGB',(1320,700),'#e9ddc0')
     draw = ImageDraw.Draw(sheet)
@@ -98,12 +101,12 @@ def main():
             if w=='sword':
                 frames[f'hero:{action}']=entries
         assert n==33
-    dest=ART/'heroCat'
+    dest=ART/directory
     dest.mkdir(exist_ok=True)
     atlas.crop((0,0,atlas.width,y+tall)).save(dest/'atlas.png')
-    (dest/'atlas.json').write_text(json.dumps({'f':frames,'art':'heroCat-7w','weapons':list(ATK),'own':own},separators=(',',':')),encoding='utf-8')
+    (dest/'atlas.json').write_text(json.dumps({'f':frames,'art':directory+'-7w','weapons':list(ATK),'own':own},separators=(',',':')),encoding='utf-8')
     portrait=sword[0][0].crop((8,0,86,76))
-    portrait.save(ART/'portrait/c.webp',lossless=True)
+    portrait.save(ART/'portrait'/f'{hero_id}.webp',lossless=True)
     sheet.save(dest/'compare.png')
 
 
