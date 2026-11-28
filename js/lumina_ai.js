@@ -192,11 +192,14 @@
       log.scrollTop = log.scrollHeight;
     };
 
+    const playSfx = (k) => { try { if (window.SFX && SFX.on) SFX.play(k); } catch (e) {} };
     const ask = (q) => {
       const text = (q || '').trim();
       if (!text) return;
+      playSfx('pick');
       appendMsg('u', text.replace(/</g, '&lt;'));
       const hits = search(text, helpTopics);
+      setTimeout(() => playSfx('blipP'), 70);
       if (!hits.length) {
         appendMsg('a', `勇者大人，典籍里暂时没有找到「<b>${text.replace(/</g, '&lt;')}</b>」的直接记录。<br>可以试试搜：<b>英雄</b>、<b>兵器</b>、<b>翻滚</b>、<b>羁绊</b>、<b>水晶</b>、<b>称号</b>，或具体技能/角色名。`);
         return;
