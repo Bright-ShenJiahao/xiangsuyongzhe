@@ -103,6 +103,11 @@ def main():
             if field in meta: meta[field] = dest.height
         (ROOT/'art'/name/'atlas.json').write_text(json.dumps(meta, separators=(',', ':')), encoding='utf-8')
         dest.save(ROOT/'art'/name/'atlas.png')
+        # Preserve the later, reviewed idle fixes when rebuilding body sizes.
+        if Path(__file__).with_name('hero_idle_anchor_overrides.json').exists():
+            from fix_idle_anchors import apply_idle_overrides
+            apply_idle_overrides(only={name})
+            meta = json.loads((ROOT/'art'/name/'atlas.json').read_text(encoding='utf-8'))
         oldmeta = json.loads(original('art/'+name+'/atlas.json'))
         poses = [('sword.idle', 0), ('sword.idle', 1), ('sword.run', 0), ('sword.atk', 0), ('spear.idle', 0), ('scythe.idle', 0)]
         for col, (key, index) in enumerate(poses):

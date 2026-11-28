@@ -1,0 +1,217 @@
+{
+  "note": "Fixed boot/body landmarks. Excludes plume, weapon tips and shafts. Expected rectangles protect against applying old anchors to regenerated art.",
+  "sets": {
+    "heroK": {
+      "hero:sword.idle": [
+        {
+          "rect": [
+            0,
+            0,
+            46,
+            55
+          ],
+          "anchor": [
+            20,
+            49
+          ]
+        },
+        {
+          "rect": [
+            48,
+            0,
+            49,
+            53
+          ],
+          "anchor": [
+            22,
+            47
+          ]
+        }
+      ],
+      "hero:spear.idle": [
+        {
+          "rect": [
+            1799,
+            0,
+            50,
+            55
+          ],
+          "anchor": [
+            19,
+            49
+          ]
+        },
+        {
+          "rect": [
+            1851,
+            0,
+            52,
+            53
+          ],
+          "anchor": [
+            22,
+            47
+          ]
+        }
+      ],
+      "hero:bow.idle": [
+        {
+          "rect": [
+            1730,
+            60,
+            44,
+            55
+          ],
+          "anchor": [
+            20,
+            49
+          ]
+        },
+        {
+          "rect": [
+            1776,
+            60,
+            46,
+            54
+          ],
+          "anchor": [
+            22,
+            47
+          ]
+        }
+      ],
+      "hero:staff.idle": [
+        {
+          "rect": [
+            1515,
+            123,
+            46,
+            55
+          ],
+          "anchor": [
+            19,
+            47
+          ]
+        },
+        {
+          "rect": [
+            1563,
+            123,
+            49,
+            55
+          ],
+          "anchor": [
+            21,
+            44
+          ]
+        }
+      ],
+      "hero:tome.idle": [
+        {
+          "rect": [
+            1326,
+            182,
+            45,
+            55
+          ],
+          "anchor": [
+            20,
+            49
+          ]
+        },
+        {
+          "rect": [
+            1373,
+            182,
+            48,
+            53
+          ],
+          "anchor": [
+            22,
+            47
+          ]
+        }
+      ],
+      "hero:gun.idle": [
+        {
+          "rect": [
+            1061,
+            242,
+            42,
+            56
+          ],
+          "anchor": [
+            20,
+            50
+          ]
+        },
+        {
+          "rect": [
+            1105,
+            242,
+            43,
+            53
+          ],
+          "anchor": [
+            22,
+            47
+          ]
+        }
+      ],
+      "hero:scythe.idle": [
+        {
+          "rect": [
+            685,
+            300,
+            54,
+            55
+          ],
+          "anchor": [
+            20,
+            49
+          ]
+        },
+        {
+          "rect": [
+            741,
+            300,
+            56,
+            53
+          ],
+          "anchor": [
+            22,
+            47
+          ]
+        }
+      ]
+    },
+    "heroScytheGemini2Cal": {
+      "hero:scythe.idle": [
+        {
+          "rect": [
+            0,
+            0,
+            40,
+            38
+          ],
+          "anchor": [
+            13,
+            38
+          ]
+        },
+        {
+          "rect": [
+            42,
+            0,
+            43,
+            38
+          ],
+          "anchor": [
+            15,
+            35
+          ]
+        }
+      ]
+    }
+  }
+}
