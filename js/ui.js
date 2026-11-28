@@ -185,8 +185,32 @@
       { const pend = Object.values(FIG).flat().filter(x => !x.c.complete); if (pend.length) Promise.all(pend.map(x => new Promise(r => { x.c.addEventListener('load', r); x.c.addEventListener('error', r); }))).then(() => { if (d.isConnected) document.querySelector('[data-panel="codex"]').click(); }); }
       anims.forEach((a, i) => { a.i = i; draw(a); }); const tm = setInterval(() => { if (!d.isConnected) return clearInterval(tm); anims.forEach(a => { a.i++; draw(a); }); }, 400);   // 11/23 原地小幅待机（铃兰式）
       return d; }],
-    set: ['设置', () => { const d = document.createElement('div'); const b = document.createElement('button'); b.className = 'btn'; const lab = () => b.textContent = '音效：' + (SFX.on ? '开' : '关'); lab(); b.onclick = () => { SFX.on = !SFX.on; lab(); if (SFX.on) SFX.play('pick'); }; d.appendChild(b);
-      const m = document.createElement('button'); m.className = 'btn'; m.style.marginLeft = '8px'; const VS = [0, .3, .6, 1], ml = () => m.textContent = '音乐：' + (BGM.vol === 0 ? '关' : Math.round(BGM.vol * 100) + '%'); ml(); m.onclick = () => { const i = VS.findIndex(v => Math.abs(v - BGM.vol) < .05); BGM.vol = VS[(i + 1) % VS.length]; ml(); }; d.appendChild(m); return d; }],   // 11/24 音效开关 + 11/25 音乐音量
+    set: ['设置', () => {
+      if (!document.getElementById('pxSetCss')) {
+        const st = document.createElement('style'); st.id = 'pxSetCss';
+        st.textContent = `.pxset{display:flex;flex-direction:column;gap:14px;padding:8px 4px;max-width:420px;margin:0 auto}
+          .pxrow{display:flex;align-items:center;gap:12px;background:#241910;border:2px solid #8a6a38;box-shadow:inset 0 0 0 2px #140d08;padding:10px 12px}
+          .pxrow label{min-width:56px;color:#ffd890;font-weight:bold;letter-spacing:.08em}
+          .pxrow .pxval{min-width:44px;text-align:right;color:#f4e6c8;font-family:monospace;font-size:15px}
+          .pxsl{flex:1;-webkit-appearance:none;appearance:none;height:14px;background:#140d08;border:2px solid #745834;outline:none;cursor:pointer}
+          .pxsl::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:22px;background:#e4b152;border:2px solid #fff3c8;box-shadow:2px 2px 0 #1a0e06;cursor:pointer}
+          .pxsl::-moz-range-thumb{width:14px;height:20px;border-radius:0;background:#e4b152;border:2px solid #fff3c8;box-shadow:2px 2px 0 #1a0e06;cursor:pointer}`;
+        document.head.appendChild(st);
+      }
+      const d = document.createElement('div'); d.className = 'pxset';
+      const mkSlider = (name, getV, setV, onEnd) => {
+        const row = document.createElement('div'); row.className = 'pxrow';
+        const lb = document.createElement('label'); lb.textContent = name;
+        const inp = document.createElement('input'); inp.type = 'range'; inp.className = 'pxsl'; inp.min = 0; inp.max = 100; inp.step = 5;
+        const val = document.createElement('span'); val.className = 'pxval';
+        const sync = () => { const p = Math.round(getV() * 100); inp.value = p; val.textContent = p === 0 ? '关' : p + '%'; inp.style.background = `linear-gradient(90deg,#c89238 0%,#c89238 ${p}%,#140d08 ${p}%,#140d08 100%)`; };
+        inp.oninput = () => { setV(Number(inp.value) / 100); sync(); };
+        if (onEnd) inp.onchange = onEnd;
+        sync(); row.append(lb, inp, val); return row;
+      };
+      d.appendChild(mkSlider('音乐', () => BGM.vol, v => { BGM.vol = v; }));
+      d.appendChild(mkSlider('音效', () => SFX.vol, v => { SFX.vol = v; }, () => { if (SFX.on) SFX.play('pick'); }));
+      return d; }],   // 11/29 像素风音乐/音效拖动滑条
     help: ['帮助', () => { const d = document.createElement('div'); d.className = 'help';   // 11/24 帮助：游戏规则分页
       const H = [['基础', `深夜两点，你被吸进了一盘 999 合 1 的卡带。打倒哥布林王，才能回到屏幕这一边。<br>· 移动：${touch ? '按住屏幕拖动' : 'WASD 或方向键'}。<br>· 攻击是自动的：技能栏里的技能书按顺序轮流放出，你只管走位。<br>· 打怪拿经验升级，升级、宝箱、商店都能拿到新的技能书和宝物。<br>· 暂停：${touch ? '右上角 II' : 'P 或 Esc'}。`],
         ['翻滚和身法', `· 翻滚：${touch ? '右下角按钮' : '空格'}。翻滚时无敌，可以穿过敌人的攻击。<br>· 翻滚有 2 格，用掉后每格 1.5 秒回一格；按钮满格时会发光。<br>· 身法印记会给翻滚加效果。只有<b>满格时那一滚</b>才会触发效果，纯数值的（翻滚距离、回格速度）一直有效。<br>· 暗影步：在敌人出招前一刻翻滚，会化成黑影。`],

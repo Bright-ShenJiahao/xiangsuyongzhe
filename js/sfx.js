@@ -1,6 +1,6 @@
 // 11/24 音效：WebAudio 现场合成（先顶上，以后可换正式素材）。SFX.play('hit') 等；同一种声音 40ms 内只响一次，免得怪多时炸耳朵
 (() => {
-  let AC = null, on = localStorage.getItem('xsyz-sfx') !== '0'; const last = {}, VOL = .8;
+  let AC = null, on = localStorage.getItem('xsyz-sfx') !== '0', VOL = (() => { const v = parseFloat(localStorage.getItem('xsyz-sfxVol')); return isNaN(v) ? (on ? .8 : 0) : Math.max(0, Math.min(1, v)); })(); const last = {};
   const ac = () => { if (!AC) try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } if (AC.state === 'suspended') AC.resume(); return AC; };
   addEventListener('pointerdown', ac, { once: true }); addEventListener('keydown', ac, { once: true });
   function tone(f0, f1, dur, type = 'square', vol = .15, delay = 0) { const a = AC; if (!a) return; const t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur); g.gain.setValueAtTime(vol * VOL, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + .02); }
@@ -21,5 +21,5 @@
     excl: () => { tone(1568, 1568, .1, 'square', .07); tone(2093, 2093, .12, 'square', .06, .07); }, blipP: () => tone(960 + Math.random() * 140, 900, .045, 'square', .045), blipH: () => tone(520 + Math.random() * 60, 480, .05, 'square', .045), blipN: () => tone(300 + Math.random() * 50, 280, .055, 'square', .05),
     door: () => { tone(90, 150, .6, 'sawtooth', .08); tone(180, 300, .6, 'sine', .08); noise(.5, .07, 250); }, whoosh: () => { noise(.55, .14, 500); tone(260, 1700, .55, 'sine', .08); }, step: () => { noise(.04, .08, 900); tone(130, 70, .05, 'triangle', .06); },
     win: () => [659, 784, 988].forEach((f, i) => tone(f, f, .16, 'triangle', .1, i * .08)), jackpot: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, f * 1.01, .22, 'triangle', .12, i * .09)) };
-  window.SFX = { play(k) { if (!on || !AC || !S[k]) return; const n = performance.now(); if (n - (last[k] || 0) < 40) return; last[k] = n; try { S[k](); } catch (e) {} }, get on() { return on; }, set on(v) { on = !!v; localStorage.setItem('xsyz-sfx', on ? '1' : '0'); } };
+  window.SFX = { play(k) { if (!on || VOL <= 0 || !AC || !S[k]) return; const n = performance.now(); if (n - (last[k] || 0) < 40) return; last[k] = n; try { S[k](); } catch (e) {} }, get on() { return on && VOL > 0; }, set on(v) { on = !!v; if (on && VOL <= 0) VOL = .8; localStorage.setItem('xsyz-sfx', on ? '1' : '0'); localStorage.setItem('xsyz-sfxVol', VOL); }, get vol() { return on ? VOL : 0; }, set vol(v) { VOL = Math.max(0, Math.min(1, v)); on = VOL > 0; localStorage.setItem('xsyz-sfx', on ? '1' : '0'); localStorage.setItem('xsyz-sfxVol', VOL); } };
 })();
