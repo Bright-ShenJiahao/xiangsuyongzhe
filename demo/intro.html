@@ -48,7 +48,7 @@ function fx(cvId, mode) { const c = $(cvId), g = c.getContext('2d'); let bits = 
   requestAnimationFrame(f); } requestAnimationFrame(f); }
 fx('ck', 'crack'); fx('cr', 'glow');
 // 像素场景
-const QS = new URLSearchParams(location.search), HSEX = ['f', 'e', 'v', 's', 'k'].includes(QS.get('h')) ? QS.get('h') : 'm', HW = QS.get('w') || 'sword', HDIR = HSEX==='m' && ['sword','spear','bow','staff','tome','scythe','gun'].includes(HW) ? 'hero'+HW[0].toUpperCase()+HW.slice(1)+'Gemini2Cal' : ({ f: 'heroFNew', e: 'heroENew', v: 'heroV', s: 'heroS', k: 'heroK' })[HSEX] || 'hero';   /* 11/28 全角色均使用新版7武器图集 */
+const QS = new URLSearchParams(location.search), HSEX = ['f', 'e', 'v', 's', 'k', 'c'].includes(QS.get('h')) ? QS.get('h') : 'm', HW = QS.get('w') || 'sword', HDIR = HSEX==='m' && ['sword','spear','bow','staff','tome','scythe','gun'].includes(HW) ? 'hero'+HW[0].toUpperCase()+HW.slice(1)+'Gemini2Cal' : ({ f: 'heroFNew', e: 'heroENew', v: 'heroV', s: 'heroS', k: 'heroK', c: 'heroCat' })[HSEX] || 'hero';   /* 11/28 全角色均使用新版7武器图集 */
 const AT = Object.assign(new Image(), { src: '../art/' + HDIR + '/atlas.png' }), PR = Object.assign(new Image(), { src: '../art/heroP/atlas.png' }), BG = Object.assign(new Image(), { src: '../art/intro/tower.webp' });
 const FR = { idle: [0, 0, 36, 40, 13.6, 39], hurt: [442, 0, 45, 39, 18.5, 39], dead: [489, 0, 54, 23, 19.7, 23] }, PI = [[878, 140, 38, 40, 16.5, 40], [918, 140, 39, 40, 17.4, 40]];
 const CW = 856, CH = 482, Z = CW / 640;

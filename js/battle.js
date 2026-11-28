@@ -897,7 +897,7 @@
   const cMul = () => (1 + (hero.fx.coinMul || 0)) * (G.route === 'elite' ? 1.5 : 1) * (RUN.coinBoost ? 1.3 : 1);
   // 11/23 地上的铜钱：弹出落地，靠近就吸过来；放着 10 秒以上会招来小咕噜偷钱，撞到它钱会掉出来
   function coinTick(dt) {
-    const mag = 40 + (hero.fx.waveCoin || 0) * 8;
+    const mag = (40 + (hero.fx.waveCoin || 0) * 8) * (RUN.hero === 'c' ? 1.2 : 1);
     for (const c of G.gc) { c.t += dt; if (c.h > 0 || c.vh > 0) { c.vh -= 300 * dt; c.h = Math.max(0, c.h + c.vh * dt); c.x += c.vx * dt; if (c.h === 0) { c.vh = 0; c.vx = 0; } }
       const d = dist(c, hero); if (c.pull && c.t > .35) { const k = Math.min(1, dt * 8); c.x += (hero.x - c.x) * k; c.y += (hero.y - c.y) * k; } if (c.t > .35 && d < mag && !hero.dead) { const k = Math.min(1, dt * (6 + 300 / Math.max(d, 5))); c.x += (hero.x - c.x) * k; c.y += (hero.y - c.y) * k; }
       if (c.t > .35 && d < 9) { c.got = 1; G.cf += c.v * cMul(); const n = Math.floor(G.cf); G.cf -= n; RUN.coins += n; SFX.play('coin'); parts.push({ x: hero.x, y: hero.y - 30 * K, vx: 0, vy: -40 * K, t: 0, T: .3, col: '#ffe08a', g: 0 }); } }
