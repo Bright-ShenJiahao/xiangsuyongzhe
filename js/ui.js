@@ -151,7 +151,7 @@
       d.addEventListener('click', ev => show(ev.target.closest('.fig')));
       for (const [k, n, note] of [['gob_thief', '小咕噜', '小偷'], ['gob_merchant', '矮人商人', '商人'], ['guard', '王国卫兵', '守卫'], ['wizard', '大法师', '王国'], ['minister', '大臣', '王国']]) add(null, [], n, note, 'blue', note, k);   // 11/24 底座：勇者金、NPC 蓝、怪物灰   // 11/23 NPC 也进图鉴
       { // 11/23 阵营分类：页签 + 「全部」里分组小标题
-        const G = [['hum', '人类阵营'], ['gob', '哥布林'], ['wild', '野兽·亡灵'], ['neu', '中立']], gOf = k => ['m', 'f', 'p', 'guard', 'wizard', 'minister'].includes(k) ? 'hum' : k === 'gob_merchant' || k === 'gob_thief' ? 'neu' : ['wolf_free', 'skeleton'].includes(k) ? 'wild' : 'gob';
+        const G = [['hum', '主角阵营'], ['gob', '哥布林'], ['wild', '野兽·亡灵'], ['neu', '中立']], gOf = k => (DATA.heroes.some(h => h.id === k) || ['guard', 'wizard', 'minister'].includes(k)) ? 'hum' : k === 'gob_merchant' || k === 'gob_thief' ? 'neu' : ['wolf_free', 'skeleton'].includes(k) ? 'wild' : 'gob';
         const figs = [...d.querySelectorAll('.fig')]; figs.forEach(e => { e.dataset.g = gOf(e.dataset.k); if (DATA.enemies[e.dataset.k] && !SEEN.has('e:' + e.dataset.k)) { e.classList.add('lock'); e.querySelector('b').textContent = '？？？'; e.querySelector('small').textContent = '还没遇到'; } }); d.innerHTML = '';   // 11/24 收集：没遇到的怪显示黑影
         for (const [g, n] of G) { const L = figs.filter(e => e.dataset.g === g); if (!L.length) continue; const h = document.createElement('div'); h.className = 'cxh'; h.dataset.g = g; h.textContent = `— ${n} —`; d.appendChild(h); L.forEach(e => d.appendChild(e)); }
         const bar = document.createElement('div'); bar.className = 'cxtabs'; let cur = 'all';

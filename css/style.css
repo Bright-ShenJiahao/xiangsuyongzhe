@@ -1634,20 +1634,8 @@ html body .oathrow .oic { border-radius: 50%; }
   font-weight: normal !important;
   -webkit-font-smoothing: none;
 }
-#title .ttop .btn, #tpanel button {
-  border-radius: 0 !important;
-  background-image: none !important;
-  border: 2px solid #a17c42 !important;
-  box-shadow: inset 2px 2px 0 #5a4930, inset -2px -2px 0 #16110b;
-  color: #f5d999;
-  text-shadow: 1px 1px 0 #20170c;
-}
-#tpanel button.on, #tpanel button.active, #tpanel button[aria-selected="true"] {
-  background-color: #d4a642 !important;
-  color: #2e200e;
-  border-color: #ffe29a !important;
-  text-shadow: none;
-}
+
+
 #tpanel button:focus-visible, #title .ttop .btn:focus-visible {
   outline: 2px solid #ffe29a;
   outline-offset: 3px;
@@ -1667,4 +1655,18 @@ html body .oathrow .oic { border-radius: 50%; }
 }
 @media (max-width: 600px) {
   #tpanel .ctabs button, #tpanel .ptabs button { font-size: 14px; padding: 5px 9px; }
+}
+
+/* 保留按钮美术，叠加像素字体 */
+#title .ttop .btn, #tpanel button {
+  image-rendering: pixelated;
+}
+#title .tload, #title .tload span {
+  font-family: FPixel, WenKai, monospace !important;
+  font-size: 14px;
+  text-shadow: 1px 1px 0 #000;
+  -webkit-font-smoothing: none;
+}
+#title .tload i {
+  background: repeating-linear-gradient(90deg, #ffdc75 0 6px, #bd872c 6px 8px);
 }
