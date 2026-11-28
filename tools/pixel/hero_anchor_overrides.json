@@ -1,0 +1,34 @@
+{
+  "heroFNew": {
+    "hero:spear.dash0": {
+      "ay": 30,
+      "previousAy": 33
+    }
+  },
+  "heroV": {
+    "hero:bow.atk1": {
+      "ay": 36,
+      "previousAy": 39
+    }
+  },
+  "heroS": {
+    "hero:bow.run0": {
+      "ay": 35,
+      "previousAy": 39
+    }
+  },
+  "heroK": {
+    "hero:spear.dash0": {
+      "ay": 34,
+      "previousAy": 37
+    },
+    "hero:spear.lift0": {
+      "ay": 41,
+      "previousAy": 45
+    },
+    "hero:staff.stomp1": {
+      "ay": 40,
+      "previousAy": 45
+    }
+  }
+}
