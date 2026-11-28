@@ -127,7 +127,8 @@
       const fh = (st, n) => { const f = st && SPR.sets[st] && SPR.frame(st, n); return f ? f.h * (SPR.sets[st].sk || 1) : 0; }, GREF = fh('goblin', 'idle0') || 40;
       const gameH = (set, k) => { const h = k === 'm' || k === 'f' || k === 'p' || k === 'e' || k === 'v' || k === 's' || (['k', 'c', 'r', 'w', 'q', 'j'].includes(k)) ? fh(SPR.heroSet(k, k === 'p' ? 'staff' : 'sword'), (k === 'p' ? 'staff' : 'sword') + '.idle') : fh(set || k, 'idle0'); return h ? h / GREF : 1; };
       const add = (set, names, name, note, tier, lab, figK) => { const e = document.createElement('div'); e.className = 'fig ' + tier; e.dataset.k = figK; const st = document.createElement('div'); st.className = 'fst';
-        const fr = FIG[figK] && FIG[figK].every(x => x.c.complete) ? FIG[figK] : (set ? names.map(n => Array.isArray(n) ? SPR.crop(set, n[0], n[1]) : SPR.crop(set, n)).filter(Boolean) : []); if (fr === FIG[figK]) e.classList.add('big');
+        const figure = DATA.heroes.some(h => h.id === figK) ? null : FIG[figK];
+        const fr = figure && figure.every(x => x.c.complete && x.c.naturalWidth) ? figure : (set ? names.map(n => Array.isArray(n) ? SPR.crop(set, n[0], n[1]) : SPR.crop(set, n)).filter(Boolean) : []); if (fr === figure) e.classList.add('big');
 
         // 11/22 按实际像素找脚：每帧最低的不透明行 = 脚底；第 1 帧脚底几行的中点 = 站位中心，其余帧按原锚点差值跟随（保留呼吸位移）
         const meas = f => { const w = f.c.naturalWidth || f.c.width, h = f.c.naturalHeight || f.c.height, cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d'); g.drawImage(f.c, 0, 0); let D; try { D = g.getImageData(0, 0, w, h).data; } catch (e) { return { c: cv, w, h, bot: h, fx: f.f.ax, ax: f.f.ax }; }
@@ -140,7 +141,13 @@
           st.appendChild(c); anims.push({ c, fr, i: 0 }); }
         st.insertAdjacentHTML('beforeend', ped(tier, lab)); e.appendChild(st); e.insertAdjacentHTML('beforeend', `<b>${name}</b><small>${note}</small>`); d.appendChild(e); };
       const draw = a => { const g = a.c.getContext('2d'), f = a.fr[a.i % a.fr.length]; g.clearRect(0, 0, a.c.width, a.c.height); g.drawImage(f.c, Math.round(a.c.width / 2 - f.f.ax), a.c.height - f.bot); };   // 按脚底锚点对齐底座中心
-      for (const h of DATA.heroes) { const n = SPR.count(SPR.heroSet(h.id, 'sword'), 'sword.idle') || 1; add(SPR.heroSet(h.id, 'sword'), Array.from({ length: Math.max(2, n) }, (_, i) => ['sword.idle', i % n]), h.name, h.perk, 'gold', '勇者', h.id); }
+      for (const h of DATA.heroes) {
+        const weapon = h.id === 'p' ? 'staff' : 'sword';
+        const set = SPR.heroSet(h.id, weapon);
+        const action = SPR.sets[set]?.f[weapon + '.idle'] ? weapon + '.idle' : 'idle';
+        const n = SPR.count(set, action) || 1;
+        add(set, Array.from({ length: Math.max(2, n) }, (_, i) => [action, i % n]), h.name, h.perk, 'gold', '勇者', h.id);
+      }
       for (const [k, T] of Object.entries(DATA.enemies)) { const tier = 'grey'; add(k, ['idle0', 'idle1', 'walk0', 'walk1', 'walk2', 'walk3'].filter(n => SPR.crop(k, n)), T.name, T.boss ? '首领' : T.ranged ? '远程' : '近战', tier, T.boss ? '首领' : T.ranged ? '远程' : '近战', k); }
       const INFO = { gob_thief: '偷铜钱的小贼。撞到它能把铜钱抢回来。', gob_merchant: '在各张卡带之间跑生意的矮人，吝啬又油嘴滑舌。', guard: '高塔最后的守卫。', wizard: '王国的老法师，守在召唤祭坛旁。' };
       // 11/23 简介固定在面板右边，默认选中第一个
