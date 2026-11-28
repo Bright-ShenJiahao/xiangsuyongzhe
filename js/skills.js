@@ -35,26 +35,26 @@ window.SKILLS = (A) => {
   // ---------- 每本书出手 ----------
   // c = { S, sk, L(熟练度格数), d(本次伤害), a(朝向), sid }；返回 false = 场上没有敌人，不放
   const C = {
-    sword(c) { const r = 52 * MR * (c.L >= 3 ? 1.25 : 1) * area(), half = 1.18 * (c.L >= 3 ? 1.2 : 1), h = H();
+    sword(c) { const {r,half} = PIXEL_SKILL_FX.geometry('sword',c.L,area()), h = H();
       const slash = (rev) => { const a = A.aimNow(c.a); A.fx({ k: 'pixelSlash', x: h.x, y: h.y - 12 * K, a, t: 0, T: .24, r, half, rev }); hitAll(z => inFan(z, h, a, r, half), c.d, { sid: c.sid, kb: 12 }); };
       slash(); if (c.L >= 5) wait(.15, () => slash(true));
       if (c.L >= 7) shoot({ x: h.x, y: h.y, a: c.a, v: 260, life: .6, r: 12, pierce: 99, d: c.d * .7, sid: c.sid, o: { extra: true }, look: 'crescent' }); },
-    whirl(c) { const r = 40 * MR * area(), h = H(), spin = (k) => { A.fx({ k: 'swordArt', art: 'ring', x: h.x, y: h.y, t: 0, T: .3, r, col: '#e8ecf4' }); hitAll(z => inCircle(z, h, r), c.d * k, { sid: c.sid, kb: 12, slowP: c.L >= 3 ? [.3, 1.5] : 0 }); };
+    whirl(c) { const {r} = PIXEL_SKILL_FX.geometry('whirl',c.L,area()), h = H(), spin = (k) => { A.fx({ k: 'swordArt', art: 'ring', x: h.x, y: h.y, t: 0, T: .3, r, col: '#e8ecf4' }); hitAll(z => inCircle(z, h, r), c.d * k, { sid: c.sid, kb: 12, slowP: c.L >= 3 ? [.3, 1.5] : 0 }); };
       spin(1); if (c.L >= 5) wait(.25, () => spin(1));
       if (c.L >= 7) zone({ x: h.x, y: h.y, r: r * .7, T: 1, every: .2, d: c.d * .4, sid: c.sid, look: 'wind' }); },
     guard(c) { swords = []; swords.push({ cast: active, hits: 6, life: 6, ph: R(0, 7), d: c.d, sid: c.sid, L: c.L, cd: new Map() }); },
     wave(c) { const h = H(), n = 3; for (let i = 0; i < n; i++) shoot({ x: h.x, y: h.y, a: c.a + (i - (n - 1) / 2) * .25, v: 240, life: .7, r: 12, pierce: c.L >= 5 ? 99 : 3, d: c.d, sid: c.sid, look: 'crescent', back: c.L >= 7 }); },
-    phantom(c) { const h = H(), L = 120, w = 12, e = P(h.x, h.y, c.a, L);
+    phantom(c) { const h = H(), {L,w} = PIXEL_SKILL_FX.geometry('phantom',c.L,area()), e = P(h.x, h.y, c.a, L);
       A.fx({ k: 'swordArt', art: 'trail', x: h.x, y: h.y - 10 * K, a: c.a, L, w, t: 0, T: .25, col: '#bfe8ff' });
       hitAll(z => inLine(z, h, c.a, L, w), c.d, { sid: c.sid, kb: 6, bleed: c.L >= 5 });
       const g = (p) => ghosts.push({ cast: active, hero: A.character?.() || 'm', x: p.x, y: p.y, f: h.f, t: 0, T: c.L >= 3 ? 2 : .7, d: c.d * .67, sid: c.sid, spun: false, mimic: c.L >= 3 });
       g(e); if (c.L >= 7) g({ x: h.x, y: h.y }); },
-    flash(c) { const h = H(), r = 52 * 1.8 * (c.L >= 5 ? 1.3 : 1) * area();
+    flash(c) { const h = H(), {r} = PIXEL_SKILL_FX.geometry('flash',c.L,area());
       A.fx({ k: 'pixelSlash', x: h.x, y: h.y - 12 * K, a: c.a, t: 0, T: .3, r, half: PI / 2, gold: true }); A.shake(.2);
       hitAll(z => inFan(z, h, c.a, r, PI / 2), c.d, { sid: c.sid, kb: 16, crit: c.S.crit });
       if (c.L >= 7) shoot({ x: h.x, y: h.y, a: c.a, v: 220, life: .9, r: 22, pierce: 99, d: c.d * .6, sid: c.sid, o: { extra: true }, look: 'crescent', big: 2 }); },
     storm(c) { return { hold: c.L >= 5 ? 3 : 2, move: c.L >= 3 ? 1.3 : 1, every: .2, spin: true,
-      tick: () => { const h = H(), r = 30 * MR * area(); hitAll(z => inCircle(z, h, r), c.d, { sid: c.sid, kb: 6 }); },
+      tick: () => { const h = H(), {r} = PIXEL_SKILL_FX.geometry('storm',c.L,area()); hitAll(z => inCircle(z, h, r), c.d, { sid: c.sid, kb: 6 }); },
       end: () => { if (c.L >= 7) { const h = H(); A.fx({ k: 'swordArt', art: 'ring', x: h.x, y: h.y, t: 0, T: .4, r: 60 * area(), gold: true }); hitAll(z => inCircle(z, h, 60 * area()), c.d * 3, { sid: c.sid, kb: 16, extra: true }); } } }; },
     holysword(c) { const p0 = dense(40) || H(), n = c.L >= 3 ? 9 : 6;
       for (let i = 0; i < n; i++) { const p = { x: p0.x + R(-40, 40) * K, y: p0.y + R(-28, 28) * K }; A.tele({ k: 'circle', x: p.x, y: p.y, r: 24, t: 0, T: .3 + i * .1 }); A.fx({ k: 'swordArt', art: 'fall', x: p.x, y: p.y, t: 0, T: .3 + i * .1, r: 24 }); wait(.3 + i * .1, () => { A.fx({ k: 'swordArt', art: 'impact', x: p.x, y: p.y, t: 0, T: .3, r: 24 }); hitAll(z => inCircle(z, p, 24), c.d, { sid: c.sid, kb: 8 }); }); }
@@ -133,7 +133,7 @@ window.SKILLS = (A) => {
 
   Object.assign(C, {
     huntingblade(c) { let target=eliteTarget()||near(); if(!target)return false; for(let i=0;i<3;i++)wait(i*.18,()=>{if(target.dead)target=eliteTarget()||near();if(target){A.fx({k:'swordArt',art:'hunt',x:target.x,y:target.y-10*K,a:A.ang(H(),target),t:0,T:.18,r:18});if(i===0)hitAll(q=>q===target,c.d,{sid:c.sid,kb:4,on:()=>A.mark('break',target,c)});else A.hurt(target,c.d,target,4,c.sid,{extra:true});}if(i===2&&target?.breakN)A.hurt(target,12,target,0,c.sid,{extra:true});}); },
-    sworddomain(c) { return {hold:3,move:1,every:.25,spin:true,tick:()=>{const h=H(),r=44*area();hitAll(z=>inCircle(z,h,r),c.d,{sid:c.sid,kb:4});},end:()=>{const h=H();for(let i=0;i<12;i++)shoot({x:h.x,y:h.y,a:i*PI/6,v:240,life:.55,r:8,pierce:99,d:7,sid:c.sid,look:'crescent',o:{extra:true}});} }; },
+    sworddomain(c) { return {hold:3,move:1,every:.25,spin:true,tick:()=>{const h=H(),{r}=PIXEL_SKILL_FX.geometry('sworddomain',c.L,area());hitAll(z=>inCircle(z,h,r),c.d,{sid:c.sid,kb:4});},end:()=>{const h=H();for(let i=0;i<12;i++)shoot({x:h.x,y:h.y,a:i*PI/6,v:240,life:.55,r:8,pierce:99,d:7,sid:c.sid,look:'crescent',o:{extra:true}});} }; },
     meteorjavelins(c) { const p=dense(45,240)||H();for(let i=0;i<5;i++){const q={x:p.x+R(-35,35)*K,y:p.y+R(-25,25)*K};A.tele({k:'circle',x:q.x,y:q.y,r:13,t:0,T:.35});wait(.35,()=>{A.fx({k:'thrust',x:q.x,y:q.y-45*K,a:PI/2,L:55,w:12,t:0,T:.2});hitAll(z=>inCircle(z,q,16),c.d,{sid:c.sid,kb:8});});} },
     returningthrust(c) { const h=H(),z=near(),m=A.moveDir?.()||[0,0],a=Math.hypot(m[0],m[1])>.1?Math.atan2(m[1],m[0]):(z?A.ang(h,z):c.a),e=P(h.x,h.y,a,100);h.x=e.x;h.y=e.y;h.inv=Math.max(h.inv||0,.15);A.clamp(h);A.fx({k:'thrust',x:h.x,y:h.y,a,L:100,w:24,t:0,T:.25});wait(.2,()=>{A.fx({k:'thrust',x:e.x,y:e.y,a:a+PI,L:70,w:20,t:0,T:.22});hitAll(q=>inLine(q,e,a+PI,70,22),c.d,{sid:c.sid,kb:8});}); },
     knightcharge(c) { const h=H(),z=near(),m=A.moveDir?.()||[0,0],a=Math.hypot(m[0],m[1])>.1?Math.atan2(m[1],m[0]):(z?A.ang(h,z):c.a),e=P(h.x,h.y,a,140);A.fx({k:'line',x:h.x,y:h.y,a,L:140,w:22,t:0,T:.3,col:'#ffe08a'});hitAll(q=>inLine(q,h,a,140,24),5,{sid:c.sid,kb:15,on:q=>{A.mark('imbalance',q,c);A.hurt(q,18,q,0,c.sid,{extra:true});}});h.x=e.x;h.y=e.y;h.inv=Math.max(h.inv||0,.3);A.clamp(h); },
@@ -402,7 +402,7 @@ window.SKILLS = (A) => {
     active = ch && ch.cast;
     if (ch) { ch.ti -= dt; if (ch.ti <= 0) { ch.ti = ch.every; ch.tick && ch.tick(); } if (ch.spin) A.spinFace(); } active = null;
   }
-  function ghostSpin(g) { A.fx({ k: 'swordArt', art: 'ring', x: g.x, y: g.y, t: 0, T: .3, r: 34 }); hitAll(z => inCircle(z, g, 34), g.d, { sid: g.sid, kb: 10, extra: true }); }
+  function ghostSpin(g) { A.fx({ k: 'swordArt', art: 'ring', skill: g.sid, x: g.x, y: g.y, t: 0, T: .3, r: 34 }); hitAll(z => inCircle(z, g, 34), g.d, { sid: g.sid, kb: 10, extra: true }); }
 
   // ---------- 画 ----------
   function drawUnder(ctx, X, Y, u) {
@@ -418,7 +418,7 @@ window.SKILLS = (A) => {
       for (let k = 0; k < 6; k++) { const aa = Math.random() * 7, rr = Math.random() * z.r; pix(X(z.x) + Math.round(Math.cos(aa) * rr * u), Y(z.y) + Math.round(Math.sin(aa) * rr * u / YS) - (z.look === 'rain' ? Math.round(Math.random() * 8 * u) : 0), `rgba(${col},.35)`, z.look === 'rain' ? 1 : 2); } }
     for (const m of marks) if (m.k === 'stuck') { const ca = Math.cos(m.a), sa = Math.sin(m.a) / YS; for (let j = 0; j < 12; j++) pix(X(m.x) - Math.round(ca * j * 1.5 * u), Y(m.y) - Math.round((sa * j * 1.5 + j * .6) * u), j < 3 ? '#e8ecf4' : '#a89a80'); }
     if (ch && ch.snow) { const h = H(); ctx.fillStyle = 'rgba(200,230,255,.10)'; ctx.beginPath(); ctx.ellipse(X(h.x), Y(h.y), ch.snow * u, ch.snow * u / YS, 0, 0, 7); ctx.fill(); }
-    for (const f of followers) { const id=f.cast?.sid, h=H(); if(id==='sworddomain')window.PIXEL_SKILL_FX?.domain(ctx,X(h.x),Y(h.y),44*f.scale,f.elapsed,u,YS); else if(id==='storm')window.PIXEL_SKILL_FX?.effect(ctx,{k:'swordArt',art:'storm',r:30*MR*f.scale,t:f.elapsed%.32,T:.32},X(h.x),Y(h.y),u,YS); }
+    for (const f of followers) { const id=f.cast?.sid, h=H(); if(id==='sworddomain')window.PIXEL_SKILL_FX?.domain(ctx,X(h.x),Y(h.y),44*f.scale,f.elapsed,u,YS); else if(id==='storm')window.PIXEL_SKILL_FX?.effect(ctx,{k:'swordArt',art:'storm',r:30*MR*f.scale,t:f.elapsed%.4,T:.4},X(h.x),Y(h.y),u,YS); }
     if (ch && ch.gate) { const p = ch.gate; ctx.fillStyle = 'rgba(40,10,60,.55)'; ctx.beginPath(); ctx.ellipse(X(p.x), Y(p.y), 26 * u, 26 * u / YS, 0, 0, 7); ctx.fill(); ctx.strokeStyle = '#b07bff'; ctx.lineWidth = u; ctx.stroke(); }
   }
   function drawOver(ctx, X, Y, u) {
@@ -426,11 +426,12 @@ window.SKILLS = (A) => {
     for (const f of followers) if (f.snow) { const h = H(); ctx.strokeStyle = 'rgba(200,230,255,.35)'; ctx.lineWidth = u; ctx.beginPath(); ctx.ellipse(X(h.x), Y(h.y), f.snow * u, f.snow * u / YS, 0, 0, 7); ctx.stroke(); }
     const pix = (x, y, c, q = 1) => { ctx.fillStyle = c; ctx.fillRect(x, y, q * u, q * u); };
     for (const g of ghosts) { const a = Math.max(0, 1 - g.t / g.T) * .55; ctx.globalAlpha = a; SPR.drawHero(ctx, g.spun ? 'atk' : 'idle', g.spun ? 1 : 0, X(g.x), Y(g.y), g.f < 0, u, { w: 'sword', c: g.hero || 'm', white: .8 }); ctx.globalAlpha = 1; }
-    for (const s of swords) window.PIXEL_SKILL_FX?.sword(ctx,X(s.x),Y(s.y)-14*u,s.ph+Math.PI/2,u,28);
+    for (const s of swords) window.PIXEL_SKILL_FX?.sword(ctx,X(s.x),Y(s.y)-14*u,s.ph+Math.PI/2,u,24,false,'guard',A.now());
     const windup=H().cs;if(windup?.sk.id==='flash'&&windup.ph==='wu')window.PIXEL_SKILL_FX?.charge(ctx,X(H().x),Y(H().y),u,Math.min(1,windup.t/windup.dur),H().f);
     for (const o of orbs) { const x = X(o.x), y = Y(o.y); ctx.fillStyle = 'rgba(120,60,200,.35)'; ctx.beginPath(); ctx.arc(x, y, 6 * u, 0, 7); ctx.fill(); pix(x - 2 * u, y - 2 * u, '#2a0a40', 4); pix(x - u, y - u, '#c8a0ff', 2); }
     for (const p of projs) { const x = X(p.x), y = Y(p.y), ca = Math.cos(p.a), sa = Math.sin(p.a) / YS, b = p.big || 1, career=p.cast?.career;if(p.sid&&career?.color&&!p.o?.extra){ctx.save();ctx.shadowColor=career.color;ctx.shadowBlur=7*u;}
       if(DATA.skills[p.sid]?.sys==='剑'&&p.look==='crescent'&&window.PIXEL_SKILL_FX?.projectile(ctx,p,x,y,u)){}
+      else if(p.sid==='guard'&&p.look==='sword'&&window.PIXEL_SKILL_FX){PIXEL_SKILL_FX.sword(ctx,x,y,p.a,u,20,true,'guard',p.t);}
       else if(p.look==='gunmissile'||p.look==='gunshell'){gunImage(ctx,p.look==='gunshell'?'shell':'missile'+(Math.floor(p.t*10)%2),x,y,u,p.a+PI/2);}
       else if (p.look === 'crescent') { for (let j = -6 * b; j <= 6 * b; j++) { const off = (1 - (j / (6 * b)) ** 2) * 4 * b; pix(x + Math.round((-sa * j + ca * off) * u), y + Math.round((ca * j + sa * off) * u), Math.abs(j) < 2 * b ? '#ffffff' : '#bfe8ff'); } }
       else if (p.look === 'arrow' || p.look === 'bigarrow' || p.look === 'feather' || p.look === 'spear' || p.look === 'sword') { const n = p.look === 'bigarrow' ? 22 : p.look === 'spear' ? 16 : 9, q = p.look === 'bigarrow' ? 2 * b : 1, c1 = p.look === 'feather' ? '#9ff0c8' : p.look === 'bigarrow' ? '#fff6c0' : '#e8ecf4';
