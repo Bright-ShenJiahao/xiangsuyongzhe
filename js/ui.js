@@ -210,7 +210,47 @@
       };
       d.appendChild(mkSlider('音乐', () => BGM.vol, v => { BGM.vol = v; }));
       d.appendChild(mkSlider('音效', () => SFX.vol, v => { SFX.vol = v; }, () => { if (SFX.on) SFX.play('pick'); }));
-      return d; }],   // 11/29 像素风音乐/音效拖动滑条
+      const mkToggle = (name, key) => {
+        const row = document.createElement('div'); row.className = 'pxrow';
+        const lb = document.createElement('label'); lb.textContent = name; lb.style.flex = '1';
+        const btn = document.createElement('button'); btn.className = 'btn mini';
+        const sync = () => { const on = localStorage.getItem(key) !== '0'; btn.textContent = on ? '开' : '关'; btn.classList.toggle('gold', on); };
+        btn.onclick = () => { localStorage.setItem(key, localStorage.getItem(key) !== '0' ? '0' : '1'); sync(); };
+        sync(); row.append(lb, btn); return row;
+      };
+      d.appendChild(mkToggle('屏幕震动', 'xsyz-shake'));
+      d.appendChild(mkToggle('伤害数字', 'xsyz-dmgnum'));
+      if (document.documentElement.requestFullscreen) {
+        const row = document.createElement('div'); row.className = 'pxrow';
+        const lb = document.createElement('label'); lb.textContent = '全屏模式'; lb.style.flex = '1';
+        const btn = document.createElement('button'); btn.className = 'btn mini';
+        const sync = () => { const fs = !!document.fullscreenElement; btn.textContent = fs ? '退出全屏' : '进入全屏'; btn.classList.toggle('gold', fs); };
+        btn.onclick = () => { (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {}).finally(sync); };
+        sync(); row.append(lb, btn); d.appendChild(row);
+      }
+      {
+        const row = document.createElement('div'); row.className = 'pxrow';
+        const lb = document.createElement('label'); lb.textContent = '存档备份'; lb.style.flex = '1';
+        const exp = document.createElement('button'); exp.className = 'btn mini'; exp.textContent = '导出';
+        const imp = document.createElement('button'); imp.className = 'btn mini'; imp.textContent = '导入';
+        exp.onclick = () => {
+          const obj = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('xsyz')) obj[k] = localStorage.getItem(k); }
+          const code = btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(() => alert('存档码已复制到剪贴板！'), () => prompt('请复制以下存档码：', code));
+          else prompt('请复制以下存档码：', code);
+        };
+        imp.onclick = () => {
+          const code = prompt('请粘贴之前导出的存档码（将覆盖当前浏览器存档）：'); if (!code) return;
+          try {
+            const obj = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+            if (!obj || typeof obj !== 'object') throw 0;
+            for (const [k, v] of Object.entries(obj)) if (k.startsWith('xsyz')) localStorage.setItem(k, v);
+            alert('存档导入成功，即将刷新页面生效！'); location.reload();
+          } catch (e) { alert('存档码格式无效，请检查是否复制完整。'); }
+        };
+        row.append(lb, exp, imp); d.appendChild(row);
+      }
+      return d; }],   // 11/29 像素风设置项（音量滑条+震动+伤害数字+全屏+存档备份）
     help: ['帮助', () => { const d = document.createElement('div'); d.className = 'help';   // 11/24 帮助：游戏规则分页
       const H = [['基础', `深夜两点，你被吸进了一盘 999 合 1 的卡带。打倒哥布林王，才能回到屏幕这一边。<br>· 移动：${touch ? '按住屏幕拖动' : 'WASD 或方向键'}。<br>· 攻击是自动的：技能栏里的技能书按顺序轮流放出，你只管走位。<br>· 打怪拿经验升级，升级、宝箱、商店都能拿到新的技能书和宝物。<br>· 暂停：${touch ? '右上角 II' : 'P 或 Esc'}。`],
         ['翻滚和身法', `· 翻滚：${touch ? '右下角按钮' : '空格'}。翻滚时无敌，可以穿过敌人的攻击。<br>· 翻滚有 2 格，用掉后每格 1.5 秒回一格；按钮满格时会发光。<br>· 身法印记会给翻滚加效果。只有<b>满格时那一滚</b>才会触发效果，纯数值的（翻滚距离、回格速度）一直有效。<br>· 暗影步：在敌人出招前一刻翻滚，会化成黑影。`],

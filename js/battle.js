@@ -1104,7 +1104,7 @@
     const Wm = W / s, Hm = H / s;
     { const now = performance.now(), dt = Math.min(.1, (now - (cam.tm || now)) / 1000), tx = Math.max(0, Math.min(MAPW - Wm, hero.x - Wm / 2)), ty = Math.max(0, Math.min(MAPH - Hm, hero.y - 20 * K - Hm / 2)), k = 1 - Math.exp(-12 * dt);
       cam.tm = now; if (cam.snap || cam.x == null || Math.abs(tx - cam.x) > Wm || Math.abs(ty - cam.y) > Hm) { cam.x = tx; cam.y = ty; cam.snap = false; } else { cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; } }   // 镜头平滑跟随
-    const sh = G.shake > 0 && !G.paused ? rd(R(-2, 2)) * u : 0;
+    const sh = G.shake > 0 && !G.paused && localStorage.getItem('xsyz-shake') !== '0' ? rd(R(-2, 2)) * u : 0;
     G.kx = (G.kx || 0) * .82; G.ky = (G.ky || 0) * .82; ctx.setTransform(1, 0, 0, 1, sh - rd(G.kx * u), -rd(G.ky * u));
     if (MIMG.complete && MIMG.naturalWidth) { const k = MIMG.naturalWidth / MAPW; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(MIMG, cam.x * k, cam.y * k, Wm * k, Hm * k, 0, 0, W, H); ctx.imageSmoothingEnabled = false; }
     else { ctx.fillStyle = '#6a4a2a'; ctx.fillRect(0, 0, W, H); }
@@ -1213,7 +1213,8 @@
     }
     for (const q of parts) { ctx.fillStyle = q.col; const z = (q.sz || 1) * u; ctx.fillRect(X(q.x), Y(q.y), z, z); }
     const nk = Math.max(1, rd(u * .9));
-    for (const n of nums) { const y = Y(n.y) - n.t * 22 * u; if (n.txt) { ctx.font = `${7 * u}px Pix, monospace`; ctx.textAlign = 'center'; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#2a160e'; ctx.strokeText(n.txt, X(n.x), y); ctx.fillStyle = n.col; ctx.fillText(n.txt, X(n.x), y); } else num(n.v, X(n.x), y, n.col, n.big ? nk + 1 : nk); }
+    const showDmg = localStorage.getItem('xsyz-dmgnum') !== '0';
+    for (const n of nums) { if (!n.txt && !showDmg) continue; const y = Y(n.y) - n.t * 22 * u; if (n.txt) { ctx.font = `${7 * u}px Pix, monospace`; ctx.textAlign = 'center'; ctx.lineWidth = 2 * u; ctx.strokeStyle = '#2a160e'; ctx.strokeText(n.txt, X(n.x), y); ctx.fillStyle = n.col; ctx.fillText(n.txt, X(n.x), y); } else num(n.v, X(n.x), y, n.col, n.big ? nk + 1 : nk); }
     if (hero.dead && G.deadR != null) { const r = G.deadR, hx = X(hero.x), hy = Y(hero.y) - 14 * u;
       if (r > .55 && r < .62 && !G.dust) { G.dust = 1; for (let k = 0; k < 14; k++) parts.push({ x: hero.x + R(-14, 14) * K, y: hero.y, vx: R(-20, 20) * K, vy: -R(5, 25) * K, t: 0, T: R(.5, .9), col: '#c8b090', g: 0 }); }
       const gk = Math.min(1, Math.max(0, (r - .3) / 1.2)); if (gk > 0) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'saturation'; ctx.globalAlpha = gk; ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, W, H);
