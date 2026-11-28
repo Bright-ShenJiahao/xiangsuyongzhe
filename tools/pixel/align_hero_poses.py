@@ -61,9 +61,9 @@ def main():
                 if '.' not in key:
                     continue
                 weapon,action=key.split(':',1)[-1].split('.')
-                if weapon=='sword' or action not in ('idle','run'):
+                if weapon=='sword' or action in ('atk', 'big'):
                     continue
-                for base,box in zip(sword[1]['f']['hero:sword.'+action],frames):
+                for base,box in zip(sword[1]['f'].get('hero:sword.'+action, []),frames):
                     anchor=match(tile(sword[2],base),tile(atlas,box),base,box)
                     if anchor and any(abs(a-b)>=1.5 for a,b in zip(anchor,box[4:])):
                         adjustments[tuple(box[:4])]=anchor
