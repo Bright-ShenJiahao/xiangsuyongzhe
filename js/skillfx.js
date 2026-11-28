@@ -59,6 +59,7 @@ window.PIXEL_SKILL_FX = (() => {
     scope(ctx,x,y,p.a,ys,{r},()=>art(ctx,id,phase((p.t||0)%.3,.3),s,s,u,id==='huntingblade'?[34,32]:[32,32],p.sid||id));return true;
   }
   function effect(ctx,o,x,y,u,ys){
+    if(o.spear)return window.SPEAR_SKILL_FX?.effect(ctx,o,x,y,u,ys)||false;
     if(o.k==='pixelSlash')return slash(ctx,o,x,y,u,ys);
     if(o.k!=='swordArt')return false;
     if(o.art==='ring'||o.art==='storm')return ring(ctx,o,x,y,u,ys);

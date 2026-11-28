@@ -304,8 +304,8 @@
     if(id==='g_fast'||id==='g_spread'){for(let j=0;j<(id==='g_fast'?6:8);j++)DM.shots.push({k:'arrow',x:hx,y,vx:320*u,vy:id==='g_spread'?(j-3.5)*25*u:0,t:-j*.04,T:.6});}
     else if (id === 'sword') DM.fx.push({ k: 'pixelSlash', x: hx, y, a: 0, t: 0, T: .24, r: 52, half: 1.18 });
     else if (id === 'whirl') DM.fx.push({ k: 'swordArt', art: 'ring', x: hx, y, t: 0, T: .3, r: 40, col: '#e8ecf4' });
-    else if (id === 'spear') DM.fx.push({ k: 'thrust', x: hx, y, a: 0, L: 82, w: 14, t: 0, T: .2 });
-    else if (id === 'sweep') DM.fx.push({ k: 'slash', x: hx, y, a: 0, t: 0, T: .22, r: 48, half: 1.4, wood: true });
+    else if (id === 'spear') DM.fx.push({ spear:'thrust', skill:'spear', k: 'thrust', x: hx, y, a: 0, L: 82, w: 14, t: 0, T: .2 });
+    else if (id === 'sweep') DM.fx.push({ spear:'sweep', skill:'sweep', k: 'slash', x: hx, y, a: 0, t: 0, T: .22, r: 48, half: 1.4, wood: true });
     else if (id === 'bow') DM.shots.push({ k: 'arrow', x: hx, y, vx: 320 * u, vy: 0, t: 0, T: .7 });
     else if (id === 'fan') { for (let i = 0; i < 5; i++) { const a = (i - 2) * .25; DM.shots.push({ k: 'arrow', x: hx, y, vx: 300 * u * Math.cos(a), vy: 300 * u * Math.sin(a) / DYS * .35, t: 0, T: .35 }); } }
     else if (id === 'staff') DM.shots.push({ k: 'fire', x: hx + Math.min(150 * u, c.width * .5 - 34 * u), y: hy, t: 0, T: .5, r: 30, boom: 1 });

@@ -79,7 +79,7 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
     <input id="seek" type="range" min="0" max="5" step="0.01" value="0" style="width:100%" aria-label="播放时间轴">
     <div class="hint" id="info"></div>
     <section id="fxPane" style="margin-top:10px">
-      <h3>剑系特效与命中范围校准</h3>
+      <h3>技能特效与命中范围校准</h3>
       <div class="row"><label><input id="fxShow" type="checkbox" checked>显示特效</label><label><input id="rangeShow" type="checkbox" checked>显示实际范围</label>
       <label>熟练度<select id="fxLevel"><option>1</option><option>3</option><option>5</option><option>7</option></select></label>
       <label>范围倍率<input id="fxArea" type="number" min="0.8" max="2" step="0.05" value="1"></label>
@@ -110,6 +110,8 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
 <script src="../js/data.js"></script>
 <script src="../js/skframes.js"></script>
 <script src="../js/swordfxdata.js"></script>
+<script src="../js/spearfxdata.js"></script>
+<script src="../js/spearfx.js"></script>
 <script src="../js/skillfx.js"></script>
 <script>
 (async () => { try {
@@ -165,16 +167,16 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
   function thumb(w, tok, cw, ch) { const c = document.createElement('canvas'); c.width = cw; c.height = ch; const f = frame(w, tok); if (f) { const k = Math.min((cw - 4) / f.w, (ch - 4) / f.h, 2); drawF(c.getContext('2d'), f, cw / 2 - (f.w / 2 - f.ax) * k, ch - 2 - (f.h - f.ay) * k, k); } return c; }
 
   let edits = {}; try { edits = JSON.parse(localStorage.getItem('xsyz-skf') || '{}') || {}; } catch (e) {}
-  const FX=window.PIXEL_SKILL_FX;await FX.ready;let fxEdits={};try{fxEdits=JSON.parse(localStorage.getItem('xsyz-swordfx')||'{}')||{};}catch(e){}FX.setOverrides(fxEdits);
+  let FX=window.PIXEL_SKILL_FX;await Promise.all([FX.ready,window.SPEAR_SKILL_FX.ready]);let fxEdits={};try{fxEdits=JSON.parse(localStorage.getItem('xsyz-swordfx')||'{}')||{};}catch(e){}FX.setOverrides(fxEdits);
   let W = 'sword', id = null, phSel = 'wu', playing = true, T0 = performance.now(), tAcc = 0, last = performance.now();
   const ids = w => Object.keys(DATA.skills).filter(k => DATA.skills[k].w === w);
   // 当前招的帧设置：默认值 + 工具里改过的
   const cur = () => { const S = DATA.skills[id]; return Object.assign({}, S.frame === 'big' ? SKF.big : SKF.base, SKF.s[id] || {}, edits[id] || {}); };
   const setK = (k, v) => { const c = cur(); c[k] = v; const d = S => S.frame === 'big' ? SKF.big : SKF.base, def = Object.assign({}, d(DATA.skills[id]), SKF.s[id] || {});
     const e = {}; for (const kk in c) if (JSON.stringify(c[kk]) !== JSON.stringify(def[kk])) e[kk] = c[kk];
-    if (Object.keys(e).length) edits[id] = e; else delete edits[id];delete fxEdits[id];FX.setOverrides(fxEdits);render(); };
+    if (Object.keys(e).length) edits[id] = e; else delete edits[id];render(); };
 
-  async function switchSet() { CUR_SET = await loadHeroWeapon(CUR_HERO, W); render(); }
+  async function switchSet() { FX=W==='spear'?window.SPEAR_SKILL_FX:window.PIXEL_SKILL_FX;FX.setOverrides(fxEdits); CUR_SET = await loadHeroWeapon(CUR_HERO, W); render(); }
   function tabs() { $('wtabs').innerHTML = ''; for (const w in WN) { const b = document.createElement('button'); b.textContent = WN[w]; if (w === W) b.className = 'on'; b.onclick = () => { W = w; id = ids(w)[0]; phSel = 'wu'; tabs(); switchSet(); }; $('wtabs').append(b); } }
   $('heroSel').onchange = e => { CUR_HERO = e.target.value; switchSet(); };
   function list() { $('list').innerHTML = ''; for (const k of ids(W)) { const S = DATA.skills[k], d = document.createElement('div'); d.className = (k === id ? 'sel ' : '') + (edits[k] || fxEdits[k] ? 'mod' : ''); d.innerHTML = `<span>${S.name}</span><i>${DATA.tierName ? DATA.tierName[S.tier] : S.tier}${S.hold ? '·占时' : ''}</i>`; d.onclick = () => { id = k; phSel = 'wu'; tAcc = 0; render(); }; $('list').append(d); } }
@@ -201,18 +203,18 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
     $('info').textContent = `前摇 ${S.wu}s · ${S.hold ? '持续 ' + S.hold + 's · ' : ''}后摇 ${S.rc}s（出手算在后摇里）· ${S.desc}`; }
 
   function fxControls(){
-    $('fxPane').hidden=W!=='sword';if(W!=='sword')return;const c=FX.config(id);$('fxScale').value=c.scale;$('fxX').value=c.x;$('fxY').value=c.y;
-    const wrap=$('fxFrames');wrap.innerHTML='';const im=new Image();im.crossOrigin='anonymous';im.onload=()=>{for(let i=0;i<4;i++){const cv=document.createElement('canvas');cv.width=cv.height=64;cv.style.cssText='width:64px;height:64px;background:#35424a;border:1px solid #75818b;cursor:pointer';const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(im,i*64,0,64,64,0,0,64,64);cv.title='第'+(i+1)+'帧，点选可固定';cv.onclick=()=>{$('fxFrame').value=i;seekRelease();};wrap.append(cv);}};im.src=new URL('../art/fx/player/sword/'+FX.catalog[id].file,location.href).href;
+    $('fxPane').hidden=!['sword','spear'].includes(W);if(!['sword','spear'].includes(W))return;const c=FX.config(id);$('fxScale').value=c.scale;$('fxX').value=c.x;$('fxY').value=c.y;
+    const wrap=$('fxFrames');wrap.innerHTML='';const im=new Image();im.crossOrigin='anonymous';im.onload=()=>{for(let i=0;i<4;i++){const cv=document.createElement('canvas');cv.width=cv.height=64;cv.style.cssText='width:64px;height:64px;background:#35424a;border:1px solid #75818b;cursor:pointer';const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(im,i*64,0,64,64,0,0,64,64);cv.title='第'+(i+1)+'帧，点选可固定';cv.onclick=()=>{$('fxFrame').value=i;seekRelease();};wrap.append(cv);}};im.src=new URL('../art/fx/player/'+W+'/'+FX.catalog[id].file,location.href).href;
   }
-  function timing(){const S=DATA.skills[id],L=W==='sword'?+$('fxLevel').value:1,cut=L>=7?.05:0;return {wu:Math.max(.08,((S.charge&&L>=3)?.5:S.wu)-cut),rc:Math.max(.08,S.rc-cut),hold:id==='storm'&&L>=5?3:S.hold};}
+  function timing(){const S=DATA.skills[id],L=['sword','spear'].includes(W)?+$('fxLevel').value:1,cut=L>=7?.05:0;return {wu:Math.max(.08,((S.charge&&L>=3)?.5:S.wu)-cut),rc:Math.max(.08,S.rc-cut),hold:id==='dragon'?3:id==='storm'&&L>=5?3:S.hold};}
   function seekRelease(){tAcc=timing().wu+.09;playing=false;$('play').textContent='播放';}
-  for(const [node,key] of [['fxScale','scale'],['fxX','x'],['fxY','y']])$(node).onchange=()=>{const v={...FX.config(id),[key]:+$(node).value};fxEdits[id]=v;FX.setOverrides(fxEdits);render();};
+  for(const [node,key] of [['fxScale','scale'],['fxX','x'],['fxY','y']])$(node).onchange=()=>{const v={...FX.config(id),[key]:+$(node).value};fxEdits[id]=v;FX.setOverrides(fxEdits);window.PIXEL_SKILL_FX.setOverrides(fxEdits);window.SPEAR_SKILL_FX.setOverrides(fxEdits);render();};
   $('fxFrame').onchange=()=>{if(+$('fxFrame').value>=0)seekRelease();};
   $('prevFrame').onclick=()=>{playing=false;tAcc=Math.max(0,tAcc-1/(cur().fps||12));$('play').textContent='播放';};
   $('nextFrame').onclick=()=>{playing=false;tAcc+=1/(cur().fps||12);$('play').textContent='播放';};
   $('seek').oninput=()=>{playing=false;tAcc=+$('seek').value;$('play').textContent='播放';};
   // 时间轴：前摇 → 出手 → 持续 → 后摇剩下的 → 空闲 0.5 秒 → 重来
-  function segs() { const S = DATA.skills[id], c = cur(); const tm=timing(),a = [['wu', tm.wu]]; if (tm.hold) a.push(['hold', tm.hold], ['rc', tm.rc]); else a.push(['hit', Math.min(c.hitT, tm.rc)], ['rc', Math.max(0, tm.rc - c.hitT)]); const fx=W==='sword'?FX.geometry(id,+$('fxLevel').value,+$('fxArea').value):null;a.push(['idle', Math.max(.5,(fx?.life||0)-(a.reduce((n,p)=>n+p[1],0)-tm.wu)+.25)]); return a; }
+  function segs() { const S = DATA.skills[id], c = cur(); const tm=timing(),a = [['wu', tm.wu]]; if (tm.hold) a.push(['hold', tm.hold], ['rc', tm.rc]); else a.push(['hit', Math.min(c.hitT, tm.rc)], ['rc', Math.max(0, tm.rc - c.hitT)]); const fx=['sword','spear'].includes(W)?FX.geometry(id,+$('fxLevel').value,+$('fxArea').value):null;a.push(['idle', Math.max(.5,(fx?.life||0)-(a.reduce((n,p)=>n+p[1],0)-tm.wu)+.25)]); return a; }
   const g = $('stage').getContext('2d');
   function loop(now) {
     const dt = Math.min(.1, (now - last) / 1000); last = now; if (playing) tAcc += dt * +$('spd').value;
@@ -221,21 +223,21 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
     const c = cur(), flip = $('flip').checked; let tok = null, lunge = 0;
     if (ph !== 'idle') { const r = SKF.pick(c, ph, pt); tok = r ? r[0] + r[1] : null; if (ph === 'hit') lunge = c.lunge || 0; }
     if (!tok) tok = ph === 'idle' && $('run').checked ? 'run' + (Math.floor(tAcc * 10) % 4) : 'idle' + (Math.floor(tAcc * 2) % 2);
-    const cv=$('stage'),lv=+$('fxLevel').value,area=+$('fxArea').value,age=t-timing().wu,fxOn=W==='sword'&&$('fxShow').checked,rangeOn=W==='sword'&&$('rangeShow').checked;
+    const cv=$('stage'),lv=+$('fxLevel').value,area=+$('fxArea').value,age=t-timing().wu,fxOn=['sword','spear'].includes(W)&&$('fxShow').checked,rangeOn=['sword','spear'].includes(W)&&$('rangeShow').checked;
     const fit=(fxOn||rangeOn)?FX.extent(id,lv,area):45,k=Math.max(1,Math.min(+$('zoom').value,Math.floor((cv.width/2-28)/fit),Math.floor((cv.height*.38)/(fit/1.35))));
-    const hx=cv.width/2,hy=cv.height*.6,angle=flip?Math.PI:0;
+    const hx=cv.width/2,hy=cv.height*.6,angle=flip?Math.PI:0,heroShift=W==='spear'&&age>=0?({returningthrust:100,knightcharge:140})[id]||0:0;
     g.clearRect(0,0,cv.width,cv.height);g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(hx,hy,16*k,3*k,0,0,7);g.fill();
     g.strokeStyle='rgba(255,255,255,.2)';g.beginPath();g.moveTo(hx,40);g.lineTo(hx,hy+12);g.stroke();
     if(rangeOn)FX.range(g,id,hx,hy,k,angle,lv,area,Math.max(0,age));
     const fxArgs={id,time:age,x:hx,y:hy,u:k,a:angle,L:lv,A:area,showFx:fxOn,frame:+$('fxFrame').value};
     if(['storm','sworddomain'].includes(id))FX.preview(g,fxArgs);
-    drawF(g,frame(W,tok),hx+(flip?-1:1)*lunge*k,hy,k,flip);
+    drawF(g,frame(W,tok),hx+(flip?-1:1)*(lunge+heroShift)*k,hy,k,flip);
     if(fxOn&&id==='phantom'&&age>=0&&age<FX.geometry(id,lv,area).life){g.save();g.globalAlpha=.45*(1-age/FX.geometry(id,lv,area).life);drawF(g,frame(W,age>=.5?'atk1':'idle0'),hx+(flip?-1:1)*120*k,hy,k,flip);g.restore();}
     if(!['storm','sworddomain'].includes(id))FX.preview(g,fxArgs);
     if(fxOn&&id==='flash'&&age<0)FX.charge(g,hx,hy,k,Math.max(0,t/timing().wu),flip?-1:1);
     g.fillStyle='#fff';g.font='18px system-ui';const nm={wu:'前摇',hit:'出手',hold:'持续',rc:'后摇',idle:'空闲'}[ph];g.fillText(nm+' · '+tok+' · 特效相对出手 '+age.toFixed(2)+'s',10,24);
     $('seek').max=tot;$('seek').value=t;
-    if(W==='sword'){$('fxReadout').textContent='实际显示 '+k+'×像素 · 素材4帧 · '+JSON.stringify(FX.geometry(id,lv,area));}
+    if(['sword','spear'].includes(W)){$('fxReadout').textContent='实际显示 '+k+'×像素 · 素材4帧 · '+JSON.stringify(FX.geometry(id,lv,area));}
     // 时间条
     const bar = $('bar'); if (bar.dataset.k !== id + JSON.stringify(c)+JSON.stringify(timing())) { bar.dataset.k = id + JSON.stringify(c)+JSON.stringify(timing()); bar.innerHTML = ''; for (const [k2, d] of sg) { const s = document.createElement('span'), P = PH.find(p => p[0] === k2); s.style.flex = d; s.style.background = P ? P[2] : '#333'; s.textContent = P ? P[1] : '空闲'; bar.append(s); } const cu = document.createElement('i'); cu.id = 'cur'; bar.append(cu); }
     $('cur').style.left = (t / tot * 100) + '%';
@@ -248,7 +250,7 @@ input[type=number]{width:64px;background:#1c140e;color:#f0e2c4;border:1px solid 
   $('lunge').onchange = e => setK('lunge', +e.target.value || 0);
   $('save').onclick = () => { localStorage.setItem('xsyz-skf', JSON.stringify(edits));localStorage.setItem('xsyz-swordfx',JSON.stringify(fxEdits)); msg('已保存。游戏页刷新一下（或开着也会自动读到）'); };
   $('copy').onclick = async () => { $('out').select(); try { await navigator.clipboard.writeText($('out').value); msg('已复制，直接粘贴发给 Claude'); } catch (e) { document.execCommand('copy'); msg('已复制'); } };
-  $('resetOne').onclick = () => { delete edits[id];delete fxEdits[id];FX.setOverrides(fxEdits);render(); msg('这招已恢复默认（记得点保存）'); };
+  $('resetOne').onclick = () => { delete edits[id];delete fxEdits[id];FX.setOverrides(fxEdits);window.PIXEL_SKILL_FX.setOverrides(fxEdits);window.SPEAR_SKILL_FX.setOverrides(fxEdits);render(); msg('这招已恢复默认（记得点保存）'); };
   $('resetAll').onclick = () => { if (!confirm('清除所有改动？')) return; edits = {};fxEdits={};FX.setOverrides(fxEdits);localStorage.removeItem('xsyz-swordfx');localStorage.removeItem('xsyz-skf'); render(); msg('已全部清除'); };
   $('toAll').onclick = () => { const c = cur(), me = id; for (const k of ids(W)) if (k !== me) { const S = DATA.skills[k]; edits[k] = { wu: c.wu, hit: c.hit, rc: c.rc, fps: c.fps, hitT: c.hitT, lunge: c.lunge }; if (S.hold) edits[k].hold = c.hold; } render(); msg(`已套用到${WN[W]}的所有招（记得点保存）`); };
   id = ids(W)[0]; tabs(); await switchSet(); requestAnimationFrame(loop);
