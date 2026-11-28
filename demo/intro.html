@@ -7,7 +7,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 #st { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
 .pg { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s; overflow: hidden; }
 .pg.on { opacity: 1; }
-.pg img.ill { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.7vh); transform: translate(-50%, -50%) scale(1.04); filter: sepia(.15); }
+.pg img.ill { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.7vh); transform: translate(-50%, -50%); image-rendering: pixelated; }
 .frame { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.7vh); aspect-ratio: 16/9; transform: translate(-50%, -50%); background: url(../art/intro/frame.webp) center / 100% 100%; pointer-events: none; mix-blend-mode: multiply; opacity: .95; }
 .vig { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(30, 16, 6, .75) 100%); pointer-events: none; }
 #cap { position: fixed; left: 50%; bottom: 9vh; transform: translateX(-50%); width: min(900px, 86vw); text-align: center; color: #fff3d8; font-size: clamp(17px, 2.4vw, 26px); line-height: 1.8; letter-spacing: .08em; text-shadow: 0 2px 6px #000, 0 0 14px rgba(0,0,0,.8); min-height: 3.6em; z-index: 5; }
@@ -26,7 +26,7 @@ html.gm #play, html.gm #first { display: none !important; }
 <div id="st">
   <div class="pg" id="g1"><img class="ill" src="../art/intro/p1.webp"><div class="vig"></div><div class="frame"></div></div>
   <div class="pg" id="g2"><img class="ill" src="../art/intro/p2.webp"><canvas class="crack" id="ck"></canvas><div class="vig"></div><div class="frame"></div></div>
-  <div class="pg" id="g2b"><img class="ill" src="../art/ui2/map.webp" style="filter:sepia(.75) brightness(.9) contrast(1.05)"><canvas class="crack" id="mk" style="mix-blend-mode:normal"></canvas><div class="vig"></div><div class="frame"></div></div>
+  <div class="pg" id="g2b"><img class="ill" src="../art/intro/map.webp"><canvas class="crack" id="mk" style="mix-blend-mode:normal"></canvas><div class="vig"></div><div class="frame"></div></div>
   <div class="pg" id="g3"><img class="ill" src="../art/intro/p3.webp"><canvas class="crack" id="cr"></canvas><div class="vig"></div><div class="frame"></div></div>
 </div>
 <div id="cap"></div><div id="white"></div>
@@ -39,12 +39,20 @@ const $ = s => document.getElementById(s), wait = ms => new Promise(r => setTime
 let RUN = 0;
 const FS = (k) => { if (GAME && QS.has('tw')) try { parent.SFX.play(k); } catch (e) {} };   /* 11/25 只有首次召唤那一幕有音效，之后回塔顶是安静的 */
 async function type(el, s, id, sp = 70, bl) { el.textContent = ''; for (let i = 1; i <= s.length; i++) { if (id !== RUN) return; el.textContent = s.slice(0, i); if (bl && !/[，。！？…\s]/.test(s[i - 1])) FS(bl); await wait(sp); } }
-function kb(img, from, to, T) { img.animate([{ transform: `translate(-50%,-50%) ${from}` }, { transform: `translate(-50%,-50%) ${to}` }], { duration: T, easing: 'linear', fill: 'forwards' }); }
-// 第 2 页：裂缝里一闪一闪往下掉方块；第 3 页：水晶光呼吸
-function fx(cvId, mode) { const c = $(cvId), g = c.getContext('2d'); let bits = []; function f(t) { if (!c.isConnected) return; const W = c.width = c.clientWidth / 3 | 0, H = c.height = c.clientHeight / 3 | 0; g.clearRect(0, 0, W, H);
-  if (mode === 'crack') { if (Math.random() < .5) bits.push({ x: W * (.32 + Math.random() * .45), y: H * (.08 + Math.random() * .15), v: .3 + Math.random() * .6 }); for (const b of bits) { b.y += b.v; g.fillStyle = `rgba(255,190,90,${Math.max(0, 1 - b.y / (H * .6))})`; g.fillRect(b.x | 0, b.y | 0, 2, 2); } bits = bits.filter(b => b.y < H * .6);
-     }
-  else { const x = W * .353, y = H * .31, r = 14 + 4 * Math.sin(t / 400); const gr = g.createRadialGradient(x, y, 0, x, y, r * 2.5); gr.addColorStop(0, 'rgba(200,170,255,.55)'); gr.addColorStop(1, 'rgba(160,140,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+function kb() { /* 静态镜头，不做推进缩放 */ }
+// 像素动态特效：第 2 页裂缝缓慢掉方块；第 3 页水晶呼吸光+升腾光点
+function fx(cvId, mode) { const c = $(cvId), g = c.getContext('2d'); let bits = []; function f(t) { if (!c.isConnected) return; const W = c.width = Math.max(1, c.clientWidth / 3 | 0), H = c.height = Math.max(1, c.clientHeight / 3 | 0); g.clearRect(0, 0, W, H);
+  if (mode === 'crack') {
+    if (Math.random() < .25) bits.push({ x: W * (.30 + Math.random() * .48), y: H * (.06 + Math.random() * .18), v: .12 + Math.random() * .25 });
+    for (const b of bits) { b.y += b.v; g.fillStyle = `rgba(255,195,95,${Math.max(0, 1 - b.y / (H * .6))})`; g.fillRect(b.x | 0, b.y | 0, 2, 2); }
+    bits = bits.filter(b => b.y < H * .6);
+  } else {
+    const x = W * .353, y = H * .31, r = 14 + 4 * Math.sin(t / 400);
+    const gr = g.createRadialGradient(x, y, 0, x, y, r * 2.5); gr.addColorStop(0, 'rgba(215,175,255,.55)'); gr.addColorStop(1, 'rgba(160,130,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    if (Math.random() < .35) bits.push({ x: x + (Math.random() - .5) * 34, y: y + 18 + Math.random() * 14, vy: -.35 - Math.random() * .45, a: .9, c: Math.random() < .5 ? '#f5d8ff' : '#ffe6a8' });
+    for (const b of bits) { b.y += b.vy; b.a -= .014; g.fillStyle = b.c; g.globalAlpha = Math.max(0, b.a); g.fillRect(b.x | 0, b.y | 0, 2, 2); }
+    g.globalAlpha = 1; bits = bits.filter(b => b.a > 0 && b.y > 0);
+  }
   requestAnimationFrame(f); } requestAnimationFrame(f); }
 fx('ck', 'crack'); fx('cr', 'glow');
 // 像素场景
