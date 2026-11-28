@@ -1,163 +1,107 @@
-"""Calibrate and repack the six playable hero atlases."""
-from pathlib import Path
+"""Recover original frame pixels and calibrate ground anchors without resizing."""
+import io
 import json
-import re
+from pathlib import Path
+import subprocess
 
 import numpy as np
 from PIL import Image, ImageDraw
-from scipy.ndimage import label
+from scipy.ndimage import binary_fill_holes, distance_transform_edt
 
-ROOT = Path(__file__).resolve().parents[2]
-ART = ROOT / "art"
+ART = Path(__file__).resolve().parents[2] / "art"
+BASE = "da1d8fd"
 WEAPONS = ("sword", "spear", "bow", "staff", "tome", "gun", "scythe")
-HEROES = ("Ayuan", "Rin", "Elf", "Vampire", "Skeleton", "Knight")
 AIR = {"jump", "back", "roll", "dead"}
-LOW = AIR | {"slam", "charge", "dash"}
-BEFORE = np.zeros(4, dtype=int)
-AFTER = BEFORE.copy()
 
 
-def noise(pixels):
-    r, g, b, a = pixels.astype(int).transpose(2, 0, 1)
-    pink = (a > 0) & (r > 180) & (b > 160) & (np.minimum(r, b) - g > 60)
-    groups, _ = label((a >= 128) & ~pink, np.ones((3, 3)))
-    sizes = np.bincount(groups.ravel())
-    bright = (0.2126*r + 0.7152*g + 0.0722*b >= 155) & (groups > 0)
-    protected = np.unique(groups[bright])
-    return pink | ((groups > 0) & (sizes[groups] <= 3) & ~np.isin(groups, protected))
+def base_file(path):
+    key = path.relative_to(ART.parent).as_posix()
+    return subprocess.check_output(["git", "show", f"{BASE}:{key}"], cwd=ART.parent)
 
 
-def body(pixels):
+def boot_line(pixels, center, previous, spread):
     mask = pixels[:, :, 3] >= 128
-    # Locate the dense head using a short moving vertical window. Thin shafts,
-    # tips and plumes contribute too few pixels to define the head.
-    h, w = mask.shape
-    best = (0, 0, 0)
-    for y in range(max(1, h // 2)):
-        row = mask[y:y+9].sum(axis=0)
-        for x in range(max(w - 13, 1)):
-            score = np.minimum(row[x:x+14], 8).sum()
-            if score > best[0]:
-                best = (score, y, x)
-    _, y, x = best
-    left, right = max(0, x-7), min(w, x+21)
-    head = mask[:min(h, y+13), left:right].copy()
-    rgb = pixels[:head.shape[0], left:right, :3].astype(int)
-    r, g, b = rgb.transpose(2, 0, 1)
-    head &= ~((b > r+18) & (g > r+8))
-    dense = np.flatnonzero(head.sum(axis=1) >= 5)
-    top = int(dense[0]) if dense.size else y
-    upper = mask[top:min(h, top+22), left:right]
-    center = float(np.nonzero(upper)[1].mean() + left + .5) if upper.any() else w/2
-    lower = mask[max(top+13, h//2):, max(0, left-5):min(w, right+5)]
-    rows = np.flatnonzero(lower.sum(axis=1) >= 3)
-    bottom = int(max(top+13, h//2)+rows[-1]+1) if rows.size else h
-    return round(center, 1), bottom, bottom-top
+    left = max(0, round(center)-spread)
+    right = min(mask.shape[1], round(center)+spread+1)
+    column = mask[:, left:right]
+    rows = np.flatnonzero((column[:, 1:] & column[:, :-1]).sum(axis=1) >= 2)
+    if not rows.size:
+        return previous
+    return int(rows[-1]+1)
 
 
-def read(name):
-    directory = ART / name
-    data = json.loads((directory / "atlas.json").read_text(encoding="utf-8"))
-    return directory, data, Image.open(directory / "atlas.png").convert("RGBA")
+def edge_color(pixels):
+    r, g, b, a = pixels.astype(int).transpose(2, 0, 1)
+    magenta = (r > 180) & (b > 160) & (np.minimum(r, b)-g > 60)
+    solid = a >= 128
+    exterior = ~binary_fill_holes(solid)
+    padded = np.pad(exterior, 1, constant_values=True)
+    edge = padded[:-2, 1:-1] | padded[2:, 1:-1] | padded[1:-1, :-2] | padded[1:-1, 2:]
+    fringe = magenta & solid & edge
+    reference = solid & ~magenta
+    if fringe.any() and reference.any():
+        nearest = distance_transform_edt(~reference, return_distances=False, return_indices=True)
+        yy, xx = nearest[:, fringe]
+        pixels[fringe, :3] = pixels[yy, xx, :3]
+        return int(fringe.sum())
+    return 0
 
 
-def crop(atlas, box):
-    x,y,w,h = box[:4]
-    return np.array(atlas.crop((x,y,x+w,y+h)))
-
-
-def fix(directory, data, atlas, target):
-    actions = {}
-    for key, frames in data["f"].items():
-        if "." in key:
-            for box in frames:
-                actions.setdefault(tuple(box[:4]), set()).add(key.rsplit(".",1)[1])
-    packed = {}
-    preview = {}
-    x = y = row = 0
-    for key, frames in data["f"].items():
-        first = tuple(frames[0][:4]) if frames else None
-        for i, box in enumerate(frames):
-            region = tuple(box[:4])
-            if region not in packed:
-                pixels = crop(atlas, box)
-                dirt = noise(pixels)
-                ax, ay, height = body(pixels)
-                acts = actions.get(region, set())
-                grounded = not acts.intersection(AIR)
-                upright = not acts.intersection(LOW) and height >= target * .73
-                BEFORE[:] += (upright and abs(height-target)>2, grounded and box[5]!=ay,
-                              abs(box[4]-ax)>.05, dirt.any())
-                pixels[dirt] = 0
-                pixels[pixels[:,:,3]<128] = 0
-                clean = Image.fromarray(pixels)
-                if upright and abs(body(pixels)[2]-target)>2:
-                    candidates = [clean]
-                    _, _, height = body(pixels)
-                    for offset in range(-12,13):
-                        scale = (target+offset)/max(height,1)
-                        size = tuple(max(1,round(v*scale)) for v in clean.size)
-                        candidates.append(clean.resize(size, Image.Resampling.NEAREST))
-                    clean = min(candidates, key=lambda im: (abs(body(np.array(im))[2]-target),
-                                                            abs(im.height-pixels.shape[0])))
-                pixels = np.array(clean)
-                pixels[noise(pixels)] = 0
-                clean = Image.fromarray(pixels)
-                ax, bottom, height = body(pixels)
-                ay = bottom if grounded else round(box[5]*clean.height/box[3],1)
-                w,h = clean.size
-                if x+w > 1024:
-                    x,y,row = 0,y+row+2,0
-                packed[region] = ([x,y,w,h,ax,ay], clean, upright, grounded)
-                x += w+2
-                row = max(row,h)
-            frames[i] = packed[region][0].copy()
-        if frames:
-            preview[key] = packed[first][:2]
-    output = Image.new("RGBA",(1024,y+row))
-    for box, image, _, _ in packed.values():
-        output.paste(image, tuple(box[:2]))
-    png = directory/"atlas.png"
-    output.save(png)
-    (directory/"atlas.json").write_text(json.dumps(data,ensure_ascii=False,separators=(",",":"))+"\n", encoding="utf-8")
-    with Image.open(png) as saved:
-        for box, _, upright, grounded in packed.values():
-            pixels = crop(saved,box)
-            ax, ay, height = body(pixels)
-            AFTER[:] += (upright and abs(height-target)>2, grounded and box[5]!=ay,
-                         abs(box[4]-ax)>.05, noise(pixels).any())
-    return preview
+def calibrate(directory):
+    meta = directory / "atlas.json"
+    png = directory / "atlas.png"
+    data = json.loads(base_file(meta))
+    source = Image.open(io.BytesIO(base_file(png))).convert("RGBA")
+    result = source.copy()
+    frames = data["f"]
+    regions = {}
+    for key, entries in frames.items():
+        action = key.split(".")[-1].split(":")[-1]
+        for entry in entries:
+            regions.setdefault(tuple(entry[:4]), []).append((action, entry, key))
+    changed = tinted = 0
+    for (x, y, w, h), aliases in regions.items():
+        pixels = np.array(source.crop((x, y, x+w, y+h)))
+        tinted += edge_color(pixels)
+        result.paste(Image.fromarray(pixels), (x, y))
+        if any(action in AIR for action, _, _ in aliases):
+            continue
+        _, sample, _ = aliases[0]
+        scythe = any("scythe." in key for _, _, key in aliases)
+        line = boot_line(pixels, sample[4], sample[5], 8 if scythe else 13)
+        if abs(line-sample[5]) >= 2:
+            changed += 1
+            for _, entry, _ in aliases:
+                entry[5] = line
+    assert np.array_equal(np.asarray(source)[:, :, 3], np.asarray(result)[:, :, 3])
+    result.save(png)
+    meta.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":"))+"\n", encoding="utf-8")
+    print(directory.name, len(regions), changed, tinted)
+    return result, frames
 
 
 def main():
     groups = [[f"hero{weapon.title()}Gemini2Cal" for weapon in WEAPONS]]
-    groups += [[name] for name in ("heroFNew","heroENew","heroV","heroS","heroK")]
-    sheet = Image.new("RGB",(6*320+70,7*128+36),"#e9ddc0")
+    groups += [[name] for name in ("heroFNew", "heroENew", "heroV", "heroS", "heroK")]
+    sheet = Image.new("RGB", (1990, 932), "#e9ddc0")
     draw = ImageDraw.Draw(sheet)
-    for col,(hero,names) in enumerate(zip(HEROES,groups)):
-        directory,data,atlas = read(names[0])
-        target = body(crop(atlas,data["f"]["hero:sword.idle"][0]))[2]
-        previews = {}
-        for name in names:
-            previews.update(fix(*read(name), target))
-        draw.text((80+col*320,10),hero,fill="#30251b")
-        for row,weapon in enumerate(WEAPONS):
-            baseline = row*128+141
-            draw.text((5,baseline-30),weapon,fill="#30251b")
-            draw.line((71,baseline,sheet.width,baseline),fill="#b78671")
-            for j,action in enumerate(("idle","run","atk")):
-                item = previews.get(f"hero:{weapon}.{action}")
-                if item is None:
+    for col, (name, directories) in enumerate(zip(("Ayuan", "Rin", "Elf", "Vampire", "Skeleton", "Knight"), groups)):
+        atlases = [calibrate(ART / directory) for directory in directories]
+        draw.text((80+320*col, 10), name, fill="#30251b")
+        for row, weapon in enumerate(WEAPONS):
+            atlas, frames = atlases[row] if len(atlases)>1 else atlases[0]
+            base = 141+row*128
+            draw.text((5, base-30), weapon, fill="#30251b")
+            draw.line((71, base, sheet.width, base), fill="#18844a")
+            for j, action in enumerate(("idle", "run", "atk")):
+                entries = frames.get(f"hero:{weapon}.{action}")
+                if not entries:
                     continue
-                box,image = item
-                image = image.resize((image.width*2,image.height*2),Image.Resampling.NEAREST)
-                position = (120+col*320+j*102-round(box[4]*2),baseline-round(box[5]*2))
-                sheet.paste(image,position,image)
-    sheet.save(ART/"compare_6heroes.png")
-    for name,before,after in zip(("height","ay","ax","cutout"),BEFORE,AFTER):
-        print(f"{name}: {before} -> {after}")
-    return int(AFTER.any())
+                x, y, w, h, ax, ay = entries[0]
+                im = atlas.crop((x, y, x+w, y+h)).resize((2*w, 2*h), Image.Resampling.NEAREST)
+                sheet.paste(im, (120+320*col+102*j-round(2*ax), base-round(2*ay)), im)
+    sheet.save(ART / "compare_6heroes.png")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
