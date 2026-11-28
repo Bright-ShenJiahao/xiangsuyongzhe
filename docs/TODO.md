@@ -349,6 +349,11 @@
 - 接入剑、枪、弓、法杖、圣典、掌机、镰刀全 7 套 33 帧图集至 `art/heroS/atlas.{png,json}`（生成脚本 `tools/pixel/build_heroS.py`），同步生成占位立绘 `art/portrait/s.webp` 与五角色同落脚线对比图 `art/compare_5heroes.png`。
 - 校准基准：按阿远身高（`idle0=39px` / `idle1=36px`）定每套单一等比缩放（`0.4868`～`0.5000`），严格亮洋红抠图保护深紫法袍，补齐连续 1px 深棕描边 `(58,34,24)` 并柔化白骨过高亮部，按靴底与重心定锚点。
 - 全场景接入：`js/data.js`（`DATA.heroes` 新增 `id: 's'`）、`js/sprites.js`（`SETS.heroS`）、`js/ui.js`（选人/图鉴/立绘预载）、`demo/intro.html`（`h=s`）、`demo/palace.html`（`h=s`）与 `tools/frames.html`。
+
+## 皇家骑士团女（女骑士，id=k）可玩角色接入（2026-11-28）
+- 接入剑、枪、弓、法杖、圣典、掌机、镰刀全 7 套 33 帧图集至 `art/heroK/atlas.{png,json}`（生成脚本 `tools/pixel/build_heroK.py`），同步生成占位立绘 `art/portrait/k.webp` 与六角色同落脚线对比图 `art/compare_6heroes.png`。
+- 校准基准：排除头盔蓝羽后按阿远体型定单一等比缩放，清理洋红残边与杂点，补齐连续 1px 深棕描边 `(58,34,24)`，按靴底与重心定锚点。
+- 全场景接入：`js/data.js`、`js/sprites.js`（`SETS.heroK`）、`js/ui.js`、`demo/intro.html`、`demo/palace.html` 与 `tools/frames.html`。
 ## 正式书封与阿远新镰刀（2026-11-28）
 - 接入用户提供的掌机、圣典、镰刀三本正式书封，按独立连通轮廓抠图，统一128px画布，替换选人/背包/商店/场内书本与拾取提示中的旧借图；保留单技能图标。美术清单同步更新。
 - 替换阿远镰刀33帧，源图保存于art/src/ayuan_scythe_latest.webp。全套固定倍率0.4935，第一待机人物身高按旧剑38px对齐（排除武器），各动作锚点参考旧剑对应姿态的头部与落脚关系；保留腾空/翻滚姿势差异，清理轮廓内洋红污染，默认使用旧剑色板版本。
