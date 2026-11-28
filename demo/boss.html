@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8"><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>首领 / 精英 / 组合首领 演示（局外）</title>
+<style>
+body{margin:0;background:#1b1410;color:#f3e6c8;font:14px/1.5 system-ui,sans-serif;display:flex;flex-wrap:wrap;min-height:100vh}
+#L{flex:1 1 560px;display:flex;flex-direction:column;align-items:center;padding:8px}
+canvas{background:#5b4a32;image-rendering:pixelated;max-width:100%;border:3px solid #6b4a2b;touch-action:none}
+#R{flex:0 1 340px;padding:10px;background:#2a1d14;overflow:auto;max-height:100vh;box-sizing:border-box}
+button{font:inherit;background:#4a3322;color:#f3e6c8;border:1px solid #8a6a44;padding:4px 10px;border-radius:3px;margin:2px;cursor:pointer}
+button.on{background:#8a6a2a;border-color:#ffd27a}
+h4{margin:10px 0 4px;color:#ffd890}
+.row{display:flex;align-items:center;gap:6px;margin:3px 0}.row label{width:96px}.row input{flex:1}.row b{width:34px;text-align:right}
+#desc{font-size:13px;background:#1b1410;border-left:3px solid #c9a15a;padding:6px 8px;margin:6px 0}
+</style></head><body>
+<div id="L"><canvas id="c" width="760" height="460"></canvas>
+<div style="font-size:12px;opacity:.85;margin-top:4px">WASD / 方向键移动（手机：按住拖动）· <b>空格 / 双击 = 翻滚</b>（0.3 秒无敌，冷却 1.8 秒）· 勇者自动攻击最近的敌人 · <b>点敌人 = 指定先打它</b></div></div>
+<div id="R">
+<h4>单个对手</h4><div id="who1"></div>
+<h4>精英招式（新）</h4><div id="who3"></div>
+<h4>组合首领</h4><div id="who2"></div>
+<div id="desc"></div>
+<h4>招式（单个对手时可选）</h4><div id="pat"></div>
+<div class="row"><label>子弹速度</label><input type="range" id="bs" min="40" max="220" value="110"><b id="bsV">110</b></div>
+<div class="row"><label>预警时间 s</label><input type="range" id="wt" min="0.2" max="1.5" step="0.1" value="0.8"><b id="wtV">0.8</b></div>
+<div class="row"><label>旁边小怪</label><input type="range" id="mn" min="0" max="20" value="4"><b id="mnV">4</b></div>
+<div class="row"><button id="re">重来</button><button id="god">无敌：关</button></div>
+<h4>记录</h4><div id="st" style="font-size:13px"></div>
+</div>
+<script src="js/data.js"></script><script src="js/sprites.js"></script>
+<script>
+const cv = c, ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false; const W = cv.width, H = cv.height, YS = 1.4, U = 2, PI = Math.PI;
+const R = (a, b) => a + Math.random() * (b - a), dist = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * YS), ang = (a, b) => Math.atan2((b.y - a.y) * YS, b.x - a.x);
+const PAT = {
+  fan: { n: '扇形飞斧', d: '对着你扔 5 把斧头，扇形 60°' }, rain: { n: '红圈砸石', d: '你脚下和周围出现红圈，结束后砸下' }, ring: { n: '环形弹幕', d: '一圈 16 颗慢速子弹，留缺口' },
+  charge: { n: '冲锋', d: '先画红线再冲' }, spiral: { n: '旋转弹幕', d: '原地转圈吐子弹 3 秒' }, homing: { n: '追踪火球', d: '3 颗慢速追踪火球' }, rock5: { n: '五连投石', d: '连续 5 颗砸在你前进方向' },
+  holy: { n: '圣光红圈', d: '你周围 3 个金色红圈' }, horn: { n: '吹号狂暴', d: '自己和身边小怪 5 秒内又快又痛' },
+  boom: { n: '回旋棒', d: '棒子扔出去再飞回来，去回都打' }, hook: { n: '钩锁', d: '甩出绳钩，钩中把你拉到它身边' }, grab: { n: '抱腿', d: '扑上来抱住你，移动变慢，翻滚才能甩开' },
+  fire: { n: '火箭雨', d: '箭落地留下一片火，烧 4 秒' }, wall: { n: '盾墙', d: '3 个盾排成一排推过来，挡路、碰到会被推开' }, mine: { n: '埋地雷', d: '扔下 3 颗地雷，3 秒后激活，一直留在地上' },
+  blink: { n: '隐身背刺', d: '消失 1 秒，从你背后出现砍一刀' }, curse: { n: '混乱诅咒', d: '紫色光弹，中了 2 秒内方向键上下左右颠倒（有时 2–3 个球），并持续掉一点血' }, quake: { n: '震波', d: '一圈震波往外扩，要翻滚穿过去' },
+  bones: { n: '骷髅圈', d: '在你周围召出一圈骷髅往里围' }, crack: { n: '地裂', d: '砸地裂开一条直线，一路延伸' }, roll: { n: '滚石球', d: '缩成石球撞过来，碰到墙反弹' } };
+const M = (set, k, hp, pats, o = {}) => Object.assign({ set, k, hp, pats }, o);
+const WHO = {
+  king: { n: '哥布林王', solo: 1, d: '单个首领：4 招轮流，残血 50% 进入第二阶段', m: [M('gob_king', 1, 600, ['fan', 'rain', 'ring', 'charge'], { p2: ['ring', 'spiral', 'rain', 'charge', 'fan'], lead: 1 })] },
+  shaman: { n: '萨满精英', solo: 1, d: '单个精英：追踪火球', m: [M('gob_shaman', 1.15, 120, ['homing'])] },
+  thrower: { n: '投石精英', solo: 1, d: '单个精英：五连投石', m: [M('gob_thrower', 1.15, 100, ['rock5'])] },
+  e_gob: { n: '哥布林', solo: 2, d: '精英：回旋棒', m: [M('goblin', 1.2, 100, ['boom'])] }, e_blade: { n: '刀手', solo: 2, d: '精英：钩锁', m: [M('gob_blade', 1.2, 110, ['hook'])] },
+  e_kid: { n: '小哥布林', solo: 2, d: '精英：抱腿', m: [M('gob_kid', 1.3, 80, ['grab'])] }, e_arch: { n: '弓手', solo: 2, d: '精英：火箭雨', m: [M('gob_archer', 1.2, 90, ['fire'])] },
+  e_shield: { n: '盾兵', solo: 2, d: '精英：盾墙', m: [M('gob_shield', 1.2, 140, ['wall'])] }, e_bomb: { n: '炸弹兵', solo: 2, d: '精英：埋地雷', m: [M('gob_bomb', 1.2, 90, ['mine'])] },
+  e_ghost: { n: '幽灵', solo: 2, d: '精英：隐身背刺', m: [M('gob_ghost', 1.2, 100, ['blink'])] }, e_mage: { n: '法师', solo: 2, d: '精英：混乱诅咒', m: [M('gob_mage', 1.2, 100, ['curse'])] },
+  e_drum: { n: '战鼓手', solo: 2, d: '精英：震波', m: [M('gob_drum', 1.1, 130, ['quake'])] }, e_necro: { n: '死灵法师', solo: 2, d: '精英：骷髅圈', m: [M('gob_necro', 1.1, 110, ['bones'])] },
+  e_troll: { n: '巨魔', solo: 2, d: '精英：地裂', m: [M('gob_troll', .7, 180, ['crack'])] }, e_rock: { n: '岩石哥布林', solo: 2, d: '精英：滚石球', m: [M('gob_rock', 1.1, 160, ['roll'])] },
+  guard: { n: '① 王 + 两护卫', d: '<b>先打谁？</b>萨满每 3 秒给王回 3% 血；战鼓手让王出招间隔减半。护卫活着时王受到的伤害减半（身上有金圈）。死一个护卫，王立刻狂暴（更快）。点护卫可以指定先打它。', m: [M('gob_king', 1, 600, ['fan', 'rain', 'ring', 'charge'], { p2: ['ring', 'spiral', 'rain', 'charge'], lead: 1 }), M('gob_shaman', 1.1, 110, ['homing'], { role: 'heal', ox: -150 }), M('gob_drum', 1.1, 120, [], { role: 'drum', ox: 150 })] },
+  duo: { n: '② 酋长 + 圣骑士', d: '<b>两人搭档</b>：圣骑士每 6 秒给酋长套一层护盾（吸收 40 伤害），酋长吹号狂暴冲上来。<b>先倒下的那个，10 秒内另一个没被打倒就会复活（回一半血）</b>——要把两个的血量控制得差不多。', m: [M('gob_chief', .75, 260, ['fan', 'horn']), M('gob_paladin', .75, 280, ['holy', 'charge'], { role: 'shield' })], revive: 1 },
+  riders: { n: '③ 骑兵兄弟', d: '<b>交叉冲锋</b>：两人从两边同时画红线，交叉成 X 冲过来，要站在红线之间的空隙。一个倒下，另一个冲得更快、连冲两次。', m: [M('gob_wolf', .95, 220, [], { rider: 1 }), M('gob_boar', .95, 260, [], { rider: 1 })], riders: 1 } };
+let ents = [], who = 'king', only = null, god = false, bs_ = [], hero, bullets, marks, mobs, fx, nums, t, rec, focus = null, riderT = 0;
+function reset() { const G = WHO[who]; bs_ = G.m.map((m, i) => ({ ...m, x: W / 2 + (m.ox || (G.m.length > 1 && !m.lead ? (i ? 120 : -120) : 0)), y: 150, hp: m.hp, max: m.hp, st: 'idle', t: R(0, .6), f: 1, ph: 1, flash: 0, shield: 0, dead: 0, deadT: 0 }));
+  hero = { x: W / 2, y: 380, hp: 85, max: 85, roll: 0, rcd: 0, inv: 0, f: 1, acd: 0, vx: 0, vy: -1 }; bullets = []; ents = []; marks = []; mobs = []; fx = []; nums = []; t = 0; riderT = 1.5; focus = null; rec = { hits: 0, dodged: 0, rolls: 0, time: 0 }; for (let i = 0; i < +mn.value; i++) spawnMob(); }
+function spawnMob() { const a = R(0, 7); mobs.push({ x: W / 2 + Math.cos(a) * 360, y: H / 2 + Math.sin(a) * 220, hp: 6, f: 1, cd: R(0, 1), fast: 0 }); }
+const bspd = () => +bs.value, warn = () => +wt.value, live = () => bs_.filter(b => !b.dead), lead = () => bs_.find(b => b.lead);
+function say(b, txt, c = '#ffb84a') { nums.push({ x: b.x, y: b.y - 90, txt, t: -.6, c }); }
+function startPat(b) { const L = only && WHO[who].solo ? [only] : b.ph === 2 && b.p2 ? b.p2 : b.pats; if (!L.length) { b.st = 'walk'; b.t = 0; return; } b.p = L[Math.random() * L.length | 0]; b.st = 'warn'; b.t = 0; b.aim = ang(b, hero); const p = b.p, w = warn();
+  if (p === 'rain') { const n = b.ph === 2 ? 6 : 4; for (let i = 0; i < n; i++) marks.push({ k: 'circle', x: i ? hero.x + R(-110, 110) : hero.x, y: i ? hero.y + R(-70, 70) : hero.y, r: 30, t: 0, T: w + .1 * i }); }
+  if (p === 'holy') for (let i = 0; i < 3; i++) marks.push({ k: 'circle', gold: 1, x: hero.x + (i ? R(-80, 80) : 0), y: hero.y + (i ? R(-50, 50) : 0), r: 34, t: 0, T: w + .15 * i });
+  if (p === 'charge') marks.push({ k: 'line', x: b.x, y: b.y, a: b.aim, len: 380, t: 0, T: w });
+  if (p === 'fan') marks.push({ k: 'fan', x: b.x, y: b.y, a: b.aim, t: 0, T: w * .7 });
+  if (p === 'hook' || p === 'crack' || p === 'roll') marks.push({ k: 'line', x: b.x, y: b.y, a: b.aim, len: p === 'hook' ? 300 : 420, t: 0, T: w * (p === 'hook' ? .6 : 1), thin: p === 'hook' });
+  if (p === 'grab') marks.push({ k: 'circle', x: hero.x, y: hero.y, r: 22, t: 0, T: w * .8, noHit: 1 });
+  if (p === 'fire') for (let i = 0; i < 6; i++) marks.push({ k: 'circle', x: hero.x + R(-120, 120), y: hero.y + R(-80, 80), r: 26, t: 0, T: w + i * .08, fire: 1 });
+  if (p === 'boom' || p === 'wall' || p === 'mine' || p === 'blink' || p === 'curse' || p === 'quake' || p === 'bones') marks.push({ k: 'glow', x: b.x, y: b.y, t: 0, T: w * .7, c: '255,200,80' });
+  if (p === 'ring' || p === 'spiral' || p === 'homing' || p === 'horn') marks.push({ k: 'glow', x: b.x, y: b.y, t: 0, T: w * .7, c: p === 'horn' ? '255,120,60' : '200,120,255' }); }
+function shoot(x, y, a, v, o = {}) { bullets.push(Object.assign({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v / YS, t: 0, life: 6, r: 7, dmg: 8, col: '#5ad0ff' }, o)); }
+function fire(b) { const p = b.p, v = bspd();
+  if (p === 'fan') for (let i = -2; i <= 2; i++) shoot(b.x, b.y - 20, b.aim + i * PI / 15, v * 1.2, { col: '#d8d8e8', axe: 1, dmg: 10 });
+  if (p === 'ring') { const k = b.ph === 2 ? 2 : 1; for (let w = 0; w < k; w++) setTimeout(() => { if (b.dead) return; const gap = R(0, 16) | 0, off = w * PI / 16; for (let i = 0; i < 16; i++) if (Math.abs(i - gap) > 1) shoot(b.x, b.y - 20, i * PI / 8 + off, v * .9); }, w * 450); }
+  if (p === 'homing') for (let i = -1; i <= 1; i++) shoot(b.x, b.y - 20, b.aim + i * .6, v * .7, { home: 1, life: 3.2, col: '#c87aff', dmg: 9 });
+  if (p === 'horn') { b.rage = 5; say(b, '狂暴！'); for (const m of mobs) if (dist(m, b) < 200) m.fast = 5; }
+  if (p === 'charge') { b.st = 'charge'; b.t = 0; b.cx = Math.cos(b.aim); b.cy = Math.sin(b.aim); return; }
+  if (p === 'spiral') { b.st = 'spin'; b.t = 0; return; }
+  if (p === 'rock5') { b.st = 'rock'; b.t = 0; b.q = 5; return; }
+  if (p === 'boom') ents.push({ k: 'boom', x: b.x, y: b.y - 20, a: b.aim, t: 0, o: b, hit: {} });
+  if (p === 'hook') ents.push({ k: 'hook', x: b.x, y: b.y - 20, a: b.aim, t: 0, o: b });
+  if (p === 'grab') { if (Math.hypot(hero.x - (b.gx = hero.x), 0) >= 0) { b.x = hero.x - 10; b.y = hero.y; } if (hero.roll <= 0 && !god) { hero.grab = 1; hero.grabT = 0; nums.push({ x: hero.x, y: hero.y - 46, txt: '被抱住！翻滚甩开', t: -.2, c: '#ffb84a' }); } }
+  if (p === 'wall') { const a = ang(b, hero), nx = -Math.sin(a), ny = Math.cos(a); for (let i = -1; i <= 1; i++) ents.push({ k: 'wall', x: b.x + nx * i * 34, y: b.y + ny * i * 34 / YS, vx: Math.cos(a) * 70, vy: Math.sin(a) * 70 / YS, t: 0 }); }
+  if (p === 'mine') for (let i = 0; i < 3; i++) ents.push({ k: 'mine', x: hero.x + R(-90, 90), y: hero.y + R(-60, 60), t: 0 });
+  if (p === 'blink') { b.st = 'gone'; b.t = 0; return; }
+  if (p === 'curse') { const r = Math.random(), n = r < .5 ? 1 : r < .8 ? 2 : 3; for (let i = 0; i < n; i++) shoot(b.x, b.y - 20, b.aim + (i - (n - 1) / 2) * .35, bspd() * .9, { col: '#c87aff', r: 9, dmg: 2, curse: 1 }); }   // 有时 2–3 个球
+  if (p === 'quake') ents.push({ k: 'quake', x: b.x, y: b.y, t: 0, r: 20, hitDone: 0 });
+  if (p === 'bones') for (let i = 0; i < 8; i++) { const a = i * PI / 4; mobs.push({ x: hero.x + Math.cos(a) * 110, y: hero.y + Math.sin(a) * 80, hp: 4, f: 1, cd: 1, fast: 0, bone: 1 }); }
+  if (p === 'crack') ents.push({ k: 'crack', x: b.x, y: b.y, a: b.aim, t: 0, len: 0, hd: 0 });
+  if (p === 'roll') ents.push({ k: 'roll', x: b.x, y: b.y, vx: Math.cos(b.aim) * 300, vy: Math.sin(b.aim) * 300 / YS, t: 0, cd: 0 });
+  b.st = 'rec'; b.t = 0; }
+function hurtHero(d) { if (god || hero.inv > 0 || hero.roll > 0) { rec.dodged++; nums.push({ x: hero.x, y: hero.y - 46, txt: 'MISS', t: 0, c: '#fff' }); return; } hero.hp = Math.max(0, hero.hp - d); hero.inv = .6; rec.hits++; nums.push({ x: hero.x, y: hero.y - 46, txt: '-' + d, t: 0, c: '#ff6a5a' }); }
+const guarded = b => b.lead && WHO[who].m.length > 1 && bs_.some(o => o !== b && !o.dead && (o.role === 'heal' || o.role === 'drum'));
+function dmgBoss(b, d) { if (guarded(b)) d = Math.round(d / 2);
+  if (b.shield > 0) { const a = Math.min(b.shield, d); b.shield -= a; d -= a; nums.push({ x: b.x + 14, y: b.y - 60, txt: '盾', t: 0, c: '#ffe08a' }); }
+  b.hp -= d; b.flash = .1; if (d) nums.push({ x: b.x, y: b.y - 50, txt: d, t: 0, c: '#fff' });
+  if (b.hp <= 0 && !b.dead) { b.dead = 1; b.deadT = 0; b.hp = 0; onDeath(b); } }
+function onDeath(b) { const G = WHO[who], L = lead();
+  if ((b.role === 'heal' || b.role === 'drum') && L && !L.dead) { L.rage = 999; say(L, '护卫倒下，王狂暴了！'); }
+  if (G.riders) { const o = live()[0]; if (o) { o.solo2 = 1; say(o, '兄弟！！'); } }
+  if (G.revive) { const o = live()[0]; if (o) { b.revT = 10; say(o, '10 秒内打倒它，不然会复活！', '#ff8a6a'); } else for (const x of bs_) x.revT = null; } }
+function step(dt) { const G = WHO[who];
+  if (hero.hp <= 0 || !live().length) return; t += dt; rec.time = t;
+  let mx = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0), my = (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+  if (drag) { const dx = drag.x - hero.x, dy = drag.y - hero.y, d = Math.hypot(dx, dy); if (d > 6) { mx = dx / d; my = dy / d; } }
+  if (ents.some(e => e.k === 'curse')) { mx = -mx; my = -my; }   // 混乱：方向颠倒（手机拖动也反）
+  const l = Math.hypot(mx, my); if (l) { mx /= l; my /= l; hero.vx = mx; hero.vy = my; hero.f = mx < 0 ? -1 : mx > 0 ? 1 : hero.f; }
+  hero.rcd -= dt; hero.inv -= dt;
+  if (hero.grab && hero.roll > 0) { hero.grab = 0; nums.push({ x: hero.x, y: hero.y - 46, txt: '甩开了！', t: 0, c: '#9cf' }); }
+  if (hero.grab) { hero.grabT += dt; if (hero.grabT > 1.2) { hero.grabT = 0; hurtHero(4); hero.inv = 0; } }
+  if (hero.pull) { const o = hero.pull, a = Math.atan2(o.y - hero.y, o.x - hero.x); hero.x += Math.cos(a) * 520 * dt; hero.y += Math.sin(a) * 520 * dt; if (Math.hypot(o.x - hero.x, o.y - hero.y) < 30) hero.pull = null; }
+  else if (hero.roll > 0) { hero.roll -= dt; hero.x += hero.vx * 240 * dt; hero.y += hero.vy * 180 * dt; } else if (l) { const sp = hero.grab ? 30 : 80; hero.x += mx * sp * dt; hero.y += my * sp * dt / YS; }
+  hero.x = Math.max(20, Math.min(W - 20, hero.x)); hero.y = Math.max(60, Math.min(H - 10, hero.y));
+  if ((hero.acd -= dt) <= 0) { hero.acd = .55; let tg = focus && !focus.dead ? focus : null; if (!tg) tg = [...live(), ...mobs].sort((a, b) => dist(a, hero) - dist(b, hero))[0];
+    if (tg && dist(tg, hero) < 260) { fx.push({ k: 'slash', x: tg.x, y: tg.y - 20, t: 0 }); if (tg.max) dmgBoss(tg, 12); else { tg.hp -= 6; tg.flash = .1; if (tg.hp <= 0 && !tg.bone) setTimeout(spawnMob, 1500); } } }
+  mobs = mobs.filter(m => m.hp > 0);
+  for (const m of mobs) { m.fast -= dt; const a = ang(m, hero), d = dist(m, hero), sp = m.fast > 0 ? 75 : 40; m.f = Math.cos(a) < 0 ? -1 : 1; if (d > 26) { m.x += Math.cos(a) * sp * dt; m.y += Math.sin(a) * sp * dt / YS; } else if ((m.cd -= dt) <= 0) { m.cd = m.fast > 0 ? .8 : 1.4; hurtHero(m.fast > 0 ? 8 : 5); } m.flash = (m.flash || 0) - dt; }
+  for (const b of bs_) if (b.dead && b.revT != null) { b.revT -= dt; if (b.revT <= 0) { b.revT = null; if (live().length) { b.dead = 0; b.hp = b.max / 2; b.st = 'idle'; b.t = 0; say(b, '复活了！', '#ff6a5a'); } } }
+  if (G.riders) { const L = live(); riderT -= dt; if (riderT <= 0 && L.every(b => b.st === 'idle' || b.st === 'walk')) { riderT = L.length > 1 ? 3.2 : 1.8;
+      const sd = [[-1, -1], [1, 1], [-1, 1], [1, -1]][Math.random() * 4 | 0];
+      L.forEach((b, i) => { b.x = Math.max(40, Math.min(W - 40, hero.x + (i ? -sd[0] : sd[0]) * 230)); b.y = Math.max(80, Math.min(H - 20, hero.y + sd[1] * 140)); b.aim = ang(b, hero); b.st = 'warn'; b.t = 0; b.left = b.solo2 ? 2 : 1; marks.push({ k: 'line', x: b.x, y: b.y, a: b.aim, len: 520, t: 0, T: warn() * (b.solo2 ? .7 : 1) }); }); } }
+  for (const b of bs_) { if (b.dead) { b.deadT += dt; continue; }
+    b.flash -= dt; b.t += dt; b.f = hero.x < b.x ? -1 : 1; if (b.rage > 0) b.rage -= dt;
+    const fast = (b.rage > 0 ? .5 : 1) * (b.lead && bs_.some(o => o.role === 'drum' && !o.dead) ? .5 : 1);
+    if (b.lead && b.ph === 1 && b.hp < b.max / 2) { b.ph = 2; say(b, '第二阶段！'); b.st = 'rec'; b.t = 0; }
+    if (b.role === 'heal') { b.ht = (b.ht == null ? 3 : b.ht) - dt; const L = lead(); if (b.ht <= 0 && L && !L.dead) { b.ht = 3; L.hp = Math.min(L.max, L.hp + L.max * .03); fx.push({ k: 'beam', x: b.x, y: b.y, x2: L.x, y2: L.y, t: 0, c: '120,255,140' }); nums.push({ x: L.x, y: L.y - 70, txt: '+' + Math.round(L.max * .03), t: 0, c: '#6aff8a' }); } }
+    if (b.role === 'shield') { b.ht = (b.ht == null ? 2 : b.ht) - dt; const o = bs_.find(x => x !== b && !x.dead); if (b.ht <= 0 && o) { b.ht = 6; o.shield = 40; fx.push({ k: 'beam', x: b.x, y: b.y, x2: o.x, y2: o.y, t: 0, c: '255,230,120' }); say(o, '护盾', '#ffe08a'); } }
+    if (b.role === 'drum') { b.dt2 = (b.dt2 || 0) - dt; if (b.dt2 <= 0) { b.dt2 = 1; fx.push({ k: 'wave', x: b.x, y: b.y, t: 0 }); } }
+    if (b.rider) { if (b.st === 'warn' && b.t > warn() * (b.solo2 ? .7 : 1)) { b.st = 'charge'; b.t = 0; b.cx = Math.cos(b.aim); b.cy = Math.sin(b.aim); }
+      else if (b.st === 'charge') { const sp = b.solo2 ? 560 : 460; b.x += b.cx * sp * dt; b.y += b.cy * sp * dt / YS; if (!b.hd && dist(b, hero) < 40) { b.hd = 1; hurtHero(16); } if (b.t > 1.1) { b.hd = 0; b.x = Math.max(40, Math.min(W - 40, b.x)); b.y = Math.max(80, Math.min(H - 20, b.y)); if (--b.left > 0) { b.aim = ang(b, hero); b.st = 'warn'; b.t = 0; marks.push({ k: 'line', x: b.x, y: b.y, a: b.aim, len: 520, t: 0, T: warn() * .7 }); } else { b.st = 'walk'; b.t = 0; } } }
+      else { const a = ang(b, hero); if (dist(b, hero) > 160) { b.x += Math.cos(a) * 30 * dt; b.y += Math.sin(a) * 30 * dt / YS; } }
+      continue; }
+    if (b.p === 'grab' && hero.grab) { b.x = hero.x - 12 * hero.f; b.y = hero.y + 1; }
+    if (b.st === 'idle' && b.t > .8 * fast) startPat(b);
+    else if (b.st === 'walk') { const a = ang(b, hero), keep = b.role === 'heal' || b.role === 'drum' ? 260 : 140; if (dist(b, hero) > keep) { const sp = b.rage > 0 ? 70 : 30; b.x += Math.cos(a) * sp * dt; b.y += Math.sin(a) * sp * dt / YS; } if (b.t > 1.2 * fast) startPat(b); }
+    else if (b.st === 'warn' && b.t > warn()) fire(b);
+    else if (b.st === 'charge') { b.x += b.cx * 420 * dt; b.y += b.cy * 420 * dt / YS; if (!b.hd && dist(b, hero) < 40) { b.hd = 1; hurtHero(16); } if (b.t > .9 || b.x < 40 || b.x > W - 40 || b.y < 70 || b.y > H - 20) { b.x = Math.max(40, Math.min(W - 40, b.x)); b.y = Math.max(70, Math.min(H - 20, b.y)); b.st = 'rec'; b.t = 0; b.hd = 0; } }
+    else if (b.st === 'spin') { b.sa = (b.sa || 0) + dt * 2.6; b.sc = (b.sc || 0) - dt; if (b.sc <= 0) { b.sc = .12; for (let k = 0; k < 3; k++) shoot(b.x, b.y - 20, b.sa + k * PI * 2 / 3, bspd() * .8, { col: '#c87aff' }); } if (b.t > 3) { b.st = 'rec'; b.t = 0; } }
+    else if (b.st === 'rock') { b.sc = (b.sc || 0) - dt; if (b.sc <= 0 && b.q > 0) { b.sc = .35; b.q--; marks.push({ k: 'circle', x: hero.x + hero.vx * 48, y: hero.y + hero.vy * 36, r: 24, t: 0, T: warn() }); } if (b.q <= 0 && b.t > 2) { b.st = 'rec'; b.t = 0; } }
+    else if (b.st === 'gone') { if (b.t > 1) { const a = Math.atan2(hero.vy, hero.vx); b.x = hero.x - Math.cos(a) * 34; b.y = hero.y - Math.sin(a) * 24; b.st = 'stab'; b.t = 0; } }
+    else if (b.st === 'stab') { if (b.t > .45) { if (dist(b, hero) < 46) hurtHero(12); fx.push({ k: 'slash', x: b.x, y: b.y - 20, t: 0 }); b.st = 'rec'; b.t = 0; } }
+    else if (b.st === 'rec' && b.t > (b.ph === 2 ? .5 : .9) * fast) { b.st = 'walk'; b.t = 0; } }
+  stepEnts(dt);
+  for (const m of marks) { m.t += dt; if (m.k === 'circle' && m.t >= m.T && !m.done) { m.done = 1; fx.push({ k: 'boom', x: m.x, y: m.y, r: m.r, t: 0, gold: m.gold }); if (!m.noHit && !m.fire && Math.hypot(hero.x - m.x, (hero.y - m.y) * YS) < m.r + 6) hurtHero(12); } }
+  marks = marks.filter(m => m.k === 'circle' ? !m.done : m.t < m.T);
+  for (const b of bullets) { b.t += dt; if (b.home && b.t < 3) { const a = Math.atan2((hero.y - b.y) * YS, hero.x - b.x), cur = Math.atan2(b.vy * YS, b.vx), da = ((a - cur + PI * 3) % (PI * 2)) - PI, na = cur + Math.max(-1.4 * dt, Math.min(1.4 * dt, da)), sp = Math.hypot(b.vx, b.vy * YS); b.vx = Math.cos(na) * sp; b.vy = Math.sin(na) * sp / YS; } b.x += b.vx * dt; b.y += b.vy * dt; if (!b.hit && Math.hypot(hero.x - b.x, (hero.y - 16 - b.y) * YS) < b.r + 6) { b.hit = 1; const ok = !(god || hero.inv > 0 || hero.roll > 0); hurtHero(b.dmg); if (b.curse && ok) { ents = ents.filter(e => e.k !== 'curse'); ents.push({ k: 'curse', t: 0, cd: .5 }); nums.push({ x: hero.x, y: hero.y - 64, txt: '方向颠倒！', t: -.3, c: '#c87aff' }); } } }
+  bullets = bullets.filter(b => !b.hit && b.t < b.life && b.x > -20 && b.x < W + 20 && b.y > -20 && b.y < H + 20);
+  for (const f of fx) f.t += dt; fx = fx.filter(f => f.t < (f.k === 'wave' ? .8 : .35)); for (const n of nums) n.t += dt; nums = nums.filter(n => n.t < .9);
+}
+const FXI = {}, fi = n => FXI[n] || (FXI[n] = Object.assign(new Image(), { src: 'art/fx/elite/' + n + '.png' }));
+function spr(n, x, y, rot = 0, k = U, by = 0) { const im = fi(n); if (!im.complete || !im.naturalWidth) return false; const w = im.naturalWidth * k, h = im.naturalHeight * k; ctx.save(); ctx.translate(Math.round(x), Math.round(y)); if (rot) ctx.rotate(rot); ctx.drawImage(im, -w / 2, by ? -h : -h / 2, w, h); ctx.restore(); return true; }
+const f2 = () => Math.floor(t * 6) % 2;
+function stepEnts(dt) {
+  for (const e of ents) { e.t += dt;
+    if (e.k === 'boom') { const out = e.t < .9, d = out ? 1 : -1, sp = 300 * (out ? 1 - e.t / 1.1 : 1); if (out) { e.x += Math.cos(e.a) * sp * dt; e.y += Math.sin(e.a) * sp * dt / YS; } else { const a = Math.atan2(e.o.y - 20 - e.y, e.o.x - e.x); e.x += Math.cos(a) * 320 * dt; e.y += Math.sin(a) * 320 * dt; if (Math.hypot(e.o.x - e.x, e.o.y - 20 - e.y) < 16) e.dead = 1; }
+      const ph = out ? 'o' : 'b'; if (!e.hit[ph] && Math.hypot(hero.x - e.x, (hero.y - 16 - e.y) * YS) < 18) { e.hit[ph] = 1; hurtHero(9); } }
+    if (e.k === 'hook') { const r = e.t * 600; e.x = e.o.x + Math.cos(e.a) * r; e.y = e.o.y - 20 + Math.sin(e.a) * r / YS; if (r > 300) e.dead = 1; else if (Math.hypot(hero.x - e.x, (hero.y - 16 - e.y) * YS) < 20) { e.dead = 1; if (hero.roll > 0 || god) hurtHero(0); else { hero.pull = e.o; hurtHero(4); nums.push({ x: hero.x, y: hero.y - 60, txt: '被钩住！', t: 0, c: '#ffb84a' }); } } }
+    if (e.k === 'wall') { e.x += e.vx * dt; e.y += e.vy * dt; if (Math.hypot(hero.x - e.x, (hero.y - e.y) * YS) < 26) { const a = Math.atan2(hero.y - e.y, hero.x - e.x); hero.x += Math.cos(a) * 160 * dt + e.vx * dt; hero.y += Math.sin(a) * 160 * dt + e.vy * dt; if (!e.hd) { e.hd = 1; hurtHero(6); } } if (e.t > 4) e.dead = 1; }
+    if (e.k === 'mine') { if (e.t > 3 && Math.hypot(hero.x - e.x, (hero.y - e.y) * YS) < 20) { e.dead = 1; fx.push({ k: 'boom', x: e.x, y: e.y, r: 40, t: 0 }); hurtHero(14); } if (e.t > 25) e.dead = 1; }
+    if (e.k === 'curse') { e.cd -= dt; if (e.cd <= 0) { e.cd = .5; if (!god) { hero.hp = Math.max(1, hero.hp - 1); nums.push({ x: hero.x + R(-8, 8), y: hero.y - 40, txt: '-1', t: 0, c: '#c87aff' }); } } if (e.t > 2) e.dead = 1; }
+    if (e.k === 'quake') { e.r += 150 * dt; const d = dist(e, hero); if (!e.hitDone && Math.abs(d - e.r) < 12) { e.hitDone = 1; hurtHero(10); } if (e.r > 600) e.dead = 1; }
+    if (e.k === 'crack') { e.len = Math.min(460, e.t * 420); const px = e.x + Math.cos(e.a) * e.len, py = e.y + Math.sin(e.a) * e.len / YS; if (!e.hd && Math.hypot(hero.x - px, (hero.y - py) * YS) < 26) { e.hd = 1; hurtHero(14); } if (e.t > 2.4) e.dead = 1; }
+    if (e.k === 'roll') { e.x += e.vx * dt; e.y += e.vy * dt; if (e.x < 20 || e.x > W - 20) { e.vx *= -1; e.x = Math.max(20, Math.min(W - 20, e.x)); } if (e.y < 60 || e.y > H - 10) { e.vy *= -1; e.y = Math.max(60, Math.min(H - 10, e.y)); } e.cd -= dt; if (e.cd <= 0 && Math.hypot(hero.x - e.x, (hero.y - e.y) * YS) < 26) { e.cd = .8; hurtHero(12); } if (e.t > 3.5) e.dead = 1; }
+  }
+  for (const m of marks) if (m.fire && m.t >= m.T && !m.fd) { m.fd = 1; ents.push({ k: 'firez', x: m.x, y: m.y, r: m.r, t: 0, cd: 0 }); }
+  for (const e of ents) if (e.k === 'firez') { e.cd -= dt; if (e.cd <= 0 && Math.hypot(hero.x - e.x, (hero.y - e.y) * YS) < e.r) { e.cd = .5; hurtHero(4); } if (e.t > 4) e.dead = 1; }
+  ents = ents.filter(e => !e.dead); }
+function drawEnts() { for (const e of ents) {
+    if (e.k === 'firez' && spr('fire' + (Math.floor(t * 8 + e.x) % 3), e.x, e.y + 6, 0, U * 1.6, 1)) continue;
+    if (e.k === 'mine' && spr('mine' + (e.t > 3 && Math.floor(t * 6) % 2 ? 1 : 0), e.x, e.y + 4, 0, U, 1)) continue;
+    if (e.k === 'wall' && spr('shield', e.x, e.y, 0, U, 1)) continue;
+    if (e.k === 'boom' && spr('boomer', e.x, e.y, e.t * 16)) continue;
+    if (e.k === 'roll' && spr('ball' + (Math.floor(e.t * 8) % 2), e.x, e.y, 0, U * 1.4, 1)) continue;
+    if (e.k === 'firez') { ctx.fillStyle = `rgba(255,${120 + 60 * Math.sin(t * 20 + e.x)},40,.45)`; ctx.beginPath(); ctx.ellipse(e.x, e.y, e.r, e.r / YS, 0, 0, 7); ctx.fill(); }
+    if (e.k === 'mine') { ctx.fillStyle = '#3a2a1a'; ctx.beginPath(); ctx.ellipse(e.x, e.y, 9, 6, 0, 0, 7); ctx.fill(); ctx.fillStyle = e.t > 3 ? (Math.floor(t * 6) % 2 ? '#ff4030' : '#802010') : '#888'; ctx.fillRect(e.x - 2, e.y - 4, 4, 3); }
+    if (e.k === 'wall') { ctx.fillStyle = '#8a6a3a'; ctx.fillRect(e.x - 14, e.y - 34, 28, 34); ctx.strokeStyle = '#3a2410'; ctx.lineWidth = 3; ctx.strokeRect(e.x - 14, e.y - 34, 28, 34); ctx.fillStyle = '#c9a15a'; ctx.fillRect(e.x - 4, e.y - 22, 8, 8); }
+    if (e.k === 'crack') { ctx.strokeStyle = '#2a160e'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(e.x, e.y); let x = e.x, y = e.y; const st = 20; for (let d = 0; d < e.len; d += st) { x = e.x + Math.cos(e.a) * d + Math.sin(d * 7) * 5; y = e.y + Math.sin(e.a) * d / YS + Math.cos(d * 5) * 3; ctx.lineTo(x, y); } ctx.stroke(); }
+    if (e.k === 'quake') { ctx.strokeStyle = 'rgba(255,170,60,.85)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.ellipse(e.x, e.y, e.r, e.r / YS, 0, 0, 7); ctx.stroke(); }
+    if (e.k === 'boom') { ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.t * 16); ctx.fillStyle = '#8a4a2a'; ctx.fillRect(-12, -3, 24, 6); ctx.fillStyle = '#c86a4a'; ctx.fillRect(6, -5, 8, 10); ctx.restore(); }
+    if (e.k === 'hook') { ctx.strokeStyle = '#c9a15a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(e.o.x, e.o.y - 20); ctx.lineTo(e.x, e.y); ctx.stroke(); if (!spr('hook', e.x, e.y, e.a + PI / 2, U * .8)) { ctx.fillStyle = '#ddd'; ctx.fillRect(e.x - 4, e.y - 4, 8, 8); } }
+    if (e.k === 'curse' && spr('dizzy', hero.x, hero.y - 62, Math.sin(t * 4) * .3, U * .8)) { ctx.fillStyle = '#c87aff'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('混乱 ' + Math.ceil(2 - e.t), hero.x, hero.y - 86); continue; }
+    if (e.k === 'curse') { ctx.strokeStyle = 'rgba(200,120,255,.8)'; ctx.lineWidth = 2; for (let i = 0; i < 3; i++) { const a = t * 5 + i * 2.1; ctx.beginPath(); ctx.arc(hero.x + Math.cos(a) * 14, hero.y - 56 + Math.sin(a) * 5, 3, 0, 7); ctx.stroke(); } ctx.fillStyle = '#c87aff'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('混乱 ' + Math.ceil(2 - e.t), hero.x, hero.y - 66); }
+    if (e.k === 'roll') { ctx.fillStyle = '#7a6a5a'; ctx.beginPath(); ctx.arc(e.x, e.y - 16, 16, 0, 7); ctx.fill(); ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(e.x, e.y - 16, 16, e.t * 10, e.t * 10 + 2); ctx.stroke(); }
+  }
+  if (hero.grab) { ctx.fillStyle = '#ffb84a'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('被抱住（空格翻滚甩开）', hero.x, hero.y + 16); } }
+function draw() { ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#5b4a32'; ctx.fillRect(0, 0, W, H);
+  for (const m of marks) { const k = Math.min(1, m.t / m.T), col = m.gold ? '255,210,80' : '255,60,40';
+    if (m.k === 'circle') { ctx.fillStyle = `rgba(${col},${.15 + .3 * k})`; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r, m.r / YS, 0, 0, 7); ctx.fill(); ctx.strokeStyle = `rgb(${col})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * k, m.r * k / YS, 0, 0, 7); ctx.stroke(); }
+    if (m.k === 'line') { ctx.strokeStyle = `rgba(255,60,40,${.25 + .45 * k})`; ctx.lineWidth = m.thin ? 10 : 34; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x + Math.cos(m.a) * m.len, m.y + Math.sin(m.a) * m.len / YS); ctx.stroke(); }
+    if (m.k === 'fan') { ctx.fillStyle = `rgba(255,60,40,${.15 + .25 * k})`; ctx.beginPath(); ctx.moveTo(m.x, m.y); for (let q = -PI / 6; q <= PI / 6 + .01; q += .05) ctx.lineTo(m.x + Math.cos(m.a + q) * 260, m.y + Math.sin(m.a + q) * 260 / YS); ctx.fill(); }
+    if (m.k === 'glow') { ctx.fillStyle = `rgba(${m.c},${.4 * k})`; ctx.beginPath(); ctx.ellipse(m.x, m.y - 20, 50 * k, 50 * k, 0, 0, 7); ctx.fill(); } }
+  for (const m of marks) if (m.k === 'circle' && !m.noHit && !m.fire && !m.gold) { const k = Math.min(1, m.t / m.T); if (k > .55) spr('stone', m.x, m.y - (1 - k) * 260, k * 8, U * 1.3); }
+  for (const f of fx) { if (f.k === 'boom') { ctx.fillStyle = f.gold ? `rgba(255,230,140,${1 - f.t * 3})` : `rgba(180,150,110,${1 - f.t * 3})`; ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r * 1.2, f.r / YS * 1.2, 0, 0, 7); ctx.fill(); }
+    if (f.k === 'wave') { ctx.strokeStyle = `rgba(255,170,60,${.6 - f.t * .7})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(f.x, f.y, 30 + f.t * 120, (30 + f.t * 120) / YS, 0, 0, 7); ctx.stroke(); } }
+  drawEnts();
+  const list = [...bs_.filter(b => b.st !== 'gone').map(b => ({ y: b.y, b })), { y: hero.y, h: 1 }, ...mobs.map(m => ({ y: m.y, m }))].sort((a, b) => a.y - b.y);
+  for (const o of list) {
+    if (o.h) { if (hero.inv > 0 && hero.roll <= 0 && Math.floor(t * 20) % 2) continue; const s = SPR.sets[SPR.heroSet('m')]; if (s) SPR.drawHero(ctx, s.f.idle0 ? 'idle0' : Object.keys(s.f)[0], 0, hero.x, hero.y, hero.f < 0, U); continue; }
+    if (o.m) { const m = o.m; SPR.draw(ctx, m.bone ? 'skeleton' : 'goblin', 'walk' + (Math.floor(t * 10) % (m.bone ? 4 : 6)), 0, m.x, m.y, m.f < 0, U, { white: m.flash > 0 ? .7 : m.fast > 0 && Math.floor(t * 8) % 2 ? .3 : 0 }); continue; }
+    const b = o.b, f = SPR.sets[b.set] && SPR.sets[b.set].f || {};
+    if (b.dead) { if (b.revT != null) { ctx.globalAlpha = .35 + .2 * Math.sin(t * 6); SPR.draw(ctx, b.set, f.down ? 'down' : 'idle0', 0, b.x, b.y, b.f < 0, U, { k: b.k }); ctx.globalAlpha = 1; ctx.fillStyle = '#ff8a6a'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(`复活倒计时 ${Math.ceil(b.revT)}`, b.x, b.y - 60); } continue; }
+    const n = b.st === 'warn' ? 'windup' : b.st === 'rec' && b.t < .25 ? 'strike' : b.st === 'walk' || b.st === 'charge' ? 'walk' + (Math.floor(t * 10) % 4) : 'idle' + (Math.floor(t * 2) % 2);
+    if (b.shield > 0 || guarded(b)) { ctx.strokeStyle = 'rgba(255,230,120,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(b.x, b.y - 26, 34, 40, 0, 0, 7); ctx.stroke(); }
+    if (b.rage > 0) { ctx.fillStyle = 'rgba(255,80,40,.25)'; ctx.beginPath(); ctx.ellipse(b.x, b.y, 40, 14, 0, 0, 7); ctx.fill(); }
+    if (focus === b) { ctx.strokeStyle = '#ffe08a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(b.x - 8, b.y - 80); ctx.lineTo(b.x, b.y - 70); ctx.lineTo(b.x + 8, b.y - 80); ctx.stroke(); }
+    SPR.draw(ctx, b.set, f[n] ? n : 'idle0', 0, b.x, b.y, b.f < 0, U, { k: b.k, white: b.flash > 0 ? .6 : b.st === 'warn' && Math.floor(t * 12) % 2 ? .25 : 0 }); }
+  for (const f of fx) if (f.k === 'beam') { ctx.strokeStyle = `rgba(${f.c},${1 - f.t * 3})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(f.x, f.y - 30); ctx.lineTo(f.x2, f.y2 - 30); ctx.stroke(); }
+  for (const b of bullets) { if (b.axe ? spr('axe', b.x, b.y, b.t * 14) : b.curse ? spr('curse' + f2(), b.x, b.y, b.t * 4) : b.home ? spr('wisp' + f2(), b.x, b.y, Math.atan2(b.vy, b.vx) + PI * .75) : b.col === '#5ad0ff' ? spr('orb' + f2(), b.x, b.y) : false) continue;
+    ctx.save(); ctx.translate(b.x, b.y); if (b.axe) { ctx.rotate(b.t * 14); ctx.fillStyle = '#d8d8e8'; ctx.fillRect(-7, -2, 14, 4); ctx.fillStyle = '#8a5a2a'; ctx.fillRect(-2, -7, 4, 14); } else { ctx.fillStyle = b.col; ctx.beginPath(); ctx.arc(0, 0, b.r, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-2, -2, b.r * .4, 0, 7); ctx.fill(); } ctx.restore(); }
+  for (const f of fx) if (f.k === 'slash') { ctx.strokeStyle = `rgba(255,255,255,${1 - f.t * 3})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(f.x, f.y, 18, -1, 1); ctx.stroke(); }
+  for (const n of nums) { if (n.t < 0) continue; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#000'; ctx.fillText(n.txt, n.x + 1, n.y - n.t * 30 + 1); ctx.fillStyle = n.c; ctx.fillText(n.txt, n.x, n.y - n.t * 30); }
+  const bar = (x, y, w, v, m, c, lb, sh) => { ctx.fillStyle = '#1a0e06'; ctx.fillRect(x - 2, y - 2, w + 4, 12); ctx.fillStyle = c; ctx.fillRect(x, y, w * Math.max(0, v / m), 8); if (sh) { ctx.fillStyle = '#ffe08a'; ctx.fillRect(x, y, w * Math.min(1, sh / m), 3); } ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(lb, x, y - 4); };
+  const n = bs_.length, bw = n === 1 ? 400 : n === 2 ? 300 : 220;
+  bs_.forEach((b, i) => bar(W / 2 - (n * (bw + 20) - 20) / 2 + i * (bw + 20), 24, bw, b.hp, b.max, b.dead ? '#555' : '#d0402a', ((DATA.enemies[b.set] || {}).name || b.set) + (b.ph === 2 ? ' · 二阶段' : '') + (b.dead ? (b.revT != null ? ' · 倒下（会复活）' : ' · 击败') : ''), b.shield));
+  bar(16, H - 22, 160, hero.hp, hero.max, '#4ad04a', `勇者 ${Math.ceil(hero.hp)}/${hero.max}`);
+  ctx.fillStyle = hero.rcd > 0 ? '#666' : '#ffd890'; ctx.font = '12px sans-serif'; ctx.fillText(hero.rcd > 0 ? `翻滚 ${hero.rcd.toFixed(1)}s` : '翻滚 OK', 190, H - 12);
+  const fin = !live().length, dead = hero.hp <= 0; if (fin || dead) { ctx.fillStyle = fin ? '#ffd890' : '#ff8a6a'; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(fin ? '全部击败！' : '倒下了', W / 2, H / 2); }
+  st.innerHTML = `用时 ${rec.time.toFixed(1)} 秒 · 被打中 <b>${rec.hits}</b> 次 · 躲开 ${rec.dodged} 次 · 翻滚 ${rec.rolls} 次`; }
+const keys = {}; let drag = null, lastTap = 0;
+function roll() { if (hero.rcd > 0 || hero.roll > 0) return; hero.roll = .3; hero.rcd = 1.8; rec.rolls++; }
+addEventListener('keydown', e => { keys[e.code] = 1; if (e.code === 'Space') { e.preventDefault(); roll(); } if (e.key.startsWith('Arrow')) e.preventDefault(); }); addEventListener('keyup', e => keys[e.code] = 0);
+const pos = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; };
+cv.onpointerdown = e => { const p = pos(e), hit = live().find(b => Math.abs(b.x - p.x) < 30 && p.y < b.y + 10 && p.y > b.y - 70); if (hit) { focus = hit; return; }
+  const n = performance.now(); if (n - lastTap < 280) roll(); lastTap = n; drag = p; cv.onpointermove = e => drag = pos(e); }; addEventListener('pointerup', () => { drag = null; cv.onpointermove = null; });
+function pickWho(k, btn) { who = k; only = null; document.querySelectorAll('#who1 button,#who2 button,#who3 button').forEach(x => x.classList.toggle('on', x === btn)); desc.innerHTML = WHO[k].d; mkPat(); reset(); }
+for (const k in WHO) { const b = document.createElement('button'); b.textContent = WHO[k].n; b.onclick = () => pickWho(k, b); if (k === who) b.classList.add('on'); document.getElementById(WHO[k].solo === 2 ? 'who3' : WHO[k].solo ? 'who1' : 'who2').append(b); }
+function mkPat() { const box = document.getElementById('pat'); box.innerHTML = ''; if (!WHO[who].solo) { box.innerHTML = '<small>组合首领按自己的规则出招</small>'; return; } if (WHO[who].solo === 2) { const k = WHO[who].m[0].pats[0]; box.innerHTML = `<b>${PAT[k].n}</b>：${PAT[k].d}`; return; } const B = WHO[who].m[0], L = [...new Set([...B.pats, ...(B.p2 || [])])];
+  const sel = b => [...box.querySelectorAll('button')].forEach(x => x.classList.toggle('on', x === b)); const all = document.createElement('button'); all.textContent = '全部轮流'; all.className = 'on'; all.onclick = () => { only = null; sel(all); }; box.append(all);
+  for (const k of L) { const b = document.createElement('button'); b.textContent = PAT[k].n; b.title = PAT[k].d; b.onclick = () => { only = k; sel(b); }; box.append(b); } }
+for (const [el, v] of [[bs, bsV], [wt, wtV], [mn, mnV]]) el.oninput = () => { v.textContent = el.value; if (el === mn) reset(); };
+re.onclick = reset; document.getElementById('god').onclick = e => { god = !god; e.target.textContent = '无敌：' + (god ? '开' : '关'); };
+let last = 0; function loop(ts) { const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts; step(dt); draw(); requestAnimationFrame(loop); }
+desc.innerHTML = WHO[who].d; mkPat(); reset(); Promise.resolve(SPR.load && SPR.load()).catch(() => 0); requestAnimationFrame(loop);
+</script></body></html>
