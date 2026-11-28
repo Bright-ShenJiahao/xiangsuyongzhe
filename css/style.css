@@ -1612,3 +1612,59 @@ html body .oathrow .oic { border-radius: 50%; }
 #slotScr .slotForm, #slotScr .slotForm input, #slotScr .slotForm label {
   font-family: FPixel, WenKai, monospace !important;
 }
+
+/* 金色像素标题与主界面面板控件 */
+#title.t2 .logo img.lg2 {
+  display: block;
+  width: min(38vw, 560px);
+  height: auto;
+  image-rendering: pixelated;
+  filter: none;
+}
+#title .tenter, #title .tenter span,
+#title .tenter:hover span, #title .tenter:focus span,
+#title #bStart:focus span, #title #bStart:focus-visible span {
+  color: #ffda72 !important;
+  text-shadow: 2px 2px 0 #47210e, 0 3px 0 #120c12 !important;
+}
+#title .tenter s { height: 2px; background: #b48135; }
+#title .ttop .btn, #tpanel button, #tpanel select,
+#tpanel #tpTitle, #tpanel label {
+  font-family: FPixel, WenKai, monospace !important;
+  font-weight: normal !important;
+  -webkit-font-smoothing: none;
+}
+#title .ttop .btn, #tpanel button {
+  border-radius: 0 !important;
+  background-image: none !important;
+  border: 2px solid #a17c42 !important;
+  box-shadow: inset 2px 2px 0 #5a4930, inset -2px -2px 0 #16110b;
+  color: #f5d999;
+  text-shadow: 1px 1px 0 #20170c;
+}
+#tpanel button.on, #tpanel button.active, #tpanel button[aria-selected="true"] {
+  background-color: #d4a642 !important;
+  color: #2e200e;
+  border-color: #ffe29a !important;
+  text-shadow: none;
+}
+#tpanel button:focus-visible, #title .ttop .btn:focus-visible {
+  outline: 2px solid #ffe29a;
+  outline-offset: 3px;
+}
+#tpanel #tpTitle { font-size: 28px; }
+#tpanel .cxtabs button { line-height: 1.5; font-size: 15px; }
+@media (max-width: 600px), (orientation: portrait) {
+  #title.t2 .logo img.lg2 { width: min(86vw, 560px); }
+  #tpanel .cxtabs button { padding: 5px 9px; }
+}
+#tpanel .ctabs, #tpanel .ptabs { flex-wrap: wrap; gap: 6px; }
+#tpanel .ctabs button, #tpanel .ptabs button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 6px 12px;
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  #tpanel .ctabs button, #tpanel .ptabs button { font-size: 14px; padding: 5px 9px; }
+}
