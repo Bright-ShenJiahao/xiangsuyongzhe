@@ -49,6 +49,7 @@
   for (const sys of [...new Set(Object.values(DATA.skills).map(k=>k.sys))]) { const group=document.createElement('optgroup');group.label=sys;for(const id of Object.keys(DATA.skills).filter(id=>DATA.skills[id].sys===sys)){const o=document.createElement('option');o.value=id;o.textContent=DATA.skills[id].name;group.appendChild(o);}poolSel.appendChild(group); } G0('技能').appendChild(poolSel);
   const preparePool = id => { UI.startBattle({weapon:(DATA.weapons[DATA.skills[id].w]?DATA.skills[id].w:'sword'),book1:id,hero:'m'}); BATTLE.debug.god(); BATTLE.debug.skill(id); for(let i=0;i<4;i++)BATTLE.debug.spawn('goblin'); };
   B('新月斩特效试玩', () => preparePool('sword'));
+  const swordFxSel=document.createElement('select');swordFxSel.id='swordFxDebug';swordFxSel.title='剑系十招像素特效';swordFxSel.style.cssText=poolSel.style.cssText;for(const [id,sk] of Object.entries(DATA.skills).filter(([,sk])=>sk.sys==='剑')){const o=document.createElement('option');o.value=id;o.textContent=sk.name;swordFxSel.appendChild(o);}G0('技能').appendChild(swordFxSel);swordFxSel.onchange=()=>{poolSel.value=swordFxSel.value;preparePool(swordFxSel.value);};B('剑系特效试玩',()=>preparePool(swordFxSel.value));
   poolSel.onchange=()=>preparePool(poolSel.value);
   B('演练所选技能',()=>preparePool(poolSel.value));
   B('释放所选技能一次',()=>{if(!BATTLE.active())preparePool(poolSel.value);BATTLE.debug.cast(poolSel.value);});

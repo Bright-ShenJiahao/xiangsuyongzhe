@@ -416,7 +416,7 @@
   // 11/24 技能也能打到小咕噜：给技能看的敌人列表里多一个替身，打中就掉钱逃跑（不会死）
   const TP = { thiefP: 1, dead: false, hp: 1e9, maxHp: 1e9, kbx: 0, kby: 0, flash: 0, T: { name: '小咕噜', r: 10, pdef: 0, mdef: 0, ghost: true, hp: 1, spd: 0 } };
   function thiefHit() { const T = G && G.thief; if (!T || T.hurt > 0) return; T.hurt = .4; if (T.bag) { G.gc.push({ x: T.x, y: T.y, v: T.bag, t: 0, h: 0, vh: 110, vx: 0 }); UI.feed(`打中小咕噜！${T.bag} 铜钱掉了出来`); RUN.thief = (RUN.thief || 0) + 1; T.bag = 0; } T.st = 'run'; T.n = 9; }
-  const API = { K, YS, PI, now: () => G.t, clamp: o => clampG(o), hero: () => hero, foes: () => { const pt = propTargets(), th = G && G.thief && G.thief.hurt <= 0 ? (TP.x = G.thief.x, TP.y = G.thief.y, [TP]) : []; return pt.length || th.length ? foes.concat(pt, th) : foes; }, ang, aimNow, face: faceTo, moveDir: () => moveDir(), spinFace: () => { hero.f = Math.floor(G.t * 12) % 2 ? 1 : -1; },
+  const API = { K, YS, PI, now: () => G.t, clamp: o => clampG(o), hero: () => hero, character: () => RUN.hero, foes: () => { const pt = propTargets(), th = G && G.thief && G.thief.hurt <= 0 ? (TP.x = G.thief.x, TP.y = G.thief.y, [TP]) : []; return pt.length || th.length ? foes.concat(pt, th) : foes; }, ang, aimNow, face: faceTo, moveDir: () => moveDir(), spinFace: () => { hero.f = Math.floor(G.t * 12) % 2 ? 1 : -1; },
     hurt: (z, d, from, kb, sid, o) => hurt(z, d, from, kb, sid, o), fx: o => fx.push(o), tele: o => tele.push(Object.assign({ mine: true }, o)), shake: v => { G.shake = Math.max(G.shake, v); },
     mark: (kind,z,c) => {const result=JC.mark(kind,z,c?.career);if(c?.career)JC.hit(c.career,z,{});return result;}, detonate: (kind,z,c) => JC.detonate(kind,z,c?.career),
     summon: z=>JC.summon(z), drain: n=>{hero.hp=Math.max(1,hero.hp-n);},
@@ -1190,7 +1190,7 @@
       ctx.fillStyle = '#0a2a2a'; ctx.fillText('LEVEL UP!', x + u, y + u); ctx.fillStyle = Math.floor(t * 8) % 2 ? '#ffffff' : '#7ff0e0'; ctx.fillText('LEVEL UP!', x, y); ctx.restore(); }
     for (const o of fx) {
       const p = o.t / o.T,career=o.cast?.career;if(o.sid&&career?.color&&!o.extra){o.col=career.color;ctx.save();ctx.shadowColor=career.color;ctx.shadowBlur=8*u;}
-      if (o.k === 'pixelSlash' && window.PIXEL_SKILL_FX?.slash(ctx, o, X(o.x), Y(o.y), u, YS)) {}
+      if (window.PIXEL_SKILL_FX?.effect(ctx, o, X(o.x), Y(o.y), u, YS)) {}
       else if (o.k === 'slash' || o.k === 'pixelSlash') {   // 像素刀光：三层，从起手往前扫开（half 半角、rev 反手、gold 金色、wood 枪杆）
         const hf = o.half || 1.35, C3 = o.gold ? ['#ffffff', '#ffe27a', '#e8a020'] : o.wood ? ['#f0e0c0', '#c8a070', '#8a5a2a'] : ['#ffffff', '#fff2b0', '#f0c04c'];
         for (let k = 0; k < 3; k++) { const r = (o.r - k * 4) * u; for (let a = -hf; a <= hf; a += .04) { const t = (o.rev ? hf - a : a + hf) / (2 * hf); if (t > p * 1.6) continue; if (p > .6 && (Math.floor(a * 40) % 2)) continue; const aa = o.a + a; ctx.fillStyle = C3[k]; const q = k === 0 ? 2 * u : u; ctx.fillRect(X(o.x) + rd(Math.cos(aa) * r), Y(o.y) + rd(Math.sin(aa) * r / YS), q, q); } }
