@@ -206,7 +206,8 @@
       setTimeout(() => { const first = bar.querySelector('button'); if (first) first.click(); });
       d.appendChild(bar); d.appendChild(box); return d; }],
   };
-  for (const b of document.querySelectorAll('[data-panel]')) b.onclick = () => { const [t, fn] = PANELS[b.dataset.panel]; $('tpTitle').textContent = t; const body = $('tpBody'); document.querySelectorAll('.cxtabs, .cxpop, .cxtop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } body.innerHTML = ''; body.appendChild(fn()); overlay('tpanel', true); };
+  for (const b of document.querySelectorAll('[data-panel]')) b.onclick = () => { if (SFX.on) SFX.play('pick'); const [t, fn] = PANELS[b.dataset.panel]; $('tpTitle').textContent = t; const body = $('tpBody'); document.querySelectorAll('.cxtabs, .cxpop, .cxtop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } body.innerHTML = ''; body.appendChild(fn()); overlay('tpanel', true); };
+  $('tpanel').addEventListener('click', e => { const btn = e.target.closest('button'); if (!btn || btn.closest('.lai') || (btn.textContent && btn.textContent.startsWith('音效：'))) return; if (SFX.on) SFX.play('pick'); });
   $('tpX').onclick = () => $('tpClose').click(); $('tpClose').onclick = () => { overlay('tpanel', false); document.querySelectorAll('.cxtabs, .cxpop, .cxtop').forEach(x => x.remove()); { const r = document.querySelector('.cxrow'); if (r) { r.parentNode.insertBefore($('tpBody'), r); r.remove(); } } };
 
   // ================= 备战页 =================
