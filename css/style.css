@@ -1562,3 +1562,53 @@ html body .oathrow .oic { border-radius: 50%; }
 #wDesc .skIt{flex-wrap:wrap;}
 #wDesc .skIt em{white-space:nowrap;}
 @media(max-width:600px){#wSel .weaponAttr{font-size:11px;}#prep .weaponAttrHint{font-size:13px;}}
+
+/* 主界面复古掌机字形 */
+#title.t2 .logo .lg2 {
+  font-family: FPixel, monospace;
+  font-size: clamp(40px, 4.5vw, 72px);
+  font-weight: normal;
+  line-height: 1.35;
+  letter-spacing: .08em;
+  width: auto;
+  color: #fff0b8;
+  text-align: center;
+  white-space: nowrap;
+  -webkit-font-smoothing: none;
+  text-shadow: 2px 0 #211632, -2px 0 #211632, 0 -2px #211632,
+    0 2px #211632, 3px 5px #674164, 5px 7px #211632;
+}
+#title .tenter, #title .ttop .btn, #title .tgate {
+  font-family: FPixel, monospace;
+  font-weight: normal;
+  -webkit-font-smoothing: none;
+  text-shadow: 2px 2px 0 #171326;
+}
+#title .tenter span { font-family: inherit; letter-spacing: .16em; }
+#title.gate .logo .lg2 { animation: none; filter: none; }
+#title .tgate { letter-spacing: .15em; }
+#title .tenter:focus span, #title .tenter:hover span {
+  text-shadow: 2px 2px 0 #171326;
+}
+@media (max-width: 600px), (orientation: portrait) {
+  #title.t2 .logo .lg2 { font-size: clamp(32px, 9vw, 56px); }
+}
+
+/* 存档命名与主菜单入口 */
+.slotForm, .slotForm input, .slotForm button, .slotHint {
+  font-family: FPixel, WenKai, monospace;
+  -webkit-font-smoothing: none;
+}
+.slotForm input { font-size: 20px; line-height: 1.5; letter-spacing: .06em; }
+.slotForm label { line-height: 1.5; }
+.slotForm small, .slotErr { font-family: WenKai, sans-serif; }
+.slotForm input:focus { filter: none; outline: 2px solid #c8ffd4 !important; outline-offset: 2px; }
+#title .ttop .btn { font-size: 16px; line-height: 1.5; }
+@media (max-width: 420px) {
+  .slotForm label { grid-template-columns: 5em minmax(0, 1fr); gap: 6px; }
+  .slotForm input { font-size: 18px; }
+}
+#title .ttop .btn, #title .tenter, #title .tenter span, #slotScr h2, #slotScr button,
+#slotScr .slotForm, #slotScr .slotForm input, #slotScr .slotForm label {
+  font-family: FPixel, WenKai, monospace !important;
+}
