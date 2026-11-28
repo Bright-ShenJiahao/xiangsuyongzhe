@@ -34,6 +34,7 @@ window.SKILLS = (A) => {
 
   // ---------- 每本书出手 ----------
   // c = { S, sk, L(熟练度格数), d(本次伤害), a(朝向), sid }；返回 false = 场上没有敌人，不放
+  const staffFx=(c,art,o)=>{const first=o.pts?.[0];A.fx({...o,staff:art,skill:c.sid,unit:K,x:o.x??first?.x,y:o.y??first?.y});};
   const spearFx = (c, art, o) => A.fx({...o, spear:art, skill:c.sid});
   const C = {
     sword(c) { const {r,half} = PIXEL_SKILL_FX.geometry('sword',c.L,area()), h = H();
@@ -103,33 +104,33 @@ window.SKILLS = (A) => {
     // ---- 法杖 ----
     staff(c) { const h = H(), r = 30 * (c.L >= 3 ? 1.25 : 1) * area(), ball = (p) => { if (!p) return; A.fireball(p.x, p.y, .5, r, () => { hitAll(z => inCircle(z, p, r), c.d, { sid: c.sid, kb: 14, burn: 1 }); if (c.L >= 5) zone({ x: p.x, y: p.y, r: r * .8, T: 2, every: .5, d: c.d * .25, sid: c.sid, look: 'fire', o: { burn: 1 } }); }); };
       let p1 = dense(r, 150); if (!p1) { const e = P(h.x, h.y, c.a, 150 * area()); p1 = e; } ball(p1); if (c.L >= 7) ball(dense(r, 150, [p1])); },
-    nova(c) { const h = H(), r = 44 * (c.L >= 3 ? 1.25 : 1) * area(); A.fx({ k: 'frost', x: h.x, y: h.y, t: 0, T: .45, r });
+    nova(c) { const h = H(), r = 44 * (c.L >= 3 ? 1.25 : 1) * area(); staffFx(c,'frost_nova',{ k: 'frost', x: h.x, y: h.y, t: 0, T: .45, r });
       hitAll(z => inCircle(z, h, r), c.d, { sid: c.sid, kb: 14, slow: c.L >= 5 ? 2 : 1 });
       if (c.L >= 7) for (let i = 0; i < 8; i++) shoot({ x: h.x, y: h.y - 8 * K, a: i / 8 * PI * 2, v: 200, life: .5, r: 7, pierce: 1, d: c.d * .4, sid: c.sid, look: 'ice', o: { slow: 1 } }); },
     chain(c) { const one = (start) => { if (!start) return; const hit = new Set([start]), pts = [{ x: H().x, y: H().y - 20 * K }]; let z = start, d = c.d; const n = (c.L >= 3 ? 5 : 3) + 1;
         for (let i = 0; i < n && z; i++) { pts.push({ x: z.x, y: z.y - 14 * K }); A.hurt(z, d * (1+.15*(z.slowL||0)), H(), 4, c.sid, { dt: 'magic' }); if (c.L < 5) d *= .85; const nx = nearOf(z, 60, hit); if (nx) hit.add(nx); z = nx; }
-        bolt(pts); };
+        staffFx(c,'chain_lightning',{pts,t:0,T:.25}); };
       const t1 = near(); one(t1); if (c.L >= 7) one(near(1e9, new Set([t1]))); },
     pillar(c) { const n = c.L >= 3 ? 2 : 1, used = new Set(); for (let i = 0; i < n; i++) { const t = near(1e9, used) || near(); if (!t) return; used.add(t); const p = { x: t.x, y: t.y }; A.tele({ k: 'circle', x: p.x, y: p.y, r: 26, t: 0, T: .5, gold: true });
-      wait(.5, () => { A.fx({ k: 'pillar', x: p.x, y: p.y, t: 0, T: c.L >= 5 ? 1.5 : .4, r: 14, col: '#fff2b0' }); let healed = 0;
+      wait(.5, () => { staffFx(c,'holy_pillar',{ k: 'pillar', x: p.x, y: p.y, t: 0, T: c.L >= 5 ? 1.5 : .4, r: 14, col: '#fff2b0' }); let healed = 0;
         hitAll(z => inCircle(z, p, 26), c.d, { sid: c.sid, kb: 8, on: () => { if (false && c.L >= 7 && healed < 5) { healed++; A.heal(1); } } });
         if (c.L >= 5) zone({ x: p.x, y: p.y, r: 26, T: 1.5, every: .3, d: c.d * .3, sid: c.sid, look: 'holy' }); }); } },
     // 11/22 暗影黑雾（原暗影宝珠，id 不变）：在怪最密处放一团黑雾 5 秒，每 0.5 秒魔法伤害 + 减速；最多 2 团，再放就换掉剩得最少的那团
     orbs(c) { const p = dense(40, 220) || near(); if (!p) return; const fogs = zones.filter(z => z.look === 'fog'); if (fogs.length >= 2) { const old = fogs.sort((a, b) => (b.t / b.T) - (a.t / a.T))[0]; zones.splice(zones.indexOf(old), 1); }
       const r = 40 * (c.L >= 3 ? 1.25 : 1) * area();
       zone({ x: p.x, y: p.y, r, T: 5, every: .5, d: c.d, sid: c.sid, look: 'fog', o: { dt: 'magic', slowP: [.3, .6], curse: c.L >= 5 },
-        end: c.L >= 7 ? (z0) => { A.fx({ k: 'boom', x: z0.x, y: z0.y, t: 0, T: .4, r: r, col: 'dark' }); hitAll(q => inCircle(q, z0, r), c.d * 3, { sid: c.sid, kb: 10, dt: 'magic' }); } : null }); },
+        end: c.L >= 7 ? (z0) => { staffFx(c,'dark_burst',{ k: 'boom', x: z0.x, y: z0.y, t: 0, T: .4, r: r, col: 'dark' }); hitAll(q => inCircle(q, z0, r), c.d * 3, { sid: c.sid, kb: 10, dt: 'magic' }); } : null }); },
     thunder(c) { const n = 4, pts = []; for (let i = 0; i < n; i++) { const p = dense(24, 200, pts) || (F()[i] && { x: F()[i].x, y: F()[i].y }); if (p) pts.push(p); }
-      pts.forEach((p, i) => { A.tele({ k: 'circle', x: p.x, y: p.y, r: 24, t: 0, T: .3 + i * .15 }); wait(.3 + i * .15, () => { bolt([{ x: p.x + R(-6, 6) * K, y: p.y - 140 * K }, { x: p.x + R(-8, 8) * K, y: p.y - 70 * K }, { x: p.x, y: p.y }], '#fff6a0', .3); A.shake(.12);
+      pts.forEach((p, i) => { A.tele({ k: 'circle', x: p.x, y: p.y, r: 24, t: 0, T: .3 + i * .15 }); wait(.3 + i * .15, () => { staffFx(c,'thunder_bolt',{pts:[{ x: p.x + R(-6, 6) * K, y: p.y - 140 * K }, { x: p.x + R(-8, 8) * K, y: p.y - 70 * K }, { x: p.x, y: p.y }],r:12,height:140,t:0,T:.3}); A.shake(.12);
         for (const z of F()) if (inCircle(z, p, 24)) A.hurt(z, c.d, p, 10, c.sid, { dt: 'magic' });
         if (c.L >= 5) zone({ x: p.x, y: p.y, r: 20, T: 1.5, every: .3, d: c.d * .2, sid: c.sid, look: 'spark' }); }); });
-      if (c.L >= 7) { const p = dense(50) || pts[0]; if (p) wait(.4 + n * .15, () => { bolt([{ x: p.x, y: p.y - 160 * K }, { x: p.x + 10 * K, y: p.y - 80 * K }, { x: p.x, y: p.y }], '#ffffff', .45); A.shake(.4); hitAll(z => inCircle(z, p, 50), c.d * 2, { sid: c.sid, kb: 18, extra: true }); }); } },
+      if (c.L >= 7) { const p = dense(50) || pts[0]; if (p) wait(.4 + n * .15, () => { staffFx(c,'thunder_bolt',{pts:[{ x: p.x, y: p.y - 160 * K }, { x: p.x + 10 * K, y: p.y - 80 * K }, { x: p.x, y: p.y }],r:25,height:160,t:0,T:.45}); A.shake(.4); hitAll(z => inCircle(z, p, 50), c.d * 2, { sid: c.sid, kb: 18, extra: true }); }); } },
     blizzard(c) { const hold = c.L >= 5 ? 3.5 : 2.5, r = 70 * (c.L >= 3 ? 1.25 : 1) * area(); return { hold, move: 1, every: .15, snow: r,
-      tick: () => { const h = H(), a = R(0, PI * 2), d = Math.sqrt(Math.random()) * r, p = P(h.x, h.y, a, d); A.fx({ k: 'icicle', x: p.x, y: p.y, t: 0, T: .3 }); hitAll(z => inCircle(z, p, 10), c.d, { sid: c.sid, kb: 2, slow: 1 }); },
-      end: () => { if (c.L >= 7) for (const z of F()) if (z.cc && z.cc.k === 'freeze') { A.fx({ k: 'frost', x: z.x, y: z.y, t: 0, T: .3, r: 14 }); A.hurt(z, c.d * 3, z, 6, c.sid, { dt: 'magic' }); } } }; },
+      tick: () => { const h = H(), a = R(0, PI * 2), d = Math.sqrt(Math.random()) * r, p = P(h.x, h.y, a, d); staffFx(c,'ice_shard',{ k: 'icicle', x: p.x, y: p.y, t: 0, T: .3 }); hitAll(z => inCircle(z, p, 10), c.d, { sid: c.sid, kb: 2, slow: 1 }); },
+      end: () => { if (c.L >= 7) for (const z of F()) if (z.cc && z.cc.k === 'freeze') { staffFx(c,'ice_break',{ k: 'frost', x: z.x, y: z.y, t: 0, T: .3, r: 14 }); A.hurt(z, c.d * 3, z, 6, c.sid, { dt: 'magic' }); } } }; },
     abyss(c) { const p = dense(50) || H(), pr = 90 * (c.L >= 3 ? 1.3 : 1); return { hold: 4, move: 1, every: .3, gate: p,
-      tick: () => { for (const z of F()) if (D2(z, p) < pr && !z.T.boss) A.pull(z, p, z.tier ? 12 : 30, .3); const L = F().filter(z => D2(z, p) < 50); for (let i = 0; i < 3 && L.length; i++) { const z = L.splice(Math.random() * L.length | 0, 1)[0]; bolt([{ x: p.x, y: p.y }, { x: z.x, y: z.y - 10 * K }], '#b07bff', .2); A.hurt(z, c.d, p, 2, c.sid, { dt: 'magic', curse: c.L >= 5 }); } },
-      end: () => { if (c.L >= 7) { A.fx({ k: 'boom', x: p.x, y: p.y, t: 0, T: .5, r: 60, col: 'dark' }); A.shake(.4); for (const z of F()) if (D2(z, p) < 60) { if (!z.tier && !z.T.boss && z.hp < z.maxHp * .15) A.hurt(z, 9999, p, 0, c.sid); else A.hurt(z, c.d * 5, p, 16, c.sid, { dt: 'magic' }); } } } }; },
+      tick: () => { for (const z of F()) if (D2(z, p) < pr && !z.T.boss) A.pull(z, p, z.tier ? 12 : 30, .3); const L = F().filter(z => D2(z, p) < 50); for (let i = 0; i < 3 && L.length; i++) { const z = L.splice(Math.random() * L.length | 0, 1)[0]; staffFx(c,'abyss_tentacle',{pts:[{ x: p.x, y: p.y }, { x: z.x, y: z.y - 10 * K }],t:0,T:.2}); A.hurt(z, c.d, p, 2, c.sid, { dt: 'magic', curse: c.L >= 5 }); } },
+      end: () => { if (c.L >= 7) { staffFx(c,'dark_burst',{ k: 'boom', x: p.x, y: p.y, t: 0, T: .5, r: 60, col: 'dark' }); A.shake(.4); for (const z of F()) if (D2(z, p) < 60) { if (!z.tier && !z.T.boss && z.hp < z.maxHp * .15) A.hurt(z, 9999, p, 0, c.sid); else A.hurt(z, c.d * 5, p, 16, c.sid, { dt: 'magic' }); } } } }; },
   };
 
   Object.assign(C, {
@@ -141,13 +142,13 @@ window.SKILLS = (A) => {
     falcondive(c) { if(!near())return false;const used=new Set();for(let i=0;i<3;i++)wait(i*.5,()=>{const t=near(1e9,used);if(!t)return;used.add(t);A.fx({k:'line',x:t.x,y:t.y-48*K,a:PI/2,L:90,w:10,t:0,T:.18,col:'#d8edff'});hitAll(q=>q===t,c.d,{sid:c.sid,kb:5,on:()=>A.mark('prey',t,c)});}); },
     moonshower(c) { return {hold:3,move:1,every:.5,spin:true,tick:()=>{const z=near();if(!z)return;const p={x:z.x+R(-18,18)*K,y:z.y+R(-14,14)*K};A.tele({k:'circle',x:p.x,y:p.y,r:14,t:0,T:.25});wait(.25,()=>{A.fx({k:'pillar',x:p.x,y:p.y,t:0,T:.2,r:10,col:'#d9d5ff'});hitAll(q=>inCircle(q,p,16),c.d,{sid:c.sid,kb:4});});},end:()=>{const p=dense(45,220)||H();hitAll(z=>inCircle(z,p,30),c.d*3,{sid:c.sid,extra:true});} }; },
     magicmissiles(c) { for(let i=0;i<4;i++)wait(i*.09,()=>{const z=near();packet(c,z?A.ang(H(),z):c.a,c.d,{look:'beam',life:.75,r:7,pierce:0});}); },
-    fireburst(c) { const z=dense(45,240)||near();if(!z)return false;const p={x:z.x,y:z.y};A.tele({k:'circle',x:p.x,y:p.y,r:32,t:0,T:.6});wait(.6,()=>{A.fx({k:'boom',x:p.x,y:p.y,t:0,T:.35,r:36,col:'fire'});hitAll(q=>inCircle(q,p,36),c.d,{sid:c.sid,burn:1,kb:8});}); },
-    icewall(c) { const z=near(),h=H(),a=z?A.ang(h,z):c.a,p=P(h.x,h.y,a,48);return {hold:2,move:1,every:.5,tick:()=>{A.fx({k:'line',x:p.x,y:p.y-30*K,a:a+PI/2,L:160,w:8,t:0,T:.25,col:'#bfe8ff'});hitAll(t=>inLine(t,p,a+PI/2,160,14),0,{sid:c.sid,slow:1,kb:0});},end:()=>{puff(p,46,'#bfe8ff');hitAll(t=>inLine(t,p,a+PI/2,160,32),8,{sid:c.sid,extra:true,kb:8});}}; },
-    balllightning(c) { const z=near(),h=H(),p=z?{x:z.x,y:z.y}:P(h.x,h.y,c.a,80);return {hold:2,move:1,every:.25,tick:()=>{A.fx({k:'orb',x:p.x,y:p.y,t:0,T:.2,r:18,col:'#ffe98a'});hitAll(q=>inCircle(q,p,32),c.d,{sid:c.sid,kb:2});}}; },
-    arcaneorb(c) { const z=near(),h=H(),p=z?{x:z.x,y:z.y}:P(h.x,h.y,c.a,80);return {hold:1.8,move:1,every:.3,tick:()=>{const q=P(p.x,p.y,R(0,PI*2),R(0,24));A.fx({k:'orb',x:q.x,y:q.y,t:0,T:.22,r:8,col:'#c59cff'});hitAll(t=>inCircle(t,q,12),c.d,{sid:c.sid,kb:2});}}; },
-    firestorm(c) { const h=H(),z=near(),a=z?A.ang(h,z):c.a;for(let i=0;i<4;i++)wait(i*.14,()=>{const p=P(H().x,H().y,a,90+i*12);A.fx({k:'line',x:p.x,y:p.y,a,L:100,w:26,t:0,T:.2,col:'#ff9b5e'});hitAll(q=>inLine(q,p,a,100,30),c.d,{sid:c.sid,burn:1,kb:4});}); },
-    gravitywell(c) { const p=dense(60,240)||near()||H();return {hold:2,move:1,every:.25,tick:()=>{for(const z of F())if(D2(z,p)<60){A.pull(z,p,z.tier?8:18,.25);A.hurt(z,c.d,p,0,c.sid,{dt:'magic'});}},end:()=>hitAll(z=>inCircle(z,p,54),12,{sid:c.sid,extra:true,kb:10})}; },
-    mirrorbarrage(c) { return {hold:3,move:1,every:.25,spin:true,tick:()=>{for(let i=0;i<3;i++){const z=near();if(z)packet(c,A.ang(H(),z)+i*.1,c.d,{look:'shadow',life:.8,r:7,pierce:1});}},end:()=>{const p=dense(45,220)||H();hitAll(z=>inCircle(z,p,42),18,{sid:c.sid,extra:true,kb:10});}}; }
+    fireburst(c) { const z=dense(45,240)||near();if(!z)return false;const p={x:z.x,y:z.y};A.tele({k:'circle',x:p.x,y:p.y,r:32,t:0,T:.6});staffFx(c,'fire_charge',{x:p.x,y:p.y,t:0,T:.6,r:16});wait(.6,()=>{staffFx(c,'fire_impact',{k:'boom',x:p.x,y:p.y,t:0,T:.35,r:36,col:'fire'});hitAll(q=>inCircle(q,p,36),c.d,{sid:c.sid,burn:1,kb:8});}); },
+    icewall(c) { const z=near(),h=H(),a=z?A.ang(h,z):c.a,p=P(h.x,h.y,a,48);return {hold:2,move:1,every:.5,tick:()=>{staffFx(c,'icewall',{k:'line',x:p.x,y:p.y-30*K,a:a+PI/2,L:160,w:8,t:0,T:.25,col:'#bfe8ff'});hitAll(t=>inLine(t,p,a+PI/2,160,14),0,{sid:c.sid,slow:1,kb:0});},end:()=>{staffFx(c,'ice_break',{x:p.x,y:p.y,a:a+PI/2,L:160,w:32,wall:true,r:16,t:0,T:.3});hitAll(t=>inLine(t,p,a+PI/2,160,32),8,{sid:c.sid,extra:true,kb:8});}}; },
+    balllightning(c) { const z=near(),h=H(),p=z?{x:z.x,y:z.y}:P(h.x,h.y,c.a,80);return {hold:2,move:1,every:.25,tick:()=>{staffFx(c,'electric_field',{k:'orb',x:p.x,y:p.y,t:0,T:.2,r:18,col:'#ffe98a'});hitAll(q=>inCircle(q,p,32),c.d,{sid:c.sid,kb:2});}}; },
+    arcaneorb(c) { const z=near(),h=H(),p=z?{x:z.x,y:z.y}:P(h.x,h.y,c.a,80);return {hold:1.8,move:1,every:.3,tick:()=>{const q=P(p.x,p.y,R(0,PI*2),R(0,24));staffFx(c,'arcane_orb',{k:'orb',x:q.x,y:q.y,t:0,T:.22,r:8,col:'#c59cff'});hitAll(t=>inCircle(t,q,12),c.d,{sid:c.sid,kb:2});}}; },
+    firestorm(c) { const h=H(),z=near(),a=z?A.ang(h,z):c.a;for(let i=0;i<4;i++)wait(i*.14,()=>{const p=P(H().x,H().y,a,90+i*12);staffFx(c,'fire_wave',{k:'line',x:p.x,y:p.y,a,L:100,w:26,t:0,T:.2,col:'#ff9b5e'});hitAll(q=>inLine(q,p,a,100,30),c.d,{sid:c.sid,burn:1,kb:4});}); },
+    gravitywell(c) { const p=dense(60,240)||near()||H();return {hold:2,move:1,every:.25,tick:()=>{staffFx(c,'gravity_well',{x:p.x,y:p.y,r:60,t:0,T:.25});for(const z of F())if(D2(z,p)<60){A.pull(z,p,z.tier?8:18,.25);A.hurt(z,c.d,p,0,c.sid,{dt:'magic'});}},end:()=>{staffFx(c,'arcane_burst',{x:p.x,y:p.y,r:54,t:0,T:.4});hitAll(z=>inCircle(z,p,54),12,{sid:c.sid,extra:true,kb:10});}}; },
+    mirrorbarrage(c) { return {hold:3,move:1,every:.25,spin:true,tick:()=>{for(let i=0;i<3;i++){const z=near();if(z)packet(c,A.ang(H(),z)+i*.1,c.d,{look:'shadow',life:.8,r:7,pierce:1});}},end:()=>{const p=dense(45,220)||H();staffFx(c,'arcane_burst',{x:p.x,y:p.y,r:42,t:0,T:.4});hitAll(z=>inCircle(z,p,42),18,{sid:c.sid,extra:true,kb:10});}}; }
   });
   // 两个新技能池沿用现有投射物、区域和命中特效；定时实体也共享本次释放的记录。
   function actor(o) { o.cast = active; o.t = 0; o.ti = o.every || 0; o.ticks = 0; actors.push(o); return o; }
@@ -408,7 +409,7 @@ window.SKILLS = (A) => {
   // ---------- 画 ----------
   function drawUnder(ctx, X, Y, u) {
     const pix = (x, y, c, q = 1) => { ctx.fillStyle = c; ctx.fillRect(x, y, q * u, q * u); };
-    for (const z of zones) { const a = 1 - z.t / z.T;
+    for (const z of zones) { if(window.STAFF_SKILL_FX?.zone(ctx,z,X(z.x),Y(z.y),u,YS))continue; const a = 1 - z.t / z.T;
       if (z.look === 'fog') { const k = Math.min(1, z.t * 4, (z.T - z.t) * 2), x = X(z.x), y = Y(z.y);   // 黑雾：深紫底 + 翻滚的暗紫颗粒
         for (let q = 0; q < 3; q++) { ctx.fillStyle = `rgba(${[40, 60, 90][q]},${[14, 24, 40][q]},${[60, 90, 130][q]},${.22 * k})`; ctx.beginPath(); ctx.ellipse(x + Math.round(Math.cos(z.t * 1.3 + q * 2) * 4 * u), y + Math.round(Math.sin(z.t * 1.1 + q * 2) * 2 * u), z.r * u * (1 - q * .18), z.r * u * (1 - q * .18) / YS, 0, 0, 7); ctx.fill(); }
         for (let j = 0; j < 14; j++) { const aa = j * 2.4 + z.t * (j % 2 ? 1.2 : -.9), rr = z.r * (.25 + .7 * ((j * 37) % 10) / 10); pix(x + Math.round(Math.cos(aa) * rr * u), y + Math.round(Math.sin(aa) * rr * u / YS) - Math.round(((z.t * 10 + j * 3) % 8) * u), j % 3 ? 'rgba(154,80,224,' + (.8 * k) + ')' : 'rgba(30,8,40,' + (.9 * k) + ')', 2 * u); }
@@ -419,10 +420,11 @@ window.SKILLS = (A) => {
       for (let k = 0; k < 6; k++) { const aa = Math.random() * 7, rr = Math.random() * z.r; pix(X(z.x) + Math.round(Math.cos(aa) * rr * u), Y(z.y) + Math.round(Math.sin(aa) * rr * u / YS) - (z.look === 'rain' ? Math.round(Math.random() * 8 * u) : 0), `rgba(${col},.35)`, z.look === 'rain' ? 1 : 2); } }
     for (const m of marks) if (m.k === 'stuck') { if(window.SPEAR_SKILL_FX?.stuck(ctx,m,X(m.x),Y(m.y),u,YS))continue; const ca = Math.cos(m.a), sa = Math.sin(m.a) / YS; for (let j = 0; j < 12; j++) pix(X(m.x) - Math.round(ca * j * 1.5 * u), Y(m.y) - Math.round((sa * j * 1.5 + j * .6) * u), j < 3 ? '#e8ecf4' : '#a89a80'); }
     if (ch && ch.snow) { const h = H(); ctx.fillStyle = 'rgba(200,230,255,.10)'; ctx.beginPath(); ctx.ellipse(X(h.x), Y(h.y), ch.snow * u, ch.snow * u / YS, 0, 0, 7); ctx.fill(); }
-    for (const f of followers) { const id=f.cast?.sid, h=H(); if(id==='sworddomain')window.PIXEL_SKILL_FX?.domain(ctx,X(h.x),Y(h.y),44*f.scale,f.elapsed,u,YS); else if(id==='storm')window.PIXEL_SKILL_FX?.effect(ctx,{k:'swordArt',art:'storm',r:30*MR*f.scale,t:f.elapsed%.4,T:.4},X(h.x),Y(h.y),u,YS); }
+    for (const f of followers) { const id=f.cast?.sid, h=H();if(id==='abyss'&&f.gate)window.STAFF_SKILL_FX?.effect(ctx,{staff:'abyss_gate',skill:id,r:26,t:f.elapsed%.6,T:.6},X(f.gate.x),Y(f.gate.y),u,YS); if(id==='sworddomain')window.PIXEL_SKILL_FX?.domain(ctx,X(h.x),Y(h.y),44*f.scale,f.elapsed,u,YS); else if(id==='storm')window.PIXEL_SKILL_FX?.effect(ctx,{k:'swordArt',art:'storm',r:30*MR*f.scale,t:f.elapsed%.4,T:.4},X(h.x),Y(h.y),u,YS); }
     if (ch && ch.gate) { const p = ch.gate; ctx.fillStyle = 'rgba(40,10,60,.55)'; ctx.beginPath(); ctx.ellipse(X(p.x), Y(p.y), 26 * u, 26 * u / YS, 0, 0, 7); ctx.fill(); ctx.strokeStyle = '#b07bff'; ctx.lineWidth = u; ctx.stroke(); }
   }
   function drawOver(ctx, X, Y, u) {
+    for(const f of followers)if(f.cast?.sid==='mirrorbarrage'){const h=H();for(let i=0;i<3;i++){ctx.save();ctx.globalAlpha=.35;SPR.drawHero(ctx,'atk',Math.floor(f.elapsed*8)%2,X(h.x)+(i-1)*24*u,Y(h.y)-16*u,h.f<0,u,{w:'staff',c:A.character?.()||'m',white:.65,alpha:.35});ctx.restore();}}
     drawPool(ctx,X,Y,u);
     for (const f of followers) if (f.snow) { const h = H(); ctx.strokeStyle = 'rgba(200,230,255,.35)'; ctx.lineWidth = u; ctx.beginPath(); ctx.ellipse(X(h.x), Y(h.y), f.snow * u, f.snow * u / YS, 0, 0, 7); ctx.stroke(); }
     const pix = (x, y, c, q = 1) => { ctx.fillStyle = c; ctx.fillRect(x, y, q * u, q * u); };
@@ -431,7 +433,8 @@ window.SKILLS = (A) => {
     const windup=H().cs;if(windup?.sk.id==='flash'&&windup.ph==='wu')window.PIXEL_SKILL_FX?.charge(ctx,X(H().x),Y(H().y),u,Math.min(1,windup.t/windup.dur),H().f);
     for (const o of orbs) { const x = X(o.x), y = Y(o.y); ctx.fillStyle = 'rgba(120,60,200,.35)'; ctx.beginPath(); ctx.arc(x, y, 6 * u, 0, 7); ctx.fill(); pix(x - 2 * u, y - 2 * u, '#2a0a40', 4); pix(x - u, y - u, '#c8a0ff', 2); }
     for (const p of projs) { const x = X(p.x), y = Y(p.y), ca = Math.cos(p.a), sa = Math.sin(p.a) / YS, b = p.big || 1, career=p.cast?.career;if(p.sid&&career?.color&&!p.o?.extra){ctx.save();ctx.shadowColor=career.color;ctx.shadowBlur=7*u;}
-      if(window.SPEAR_SKILL_FX?.projectile(ctx,p,x,y,u,YS)){}
+      if(window.STAFF_SKILL_FX?.projectile(ctx,p,x,y,u,YS)){}
+      else if(window.SPEAR_SKILL_FX?.projectile(ctx,p,x,y,u,YS)){}
       else if(DATA.skills[p.sid]?.sys==='剑'&&p.look==='crescent'&&window.PIXEL_SKILL_FX?.projectile(ctx,p,x,y,u)){}
       else if(p.sid==='guard'&&p.look==='sword'&&window.PIXEL_SKILL_FX){PIXEL_SKILL_FX.sword(ctx,x,y,p.a,u,20,true,'guard',p.t);}
       else if(p.look==='gunmissile'||p.look==='gunshell'){gunImage(ctx,p.look==='gunshell'?'shell':'missile'+(Math.floor(p.t*10)%2),x,y,u,p.a+PI/2);}

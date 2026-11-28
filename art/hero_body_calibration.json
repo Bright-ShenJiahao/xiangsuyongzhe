@@ -1,0 +1,64 @@
+{
+  "base": "74db8d1757db2548b56c4162dd0dec29bbf8177d",
+  "reference": {
+    "set": "heroP",
+    "bodyTop": 2,
+    "boot": 40
+  },
+  "heroes": [
+    {
+      "set": "heroMech",
+      "bodyTop": 6,
+      "boot": 38,
+      "targetBody": 38,
+      "scale": 1.1875,
+      "outline": true,
+      "uniqueAnchorFrames": 231
+    },
+    {
+      "set": "heroWitch",
+      "bodyTop": 11,
+      "boot": 42,
+      "targetBody": 38,
+      "scale": 1.2258064516129032,
+      "outline": true,
+      "uniqueAnchorFrames": 231
+    },
+    {
+      "set": "heroMoon",
+      "bodyTop": 7,
+      "boot": 38,
+      "targetBody": 38,
+      "scale": 1.2258064516129032,
+      "outline": true,
+      "uniqueAnchorFrames": 231
+    },
+    {
+      "set": "heroCat",
+      "bodyTop": 5,
+      "boot": 38,
+      "targetBody": 38,
+      "scale": 1.1515151515151516,
+      "outline": true,
+      "uniqueAnchorFrames": 231
+    },
+    {
+      "set": "heroMiko",
+      "bodyTop": 0,
+      "boot": 38,
+      "targetBody": 38,
+      "scale": 1.0,
+      "outline": true,
+      "uniqueAnchorFrames": 231
+    },
+    {
+      "set": "heroK",
+      "bodyTop": 8,
+      "boot": 44,
+      "targetBody": 38,
+      "scale": 1.0555555555555556,
+      "outline": false,
+      "uniqueAnchorFrames": 231
+    }
+  ]
+}

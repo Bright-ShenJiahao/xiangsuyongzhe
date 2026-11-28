@@ -308,8 +308,8 @@
     else if (id === 'sweep') DM.fx.push({ spear:'sweep', skill:'sweep', k: 'slash', x: hx, y, a: 0, t: 0, T: .22, r: 48, half: 1.4, wood: true });
     else if (id === 'bow') DM.shots.push({ k: 'arrow', x: hx, y, vx: 320 * u, vy: 0, t: 0, T: .7 });
     else if (id === 'fan') { for (let i = 0; i < 5; i++) { const a = (i - 2) * .25; DM.shots.push({ k: 'arrow', x: hx, y, vx: 300 * u * Math.cos(a), vy: 300 * u * Math.sin(a) / DYS * .35, t: 0, T: .35 }); } }
-    else if (id === 'staff') DM.shots.push({ k: 'fire', x: hx + Math.min(150 * u, c.width * .5 - 34 * u), y: hy, t: 0, T: .5, r: 30, boom: 1 });
-    else if (id === 'nova') DM.fx.push({ k: 'frost', x: hx, y: hy - 8 * u, t: 0, T: .45, r: 44 });
+    else if (id === 'staff') DM.shots.push({ staff:'fireball',skill:'staff', k: 'fire', x: hx + Math.min(150 * u, c.width * .5 - 34 * u), y: hy, t: 0, T: .5, r: 30, boom: 1 });
+    else if (id === 'nova') DM.fx.push({ staff:'frost_nova',skill:'nova', k: 'frost', x: hx, y: hy - 8 * u, t: 0, T: .45, r: 44 });
   }
   function demoFx(g, u, dt) {
     for (const o of DM.fx) {
@@ -325,6 +325,7 @@
     for (const o of DM.shots) {
       o.t += dt;
       if (o.k === 'arrow') { o.x += o.vx * dt; o.y += o.vy * dt; const S = SPR.sets.gob_archer, f = SPR.frame('gob_archer', 'arrow'); if (f && S) { g.save(); g.translate(o.x, o.y); g.rotate(Math.atan2(o.vy, o.vx)); const q = u * .5 * (S.sk || 1); g.drawImage(S.base, f.x, f.y, f.w, f.h, -f.w * q / 2, -f.h * q / 2, f.w * q, f.h * q); g.restore(); } else { g.fillStyle = '#8a5a2a'; g.fillRect(o.x, o.y, 6 * u, u); } }
+      else if(o.k==='fire'&&o.staff){window.STAFF_SKILL_FX?.effect(g,o,o.x,o.y,u,DYS);if(o.t>=o.T&&o.boom){o.boom=0;DM.fx.push({staff:'fire_impact',skill:'staff',k:'boom',x:o.x,y:o.y,t:0,T:.35,r:o.r});}}
       else if (o.k === 'fire') { const p = o.t / o.T, hh = (1 - p) * Math.min(120, o.y / u - 12); for (let j = 0; j < 5; j++) { g.fillStyle = ['#fff6c0', '#ffd060', '#ff8a30', '#e04a20', '#902a10'][j]; const q = (5 - j) * u; g.fillRect(o.x - q / 2 - rd(j * 3 * u * (1 - p)), o.y - rd((hh + j * 7) * u) - q / 2, q, q); } if (o.t >= o.T && o.boom) { o.boom = 0; DM.fx.push({ k: 'boom', x: o.x, y: o.y, t: 0, T: .35, r: o.r }); } }
     }
     DM.shots = DM.shots.filter(o => o.t < o.T);
