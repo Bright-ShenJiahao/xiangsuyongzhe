@@ -43,8 +43,8 @@ def cut_sheet(path):
     im = Image.open(path).convert("RGB")
     a = np.array(im)
     r, g, b = a.astype(int).transpose(2, 0, 1)
-    # Strict bright magenta chroma key so deep purple robe (r < 145) is NEVER touched!
-    bg_mag = (r > 175) & (b > 150) & (np.minimum(r, b) - g > 78)
+    # Strict pure bright magenta chroma key so thin bone blades and deep purple robe are NEVER eaten!
+    bg_mag = (r > 185) & (b > 165) & (np.minimum(r, b) - g > 95)
     mask = ~bg_mag
 
     def find_parts(m_in):
@@ -87,11 +87,11 @@ def cut_sheet(path):
         m = (lab2[y0:y1, x0:x1] == cid) & mask[y0:y1, x0:x1]
         sub = a[y0:y1, x0:x1].copy()
 
-        # Strip only bright pink outer halo pixels (keep deep purple robe intact!)
+        # Despill bright pink outer halo to dark outline instead of deleting pixels (keeps thin blades intact!)
         sr, sg, sb = sub.astype(int).transpose(2, 0, 1)
         edge = m & ~ndimage.binary_erosion(m, structure=np.ones((3, 3)), border_value=0)
-        pink_halo = edge & (sr > 155) & (sb > 135) & (np.minimum(sr, sb) - sg > 55)
-        m = m & ~pink_halo
+        pink_halo = edge & (sr > 165) & (sb > 145) & (np.minimum(sr, sb) - sg > 65)
+        sub[pink_halo] = OUTLINE
 
         # Clean isolated 1-3px detached dust
         clab, cn = ndimage.label(m)
@@ -186,11 +186,11 @@ def main():
             sm = im.resize((max(1, round(im.width * sc)), max(1, round(im.height * sc))), Image.Resampling.NEAREST)
             arr = np.array(sm).copy()
             m = arr[..., 3] > 127
-            # Continuous 1px crisp dark-brown outer outline (Ayuan style)
+            # Apply crisp dark-brown outline ONLY on dark/mid-dark edge pixels (preserve bright bone/silver blades!)
             edge = m & ~ndimage.binary_erosion(m, structure=CROSS, border_value=0)
-            arr[edge, :3] = OUTLINE
-            # Gentle highlight softening on overly bright pure-white skull/bone (>230)
             lum = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
+            arr[edge & (lum < 155), :3] = OUTLINE
+            # Gentle highlight softening on overly bright pure-white skull/bone (>230)
             hi = m & (~edge) & (lum > 230)
             arr[hi, :3] = np.clip(np.rint(arr[hi, :3].astype(float) * 0.94), 0, 255).astype(np.uint8)
             arr[~m, :3] = 0

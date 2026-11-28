@@ -43,7 +43,7 @@ def cut_sheet(path):
     im = Image.open(path).convert("RGB")
     a = np.array(im)
     r, g, b = a.astype(int).transpose(2, 0, 1)
-    bg_mag = (r > 170) & (b > 145) & (np.minimum(r, b) - g > 72)
+    bg_mag = (r > 185) & (b > 165) & (np.minimum(r, b) - g > 95)
     mask = ~bg_mag
 
     def find_parts(m_in):
@@ -86,11 +86,11 @@ def cut_sheet(path):
         m = (lab2[y0:y1, x0:x1] == cid) & mask[y0:y1, x0:x1]
         sub = a[y0:y1, x0:x1].copy()
 
-        # Strip bright pink outer halo
+        # Despill bright pink outer halo to dark outline instead of deleting pixels (keeps thin spear/sword intact!)
         sr, sg, sb = sub.astype(int).transpose(2, 0, 1)
         edge = m & ~ndimage.binary_erosion(m, structure=np.ones((3, 3)), border_value=0)
-        pink_halo = edge & (sr > 155) & (sb > 135) & (np.minimum(sr, sb) - sg > 55)
-        m = m & ~pink_halo
+        pink_halo = edge & (sr > 165) & (sb > 145) & (np.minimum(sr, sb) - sg > 65)
+        sub[pink_halo] = OUTLINE
 
         clab, cn = ndimage.label(m)
         if cn > 1:
@@ -190,8 +190,8 @@ def main():
             arr = np.array(sm).copy()
             m = arr[..., 3] > 127
             edge = m & ~ndimage.binary_erosion(m, structure=CROSS, border_value=0)
-            arr[edge, :3] = OUTLINE
             lum = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
+            arr[edge & (lum < 155), :3] = OUTLINE
             hi = m & (~edge) & (lum > 230)
             arr[hi, :3] = np.clip(np.rint(arr[hi, :3].astype(float) * 0.94), 0, 255).astype(np.uint8)
             arr[~m, :3] = 0
