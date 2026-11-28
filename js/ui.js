@@ -136,11 +136,26 @@
           const xs = []; for (let y = Math.max(0, bot - 3); y < bot; y++) for (let x = 0; x < w; x++) if (D[(y * w + x) * 4 + 3] > 40) xs.push(x); xs.sort((p, q) => p - q);
           if (!bot) return { c: f.c, w, h, bot: h, fx: f.f.ax, ax: f.f.ax, lazy: 1 };
           return { c: cv, w, h, bot, fx: xs.length ? (xs[0] + xs[xs.length - 1] + 1) / 2 : w / 2, ax: f.f.ax }; };
-        const raw = fr; let fm = fr.length ? fr.map(meas) : []; if (fm.length) { const b0 = fm[0]; fm.forEach(m => { m.ax = b0.fx + (m.ax - b0.ax); }); }
-        if (fm.length) { const fr = fm.map(m => ({ c: m.c, f: { ax: m.ax }, bot: m.bot })); const W = 2 * Math.ceil(Math.max(...fr.map(f => Math.max(f.f.ax, f.c.width - f.f.ax)))) + 2, H = Math.max(...fr.map(f => f.bot)), c = document.createElement('canvas'); c.width = W; c.height = H; { const gh = gameH(set, figK), want = Math.min(96, 70 * gh), sc = Math.min(want / H, 136 / W); c.style.height = Math.round(H * sc) + 'px'; c.style.width = Math.round(W * sc) + 'px'; }   // 统一倍率，保留怪物本身大小差别
-          st.appendChild(c); anims.push({ c, fr, i: 0 }); }
+        const isHero = DATA.heroes.some(h => h.id === figK);
+        let fm = fr.map(f => {
+          if (isHero) return { c: f.c, w: f.c.width, h: f.c.height, ax: f.f.ax, bot: f.f.ay };
+          return meas(f);
+        });
+        if (fm.length && !isHero) {
+          const baseAx = fm[0].ax, footCenter = fm[0].fx;
+          fm.forEach(m => { m.ax = footCenter + (m.ax - baseAx); });
+        }
+        if (figK === 'wizard') fm = fm.map(m => {
+          const flipped = document.createElement('canvas');
+          flipped.width = m.w; flipped.height = m.h;
+          const g = flipped.getContext('2d');
+          g.translate(m.w, 0); g.scale(-1, 1); g.drawImage(m.c, 0, 0);
+          return { ...m, c: flipped, ax: m.w - m.ax };
+        });
+        if (fm.length) { const fr = fm.map(m => ({ c: m.c, f: { ax: m.ax }, bot: m.bot })); const W = 2 * Math.ceil(Math.max(...fr.map(f => Math.max(f.f.ax, f.c.width - f.f.ax)))) + 2, below = Math.max(0, ...fr.map(f => f.c.height - f.bot)), H = Math.ceil(Math.max(...fr.map(f => f.bot)) + below), c = document.createElement('canvas'); c.width = W; c.height = H; { const gh = gameH(set, figK), want = Math.min(96, 70 * gh), sc = Math.min(want / H, 136 / W); c.style.height = Math.round(H * sc) + 'px'; c.style.width = Math.round(W * sc) + 'px'; }   // 统一倍率，保留怪物本身大小差别
+          st.appendChild(c); anims.push({ c, fr, i: 0, below }); }
         st.insertAdjacentHTML('beforeend', ped(tier, lab)); e.appendChild(st); e.insertAdjacentHTML('beforeend', `<b>${name}</b><small>${note}</small>`); d.appendChild(e); };
-      const draw = a => { const g = a.c.getContext('2d'), f = a.fr[a.i % a.fr.length]; g.clearRect(0, 0, a.c.width, a.c.height); g.imageSmoothingEnabled = false; g.drawImage(f.c, Math.round(a.c.width / 2 - f.f.ax), a.c.height - f.bot); };   // 按脚底锚点对齐底座中心
+      const draw = a => { const g = a.c.getContext('2d'), f = a.fr[a.i % a.fr.length]; g.clearRect(0, 0, a.c.width, a.c.height); g.imageSmoothingEnabled = false; g.drawImage(f.c, Math.round(a.c.width / 2 - f.f.ax), a.c.height - (a.below || 0) - f.bot); };   // 按脚底锚点对齐底座中心
       for (const h of DATA.heroes) {
         const weapon = ({ m: 'sword', f: 'staff', e: 'bow', p: 'staff', v: 'scythe', s: 'scythe', r: 'gun', w: 'staff', j: 'spear', q: 'tome', c: 'gun', k: 'spear' })[h.id] || 'sword';
         const set = ({m: 'heroSwordGemini2Cal', f: 'heroFNew', e: 'heroENew', p: 'heroP', v: 'heroV', s: 'heroS', r: 'heroMech', w: 'heroWitch', j: 'heroMiko', q: 'heroMoon', c: 'heroCat', k: 'heroK'})[h.id] || SPR.heroSet(h.id, weapon);
@@ -154,7 +169,7 @@
       const show = e => { const side = document.querySelector('.cxside'); if (!e || !side) return; d.querySelectorAll('.fig.sel').forEach(x => x.classList.remove('sel')); e.classList.add('sel');
         if (e.classList.contains('lock')) { side.innerHTML = '<div class="cxbig"></div><b>？？？</b><p>还没遇到过这个敌人。</p>'; return; } const k = e.dataset.k, T = DATA.enemies[k], H = DATA.heroes.find(h => h.id === k), cv = e.querySelector('canvas');
         side.innerHTML = `<div class="cxbig"></div><b>${e.querySelector('b').textContent}</b>` + (H ? `<p>${H.desc || ''}</p><p class="g">◆ ${H.perk}</p>` : T ? `<p>${T.boss ? '首领' : T.ranged ? '远程' : '近战'} · ${T.dtype === 'magic' ? '魔法' : '物理'}伤害</p><div class="st"><span>生命 <i>${T.hp}</i></span><span>伤害 <i>${T.dmg}</i></span><span>移速 <i>${T.spd}</i></span><span>物防 <i>${T.pdef || 0}</i></span><span>魔防 <i>${T.mdef || 0}</i></span></div>` : `<p>${INFO[k] || ''}</p>`);
-        if (cv) { const c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height; c2.style.height = Math.min(150, parseFloat(cv.style.height) * 1.5) + 'px'; side.querySelector('.cxbig').appendChild(c2); const a = anims.find(x => x.c === cv); if (a) anims.push({ c: c2, fr: a.fr, i: a.i }); } };
+        if (cv) { const c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height; c2.style.height = Math.min(150, parseFloat(cv.style.height) * 1.5) + 'px'; side.querySelector('.cxbig').appendChild(c2); const a = anims.find(x => x.c === cv); if (a) anims.push({ c: c2, fr: a.fr, i: a.i, below: a.below }); } };
       d.addEventListener('click', ev => show(ev.target.closest('.fig')));
       for (const [k, n, note] of [['gob_thief', '小咕噜', '小偷'], ['gob_merchant', '矮人商人', '商人'], ['guard', '王国卫兵', '守卫'], ['wizard', '大法师', '王国'], ['minister', '大臣', '王国']]) add(null, [], n, note, 'blue', note, k);   // 11/24 底座：勇者金、NPC 蓝、怪物灰   // 11/23 NPC 也进图鉴
       { // 11/23 阵营分类：页签 + 「全部」里分组小标题
